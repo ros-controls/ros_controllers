@@ -12,7 +12,6 @@
   <depend package="controller_interface"/>
   <depend package="control_toolbox" />
   <depend package="realtime_tools" />
-  <depend package="pr2_controllers_msgs" />
 
   <export>
     <controller_interface plugin="${prefix}/effort_controllers_plugin.xml" />

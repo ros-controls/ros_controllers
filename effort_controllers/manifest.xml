@@ -10,6 +10,7 @@
   <url>http://ros.org/wiki/effort_controllers</url>
 
   <depend package="controller_interface"/>
+  <depend package="controllers_msgs"/>
   <depend package="control_toolbox" />
   <depend package="realtime_tools" />
 

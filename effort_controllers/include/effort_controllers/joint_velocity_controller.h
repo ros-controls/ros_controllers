@@ -37,20 +37,27 @@
 #define EFFORT_CONTROLLERS_JOINT_VELOCITY_CONTROLLER_H
 
 /**
-   @class velocity_controllers:JointVelocityController
+   @class effort_controllers::JointVelocityController
    @brief Joint Velocity Controller
 
-   This class passes the commanded velocity down to the joint
+   This class controls positon using a pid loop.
 
-   @section ROS interface
+   @section ROS ROS interface
 
-   @param type Must be "JointVelocityController"
+   @param type Must be "effort_controllers::JointVelocityController"
    @param joint Name of the joint to control.
+   @param pid Contains the gains for the PID loop around velocity.  See: control_toolbox::Pid
 
    Subscribes to:
-   - @b command (std_msgs::Float64) : The joint velocity to apply
-*/
 
+   - @b command (std_msgs::Float64) : The joint velocity to achieve.
+
+   Publishes:
+
+   - @b state (controllers_msgs::JointControllerState) :
+     Current state of the controller, including pid error and gains.
+
+*/
 
 #include <boost/thread/condition.hpp>
 #include <ros/node_handle.h>
@@ -77,14 +84,14 @@ public:
   bool init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n);
 
   /*!
-   * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
+   * \brief Give set velocity of the joint for next update: revolute (angle) and prismatic (velocity)
    *
    * \param double pos Velocity command to issue
    */
   void setCommand(double cmd);
 
   /*!
-   * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
+   * \brief Get latest velocity command to the joint: revolute (angle) and prismatic (velocity).
    */
   void getCommand(double & cmd);
 
@@ -104,8 +111,7 @@ public:
 
   std::string getJointName();
   hardware_interface::JointHandle joint_;
-
-  double command_;                                /**< Last commanded position. */
+  double command_;                                /**< Last commanded velocity. */
 
 private:
   control_toolbox::Pid pid_controller_;           /**< Internal PID controller. */
@@ -123,5 +129,7 @@ private:
 };
 
 } // namespace
+
+
 
 #endif

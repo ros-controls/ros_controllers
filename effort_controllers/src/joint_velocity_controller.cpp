@@ -65,8 +65,6 @@ JointVelocityController::~JointVelocityController()
     return false;
   }
 
-  joint_ = robot->getJointHandle(joint_name);
-
   if (!pid_controller_.init(ros::NodeHandle(n, "pid")))
     return false;
 
@@ -145,3 +143,5 @@ void JointVelocityController::setCommandCB(const std_msgs::Float64ConstPtr& msg)
 }
 
 } // namespace
+
+PLUGINLIB_DECLARE_CLASS(effort_controllers, JointVelocityController, effort_controllers::JointVelocityController, controller_interface::ControllerBase)

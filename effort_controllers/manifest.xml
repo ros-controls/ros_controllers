@@ -13,6 +13,7 @@
   <depend package="controllers_msgs"/>
   <depend package="control_toolbox" />
   <depend package="realtime_tools" />
+  <depend package="urdf" />
 
   <export>
     <controller_interface plugin="${prefix}/effort_controllers_plugin.xml" />

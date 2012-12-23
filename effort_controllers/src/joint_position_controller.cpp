@@ -1,0 +1,184 @@
+/*********************************************************************
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2008, Willow Garage, Inc.
+ *  Copyright (c) 2012, hiDOF, Inc.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of the Willow Garage nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
+
+#include <effort_controllers/joint_position_controller.h>
+#include <angles/angles.h>
+#include <pluginlib/class_list_macros.h>
+
+namespace effort_controllers {
+
+JointPositionController::JointPositionController()
+: command_(0), loop_count_(0),  initialized_(false), last_time_(0)
+{}
+
+JointPositionController::~JointPositionController()
+{
+  sub_command_.shutdown();
+}
+
+bool JointPositionController::init(hardware_interface::EffortJointInterface *robot, 
+				   const std::string &joint_name, const control_toolbox::Pid &pid)
+{
+  joint_ = robot->getJointHandle(joint_name);
+  pid_controller_ = pid;
+
+  // get urdf info about joint
+  urdf::Model urdf;
+  if (!urdf.initParam("robot_description")){
+    ROS_ERROR("Failed to parse urdf file");
+    return false;
+  }
+  joint_urdf_ = urdf.getJoint(joint_name);
+  if (!joint_urdf_){
+    ROS_ERROR("Could not find joint %s in urdf", joint_name.c_str());
+    return false;
+  }
+
+  return true;
+}
+
+bool JointPositionController::init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n)
+{
+  std::string joint_name;
+  if (!n.getParam("joint", joint_name)) {
+    ROS_ERROR("No joint given (namespace: %s)", n.getNamespace().c_str());
+    return false;
+  }
+
+  control_toolbox::Pid pid;
+  if (!pid.init(ros::NodeHandle(n, "pid")))
+    return false;
+
+  controller_state_publisher_.reset(
+    new realtime_tools::RealtimePublisher<controllers_msgs::JointControllerState>(n, "state", 1));
+
+  sub_command_ = n.subscribe<std_msgs::Float64>("command", 1, &JointPositionController::setCommandCB, this);
+
+  return init(robot, joint_name, pid);
+}
+
+
+void JointPositionController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
+{
+  pid_controller_.setGains(p,i,d,i_max,i_min);
+}
+
+void JointPositionController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
+{
+  pid_controller_.getGains(p,i,d,i_max,i_min);
+}
+
+std::string JointPositionController::getJointName()
+{
+  return joint_.getName();
+}
+
+// Set the joint position command
+void JointPositionController::setCommand(double cmd)
+{
+  command_ = cmd;
+}
+
+// Return the current position command
+void JointPositionController::getCommand(double & cmd)
+{
+  cmd = command_;
+}
+
+void JointPositionController::update(const ros::Time& time)
+{
+  if (!initialized_)
+  {
+    initialized_ = true;
+    command_ = joint_.getPosition();
+  }
+
+  ros::Duration dt = time - last_time_;
+  double error;
+  if (joint_urdf_->type == urdf::Joint::REVOLUTE)
+  {
+    angles::shortest_angular_distance_with_limits(command_, joint_.getPosition(), 
+						  joint_urdf_->limits->lower, 
+						  joint_urdf_->limits->upper,
+						  error);
+  }
+  else if (joint_urdf_->type == urdf::Joint::CONTINUOUS)
+  {
+    error = angles::shortest_angular_distance(command_, joint_.getPosition());
+  }
+  else //prismatic
+  {
+    error = joint_.getPosition() - command_;
+  }
+
+  double commanded_effort = pid_controller_.updatePid(error, joint_.getVelocity(), dt); // assuming desired velocity is 0
+  joint_.setCommand(commanded_effort);
+
+
+  // publish state
+  if (loop_count_ % 10 == 0)
+  {
+    if(controller_state_publisher_ && controller_state_publisher_->trylock())
+    {
+      controller_state_publisher_->msg_.header.stamp = time;
+      controller_state_publisher_->msg_.set_point = command_;
+      controller_state_publisher_->msg_.process_value = joint_.getPosition();
+      controller_state_publisher_->msg_.process_value_dot = joint_.getVelocity();
+      controller_state_publisher_->msg_.error = error;
+      controller_state_publisher_->msg_.time_step = dt.toSec();
+      controller_state_publisher_->msg_.command = commanded_effort;
+
+      double dummy;
+      getGains(controller_state_publisher_->msg_.p,
+               controller_state_publisher_->msg_.i,
+               controller_state_publisher_->msg_.d,
+               controller_state_publisher_->msg_.i_clamp,
+               dummy);
+      controller_state_publisher_->unlockAndPublish();
+    }
+  }
+  loop_count_++;
+
+  last_time_ = time;
+}
+
+void JointPositionController::setCommandCB(const std_msgs::Float64ConstPtr& msg)
+{
+  command_ = msg->data;
+}
+
+} // namespace
+
+PLUGINLIB_DECLARE_CLASS(effort_controllers, JointPositionController, effort_controllers::JointPositionController, controller_interface::ControllerBase)

@@ -16,7 +16,7 @@
   <depend package="urdf" />
 
   <export>
-    <controller_interface plugin="${prefix}/effort_controllers_plugin.xml" />
+    <controller_interface plugin="${prefix}/effort_controllers_plugins.xml" />
   </export>
 
 </package>

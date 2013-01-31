@@ -71,6 +71,8 @@
 #include <controllers_msgs/JointControllerState.h>
 #include <std_msgs/Float64.h>
 #include <controllers_msgs/JointControllerState.h>
+#include <realtime_tools/realtime_buffer.h>
+
 
 namespace effort_controllers
 {
@@ -92,21 +94,12 @@ public:
    */
   void setCommand(double cmd);
 
-  /*!
-   * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
-   */
-  void getCommand(double & cmd);
-  
-  void starting(const ros::Time& time) {
-    last_time_ = time;
-    command_ = joint_.getPosition();
-    pid_controller_.reset();
-  }
+  void starting(const ros::Time& time);
   
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
    */
-  void update(const ros::Time& time);
+  void update(const ros::Time& time, const ros::Duration& period);
 
   void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
   void setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min);
@@ -114,13 +107,11 @@ public:
   std::string getJointName();
   hardware_interface::JointHandle joint_;
   boost::shared_ptr<const urdf::Joint> joint_urdf_;
-  double command_;                            /**< Last commanded position. */
+  realtime_tools::RealtimeBuffer<double> command_;             /**< Last commanded position. */
 
 private:
   int loop_count_;
-  bool initialized_;
   control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
-  ros::Time last_time_;                          /**< Last time stamp of update. */
 
   boost::scoped_ptr<
     realtime_tools::RealtimePublisher<

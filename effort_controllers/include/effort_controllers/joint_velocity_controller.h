@@ -100,11 +100,10 @@ public:
    */
 
   void starting(const ros::Time& time) {
-    last_time_ = time;
     command_ = 0.0;
     pid_controller_.reset();
   }
-  void update(const ros::Time& time);
+  void update(const ros::Time& time, const ros::Duration& period);
 
   void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
   void setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min);
@@ -115,7 +114,6 @@ public:
 
 private:
   control_toolbox::Pid pid_controller_;           /**< Internal PID controller. */
-  ros::Time last_time_;                              /**< Last time stamp of update. */
   int loop_count_;
 
   friend class JointVelocityControllerNode;

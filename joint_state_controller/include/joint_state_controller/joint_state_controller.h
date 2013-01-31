@@ -48,7 +48,7 @@ public:
 
   virtual bool init(hardware_interface::JointStateInterface* hw, ros::NodeHandle &n);
   virtual void starting(const ros::Time& time);
-  virtual void update(const ros::Time& time);
+  virtual void update(const ros::Time& time, const ros::Duration& period);
   virtual void stopping(const ros::Time& time);
 
 private:

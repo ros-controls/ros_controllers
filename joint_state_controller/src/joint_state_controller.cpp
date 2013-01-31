@@ -72,7 +72,7 @@ namespace joint_state_controller
     last_publish_time_ = time;
   }
 
-  void JointStateController::update(const ros::Time& time)
+  void JointStateController::update(const ros::Time& time, const ros::Duration& period)
   {
     // limit rate of publishing
     if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0/publish_rate_) < time){

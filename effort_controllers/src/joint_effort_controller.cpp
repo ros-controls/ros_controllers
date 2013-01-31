@@ -68,7 +68,7 @@ bool JointEffortController::init(hardware_interface::EffortJointInterface *robot
   return true;
 }
 
-void JointEffortController::update(const ros::Time& time)
+void JointEffortController::update(const ros::Time& time, const ros::Duration& period)
 {
   joint_.setCommand(command_);
 }

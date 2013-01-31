@@ -40,7 +40,7 @@
 namespace effort_controllers {
 
 JointPositionController::JointPositionController()
-: command_(0), loop_count_(0),  initialized_(false), last_time_(0)
+: loop_count_(0)
 {}
 
 JointPositionController::~JointPositionController()
@@ -108,42 +108,43 @@ std::string JointPositionController::getJointName()
 // Set the joint position command
 void JointPositionController::setCommand(double cmd)
 {
-  command_ = cmd;
+  // the writeFromNonRT can be used in RT, if you have the guarantee that 
+  //  * no non-rt thread is calling the same function (we're not subscribing to ros callbacks)
+  //  * there is only one single rt thread
+  command_.writeFromNonRT(cmd);
 }
 
-// Return the current position command
-void JointPositionController::getCommand(double & cmd)
+
+void JointPositionController::starting(const ros::Time& time) 
 {
-  cmd = command_;
+  command_.initRT(joint_.getPosition());
+  pid_controller_.reset();
 }
 
-void JointPositionController::update(const ros::Time& time)
-{
-  if (!initialized_)
-  {
-    initialized_ = true;
-    command_ = joint_.getPosition();
-  }
 
-  ros::Duration dt = time - last_time_;
+void JointPositionController::update(const ros::Time& time, const ros::Duration& period)
+{
+  double command = *(command_.readFromRT());
+
   double error;
   if (joint_urdf_->type == urdf::Joint::REVOLUTE)
   {
-    angles::shortest_angular_distance_with_limits(command_, joint_.getPosition(), 
+    angles::shortest_angular_distance_with_limits(command,
+						  joint_.getPosition(), 
 						  joint_urdf_->limits->lower, 
 						  joint_urdf_->limits->upper,
 						  error);
   }
   else if (joint_urdf_->type == urdf::Joint::CONTINUOUS)
   {
-    error = angles::shortest_angular_distance(command_, joint_.getPosition());
+    error = angles::shortest_angular_distance(command, joint_.getPosition());
   }
   else //prismatic
   {
-    error = joint_.getPosition() - command_;
+    error = joint_.getPosition() - command;
   }
 
-  double commanded_effort = pid_controller_.updatePid(error, joint_.getVelocity(), dt); // assuming desired velocity is 0
+  double commanded_effort = pid_controller_.updatePid(error, joint_.getVelocity(), period); // assuming desired velocity is 0
   joint_.setCommand(commanded_effort);
 
 
@@ -153,11 +154,11 @@ void JointPositionController::update(const ros::Time& time)
     if(controller_state_publisher_ && controller_state_publisher_->trylock())
     {
       controller_state_publisher_->msg_.header.stamp = time;
-      controller_state_publisher_->msg_.set_point = command_;
+      controller_state_publisher_->msg_.set_point = command;
       controller_state_publisher_->msg_.process_value = joint_.getPosition();
       controller_state_publisher_->msg_.process_value_dot = joint_.getVelocity();
       controller_state_publisher_->msg_.error = error;
-      controller_state_publisher_->msg_.time_step = dt.toSec();
+      controller_state_publisher_->msg_.time_step = period.toSec();
       controller_state_publisher_->msg_.command = commanded_effort;
 
       double dummy;
@@ -170,13 +171,11 @@ void JointPositionController::update(const ros::Time& time)
     }
   }
   loop_count_++;
-
-  last_time_ = time;
 }
 
 void JointPositionController::setCommandCB(const std_msgs::Float64ConstPtr& msg)
 {
-  command_ = msg->data;
+  setCommand(msg->data);
 }
 
 } // namespace

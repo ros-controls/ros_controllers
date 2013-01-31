@@ -40,7 +40,7 @@
 namespace effort_controllers {
 
 JointVelocityController::JointVelocityController()
-: command_(0), last_time_(0), loop_count_(0)
+: command_(0), loop_count_(0)
 {}
 
 JointVelocityController::~JointVelocityController()
@@ -106,11 +106,10 @@ void JointVelocityController::getCommand(double  & cmd)
   cmd = command_;
 }
 
-  void JointVelocityController::update(const ros::Time& time)
+void JointVelocityController::update(const ros::Time& time, const ros::Duration& period)
 {
-  ros::Duration dt = time - last_time_;
   double error = joint_.getVelocity() - command_;
-  double command = pid_controller_.updatePid(error, dt);
+  double command = pid_controller_.updatePid(error, perido);
   joint_.setCommand(command);
 
   if(loop_count_ % 10 == 0)
@@ -121,7 +120,7 @@ void JointVelocityController::getCommand(double  & cmd)
       controller_state_publisher_->msg_.set_point = command_;
       controller_state_publisher_->msg_.process_value = joint_.getVelocity();
       controller_state_publisher_->msg_.error = error;
-      controller_state_publisher_->msg_.time_step = dt.toSec();
+      controller_state_publisher_->msg_.time_step = perido.toSec();
       controller_state_publisher_->msg_.command = command;
 
       double dummy;
@@ -134,7 +133,6 @@ void JointVelocityController::getCommand(double  & cmd)
     }
   }
   loop_count_++;
-  last_time_ = time;
 }
 
 void JointVelocityController::setCommandCB(const std_msgs::Float64ConstPtr& msg)

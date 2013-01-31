@@ -72,7 +72,7 @@ public:
   bool init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n);
 
   void starting(const ros::Time& time) { command_ = 0.0;}
-  void update(const ros::Time& time);
+  void update(const ros::Time& time, const ros::Duration& period);
 
   hardware_interface::JointHandle joint_;
   double command_;

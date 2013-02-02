@@ -109,7 +109,7 @@ void JointVelocityController::getCommand(double  & cmd)
 void JointVelocityController::update(const ros::Time& time, const ros::Duration& period)
 {
   double error = joint_.getVelocity() - command_;
-  double command = pid_controller_.updatePid(error, perido);
+  double command = pid_controller_.updatePid(error, period);
   joint_.setCommand(command);
 
   if(loop_count_ % 10 == 0)
@@ -120,7 +120,7 @@ void JointVelocityController::update(const ros::Time& time, const ros::Duration&
       controller_state_publisher_->msg_.set_point = command_;
       controller_state_publisher_->msg_.process_value = joint_.getVelocity();
       controller_state_publisher_->msg_.error = error;
-      controller_state_publisher_->msg_.time_step = perido.toSec();
+      controller_state_publisher_->msg_.time_step = period.toSec();
       controller_state_publisher_->msg_.command = command;
 
       double dummy;

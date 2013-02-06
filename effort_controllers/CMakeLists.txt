@@ -24,7 +24,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #common commands for building c++ executables and libraries
 rosbuild_add_library(${PROJECT_NAME} 
                      src/joint_effort_controller.cpp include/effort_controllers/joint_effort_controller.h
-                     src/joint_effort_controller.cpp include/effort_controllers/joint_effort_controller.h
+                     src/joint_velocity_controller.cpp include/effort_controllers/joint_velocity_controller.h
                      src/joint_position_controller.cpp include/effort_controllers/joint_position_controller.h)
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()

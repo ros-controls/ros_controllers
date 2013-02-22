@@ -51,8 +51,7 @@ namespace joint_state_controller
     }
 
     // realtime publisher
-    ros::NodeHandle nh;
-    realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(nh, "joint_states", 4));
+    realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(n, "joint_states", 4));
 
     // get joints and allocate message
     for (unsigned i=0; i<joint_names.size(); i++){

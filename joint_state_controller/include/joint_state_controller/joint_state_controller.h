@@ -48,7 +48,7 @@ class JointStateController: public controller_interface::Controller<hardware_int
 public:
   JointStateController(){}
 
-  virtual bool init(hardware_interface::JointStateInterface* hw, ros::NodeHandle &n);
+  virtual bool init(hardware_interface::JointStateInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle& controller_nh);
   virtual void starting(const ros::Time& time);
   virtual void update(const ros::Time& time, const ros::Duration& period);
   virtual void stopping(const ros::Time& time);

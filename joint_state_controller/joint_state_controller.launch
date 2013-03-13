@@ -4,6 +4,4 @@
 
   <!-- spawn controller -->
   <node name="joint_state_controller_spawner" pkg="controller_manager" type="spawner" output="screen" args="joint_state_controller" />
-  
-
 </launch>

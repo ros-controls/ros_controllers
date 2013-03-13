@@ -37,7 +37,7 @@
 namespace joint_state_controller
 {
 
-  bool JointStateController::init(hardware_interface::JointStateInterface* hw, ros::NodeHandle &n)
+  bool JointStateController::init(hardware_interface::JointStateInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle& controller_nh)
   {
     // get all joint states from the hardware interface
     const std::vector<std::string>& joint_names = hw->getJointNames();
@@ -45,14 +45,13 @@ namespace joint_state_controller
       ROS_DEBUG("Got joint %s", joint_names[i].c_str());
 
     // get publishing period
-    if (!n.getParam("publish_rate", publish_rate_)){
+    if (!controller_nh.getParam("publish_rate", publish_rate_)){
       ROS_ERROR("Parameter 'publish_rate' not set");
       return false;
     }
 
     // realtime publisher
-    ros::NodeHandle nh;
-    realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(nh, "joint_states", 4));
+    realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(root_nh, "joint_states", 4));
 
     // get joints and allocate message
     for (unsigned i=0; i<joint_names.size(); i++){
@@ -61,7 +60,7 @@ namespace joint_state_controller
       realtime_pub_->msg_.position.push_back(0.0);
       realtime_pub_->msg_.velocity.push_back(0.0);
       realtime_pub_->msg_.effort.push_back(0.0);
-    }    
+    }
 
     return true;
   }

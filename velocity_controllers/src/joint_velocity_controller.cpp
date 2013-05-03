@@ -34,29 +34,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef EFFORT_CONTROLLERS_JOINT_EFFORT_CONTROLLER_H
-#define EFFORT_CONTROLLERS_JOINT_EFFORT_CONTROLLER_H
+#include <velocity_controllers/joint_velocity_controller.h>
+#include <pluginlib/class_list_macros.h>
 
-#include <forward_command_controller/forward_command_controller.h>
-
-namespace effort_controllers
-{
-
-/**
- * \brief Joint Effort Controller (torque or force)
- *
- * This class passes the commanded effort down to the joint.
- *
- * \section ROS interface
- *
- * \param type Must be "JointEffortController".
- * \param joint Name of the joint to control.
- *
- * Subscribes to:
- * - \b command (std_msgs::Float64) : The joint effort to apply.
- */
-typedef forward_command_controller::ForwardCommandController<hardware_interface::EffortJointInterface>
-        JointEffortController;
-}
-
-#endif
+PLUGINLIB_DECLARE_CLASS(velocity_controllers,
+                        JointVelocityController,
+                        velocity_controllers::JointVelocityController,
+                        controller_interface::ControllerBase)

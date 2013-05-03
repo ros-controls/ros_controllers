@@ -1,3 +1,4 @@
+
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
@@ -34,29 +35,72 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef EFFORT_CONTROLLERS_JOINT_EFFORT_CONTROLLER_H
-#define EFFORT_CONTROLLERS_JOINT_EFFORT_CONTROLLER_H
+#ifndef FORWARD_COMMAND_CONTROLLER_FORWARD_COMMAND_CONTROLLER_H
+#define FORWARD_COMMAND_CONTROLLER_FORWARD_COMMAND_CONTROLLER_H
 
-#include <forward_command_controller/forward_command_controller.h>
+#include <ros/node_handle.h>
+#include <hardware_interface/joint_command_interface.h>
+#include <controller_interface/controller.h>
+#include <std_msgs/Float64.h>
 
-namespace effort_controllers
+
+namespace forward_command_controller
 {
 
 /**
- * \brief Joint Effort Controller (torque or force)
+ * \brief Single joint controller.
  *
- * This class passes the commanded effort down to the joint.
+ * This class passes the command signal down to the joint.
+ * Command signal and joint hardware interface are of the same type, e.g. effort commands for an effort-controlled
+ * joint.
+ *
+ * \tparam T Type implementing the JointCommandInterface.
  *
  * \section ROS interface
  *
- * \param type Must be "JointEffortController".
+ * \param type hardware interface type.
  * \param joint Name of the joint to control.
  *
  * Subscribes to:
- * - \b command (std_msgs::Float64) : The joint effort to apply.
+ * - \b command (std_msgs::Float64) : The joint command to apply.
  */
-typedef forward_command_controller::ForwardCommandController<hardware_interface::EffortJointInterface>
-        JointEffortController;
+template <class T>
+class ForwardCommandController: public controller_interface::Controller<T>
+{
+public:
+  ForwardCommandController() : command_(0) {}
+  ~ForwardCommandController() {sub_command_.shutdown();}
+
+  bool init(T* robot, const std::string &joint_name)
+  {
+    joint_ = robot->getJointHandle(joint_name);
+    return true;
+  }
+
+  bool init(T *robot, ros::NodeHandle &n)
+  {
+    std::string joint_name;
+    if (!n.getParam("joint", joint_name))
+    {
+      ROS_ERROR("No joint given (namespace: %s)", n.getNamespace().c_str());
+      return false;
+    }
+    joint_ = robot->getJointHandle(joint_name);
+    sub_command_ = n.subscribe<std_msgs::Float64>("command", 1, &ForwardCommandController::commandCB, this);
+    return true;
+  }
+
+  void starting(const ros::Time& time) {command_ = 0.0;}
+  void update(const ros::Time& time, const ros::Duration& period) {joint_.setCommand(command_);}
+
+  hardware_interface::JointHandle joint_;
+  double command_;
+
+private:
+  ros::Subscriber sub_command_;
+  void commandCB(const std_msgs::Float64ConstPtr& msg) {command_ = msg->data;}
+};
+
 }
 
 #endif

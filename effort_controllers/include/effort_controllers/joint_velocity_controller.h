@@ -40,7 +40,7 @@
    @class effort_controllers::JointVelocityController
    @brief Joint Velocity Controller
 
-   This class controls positon using a pid loop.
+   This class controls velocity using a pid loop.
 
    @section ROS ROS interface
 

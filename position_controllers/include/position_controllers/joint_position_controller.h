@@ -34,29 +34,29 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef EFFORT_CONTROLLERS_JOINT_EFFORT_CONTROLLER_H
-#define EFFORT_CONTROLLERS_JOINT_EFFORT_CONTROLLER_H
+#ifndef POSITION_CONTROLLERS_JOINT_POSITION_CONTROLLER_H
+#define POSITION_CONTROLLERS_JOINT_POSITION_CONTROLLER_H
 
 #include <forward_command_controller/forward_command_controller.h>
 
-namespace effort_controllers
+namespace position_controllers
 {
 
 /**
- * \brief Joint Effort Controller (torque or force)
+ * \brief Joint Position Controller (linear or angular)
  *
- * This class passes the commanded effort down to the joint.
+ * This class passes the commanded position down to the joint
  *
  * \section ROS interface
  *
- * \param type Must be "JointEffortController".
+ * \param type Must be "JointPositionController".
  * \param joint Name of the joint to control.
  *
  * Subscribes to:
- * - \b command (std_msgs::Float64) : The joint effort to apply.
+ * - \b command (std_msgs::Float64) : The joint position to apply
  */
-typedef forward_command_controller::ForwardCommandController<hardware_interface::EffortJointInterface>
-        JointEffortController;
+typedef forward_command_controller::ForwardCommandController<hardware_interface::PositionJointInterface>
+        JointPositionController;
 }
 
 #endif

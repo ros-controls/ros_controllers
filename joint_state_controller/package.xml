@@ -1,0 +1,32 @@
+<package>
+  <name>joint_state_controller</name>
+  <version>0.0.2</version>
+  <description>Controller to publish joint state</description>
+  <maintainer email="wim@hidof.com">Wim Meeussen</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">https://bitbucket.org/hidof/controller-manager/wiki/</url>
+  <!-- <url type="bugtracker"></url> -->
+
+  <author>Wim Meeussen</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>realtime_tools</build_depend> 
+  <build_depend>roscpp</build_depend> 
+  <build_depend>hardware_interface</build_depend> 
+  <build_depend>pluginlib</build_depend> 
+  <build_depend>controller_interface</build_depend> 
+  <build_depend>sensor_msgs</build_depend> 
+  <run_depend>realtime_tools</run_depend> 
+  <run_depend>roscpp</run_depend> 
+  <run_depend>hardware_interface</run_depend> 
+  <run_depend>pluginlib</run_depend> 
+  <run_depend>controller_interface</run_depend> 
+  <run_depend>sensor_msgs</run_depend> 
+
+  <export>
+    <controller_interface plugin="${prefix}/joint_state_plugin.xml"/>
+  </export>
+</package>

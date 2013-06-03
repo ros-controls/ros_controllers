@@ -1,0 +1,30 @@
+<package>
+  <name>effort_controllers</name>
+  <version>0.0.2</version>
+  <description>effort_controllers</description>
+  <maintainer email="vijay@hidof.com">Vijay Pradeep</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://ros.org/wiki/effort_controllers</url>
+  <!-- <url type="bugtracker"></url> -->
+
+  <author>Vijay Pradeep</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>controller_interface</build_depend> 
+  <build_depend>controllers_msgs</build_depend> 
+  <build_depend>control_toolbox</build_depend> 
+  <build_depend>realtime_tools</build_depend> 
+  <build_depend>urdf</build_depend> 
+  <run_depend>controller_interface</run_depend> 
+  <run_depend>controllers_msgs</run_depend> 
+  <run_depend>control_toolbox</run_depend> 
+  <run_depend>realtime_tools</run_depend> 
+  <run_depend>urdf</run_depend> 
+
+  <export>
+    <controller_interface plugin="${prefix}/effort_controllers_plugins.xml"/>
+  </export>
+</package>

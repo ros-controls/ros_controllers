@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(effort_controllers)
 # Load catkin and all dependencies required for this package
 # TODO: remove all from COMPONENTS that are not catkin packages.
-find_package(catkin REQUIRED COMPONENTS controller_interface controllers_msgs control_toolbox realtime_tools urdf)
+find_package(catkin REQUIRED COMPONENTS controller_interface controllers_msgs forward_command_controller control_toolbox realtime_tools urdf)
 
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
@@ -18,7 +18,7 @@ add_library(${PROJECT_NAME}
 ## INCLUDE_DIRS: 
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 catkin_package(
-    DEPENDS controller_interface controllers_msgs control_toolbox realtime_tools urdf
+    DEPENDS controller_interface controllers_msgs control_toolbox realtime_tools urdf forward_command_controller
     CATKIN_DEPENDS # TODO
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}

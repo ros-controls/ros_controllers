@@ -1,0 +1,28 @@
+<package>
+  <name>ros_controllers</name>
+  <version>0.0.2</version>
+  <description>Library of ros controllers</description>
+  <maintainer email="wim@hidof.com">Maintained by Wim Meeussen</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://ros.org/wiki/ros_controllers</url>
+  <!-- <url type="bugtracker"></url> -->
+
+  <author>Maintained by Wim Meeussen</author>
+
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>effort_controllers</run_depend>
+  <run_depend>joint_state_controller</run_depend>
+  <run_depend>controllers_msgs</run_depend>
+
+
+
+
+
+  <export>
+    <metapackage/>
+  </export>
+</package>

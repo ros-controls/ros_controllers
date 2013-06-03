@@ -11,6 +11,7 @@ add_library(${PROJECT_NAME}
   src/joint_effort_controller.cpp include/effort_controllers/joint_effort_controller.h
   src/joint_velocity_controller.cpp include/effort_controllers/joint_velocity_controller.h
   src/joint_position_controller.cpp include/effort_controllers/joint_position_controller.h)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 # TODO: fill in what other packages will need to use this package
 ## DEPENDS: system dependencies of this project that dependent projects also need

@@ -1,6 +1,6 @@
 <package>
   <name>controllers_msgs</name>
-  <version>0.0.2</version>
+  <version>1.0.0</version>
   <description>Messages, services, and actions used in the pr2_controllers stack.</description>
   <maintainer email="wim@hidof.com">Wim Meeussen</maintainer>
 

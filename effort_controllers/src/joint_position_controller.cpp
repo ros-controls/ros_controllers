@@ -62,7 +62,7 @@ bool JointPositionController::init(hardware_interface::EffortJointInterface *rob
   }
   joint_urdf_ = urdf.getJoint(joint_name);
   if (!joint_urdf_){
-    ROS_ERROR("Could not find joint %s in urdf", joint_name.c_str());
+    ROS_ERROR("Could not find joint '%s' in urdf", joint_name.c_str());
     return false;
   }
 

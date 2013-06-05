@@ -71,13 +71,7 @@ public:
   ForwardCommandController() : command_(0) {}
   ~ForwardCommandController() {sub_command_.shutdown();}
 
-  bool init(T* robot, const std::string &joint_name)
-  {
-    joint_ = robot->getJointHandle(joint_name);
-    return true;
-  }
-
-  bool init(T *robot, ros::NodeHandle &n)
+  bool init(T* hw, ros::NodeHandle &n)
   {
     std::string joint_name;
     if (!n.getParam("joint", joint_name))
@@ -85,7 +79,7 @@ public:
       ROS_ERROR("No joint given (namespace: %s)", n.getNamespace().c_str());
       return false;
     }
-    joint_ = robot->getJointHandle(joint_name);
+    joint_ = hw->getJointHandle(joint_name);
     sub_command_ = n.subscribe<std_msgs::Float64>("command", 1, &ForwardCommandController::commandCB, this);
     return true;
   }

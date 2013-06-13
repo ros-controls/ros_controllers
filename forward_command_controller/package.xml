@@ -1,0 +1,26 @@
+<package>
+  <name>forward_command_controller</name>
+  <version>1.0.0</version>
+  <description>forward_command_controller</description>
+  <maintainer email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://ros.org/wiki/forward_command_controller</url>
+  <!-- <url type="bugtracker"></url> -->
+
+  <author>Vijay Pradeep</author>
+  <author>Adolfo Rodriguez Tsouroukdissian</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>controller_interface</build_depend> 
+  <build_depend>hardware_interface</build_depend> 
+  <build_depend>std_msgs</build_depend> 
+  <run_depend>controller_interface</run_depend> 
+  <run_depend>hardware_interface</run_depend> 
+  <run_depend>std_msgs</run_depend> 
+
+  <export>
+    <cpp cflags="-I${prefix}/include"/>
+  </export>
+</package>

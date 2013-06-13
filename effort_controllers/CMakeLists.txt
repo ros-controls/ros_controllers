@@ -1,26 +1,35 @@
-# http://ros.org/doc/groovy/api/catkin/html/user_guide/supposed.html
 cmake_minimum_required(VERSION 2.8.3)
 project(effort_controllers)
-# Load catkin and all dependencies required for this package
-# TODO: remove all from COMPONENTS that are not catkin packages.
-find_package(catkin REQUIRED COMPONENTS controller_interface controllers_msgs forward_command_controller control_toolbox realtime_tools urdf)
 
-include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
+if(USE_ROSBUILD)
+  include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
-add_library(${PROJECT_NAME} 
-  src/joint_effort_controller.cpp include/effort_controllers/joint_effort_controller.h
-  src/joint_velocity_controller.cpp include/effort_controllers/joint_velocity_controller.h
-  src/joint_position_controller.cpp include/effort_controllers/joint_position_controller.h)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+  rosbuild_init()
 
-# TODO: fill in what other packages will need to use this package
-## DEPENDS: system dependencies of this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## INCLUDE_DIRS: 
-## LIBRARIES: libraries you create in this project that dependent projects also need
-catkin_package(
-    DEPENDS controller_interface controllers_msgs control_toolbox realtime_tools urdf forward_command_controller
-    CATKIN_DEPENDS # TODO
+  set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+  set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+
+  rosbuild_add_library(${PROJECT_NAME} 
+    src/joint_effort_controller.cpp include/effort_controllers/joint_effort_controller.h
+    src/joint_velocity_controller.cpp include/effort_controllers/joint_velocity_controller.h
+    src/joint_position_controller.cpp include/effort_controllers/joint_position_controller.h)
+
+else()
+  # Load catkin and all dependencies required for this package
+  find_package(catkin REQUIRED COMPONENTS controller_interface controllers_msgs forward_command_controller control_toolbox realtime_tools urdf)
+
+  include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
+
+  add_library(${PROJECT_NAME} 
+    src/joint_effort_controller.cpp include/effort_controllers/joint_effort_controller.h
+    src/joint_velocity_controller.cpp include/effort_controllers/joint_velocity_controller.h
+    src/joint_position_controller.cpp include/effort_controllers/joint_position_controller.h)
+  target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+
+  # Declare catkin package
+  catkin_package(
+    CATKIN_DEPENDS controller_interface controllers_msgs control_toolbox realtime_tools urdf forward_command_controller
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
-)
+    )
+endif()

@@ -85,12 +85,12 @@ namespace force_torque_sensor_controller
           realtime_pubs_[i]->msg_.header.stamp = time;
           realtime_pubs_[i]->msg_.header.frame_id = sensors_[i].getFrameId();
 
-          realtime_pubs_[i]->msg_.wrench.force.x  = sensors_[i].getForce().x();
-          realtime_pubs_[i]->msg_.wrench.force.y  = sensors_[i].getForce().y();
-          realtime_pubs_[i]->msg_.wrench.force.z  = sensors_[i].getForce().z();
-          realtime_pubs_[i]->msg_.wrench.torque.x = sensors_[i].getTorque().x();
-          realtime_pubs_[i]->msg_.wrench.torque.y = sensors_[i].getTorque().y();
-          realtime_pubs_[i]->msg_.wrench.torque.z = sensors_[i].getTorque().z();
+          realtime_pubs_[i]->msg_.wrench.force.x  = sensors_[i].getForce()[0];
+          realtime_pubs_[i]->msg_.wrench.force.y  = sensors_[i].getForce()[1];
+          realtime_pubs_[i]->msg_.wrench.force.z  = sensors_[i].getForce()[2];
+          realtime_pubs_[i]->msg_.wrench.torque.x = sensors_[i].getTorque()[0];
+          realtime_pubs_[i]->msg_.wrench.torque.y = sensors_[i].getTorque()[1];
+          realtime_pubs_[i]->msg_.wrench.torque.z = sensors_[i].getTorque()[2];
 
           realtime_pubs_[i]->unlockAndPublish();
         }

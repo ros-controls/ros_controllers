@@ -5,7 +5,7 @@
   <author>Wim Meeussen</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>https://bitbucket.org/hidof/controller-manager/wiki/</url>
+  <url>https://github.com/willowgarage/ros_controllers/wiki</url>
 
   <depend package="realtime_tools"/>
   <depend package="roscpp"/>

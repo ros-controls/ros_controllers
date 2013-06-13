@@ -1,0 +1,26 @@
+<package>
+  <description brief="effort_controllers">
+
+     effort_controllers
+
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/effort_controllers</url>
+
+  <depend package="controller_interface"/>
+  <depend package="controllers_msgs"/>
+  <depend package="control_toolbox" />
+  <depend package="realtime_tools" />
+  <depend package="urdf" />
+
+  <depend package="forward_command_controller"/>
+
+  <export>
+    <controller_interface plugin="${prefix}/effort_controllers_plugins.xml" />
+  </export>
+
+</package>
+
+

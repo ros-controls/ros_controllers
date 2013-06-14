@@ -79,7 +79,7 @@ public:
       ROS_ERROR("No joint given (namespace: %s)", n.getNamespace().c_str());
       return false;
     }
-    joint_ = hw->getJointHandle(joint_name);
+    joint_ = hw->getHandle(joint_name);
     sub_command_ = n.subscribe<std_msgs::Float64>("command", 1, &ForwardCommandController::commandCB, this);
     return true;
   }

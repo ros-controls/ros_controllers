@@ -51,7 +51,7 @@ JointVelocityController::~JointVelocityController()
   bool JointVelocityController::init(hardware_interface::EffortJointInterface *robot, 
 				     const std::string &joint_name, const control_toolbox::Pid &pid)
 {
-  joint_ = robot->getJointHandle(joint_name);
+  joint_ = robot->getHandle(joint_name);
   pid_controller_ = pid;
 
   return true;

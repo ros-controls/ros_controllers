@@ -141,10 +141,12 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   }
   else //prismatic
   {
-    error = joint_.getPosition() - command;
+    error = command - joint_.getPosition();
   }
 
-  double commanded_effort = pid_controller_.updatePid(error, joint_.getVelocity(), period); // assuming desired velocity is 0
+  // Set the PID error and compute the PID command with nonuniform
+  // time step size. This also allows the user to pass in a precomputed derivative error. 
+  double commanded_effort = pid_controller_.computeCommand(error, joint_.getVelocity(), period); // assuming desired velocity is 0
   joint_.setCommand(commanded_effort);
 
 

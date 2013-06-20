@@ -37,7 +37,4 @@
 #include <position_controllers/joint_position_controller.h>
 #include <pluginlib/class_list_macros.h>
 
-PLUGINLIB_DECLARE_CLASS(position_controllers,
-                        JointPositionController,
-                        position_controllers::JointPositionController,
-                        controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(position_controllers::JointPositionController,controller_interface::ControllerBase)

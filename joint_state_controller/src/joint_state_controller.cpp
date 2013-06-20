@@ -99,4 +99,4 @@ namespace joint_state_controller
 }
 
 
-PLUGINLIB_DECLARE_CLASS(joint_state_controller, JointStateController, joint_state_controller::JointStateController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS( joint_state_controller::JointStateController, controller_interface::ControllerBase)

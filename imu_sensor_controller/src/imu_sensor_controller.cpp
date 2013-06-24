@@ -39,7 +39,7 @@ namespace imu_sensor_controller
   bool ImuSensorController::init(hardware_interface::ImuSensorInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle& controller_nh)
   {
     // get all joint states from the hardware interface
-    const std::vector<std::string>& sensor_names = hw->getSensorNames();
+    const std::vector<std::string>& sensor_names = hw->getNames();
     for (unsigned i=0; i<sensor_names.size(); i++)
       ROS_DEBUG("Got sensor %s", sensor_names[i].c_str());
 
@@ -51,7 +51,7 @@ namespace imu_sensor_controller
 
     for (unsigned i=0; i<sensor_names.size(); i++){
       // sensor handle
-      sensors_.push_back(hw->getSensorHandle(sensor_names[i]));
+      sensors_.push_back(hw->getHandle(sensor_names[i]));
 
       // realtime publisher
       RtPublisherPtr rt_pub(new realtime_tools::RealtimePublisher<sensor_msgs::Imu>(root_nh, sensor_names[i], 4));

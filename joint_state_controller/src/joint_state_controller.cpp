@@ -40,7 +40,7 @@ namespace joint_state_controller
   bool JointStateController::init(hardware_interface::JointStateInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle& controller_nh)
   {
     // get all joint states from the hardware interface
-    const std::vector<std::string>& joint_names = hw->getJointNames();
+    const std::vector<std::string>& joint_names = hw->getNames();
     for (unsigned i=0; i<joint_names.size(); i++)
       ROS_DEBUG("Got joint %s", joint_names[i].c_str());
 
@@ -55,7 +55,7 @@ namespace joint_state_controller
 
     // get joints and allocate message
     for (unsigned i=0; i<joint_names.size(); i++){
-      joint_state_.push_back(hw->getJointStateHandle(joint_names[i]));
+      joint_state_.push_back(hw->getHandle(joint_names[i]));
       realtime_pub_->msg_.name.push_back(joint_names[i]);
       realtime_pub_->msg_.position.push_back(0.0);
       realtime_pub_->msg_.velocity.push_back(0.0);

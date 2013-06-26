@@ -108,8 +108,13 @@ void JointVelocityController::getCommand(double  & cmd)
 
 void JointVelocityController::update(const ros::Time& time, const ros::Duration& period)
 {
-  double error = joint_.getVelocity() - command_;
-  double command = pid_controller_.updatePid(error, period);
+  double error = command_ - joint_.getVelocity();
+
+  // Set the PID error and compute the PID command with nonuniform time
+  // step size. The derivative error is computed from the change in the error
+  // and the timestep dt.
+  double command = pid_controller_.computeCommand(error, period);
+
   joint_.setCommand(command);
 
   if(loop_count_ % 10 == 0)

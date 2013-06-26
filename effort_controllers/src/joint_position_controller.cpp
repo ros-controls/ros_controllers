@@ -126,7 +126,9 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
 {
   double command = *(command_.readFromRT());
 
-  double error;
+  double error, vel_error;
+
+  // Compute position error
   if (joint_urdf_->type == urdf::Joint::REVOLUTE)
   {
     angles::shortest_angular_distance_with_limits(command,
@@ -141,10 +143,15 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   }
   else //prismatic
   {
-    error = joint_.getPosition() - command;
+    error = command - joint_.getPosition();
   }
 
-  double commanded_effort = pid_controller_.updatePid(error, joint_.getVelocity(), period); // assuming desired velocity is 0
+  // Compute velocity error assuming desired velocity is 0
+  vel_error = 0.0 - joint_.getVelocity();
+
+  // Set the PID error and compute the PID command with nonuniform
+  // time step size. This also allows the user to pass in a precomputed derivative error. 
+  double commanded_effort = pid_controller_.computeCommand(error, vel_error, period); 
   joint_.setCommand(commanded_effort);
 
 

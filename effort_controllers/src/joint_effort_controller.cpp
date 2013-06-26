@@ -37,4 +37,7 @@
 #include <effort_controllers/joint_effort_controller.h>
 #include <pluginlib/class_list_macros.h>
 
-PLUGINLIB_EXPORT_CLASS(effort_controllers::JointEffortController,controller_interface::ControllerBase)
+PLUGINLIB_DECLARE_CLASS(effort_controllers,
+                        JointEffortController,
+                        effort_controllers::JointEffortController,
+                        controller_interface::ControllerBase)

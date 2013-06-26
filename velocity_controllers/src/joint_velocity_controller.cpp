@@ -37,4 +37,7 @@
 #include <velocity_controllers/joint_velocity_controller.h>
 #include <pluginlib/class_list_macros.h>
 
-PLUGINLIB_EXPORT_CLASS(velocity_controllers::JointVelocityController,controller_interface::ControllerBase)
+PLUGINLIB_DECLARE_CLASS(velocity_controllers,
+                        JointVelocityController,
+                        velocity_controllers::JointVelocityController,
+                        controller_interface::ControllerBase)

@@ -36,4 +36,7 @@ else()
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
+  install(FILES joint_state_plugin.xml
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
 endif()

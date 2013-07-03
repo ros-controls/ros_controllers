@@ -1,0 +1,27 @@
+<package>
+  <description brief="effort_controllers">
+
+     effort_controllers
+
+  </description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/effort_controllers</url>
+
+  <depend package="roscpp" />
+  <depend package="realtime_tools" />
+
+  <depend package="controller_interface"/>
+  <depend package="hardware_interface"/>
+  <depend package="joint_limits_interface"/>
+
+  <depend package="control_msgs"/>
+  <depend package="trajectory_msgs"/>
+
+  <export>
+    <controller_interface plugin="${prefix}/ros_control_plugins.xml" />
+  </export>
+</package>
+
+

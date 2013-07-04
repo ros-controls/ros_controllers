@@ -103,5 +103,4 @@ namespace force_torque_sensor_controller
 
 }
 
-
-PLUGINLIB_DECLARE_CLASS(force_torque_sensor_controller, ForceTorqueSensorController, force_torque_sensor_controller::ForceTorqueSensorController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(force_torque_sensor_controller::ForceTorqueSensorController, controller_interface::ControllerBase)

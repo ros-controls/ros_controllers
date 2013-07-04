@@ -192,5 +192,4 @@ namespace imu_sensor_controller
 
 }
 
-
-PLUGINLIB_DECLARE_CLASS(imu_sensor_controller, ImuSensorController, imu_sensor_controller::ImuSensorController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(imu_sensor_controller::ImuSensorController, controller_interface::ControllerBase)

@@ -147,4 +147,4 @@ void JointVelocityController::setCommandCB(const std_msgs::Float64ConstPtr& msg)
 
 } // namespace
 
-PLUGINLIB_DECLARE_CLASS(effort_controllers, JointVelocityController, effort_controllers::JointVelocityController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS( effort_controllers::JointVelocityController, controller_interface::ControllerBase)

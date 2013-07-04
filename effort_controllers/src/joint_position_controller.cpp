@@ -187,4 +187,4 @@ void JointPositionController::setCommandCB(const std_msgs::Float64ConstPtr& msg)
 
 } // namespace
 
-PLUGINLIB_DECLARE_CLASS(effort_controllers, JointPositionController, effort_controllers::JointPositionController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS( effort_controllers::JointPositionController, controller_interface::ControllerBase)

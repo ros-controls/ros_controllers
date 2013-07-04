@@ -147,8 +147,6 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
     error = command - joint_.getPosition();
   }
 
-  //ROS_INFO_STREAM(joint_.getName() << ":" << error);
-
   // Compute velocity error assuming desired velocity is 0
   vel_error = 0.0 - joint_.getVelocity();
 

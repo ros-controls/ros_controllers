@@ -133,9 +133,10 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   {
     angles::shortest_angular_distance_with_limits(command,
 						  joint_.getPosition(), 
-						  joint_urdf_->limits->lower, 
+						  joint_urdf_->limits->lower,
 						  joint_urdf_->limits->upper,
 						  error);
+    error = -error;
   }
   else if (joint_urdf_->type == urdf::Joint::CONTINUOUS)
   {
@@ -145,6 +146,8 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   {
     error = command - joint_.getPosition();
   }
+
+  //ROS_INFO_STREAM(joint_.getName() << ":" << error);
 
   // Compute velocity error assuming desired velocity is 0
   vel_error = 0.0 - joint_.getVelocity();

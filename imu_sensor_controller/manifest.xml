@@ -2,7 +2,7 @@
   <description>
     Controller to publish state of IMU sensors
   </description>
-  <author>Adolfo Rodriguez Tsouroukdissina</author>
+  <author>Adolfo Rodriguez Tsouroukdissian</author>
   <license>Modified BSD</license>
   <review status="unreviewed" notes=""/>
   <url>https://github.com/willowgarage/ros_controllers/wiki</url>

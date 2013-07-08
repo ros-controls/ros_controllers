@@ -1,0 +1,7 @@
+<library path="lib/libimu_sensor_controller">
+  <class name="imu_sensor_controller/ImuSensorController" type="imu_sensor_controller::ImuSensorController" base_class_type="controller_interface::ControllerBase">
+  <description>
+    This controller publishes the readings of all available IMU sensors as sensor_msgs/Imu message. The controller expects a ImuSensorInterface type of hardware interface.
+  </description>
+  </class>
+</library>

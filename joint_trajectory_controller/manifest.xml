@@ -1,13 +1,13 @@
 <package>
-  <description brief="effort_controllers">
+  <description brief="joint_trajectory_controller">
 
-     effort_controllers
+     joint_trajectory_controller
 
   </description>
-  <author>Vijay Pradeep</author>
+  <author>Adolfo Rodriguez Tsouroukdissian</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/effort_controllers</url>
+  <url>https://github.com/ros-controls/ros_controllers/wiki</url>
 
   <depend package="roscpp" />
   <depend package="realtime_tools" />

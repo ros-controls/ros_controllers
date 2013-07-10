@@ -26,7 +26,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-/// \author Stuart Glaser, Adolfo Rodriguez Tsouroukdissian
+/// \author Adolfo Rodriguez Tsouroukdissian, Stuart Glaser
 
 #ifndef JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_CONTROLLER_H
 #define JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_CONTROLLER_H
@@ -45,6 +45,11 @@
 #include <realtime_tools/realtime_server_goal_handle.h>
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
+
+// trajectory_interface
+#include <joint_trajectory_controller/quintic_spline_segment.h>
+#include <joint_trajectory_controller/multi_dof_segment.h>
+#include <joint_trajectory_controller/trajectory_interface.h>
 
 
 namespace joint_trajectory_controller
@@ -69,8 +74,13 @@ private:
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
   typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
 
+  typedef trajectory_interface::QuinticSplineSegment<double>             SingleDofSplineSegment;
+  typedef trajectory_interface::MultiDofSegment<SingleDofSplineSegment>  MultiDofSplineSegment;
+  typedef trajectory_interface::Trajectory<MultiDofSplineSegment>        Trajectory;
+
   std::vector<hardware_interface::JointHandle> joints_;
   RealtimeGoalHandlePtr                        rt_active_goal_;
+  Trajectory trajectory_;
 
   void trajectoryCommandCB(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh = RealtimeGoalHandlePtr());
   void goalCB(GoalHandle gh);
@@ -90,6 +100,26 @@ inline void JointTrajectoryController::preemptActiveGoal()
     current_active_goal->gh_.setCanceled();
   }
 }
+
+
+// Temporary stuff
+//struct JointTolerance {}; // TODO: Implement!
+
+//template<class TrajectoryType>
+//class MultiJointTrajectory
+//{
+//public:
+//  std::vector<typename TrajectoryType::State> sample(const typename TrajectoryType::InputType& time);
+//private:
+//  std::vector<double>         start_times_;
+//  std::vector<TrajectoryType> trajectories_;
+
+//  std::vector<JointTolerance> trajectory_tolerance_;
+//  std::vector<JointTolerance> goal_tolerance_;
+//  double                      goal_time_tolerance_;
+
+//  RealtimeGoalHandlePtr gh_;
+//};
 
 } // namespace
 

@@ -10,7 +10,17 @@ if(USE_ROSBUILD)
   set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
   rosbuild_add_library(${PROJECT_NAME}
-    src/joint_trajectory_controller.cpp include/joint_trajectory_controller/joint_trajectory_controller.h)
+    src/joint_trajectory_controller.cpp include/joint_trajectory_controller/joint_trajectory_controller.h
+    include/joint_trajectory_controller/trajectory_interface.h
+    include/joint_trajectory_controller/quintic_spline_segment.h
+    include/joint_trajectory_controller/multi_dof_segment.h)
+
+  rosbuild_add_gtest(quintic_spline_segment_test test/quintic_spline_segment_test.cpp)
+  rosbuild_add_gtest(multi_dof_segment_test      test/multi_dof_segment_test.cpp)
+
+  # TODO: why is it explicitly needed???, without it the linker fails.
+  target_link_libraries(quintic_spline_segment_test pthread)
+  target_link_libraries(multi_dof_segment_test      pthread)
 
 else()
   # TODO
@@ -20,7 +30,7 @@ else()
 
   include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
-  add_library(${PROJECT_NAME} 
+  add_library(${PROJECT_NAME}
     src/joint_effort_controller.cpp include/effort_controllers/joint_effort_controller.h
     src/joint_velocity_controller.cpp include/effort_controllers/joint_velocity_controller.h
     src/joint_position_controller.cpp include/effort_controllers/joint_position_controller.h)

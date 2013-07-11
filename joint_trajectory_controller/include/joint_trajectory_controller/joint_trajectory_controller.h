@@ -74,9 +74,8 @@ private:
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
   typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
 
-  typedef trajectory_interface::QuinticSplineSegment<double>             SingleDofSplineSegment;
-  typedef trajectory_interface::MultiDofSegment<SingleDofSplineSegment>  MultiDofSplineSegment;
-  typedef trajectory_interface::Trajectory<MultiDofSplineSegment>        Trajectory;
+  typedef trajectory_interface::MultiDofSegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
+  typedef std::vector<Segment> Trajectory;
 
   std::vector<hardware_interface::JointHandle> joints_;
   RealtimeGoalHandlePtr                        rt_active_goal_;

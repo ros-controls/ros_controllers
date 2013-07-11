@@ -49,51 +49,79 @@
 namespace trajectory_interface
 {
 
-/**
- * TODO: Doc!
- */
-template<class Segment>
-class Trajectory
+namespace internal
 {
-public:
-  typedef typename Segment::State State;
-  typedef typename Segment::Time  Time;
 
-  typedef int SegmentId;
-  typedef unsigned int TrajectoryDim;
-  typedef unsigned int TrajectorySize;
+// NOTE: Implement as a lambda expression when C++11 becomes mainstream
+template<class Time, class Segment>
+inline bool isBeforeSegment(const Time& time, const Segment& segment)
+{
+  return time < segment.startTime();
+}
 
-  // TODO: Add constructor
+}
 
-  SegmentId sample(const Time& time, State& state)
+/**
+ * \brief Sample a trajectory at a specified time.
+ *
+ * This is a convenience function that combines finding the segment associated to a specified time (see \ref findSegment)
+ * and sampling it.
+ *
+ * \tparam Trajectory Trajectory type. Should be a \e sequence container.
+ * \param[in] trajectory Holds a sequence of segments sorted by their start time.
+ * \param[in] time Where the trajectory is to be sampled.
+ * \param[out] state Segment state at \p time.
+ *
+ * \return Iterator to the trajectory segment containing \p time. If no segment contains \p time, then
+ * <tt>trajectory.end()</tt> is returned.
+ *
+ * \note The segment implementation should allow sampling outside the trajectory time interval, implementing a policy
+ * such as holding the first/last position. In such a case, it is possible to get a valid sample for all time inputs,
+ * even for the cases when this function returns <tt>trajectory.end()</tt>.
+ *
+ * \sa findSegment
+ */
+template<class Trajectory>
+inline typename Trajectory::const_iterator sample(const Trajectory&                             trajectory,
+                                                  const typename Trajectory::value_type::Time&  time,
+                                                        typename Trajectory::value_type::State& state)
+{
+  typename Trajectory::const_iterator it = findSegment(trajectory.begin(), trajectory.end(), time);
+  if (it != trajectory.end())
   {
-    const int seg = getSegmentId(time);
-    const Time seg_time = time - start_times_[seg]; // Time from segment start
-    if (seg != -1) {multi_dof_segments_[seg].sample(seg_time, state);}
-    return seg;
+    it->sample(time, state); // Segment found at specified time
   }
-
-  TrajectoryDim dimension() const {return dim_;}
-  TrajectoryDim size() const {return multi_dof_segments_.size();}
-  TrajectoryDim empty() const {return multi_dof_segments_.empty();}
-
-  /**
-   * \brief Get an identifier to the segment containing \p time, that is, a segment that starts before or at \p time.
-   * \param time Time the desired segment should contain.
-   * \return Segment identifier >= 0 if found, -1 if the trajectory is empty or \p time preceeds the trajectory start
-   * time.
-   */
-  SegmentId getSegmentId(const Time& time)
+  else if (!trajectory.empty())
   {
-    typename std::vector<Segment>::const_iterator it = std::upper_bound(start_times_.begin(), start_times_.end(), time);
-    return std::distance(start_times_.begin(), --it);
+    trajectory.front().sample(time, state); // Specified time preceeds trajectory start time
   }
+  return it;
+}
 
-private:
-  TrajectoryDim dim_;
-  std::vector<Segment> multi_dof_segments_;
-  std::vector<Time>  start_times_;
-};
+/**
+ * \brief Find an iterator to the segment containing a specified \p time.
+ *
+ * \param first Input iterator to the initial position in the segment sequence.
+ * \param last Input iterator to the final position in the segment sequence.
+ * The range searched is <tt>[first,last)</tt>.
+ * \param time Time to search for in the range.
+ *
+ * \return Iterator to the trajectory segment containing \p time. If no segment contains \p time (ie. it's earlier
+ * than the start time of \p first), then \p last is returned.
+ *
+ * \pre The range <tt>[first,last)</tt> is sorted by segment start time.
+ *
+ * \note On average, this method has logarithmic time complexity when used on \b random-access iterators.
+ * On \b non-random-access iterators, iterator advances incur an additional linear time cost.
+ */
+template<class TrajectoryIterator, class Time>
+inline TrajectoryIterator findSegment(TrajectoryIterator first, TrajectoryIterator last, const Time& time)
+{
+  typedef typename std::iterator_traits<TrajectoryIterator>::value_type Segment;
+  return (first == last || internal::isBeforeSegment(time, *first))
+         ? last // Optimization when time preceeds all segments, or when an empty range is passed
+         : --std::upper_bound(first, last, time, internal::isBeforeSegment<Time, Segment>); // Notice decrement operator
+}
 
 } // namespace
 

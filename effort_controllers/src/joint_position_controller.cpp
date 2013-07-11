@@ -33,6 +33,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/*
+ Author: Vijay Pradeep
+ Contributors: Jonathan Bohren, Wim Meeussen, Dave Coleman
+ Desc: Effort(force)-based position controller using basic PID loop
+*/
+
 #include <effort_controllers/joint_position_controller.h>
 #include <angles/angles.h>
 #include <pluginlib/class_list_macros.h>
@@ -40,7 +46,7 @@
 namespace effort_controllers {
 
 JointPositionController::JointPositionController()
-: loop_count_(0)
+  : loop_count_(0)
 {}
 
 JointPositionController::~JointPositionController()
@@ -48,20 +54,41 @@ JointPositionController::~JointPositionController()
   sub_command_.shutdown();
 }
 
-bool JointPositionController::init(hardware_interface::EffortJointInterface *robot, 
-				   const std::string &joint_name, const control_toolbox::Pid &pid)
+bool JointPositionController::init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n)
 {
-  joint_ = robot->getHandle(joint_name);
-  pid_controller_ = pid;
+  // Get joint name from parameter server
+  std::string joint_name;
+  if (!n.getParam("joint", joint_name)) 
+  {
+    ROS_ERROR("No joint given (namespace: %s)", n.getNamespace().c_str());
+    return false;
+  }
 
-  // get urdf info about joint
+  // Load PID Controller using gains set on parameter server
+  pid_controller_.reset(new control_toolbox::Pid());
+  if (!pid_controller_->init(ros::NodeHandle(n, "pid")))
+    return false;
+
+  // Start realtime state publisher
+  controller_state_publisher_.reset(
+    new realtime_tools::RealtimePublisher<controllers_msgs::JointControllerState>(n, "state", 1));
+
+  // Start command subscriber
+  sub_command_ = n.subscribe<std_msgs::Float64>("command", 1, &JointPositionController::setCommandCB, this);
+
+  // Get joint handle from hardware interface
+  joint_ = robot->getHandle(joint_name);
+
+  // Get URDF info about joint
   urdf::Model urdf;
-  if (!urdf.initParam("robot_description")){
+  if (!urdf.initParam("robot_description"))
+  {
     ROS_ERROR("Failed to parse urdf file");
     return false;
   }
   joint_urdf_ = urdf.getJoint(joint_name);
-  if (!joint_urdf_){
+  if (!joint_urdf_)
+  {
     ROS_ERROR("Could not find joint '%s' in urdf", joint_name.c_str());
     return false;
   }
@@ -69,35 +96,14 @@ bool JointPositionController::init(hardware_interface::EffortJointInterface *rob
   return true;
 }
 
-bool JointPositionController::init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n)
-{
-  std::string joint_name;
-  if (!n.getParam("joint", joint_name)) {
-    ROS_ERROR("No joint given (namespace: %s)", n.getNamespace().c_str());
-    return false;
-  }
-
-  control_toolbox::Pid pid;
-  if (!pid.init(ros::NodeHandle(n, "pid")))
-    return false;
-
-  controller_state_publisher_.reset(
-    new realtime_tools::RealtimePublisher<controllers_msgs::JointControllerState>(n, "state", 1));
-
-  sub_command_ = n.subscribe<std_msgs::Float64>("command", 1, &JointPositionController::setCommandCB, this);
-
-  return init(robot, joint_name, pid);
-}
-
-
 void JointPositionController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
 {
-  pid_controller_.setGains(p,i,d,i_max,i_min);
+  pid_controller_->setGains(p,i,d,i_max,i_min);
 }
 
 void JointPositionController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
 {
-  pid_controller_.getGains(p,i,d,i_max,i_min);
+  pid_controller_->getGains(p,i,d,i_max,i_min);
 }
 
 std::string JointPositionController::getJointName()
@@ -108,19 +114,17 @@ std::string JointPositionController::getJointName()
 // Set the joint position command
 void JointPositionController::setCommand(double cmd)
 {
-  // the writeFromNonRT can be used in RT, if you have the guarantee that 
+  // the writeFromNonRT can be used in RT, if you have the guarantee that
   //  * no non-rt thread is calling the same function (we're not subscribing to ros callbacks)
   //  * there is only one single rt thread
   command_.writeFromNonRT(cmd);
 }
 
-
-void JointPositionController::starting(const ros::Time& time) 
+void JointPositionController::starting(const ros::Time& time)
 {
   command_.initRT(joint_.getPosition());
-  pid_controller_.reset();
+  pid_controller_->reset();
 }
-
 
 void JointPositionController::update(const ros::Time& time, const ros::Duration& period)
 {
@@ -132,10 +136,10 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   if (joint_urdf_->type == urdf::Joint::REVOLUTE)
   {
     angles::shortest_angular_distance_with_limits(joint_.getPosition(),
-						  command, 
-						  joint_urdf_->limits->lower, 
-						  joint_urdf_->limits->upper,
-						  error);
+      command,
+      joint_urdf_->limits->lower,
+      joint_urdf_->limits->upper,
+      error);
   }
   else if (joint_urdf_->type == urdf::Joint::CONTINUOUS)
   {
@@ -150,8 +154,8 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   vel_error = 0.0 - joint_.getVelocity();
 
   // Set the PID error and compute the PID command with nonuniform
-  // time step size. This also allows the user to pass in a precomputed derivative error. 
-  double commanded_effort = pid_controller_.computeCommand(error, vel_error, period); 
+  // time step size. This also allows the user to pass in a precomputed derivative error.
+  double commanded_effort = pid_controller_->computeCommand(error, vel_error, period);
   joint_.setCommand(commanded_effort);
 
 
@@ -170,10 +174,10 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
 
       double dummy;
       getGains(controller_state_publisher_->msg_.p,
-               controller_state_publisher_->msg_.i,
-               controller_state_publisher_->msg_.d,
-               controller_state_publisher_->msg_.i_clamp,
-               dummy);
+        controller_state_publisher_->msg_.i,
+        controller_state_publisher_->msg_.d,
+        controller_state_publisher_->msg_.i_clamp,
+        dummy);
       controller_state_publisher_->unlockAndPublish();
     }
   }

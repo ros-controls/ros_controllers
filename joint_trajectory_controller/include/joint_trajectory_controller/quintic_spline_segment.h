@@ -42,9 +42,7 @@ namespace trajectory_interface
 {
 
 /**
- * \brief Class representing a one-dimensional quintic spline segment.
- *
- * The segment has a finite duration, which starts at time zero and ends at a specified duration.
+ * \brief Class representing a one-dimensional quintic spline segment with a start and end time.
  *
  * \tparam Scalar Scalar type
  */
@@ -72,10 +70,11 @@ public:
   };
 
   /**
-   * \brief Creates a segment with zero duration, position, velocity and acceleration.
+   * \brief Creates a segment with a trajectory that holds zero position.
    */
   QuinticSplineSegment()
-    : duration_(static_cast<Scalar>(0))
+    : duration_(static_cast<Scalar>(0)),
+      start_time_(static_cast<Scalar>(0))
   {
     BOOST_FOREACH(Scalar& coef, coefs_) {coef = static_cast<Scalar>(0);}
   }
@@ -92,33 +91,40 @@ public:
    * (eg. start is positon-only, end is position-velocity), the lowest common specification will be used
    * (position-only in the example).
    *
-   * \param start_state Spline state at time zero.
-   * \param end_state Spline state at time \p duration
-   * \param duration Segment duration, ie. time at which the segment state equals \p end_state
+   * \param start_time Time at which the segment state equals \p start_state.
+   * \param start_state Spline state at \p start_time.
+   * \param end_state Spline state at time \p duration.
+   * \param end_time Time at which the segment state equals \p end_state.
    *
-   * \throw std::invalid_argument If the segment duration is negative or if one of the states is completely
+   * \throw std::invalid_argument If the \p end_time is earlier than \p start_time or if one of the states is
    * uninitialized.
    */
-  QuinticSplineSegment(const State& start_state,
-                       const State& end_state,
-                       const Time&  duration);
+  QuinticSplineSegment(const Time&  start_time,
+                       const State& start_state,
+                       const Time&  end_time,
+                       const State& end_state);
 
   /**
-   * \brief Sample the segment at \p state
+   * \brief Sample the segment at a specified time.
    *
-   * \note Within the <tt>[0,duration]</tt> interval, spline interpolation takes place, outside it this method will output the
-   * start/end states with zero velocity and acceleration.
+   * \note Within the <tt>[start_time, end_time]</tt> interval, spline interpolation takes place, outside it this method
+   * will output the start/end states with zero velocity and acceleration.
    *
    * \param[in] time Where the segment is to be sampled.
-   * \param[out] state Segment state at \p state.
+   * \param[out] state Segment state at \p time.
    */
-  void sample(const Time& time, State& state)
+  void sample(const Time& time, State& state) const
   {
-    sampleWithTimeBounds(coefs_, duration_, time, state.position, state.velocity, state.acceleration);
+    sampleWithTimeBounds(coefs_,
+                         duration_, (time - start_time_),
+                         state.position, state.velocity, state.acceleration);
   }
 
-  /** \return Segment duration. */
-  Time duration() const {return duration_;}
+  /** \return Segment start time. */
+  Time startTime() const {return start_time_;}
+
+  /** \return Segment end time. */
+  Time endTime() const {return start_time_ + duration_;}
 
 private:
   typedef boost::array<Scalar, 6> SplineCoefficients;
@@ -128,9 +134,11 @@ private:
    * <tt> coefs_[0] + coefs_[1]*x + coefs_[2]*x^2 + coefs_[3]*x^3 + coefs_[4]*x^4 + coefs_[5]*x^5 </tt>
    */
   SplineCoefficients coefs_;
-  Scalar duration_;
+  Time duration_;
+  Time start_time_;
 
   // These methods are borrowed from the previous controller's implementation
+  // TODO: Clean their implementation, use the Horner algorithm for more numerically stable polynomial evaluation
   static void generatePowers(int n, const Scalar& x, Scalar* powers);
 
   static void computeCoefficients(const Scalar& start_pos,
@@ -156,15 +164,18 @@ private:
 };
 
 template<class Scalar>
-QuinticSplineSegment<Scalar>::QuinticSplineSegment(const State& start_state,
-                                                   const State& end_state,
-                                                   const Time&  duration)
-  : duration_(duration)
+QuinticSplineSegment<Scalar>::QuinticSplineSegment(const Time&  start_time,
+                                                   const State& start_state,
+                                                   const Time&  end_time,
+                                                   const State& end_state)
 {
-  if (duration_ < 0.0)
+
+  if (end_time < start_time)
   {
-    throw(std::invalid_argument("Quintic spline segment can't be constructed: Negative duration provided."));
+    throw(std::invalid_argument("Quintic spline segment can't be constructed: end_time < start_time."));
   }
+  start_time_ = start_time;
+  duration_ = end_time - start_time;
 
   if (std::isnan(start_state.position) || std::isnan(end_state.position))
   {

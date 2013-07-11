@@ -38,6 +38,9 @@ namespace trajectory_interface
 /**
  * \brief Class representing a multi-dimensional trajectory segment.
  *
+ * \note This class assumes that all managed segments share the same start and end times. Implementation-wise, the
+ * values of the first segment are used.
+ *
  * \tparam Segment Must implement the following types:
  * \code
  * Segment::State;
@@ -45,7 +48,9 @@ namespace trajectory_interface
  * \endcode
  * and the following methods:
  * \code
- * void sample(const Time& time, const State& state);
+ * void sample(const Time& time, const State& state) const;
+ * Time startTime() const;
+ * Time endTime() const;
  * \endcode
  */
 template<class Segment>
@@ -66,11 +71,11 @@ public:
   MultiDofSegment(const std::vector<Segment>& multidof_segment) : multidof_segment_(multidof_segment) {}
 
   /**
-   * \brief sample
+   * \brief Sample the segment at a specified time.
    * \param[in] time Where the segment is to be sampled.
-   * \param[out] state Segment state at \p state.
+   * \param[out] state Segment state at \p time.
    */
-  void sample(const Time& time, State& state)
+  void sample(const Time& time, State& state) const
   {
     state.resize(multidof_segment_.size()); // Should be a no-op if appropriately sized
     for(unsigned int i = 0; i < multidof_segment_.size(); ++i) {multidof_segment_[i].sample(time, state[i]);}
@@ -78,6 +83,9 @@ public:
 
   /** \return Number of degrees of freedom handled by this instance. */
   unsigned int size() const {return multidof_segment_.size();}
+
+  Time startTime() const {return multidof_segment_.empty() ? 0.0 : multidof_segment_.front().startTime();}
+  Time endTime()   const {return multidof_segment_.empty() ? 0.0 : multidof_segment_.front().endTime();}
 
 private:
   std::vector<Segment> multidof_segment_;

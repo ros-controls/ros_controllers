@@ -82,7 +82,7 @@ bool JointPositionController::init(hardware_interface::EffortJointInterface *rob
     return false;
 
   controller_state_publisher_.reset(
-    new realtime_tools::RealtimePublisher<controllers_msgs::JointControllerState>(n, "state", 1));
+    new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(n, "state", 1));
 
   sub_command_ = n.subscribe<std_msgs::Float64>("command", 1, &JointPositionController::setCommandCB, this);
 

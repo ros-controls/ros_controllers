@@ -67,7 +67,7 @@ inline bool isBeforeSegment(const Time& time, const Segment& segment)
  * This is a convenience function that combines finding the segment associated to a specified time (see \ref findSegment)
  * and sampling it.
  *
- * \tparam Trajectory Trajectory type. Should be a \e sequence container.
+ * \tparam Trajectory Trajectory type. Should be a \e sequence container \e sorted by segment start time.
  * \param[in] trajectory Holds a sequence of segments sorted by their start time.
  * \param[in] time Where the trajectory is to be sampled.
  * \param[out] state Segment state at \p time.
@@ -109,7 +109,7 @@ inline typename Trajectory::const_iterator sample(const Trajectory&             
  * \return Iterator to the trajectory segment containing \p time. If no segment contains \p time (ie. it's earlier
  * than the start time of \p first), then \p last is returned.
  *
- * \pre The range <tt>[first,last)</tt> is sorted by segment start time.
+ * \pre The range <tt>[first,last)</tt> should be sorted by segment start time.
  *
  * \note On average, this method has logarithmic time complexity when used on \b random-access iterators.
  * On \b non-random-access iterators, iterator advances incur an additional linear time cost.

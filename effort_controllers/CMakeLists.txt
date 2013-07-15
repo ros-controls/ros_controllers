@@ -16,7 +16,7 @@ if(USE_ROSBUILD)
 
 else()
   # Load catkin and all dependencies required for this package
-  find_package(catkin REQUIRED COMPONENTS controller_interface controllers_msgs forward_command_controller control_toolbox realtime_tools urdf)
+  find_package(catkin REQUIRED COMPONENTS controller_interface control_msgs forward_command_controller control_toolbox realtime_tools urdf)
 
   include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
@@ -29,7 +29,7 @@ else()
 
   # Declare catkin package
   catkin_package(
-    CATKIN_DEPENDS controller_interface controllers_msgs control_toolbox realtime_tools urdf forward_command_controller dynamic_reconfigure
+    CATKIN_DEPENDS controller_interface control_msgs control_toolbox realtime_tools urdf forward_command_controller 
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     )

@@ -1,7 +1,7 @@
 <package>
-  <name>forward_command_controller</name>
+  <name>force_torque_sensor_controller</name>
   <version>0.4.0</version>
-  <description>forward_command_controller</description>
+  <description>Controller to publish state of force-torque sensors</description>
   <maintainer email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</maintainer>
 
   <license>BSD</license>
@@ -10,18 +10,25 @@
   <url type="bugtracker">https://github.com/ros-controls/ros_controllers/issues</url>
   <url type="repository">https://github.com/ros-controls/ros_controllers</url>
 
-  <author>Vijay Pradeep</author>
   <author>Adolfo Rodriguez Tsouroukdissian</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>controller_interface</build_depend> 
+
+  <build_depend>realtime_tools</build_depend> 
+  <build_depend>roscpp</build_depend> 
   <build_depend>hardware_interface</build_depend> 
-  <build_depend>std_msgs</build_depend> 
-  <run_depend>controller_interface</run_depend> 
+  <build_depend>pluginlib</build_depend> 
+  <build_depend>controller_interface</build_depend> 
+  <build_depend>geometry_msgs</build_depend>
+
+  <run_depend>realtime_tools</run_depend> 
+  <run_depend>roscpp</run_depend> 
   <run_depend>hardware_interface</run_depend> 
-  <run_depend>std_msgs</run_depend> 
+  <run_depend>pluginlib</run_depend> 
+  <run_depend>controller_interface</run_depend> 
+  <run_depend>geometry_msgs</run_depend> 
 
   <export>
-    <cpp cflags="-I${prefix}/include"/>
+    <controller_interface plugin="${prefix}/force_torque_sensor_plugin.xml"/>
   </export>
 </package>

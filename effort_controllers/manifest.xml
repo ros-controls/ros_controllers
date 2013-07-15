@@ -7,10 +7,10 @@
   <author>Vijay Pradeep</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/effort_controllers</url>
+  <url>https://github.com/ros-controls/ros_controllers/wiki</url>
 
   <depend package="controller_interface"/>
-  <depend package="controllers_msgs"/>
+  <depend package="control_msgs"/>
   <depend package="control_toolbox" />
   <depend package="realtime_tools" />
   <depend package="urdf" />

@@ -5,7 +5,7 @@
   <author>Maintained by Wim Meeussen</author>
   <license>BSD</license>
   <review status="Doc reviewed" notes="2009-11-13"/>
-  <url>http://ros.org/wiki/ros_controllers</url>
+  <url>https://github.com/ros-controls/ros_controllers/wiki</url>
   <depend stack="actionlib" />
   <depend stack="pluginlib" />
   <depend stack="ros_comm" /> 

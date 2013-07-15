@@ -100,26 +100,6 @@ inline void JointTrajectoryController::preemptActiveGoal()
   }
 }
 
-
-// Temporary stuff
-//struct JointTolerance {}; // TODO: Implement!
-
-//template<class TrajectoryType>
-//class MultiJointTrajectory
-//{
-//public:
-//  std::vector<typename TrajectoryType::State> sample(const typename TrajectoryType::InputType& time);
-//private:
-//  std::vector<double>         start_times_;
-//  std::vector<TrajectoryType> trajectories_;
-
-//  std::vector<JointTolerance> trajectory_tolerance_;
-//  std::vector<JointTolerance> goal_tolerance_;
-//  double                      goal_time_tolerance_;
-
-//  RealtimeGoalHandlePtr gh_;
-//};
-
 } // namespace
 
 #endif

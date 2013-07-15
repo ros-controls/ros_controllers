@@ -1,0 +1,7 @@
+<library path="lib/libforce_torque_sensor_controller">
+  <class name="force_torque_sensor_controller/ForceTorqueSensorController" type="force_torque_sensor_controller::ForceTorqueSensorController" base_class_type="controller_interface::ControllerBase">
+  <description>
+    This controller publishes the readings of all available force-torque sensors as geometry_msgs/WrenchStamped message. The controller expects a ForceTorqueSensorInterface type of hardware interface.
+  </description>
+  </class>
+</library>

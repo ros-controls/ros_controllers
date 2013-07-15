@@ -7,7 +7,8 @@
   <license>BSD</license>
 
   <url type="website">https://github.com/ros-controls/ros_controllers/wiki</url>
-  <!-- <url type="bugtracker"></url> -->
+  <url type="bugtracker">https://github.com/ros-controls/ros_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros_controllers</url>
 
   <author>Wim Meeussen</author>
 

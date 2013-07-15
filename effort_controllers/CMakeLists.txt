@@ -24,11 +24,12 @@ else()
     src/joint_effort_controller.cpp include/effort_controllers/joint_effort_controller.h
     src/joint_velocity_controller.cpp include/effort_controllers/joint_velocity_controller.h
     src/joint_position_controller.cpp include/effort_controllers/joint_position_controller.h)
+
   target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
   # Declare catkin package
   catkin_package(
-    CATKIN_DEPENDS controller_interface controllers_msgs control_toolbox realtime_tools urdf forward_command_controller
+    CATKIN_DEPENDS controller_interface controllers_msgs control_toolbox realtime_tools urdf forward_command_controller dynamic_reconfigure
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     )

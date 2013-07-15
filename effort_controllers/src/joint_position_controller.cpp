@@ -131,15 +131,15 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   // Compute position error
   if (joint_urdf_->type == urdf::Joint::REVOLUTE)
   {
-    angles::shortest_angular_distance_with_limits(command,
-						  joint_.getPosition(), 
-						  joint_urdf_->limits->lower, 
-						  joint_urdf_->limits->upper,
-						  error);
+    angles::shortest_angular_distance_with_limits(joint_.getPosition(),
+                                                  command,
+						                                      joint_urdf_->limits->lower,
+                                                  joint_urdf_->limits->upper,
+                                                  error);
   }
   else if (joint_urdf_->type == urdf::Joint::CONTINUOUS)
   {
-    error = angles::shortest_angular_distance(command, joint_.getPosition());
+    error = angles::shortest_angular_distance(joint_.getPosition(), command);
   }
   else //prismatic
   {

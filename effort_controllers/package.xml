@@ -15,14 +15,14 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>controller_interface</build_depend> 
-  <build_depend>controllers_msgs</build_depend> 
+  <build_depend>control_msgs</build_depend> 
   <build_depend>control_toolbox</build_depend> 
   <build_depend>realtime_tools</build_depend> 
   <build_depend>urdf</build_depend> 
   <build_depend>forward_command_controller</build_depend>
   <run_depend>forward_command_controller</run_depend>
   <run_depend>controller_interface</run_depend> 
-  <run_depend>controllers_msgs</run_depend> 
+  <run_depend>control_msgs</run_depend> 
   <run_depend>control_toolbox</run_depend> 
   <run_depend>realtime_tools</run_depend> 
   <run_depend>urdf</run_depend> 

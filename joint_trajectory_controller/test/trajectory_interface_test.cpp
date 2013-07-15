@@ -262,6 +262,90 @@ TEST_F(TrajectoryInterfaceTest, SampleTrajectory)
   }
 }
 
+TEST(OverlappingTrajectoryInterfaceTest, SampleTrajectory)
+{
+  State states[4];
+  Time  times[4];
+
+  Trajectory trajectory;
+
+  times[0] = 0.0;
+  states[0].position = 0.0;
+
+  times[1] = 2.0;
+  states[1].position = 2.0;
+
+  times[2] = 1.0;
+  states[2].position = 1.0;
+
+  times[3] = 3.0;
+  states[3].position = 5.0;
+
+  // Both segments are defined in the [1.0, 2.0) interval. The second one should take precedence
+  trajectory.push_back(Segment(times[0], states[0], times[1], states[1]));
+  trajectory.push_back(Segment(times[2], states[2], times[3], states[3]));
+
+  const double velocity1 = (states[1].position - states[0].position) / (times[1] - times[0]);
+  const double velocity2 = (states[3].position - states[2].position) / (times[3] - times[2]);
+
+  // First segment start
+  {
+    const Time time = times[0];
+    State state;
+    sample(trajectory, time, state);
+    EXPECT_NEAR(states[0].position, state.position, EPS);
+    EXPECT_NEAR(velocity1, state.velocity, EPS);
+  }
+
+  // During the first segment
+  {
+    const Time time = (times[0] + times[2]) / 2.0; // Midway between first and second segment start
+    const double position = (states[0].position + states[2].position) / 2.0;
+    State state;
+    EXPECT_EQ(trajectory.begin(), sample(trajectory, time, state));
+    EXPECT_NEAR(position, state.position, EPS);
+    EXPECT_NEAR(velocity1, state.velocity, EPS);
+  }
+
+  // Second segment start
+  {
+    const Time time = times[2];
+    State state;
+    EXPECT_EQ(++trajectory.begin(), sample(trajectory, time, state));
+    EXPECT_NEAR(states[2].position, state.position, EPS);
+    EXPECT_NEAR(velocity2, state.velocity, EPS);
+  }
+
+  // During the second segment
+  {
+    const Time time = (times[2] + times[3]) / 2.0; // Midway between second segment start and end
+    const double position = (states[2].position + states[3].position) / 2.0;
+    State state;
+    EXPECT_EQ(++trajectory.begin(), sample(trajectory, time, state));
+    EXPECT_NEAR(position, state.position, EPS);
+    EXPECT_NEAR(velocity2, state.velocity, EPS);
+  }
+
+  // Second segment end
+  {
+    const Time time = times[3];
+    State state;
+    EXPECT_EQ(++trajectory.begin(), sample(trajectory, time, state));
+    EXPECT_NEAR(states[3].position, state.position, EPS);
+    EXPECT_NEAR(velocity2, state.velocity, EPS);
+  }
+
+  // After the second segment end time (and specified first segment end time)
+  // The second segment should be still returned
+  {
+    const Time time = times[3] + 1.0;
+    State state;
+    EXPECT_EQ(++trajectory.begin(), sample(trajectory, time, state));
+    EXPECT_NEAR(states[3].position, state.position, EPS);
+    EXPECT_NEAR(0.0, state.velocity, EPS);
+  }
+}
+
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);

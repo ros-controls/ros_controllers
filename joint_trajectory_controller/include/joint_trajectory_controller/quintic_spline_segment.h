@@ -92,9 +92,9 @@ public:
    * (position-only in the example).
    *
    * \param start_time Time at which the segment state equals \p start_state.
-   * \param start_state Spline state at \p start_time.
-   * \param end_state Spline state at time \p duration.
+   * \param start_state State at \p start_time.
    * \param end_time Time at which the segment state equals \p end_state.
+   * \param end_state State at time \p end_time.
    *
    * \throw std::invalid_argument If the \p end_time is earlier than \p start_time or if one of the states is
    * uninitialized.

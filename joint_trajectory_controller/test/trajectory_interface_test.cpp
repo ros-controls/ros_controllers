@@ -86,7 +86,7 @@ protected:
 TEST(EmptyTrajectoryInterfaceTest, FindSegment)
 {
   Trajectory trajectory;
-  EXPECT_EQ(trajectory.end(), findSegment(trajectory.begin(), trajectory.end(), 0.0));
+  EXPECT_EQ(trajectory.end(), findSegment(trajectory, 0.0));
 }
 
 TEST(EmptyTrajectoryInterfaceTest, SampleTrajectory)
@@ -105,57 +105,57 @@ TEST_F(TrajectoryInterfaceTest, FindSegment)
   // Before trajectory start: No segments found
   {
     const Time time = times[0] - 1.0;
-    EXPECT_EQ(trajectory.end(), findSegment(trajectory.begin(), trajectory.end(), time));
+    EXPECT_EQ(trajectory.end(), findSegment(trajectory, time));
   }
 
   // First segment start
   {
     const Time time = times[0];
-    EXPECT_EQ(trajectory.begin(), findSegment(trajectory.begin(), trajectory.end(), time));
+    EXPECT_EQ(trajectory.begin(), findSegment(trajectory, time));
   }
 
   // During the first segment
   {
     const Time time = (times[0] + times[1]) / 2.0;
-    EXPECT_EQ(trajectory.begin(), findSegment(trajectory.begin(), trajectory.end(), time));
+    EXPECT_EQ(trajectory.begin(), findSegment(trajectory, time));
   }
 
   // Second segment start
   {
     const Time time = times[1];
-    EXPECT_EQ(++trajectory.begin(), findSegment(trajectory.begin(), trajectory.end(), time));
+    EXPECT_EQ(++trajectory.begin(), findSegment(trajectory, time));
   }
 
   // During the second segment
   {
     const Time time = (times[1] + times[2]) / 2.0;
-    EXPECT_EQ(++trajectory.begin(), findSegment(trajectory.begin(), trajectory.end(), time));
+    EXPECT_EQ(++trajectory.begin(), findSegment(trajectory, time));
   }
 
   // After the second segment end time, but before the third segment start time (there is a gap)
   // The second segment should be still returned
   {
     const Time time = (times[2] + times[3]) / 2.0;
-    EXPECT_EQ(++trajectory.begin(), findSegment(trajectory.begin(), trajectory.end(), time));
+    EXPECT_EQ(++trajectory.begin(), findSegment(trajectory, time));
   }
 
   // Last segment start
   {
     const Time time = times[3];
-    EXPECT_EQ(--trajectory.end(), findSegment(trajectory.begin(), trajectory.end(), time));
+    EXPECT_EQ(--trajectory.end(), findSegment(trajectory, time));
   }
 
   // During the last segment
   {
     const Time time = (times[3] + times[4]) / 2.0;
-    EXPECT_EQ(--trajectory.end(), findSegment(trajectory.begin(), trajectory.end(), time));
+    EXPECT_EQ(--trajectory.end(), findSegment(trajectory, time));
   }
 
   // After the last segment end time
   // The last segment should be still returned
   {
     const Time time = times[4] + 1.0;
-    EXPECT_EQ(--trajectory.end(), findSegment(trajectory.begin(), trajectory.end(), time));
+    EXPECT_EQ(--trajectory.end(), findSegment(trajectory, time));
   }
 }
 

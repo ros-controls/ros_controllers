@@ -59,7 +59,7 @@ inline bool isBeforeSegment(const Time& time, const Segment& segment)
   return time < segment.startTime();
 }
 
-}
+} // namespace
 
 /**
  * \brief Sample a trajectory at a specified time.
@@ -68,7 +68,7 @@ inline bool isBeforeSegment(const Time& time, const Segment& segment)
  * and sampling it.
  *
  * \tparam Trajectory Trajectory type. Should be a \e sequence container \e sorted by segment start time.
- * \param[in] trajectory Holds a sequence of segments sorted by their start time.
+ * \param[in] trajectory Holds a sequence of segments.
  * \param[in] time Where the trajectory is to be sampled.
  * \param[out] state Segment state at \p time.
  *
@@ -121,6 +121,22 @@ inline TrajectoryIterator findSegment(TrajectoryIterator first, TrajectoryIterat
   return (first == last || internal::isBeforeSegment(time, *first))
          ? last // Optimization when time preceeds all segments, or when an empty range is passed
          : --std::upper_bound(first, last, time, internal::isBeforeSegment<Time, Segment>); // Notice decrement operator
+}
+
+/**
+ * \brief Find an iterator to the segment containing a specified \p time.
+ *
+ * This is a convenience method wrapping the iterator-based
+ * \ref findSegment(TrajectoryIterator first, TrajectoryIterator last, const Time& time) "findSegment" overload.
+ *
+ * \tparam Trajectory Trajectory type. Should be a \e sequence container \e sorted by segment start time.
+ *
+ * \sa findSegment(TrajectoryIterator first, TrajectoryIterator last, const Time& time)
+ */
+template<class Trajectory, class Time>
+inline typename Trajectory::const_iterator findSegment(const Trajectory& trajectory, const Time& time)
+{
+  return findSegment(trajectory.begin(), trajectory.end(), time);
 }
 
 } // namespace

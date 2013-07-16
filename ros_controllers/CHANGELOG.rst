@@ -2,8 +2,8 @@
 Changelog for package ros_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.5.0 (2013-07-16)
+------------------
 * Added force_torque_sensor_controller
 * Removed controller_msgs, switched to depend on control_msgs
 * Added imu_sensor_controller

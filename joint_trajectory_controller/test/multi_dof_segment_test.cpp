@@ -28,6 +28,7 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
+#include <stdexcept>
 #include <gtest/gtest.h>
 #include <ros/console.h>
 #include <joint_trajectory_controller/quintic_spline_segment.h>
@@ -46,25 +47,21 @@ class MultiDofSegmentTest : public ::testing::Test
 {
 public:
   MultiDofSegmentTest()
-    : start_time(1.0), end_time(2.0),
-      states(2)
+    : dim(2),
+      start_time(1.0), end_time(2.0),
+      start_states(dim), end_states(dim), states(dim)
   {
     start_states[0].position =  0.0;
     start_states[1].position = -1.0;
 
     end_states[0].position =  1.0;
     end_states[1].position = -2.0;
-
-    segments_data.push_back(Segment(start_time, start_states[0], end_time, end_states[0]));
-    segments_data.push_back(Segment(start_time, start_states[1], end_time, end_states[1]));
   }
 
 protected:
-  State start_states[2], end_states[2];
+  unsigned int dim;
   Time start_time, end_time;
-
-  std::vector<Segment> segments_data;
-  std::vector<State>   states;
+  std::vector<State> start_states, end_states ,states;
 };
 
 TEST_F(MultiDofSegmentTest, DefaultConstructor)
@@ -74,7 +71,15 @@ TEST_F(MultiDofSegmentTest, DefaultConstructor)
   EXPECT_FALSE(states.empty());
   segments.sample(1.0, states);
   EXPECT_TRUE(states.empty());
+}
 
+TEST_F(MultiDofSegmentTest, InvalidSegmentConstruction)
+{
+  // Mismatching start/end state dimensions
+  end_states.pop_back();
+  EXPECT_THROW(MultiDofSegment<Segment>(start_time, start_states, end_time, end_states), std::invalid_argument);
+  try{MultiDofSegment<Segment>(start_time, start_states, end_time, end_states);}
+  catch(const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
 }
 
 TEST_F(MultiDofSegmentTest, Accessors)
@@ -89,8 +94,8 @@ TEST_F(MultiDofSegmentTest, Accessors)
 
   // Valid container
   {
-    MultiDofSegment<Segment> segments(segments_data);
-    EXPECT_EQ(segments_data.size(), segments.size());
+    MultiDofSegment<Segment> segments(start_time, start_states, end_time, end_states);
+    EXPECT_EQ(dim, segments.size());
     EXPECT_EQ(start_time, segments.startTime());
     EXPECT_EQ(end_time, segments.endTime());
   }
@@ -98,13 +103,13 @@ TEST_F(MultiDofSegmentTest, Accessors)
 
 TEST_F(MultiDofSegmentTest, SegmentSampler)
 {
-  MultiDofSegment<Segment> segments(segments_data);
+  MultiDofSegment<Segment> segments(start_time, start_states, end_time, end_states);
   const Time duration = segments.endTime() - segments.startTime();
 
   // Sample before segments start
   {
     segments.sample(start_time - duration, states);
-    EXPECT_EQ(segments_data.size(), segments.size());
+    EXPECT_EQ(dim, segments.size());
 
     for (unsigned int i = 0; i < segments.size(); ++i)
     {
@@ -117,7 +122,7 @@ TEST_F(MultiDofSegmentTest, SegmentSampler)
   // Sample at mid-segment
   {
     segments.sample(start_time + duration / 2.0, states);
-    EXPECT_EQ(segments_data.size(), segments.size());
+    EXPECT_EQ(dim, segments.size());
 
     for (unsigned int i = 0; i < segments.size(); ++i)
     {
@@ -132,7 +137,7 @@ TEST_F(MultiDofSegmentTest, SegmentSampler)
   // Sample past segment end
   {
     segments.sample(end_time + duration, states);
-    EXPECT_EQ(segments_data.size(), segments.size());
+    EXPECT_EQ(dim, segments.size());
 
     for (unsigned int i = 0; i < segments.size(); ++i)
     {

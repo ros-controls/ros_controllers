@@ -66,9 +66,19 @@ public:
   MultiDofSegment() {}
 
   /**
-   * \brief Creates a multi-dof segment from \p multidof_segment.
+   * \brief Creates a multi-dof segment by aggregating multiple \p Segment instances.
+   *
+   * \param start_time Time at which the segment state equals \p start_state.
+   * \param start_state State at \p start_time.
+   * \param end_time Time at which the segment state equals \p end_state.
+   * \param end_state State at time \p end_time.
+   *
+   * \throw std::invalid_argument If the size of \p start_state and \p end_state mismatches.
    */
-  MultiDofSegment(const std::vector<Segment>& multidof_segment) : multidof_segment_(multidof_segment) {}
+  MultiDofSegment(const Time&  start_time,
+                  const State& start_state,
+                  const Time&  end_time,
+                  const State& end_state);
 
   /**
    * \brief Sample the segment at a specified time.
@@ -90,6 +100,28 @@ public:
 private:
   std::vector<Segment> multidof_segment_;
 };
+
+template<class Segment>
+MultiDofSegment<Segment>::MultiDofSegment(const Time&  start_time,
+                                          const State& start_state,
+                                          const Time&  end_time,
+                                          const State& end_state)
+{
+  if (start_state.size() != end_state.size())
+  {
+    throw(std::invalid_argument("Multi-dof segment can't be constructed: start/end states size mismatch."));
+  }
+
+  typename State::const_iterator start_state_it = start_state.begin();
+  typename State::const_iterator end_state_it   = end_state.begin();
+
+  while (start_state_it != start_state.end())
+  {
+    multidof_segment_.push_back(Segment(start_time, *start_state_it,
+                                        end_time,   *end_state_it));
+    ++start_state_it; ++end_state_it;
+  }
+}
 
 } // namespace
 

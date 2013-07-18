@@ -49,7 +49,27 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
 
 void JointTrajectoryController::trajectoryCommandCB(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
 {
+//  if (!msg)
+//  {
+//    ROS_WARN("Received null-pointer trajectory message, skipping.");
+//    return;
+//  }
 
+//  const JointTrajectory& msg_ref = *msg;
+
+//  const ros::Time time = time_ + period_; // Why + period?
+//  ROS_DEBUG_STREAM("Figuring out new trajectory at " << time.toSec() <<
+//                   ", with data from " << msg_ref.header.stamp.toSec());
+
+//  // Hold current position if trajectory is empty
+//  if (msg->points.empty())
+//  {
+//    ROS_DEBUG("Empty trajectory command, stopping.");
+//    starting(); // TODO!
+//    return;
+//  }
+
+//  Trajectory new_trajectory = init(msg_ref, time);
 }
 
 void JointTrajectoryController::goalCB(GoalHandle gh)

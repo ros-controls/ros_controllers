@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <stdexcept>
 
 #include <ros/console.h>
 #include <ros/time.h>
@@ -158,9 +159,11 @@ Trajectory init(const trajectory_msgs::JointTrajectory&msg, const ros::Time& tim
   typedef typename Trajectory::value_type Segment;
   typedef std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator MsgPointConstIterator;
 
-  Trajectory trajectory; // Return value
-
-  if (msg.points.empty()) {return trajectory;} // No-op
+  if (msg.points.empty())
+  {
+    ROS_DEBUG("Message contains empty trajectory. Nothing to convert");
+    return Trajectory(); // Empty trajectory
+  }
 
   // Find first trajectory point occurring after current time
   MsgPointConstIterator it = findPoint(msg, time);  // Points to last point occurring before current time
@@ -178,11 +181,13 @@ Trajectory init(const trajectory_msgs::JointTrajectory&msg, const ros::Time& tim
   // Construct all trajectory segments occurring after current time
   // As long as there remain two trajectory points we can construct the next trajectory segment
   const ros::Time msg_start_time = internal::startTime(msg, time); // Trajectory start time
+  Trajectory trajectory;                                           // Return value
   while (std::distance(it, msg.points.end()) >= 2)
   {
-    MsgPointConstIterator next_it = ++it;
+    MsgPointConstIterator next_it = it; ++next_it;
     Segment segment(msg_start_time, *it, *next_it);
     trajectory.push_back(segment);
+
     ++it;
   }
 

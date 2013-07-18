@@ -73,6 +73,20 @@ inline ros::Time startTime(const trajectory_msgs::JointTrajectory& msg,
 } // namespace
 
 /**
+ * \param msg Trajectory point message.
+ * \param joint_dim Expected dimension of the position, velocity and acceleration fields.
+ * \return True if sizes of the position, velocity and acceleration fields are consistent. An empty field means that
+ * it's unspecified, so in this particular case its dimension must not coincide with \p joint_dim.
+ */
+inline bool isValid(const trajectory_msgs::JointTrajectoryPoint& point, const unsigned int joint_dim)
+{
+  if (!point.positions.empty()     && point.positions.size()     != joint_dim) {return false;}
+  if (!point.velocities.empty()    && point.velocities.size()    != joint_dim) {return false;}
+  if (!point.accelerations.empty() && point.accelerations.size() != joint_dim) {return false;}
+  return true;
+}
+
+/**
  * \param msg Trajectory message.
  * \return True if sizes of input message are consistent (joint names, position, velocity, acceleration).
  */
@@ -86,29 +100,15 @@ inline bool isValid(const trajectory_msgs::JointTrajectory& msg)
   {
     const std::iterator_traits<PointConstIterator>::difference_type index = std::distance(msg.points.begin(), it);
 
-    if (!it->positions.empty() && it->positions.size() != joint_dim)
+    if(!isValid(*it, joint_dim))
     {
-      ROS_ERROR_STREAM("Trajectory point " << index << " positions size mismatch. Expected " << joint_dim <<
-                       " elements, got " << it->positions.size() << ".");
-      return false;
-    }
-    if (!it->velocities.empty() && it->velocities.size() != joint_dim)
-    {
-      ROS_ERROR_STREAM("Trajectory point " << index << " velocities size mismatch. Expected " << joint_dim <<
-                       " elements, got " << it->velocities.size() << ".");
-      return false;
-    }
-    if (!it->accelerations.empty() && it->accelerations.size() != joint_dim)
-    {
-      ROS_ERROR_STREAM("Trajectory point " << index << " acceleration size mismatch. Expected " << joint_dim <<
-                       " elements, got " << it->accelerations.size() << ".");
+      ROS_ERROR_STREAM("Invalid trajectory point at index: " << index <<
+                       ". Size mismatch in joint names, position, velocity or acceleration data.");
       return false;
     }
   }
-
   return true;
 }
-
 
 // TODO: Add similar method for action goal message
 

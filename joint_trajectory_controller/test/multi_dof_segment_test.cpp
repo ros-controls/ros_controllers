@@ -31,8 +31,8 @@
 #include <stdexcept>
 #include <gtest/gtest.h>
 #include <ros/console.h>
-#include <joint_trajectory_controller/quintic_spline_segment.h>
-#include <joint_trajectory_controller/multi_dof_segment.h>
+#include <trajectory_interface/quintic_spline_segment.h>
+#include <trajectory_interface/multi_dof_segment.h>
 
 using namespace trajectory_interface;
 

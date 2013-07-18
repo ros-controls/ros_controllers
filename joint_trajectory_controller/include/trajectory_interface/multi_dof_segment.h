@@ -78,7 +78,10 @@ public:
   MultiDofSegment(const Time&  start_time,
                   const State& start_state,
                   const Time&  end_time,
-                  const State& end_state);
+                  const State& end_state)
+  {
+    init(start_time, start_state, end_time, end_state);
+  }
 
   /**
    * \brief Sample the segment at a specified time.
@@ -99,13 +102,18 @@ public:
 
 private:
   std::vector<Segment> multidof_segment_;
+
+  void init(const Time&  start_time,
+            const State& start_state,
+            const Time&  end_time,
+            const State& end_state);
 };
 
 template<class Segment>
-MultiDofSegment<Segment>::MultiDofSegment(const Time&  start_time,
-                                          const State& start_state,
-                                          const Time&  end_time,
-                                          const State& end_state)
+void MultiDofSegment<Segment>::init(const Time&  start_time,
+                                    const State& start_state,
+                                    const Time&  end_time,
+                                    const State& end_state)
 {
   if (start_state.size() != end_state.size())
   {

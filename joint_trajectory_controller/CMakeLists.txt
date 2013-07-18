@@ -11,19 +11,21 @@ if(USE_ROSBUILD)
 
   rosbuild_add_library(${PROJECT_NAME}
     src/joint_trajectory_controller.cpp include/joint_trajectory_controller/joint_trajectory_controller.h
-    include/joint_trajectory_controller/trajectory_interface.h
-    include/joint_trajectory_controller/quintic_spline_segment.h
-    include/joint_trajectory_controller/multi_dof_segment.h)
+    include/joint_trajectory_controller/trajectory_interface_ros.h
+    include/trajectory_interface/trajectory_interface.h
+    include/trajectory_interface/quintic_spline_segment.h
+    include/trajectory_interface/multi_dof_segment.h)
 
-  rosbuild_add_gtest(quintic_spline_segment_test test/quintic_spline_segment_test.cpp)
-  rosbuild_add_gtest(multi_dof_segment_test      test/multi_dof_segment_test.cpp)
-  rosbuild_add_gtest(trajectory_interface_test   test/trajectory_interface_test.cpp)
+  rosbuild_add_gtest(quintic_spline_segment_test   test/quintic_spline_segment_test.cpp)
+  rosbuild_add_gtest(multi_dof_segment_test        test/multi_dof_segment_test.cpp)
+  rosbuild_add_gtest(trajectory_interface_test     test/trajectory_interface_test.cpp)
+  rosbuild_add_gtest(trajectory_interface_ros_test test/trajectory_interface_ros_test.cpp)
 
   # TODO: why is it explicitly needed???, without it the linker fails.
-  target_link_libraries(quintic_spline_segment_test pthread)
-  target_link_libraries(multi_dof_segment_test      pthread)
-  target_link_libraries(trajectory_interface_test   pthread)
-
+  target_link_libraries(quintic_spline_segment_test   pthread)
+  target_link_libraries(multi_dof_segment_test        pthread)
+  target_link_libraries(trajectory_interface_test     pthread)
+  target_link_libraries(trajectory_interface_ros_test pthread)
 else()
   # TODO
 

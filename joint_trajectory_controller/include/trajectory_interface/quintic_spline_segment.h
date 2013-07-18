@@ -102,7 +102,10 @@ public:
   QuinticSplineSegment(const Time&  start_time,
                        const State& start_state,
                        const Time&  end_time,
-                       const State& end_state);
+                       const State& end_state)
+  {
+    init(start_time, start_state, end_time, end_state);
+  }
 
   /**
    * \brief Sample the segment at a specified time.
@@ -137,6 +140,11 @@ private:
   Time duration_;
   Time start_time_;
 
+  void init(const Time&  start_time,
+            const State& start_state,
+            const Time&  end_time,
+            const State& end_state);
+
   // These methods are borrowed from the previous controller's implementation
   // TODO: Clean their implementation, use the Horner algorithm for more numerically stable polynomial evaluation
   static void generatePowers(int n, const Scalar& x, Scalar* powers);
@@ -164,12 +172,11 @@ private:
 };
 
 template<class Scalar>
-QuinticSplineSegment<Scalar>::QuinticSplineSegment(const Time&  start_time,
-                                                   const State& start_state,
-                                                   const Time&  end_time,
-                                                   const State& end_state)
+void QuinticSplineSegment<Scalar>::init(const Time&  start_time,
+                                        const State& start_state,
+                                        const Time&  end_time,
+                                        const State& end_state)
 {
-
   if (end_time < start_time)
   {
     throw(std::invalid_argument("Quintic spline segment can't be constructed: end_time < start_time."));

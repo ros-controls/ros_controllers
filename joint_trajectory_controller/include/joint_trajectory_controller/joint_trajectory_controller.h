@@ -47,10 +47,8 @@
 #include <hardware_interface/joint_command_interface.h>
 
 // trajectory_interface
-#include <joint_trajectory_controller/quintic_spline_segment.h>
-#include <joint_trajectory_controller/multi_dof_segment.h>
-#include <joint_trajectory_controller/trajectory_interface.h>
-
+#include <joint_trajectory_controller/joint_trajectory_segment.h>
+#include <joint_trajectory_controller/trajectory_interface_ros.h>
 
 namespace joint_trajectory_controller
 {
@@ -74,7 +72,7 @@ private:
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
   typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
 
-  typedef trajectory_interface::MultiDofSegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
+  typedef trajectory_interface::JointTrajectorySegment<double> Segment;
   typedef std::vector<Segment> Trajectory;
 
   std::vector<hardware_interface::JointHandle> joints_;

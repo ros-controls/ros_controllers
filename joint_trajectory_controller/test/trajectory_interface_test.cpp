@@ -30,8 +30,8 @@
 #include <cmath>
 
 #include <gtest/gtest.h>
-#include <joint_trajectory_controller/quintic_spline_segment.h>
-#include <joint_trajectory_controller/trajectory_interface.h>
+#include <trajectory_interface/quintic_spline_segment.h>
+#include <trajectory_interface/trajectory_interface.h>
 
 using namespace trajectory_interface;
 

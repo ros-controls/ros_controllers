@@ -73,7 +73,6 @@
 #include <control_msgs/JointControllerState.h>
 #include <realtime_tools/realtime_buffer.h>
 
-
 namespace effort_controllers
 {
 
@@ -84,7 +83,19 @@ public:
   JointPositionController();
   ~JointPositionController();
 
-  bool init(hardware_interface::EffortJointInterface*robot, const std::string &joint_name,const control_toolbox::Pid &pid);
+  /** \brief The init function is called to initialize the controller from a
+   * non-realtime thread with a pointer to the hardware interface, itself,
+   * instead of a pointer to a RobotHW.
+   *
+   * \param hw The specific hardware interface used by this controller.
+   *
+   * \param n A NodeHandle in the namespace from which the controller
+   * should read its configuration, and where it should set up its ROS
+   * interface.
+   *
+   * \returns True if initialization was successful and the controller
+   * is ready to be started.
+   */  
   bool init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n);
 
   /*!
@@ -94,6 +105,11 @@ public:
    */
   void setCommand(double cmd);
 
+  /** \brief This is called from within the realtime thread just before the
+   * first call to \ref update
+   *
+   * \param time The current time
+   */
   void starting(const ros::Time& time);
   
   /*!
@@ -101,24 +117,40 @@ public:
    */
   void update(const ros::Time& time, const ros::Duration& period);
 
+  /**
+   * \brief Set the PID parameters
+   */
   void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
+
+  /**
+   * \brief Get the PID parameters
+   */
   void setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min);
 
+  /**
+   * \brief Get the name of the joint this controller uses
+   */
   std::string getJointName();
+
   hardware_interface::JointHandle joint_;
   boost::shared_ptr<const urdf::Joint> joint_urdf_;
   realtime_tools::RealtimeBuffer<double> command_;             /**< Last commanded position. */
 
 private:
   int loop_count_;
-  control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
+  boost::scoped_ptr<control_toolbox::Pid> pid_controller_;       /**< Internal PID controller. */
 
   boost::scoped_ptr<
     realtime_tools::RealtimePublisher<
       control_msgs::JointControllerState> > controller_state_publisher_ ;
 
   ros::Subscriber sub_command_;
+
+  /**
+   * \brief Callback from /command subscriber for setpoint
+   */
   void setCommandCB(const std_msgs::Float64ConstPtr& msg);
+
 };
 
 } // namespace

@@ -100,7 +100,7 @@ public:
   Time startTime() const {return multidof_segment_.empty() ? 0.0 : multidof_segment_.front().startTime();}
   Time endTime()   const {return multidof_segment_.empty() ? 0.0 : multidof_segment_.front().endTime();}
 
-private:
+protected:
   std::vector<Segment> multidof_segment_;
 
   void init(const Time&  start_time,

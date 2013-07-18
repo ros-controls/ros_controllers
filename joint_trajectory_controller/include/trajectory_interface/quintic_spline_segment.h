@@ -129,7 +129,7 @@ public:
   /** \return Segment end time. */
   Time endTime() const {return start_time_ + duration_;}
 
-private:
+protected:
   typedef boost::array<Scalar, 6> SplineCoefficients;
 
   /** Coefficients represent a quintic polynomial like so:
@@ -145,6 +145,7 @@ private:
             const Time&  end_time,
             const State& end_state);
 
+private:
   // These methods are borrowed from the previous controller's implementation
   // TODO: Clean their implementation, use the Horner algorithm for more numerically stable polynomial evaluation
   static void generatePowers(int n, const Scalar& x, Scalar* powers);

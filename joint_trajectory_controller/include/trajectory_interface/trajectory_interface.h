@@ -62,43 +62,6 @@ inline bool isBeforeSegment(const Time& time, const Segment& segment)
 } // namespace
 
 /**
- * \brief Sample a trajectory at a specified time.
- *
- * This is a convenience function that combines finding the segment associated to a specified time (see \ref findSegment)
- * and sampling it.
- *
- * \tparam Trajectory Trajectory type. Should be a \e sequence container \e sorted by segment start time.
- * \param[in] trajectory Holds a sequence of segments.
- * \param[in] time Where the trajectory is to be sampled.
- * \param[out] state Segment state at \p time.
- *
- * \return Iterator to the trajectory segment containing \p time. If no segment contains \p time, then
- * <tt>trajectory.end()</tt> is returned.
- *
- * \note The segment implementation should allow sampling outside the trajectory time interval, implementing a policy
- * such as holding the first/last position. In such a case, it is possible to get a valid sample for all time inputs,
- * even for the cases when this function returns <tt>trajectory.end()</tt>.
- *
- * \sa findSegment
- */
-template<class Trajectory>
-inline typename Trajectory::const_iterator sample(const Trajectory&                             trajectory,
-                                                  const typename Trajectory::value_type::Time&  time,
-                                                        typename Trajectory::value_type::State& state)
-{
-  typename Trajectory::const_iterator it = findSegment(trajectory.begin(), trajectory.end(), time);
-  if (it != trajectory.end())
-  {
-    it->sample(time, state); // Segment found at specified time
-  }
-  else if (!trajectory.empty())
-  {
-    trajectory.front().sample(time, state); // Specified time preceeds trajectory start time
-  }
-  return it;
-}
-
-/**
  * \brief Find an iterator to the segment containing a specified \p time.
  *
  * \param first Input iterator to the initial position in the segment sequence.
@@ -137,6 +100,56 @@ template<class Trajectory, class Time>
 inline typename Trajectory::const_iterator findSegment(const Trajectory& trajectory, const Time& time)
 {
   return findSegment(trajectory.begin(), trajectory.end(), time);
+}
+
+/**
+ * \brief Equivalent to \ref findSegment(TrajectoryIterator first, TrajectoryIterator last, const Time& time) "findSegment"
+ * but returning a non-const iterator.
+ *
+ * \note Although \p is passed by non-const reference, it is not modified by this function. It's a workaround to allow
+ * overloads of this function to coexist (they need different signatures to prevent ambiguities).
+ */
+template<class Trajectory, class Time>
+inline typename Trajectory::iterator findSegment(Trajectory& trajectory, const Time& time)
+{
+  return findSegment(trajectory.begin(), trajectory.end(), time);
+}
+
+/**
+ * \brief Sample a trajectory at a specified time.
+ *
+ * This is a convenience function that combines finding the segment associated to a specified time (see \ref findSegment)
+ * and sampling it.
+ *
+ * \tparam Trajectory Trajectory type. Should be a \e sequence container \e sorted by segment start time.
+ * \param[in] trajectory Holds a sequence of segments.
+ * \param[in] time Where the trajectory is to be sampled.
+ * \param[out] state Segment state at \p time.
+ *
+ * \return Iterator to the trajectory segment containing \p time. If no segment contains \p time, then
+ * <tt>trajectory.end()</tt> is returned.
+ *
+ * \note The segment implementation should allow sampling outside the trajectory time interval, implementing a policy
+ * such as holding the first/last position. In such a case, it is possible to get a valid sample for all time inputs,
+ * even for the cases when this function returns <tt>trajectory.end()</tt>.
+ *
+ * \sa findSegment
+ */
+template<class Trajectory>
+inline typename Trajectory::const_iterator sample(const Trajectory&                             trajectory,
+                                                  const typename Trajectory::value_type::Time&  time,
+                                                        typename Trajectory::value_type::State& state)
+{
+  typename Trajectory::const_iterator it = findSegment(trajectory, time);
+  if (it != trajectory.end())
+  {
+    it->sample(time, state); // Segment found at specified time
+  }
+  else if (!trajectory.empty())
+  {
+    trajectory.front().sample(time, state); // Specified time preceeds trajectory start time
+  }
+  return it;
 }
 
 } // namespace

@@ -100,6 +100,15 @@ TEST(EmptyTrajectoryInterfaceTest, SampleTrajectory)
   EXPECT_TRUE(std::isnan(state.acceleration));
 }
 
+TEST_F(TrajectoryInterfaceTest, FindSegmentOverloads)
+{
+  // The important thing here is that the test builds
+  const Time time = times[0];
+  Trajectory::const_iterator const_it = findSegment(trajectory, time);
+  Trajectory::iterator       it       = findSegment(trajectory, time);
+  EXPECT_EQ(const_it, it); // This is here only to silence the compiler for unused variables
+}
+
 TEST_F(TrajectoryInterfaceTest, FindSegment)
 {
   // Before trajectory start: No segments found

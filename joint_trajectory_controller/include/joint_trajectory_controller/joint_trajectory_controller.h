@@ -41,14 +41,16 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <trajectory_msgs/JointTrajectory.h>
 
+// realtime_tools
+#include <realtime_tools/realtime_buffer.h>
+
 // ros_control
 #include <realtime_tools/realtime_server_goal_handle.h>
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 
-// trajectory_interface
+// Project
 #include <joint_trajectory_controller/joint_trajectory_segment.h>
-#include <joint_trajectory_controller/trajectory_interface_ros.h>
 
 namespace joint_trajectory_controller
 {
@@ -57,7 +59,7 @@ namespace joint_trajectory_controller
 class JointTrajectoryController : public controller_interface::Controller<hardware_interface::PositionJointInterface>
 {
 public:
-  JointTrajectoryController() {}
+  JointTrajectoryController();
 
   bool init(hardware_interface::PositionJointInterface* hw, ros::NodeHandle& controller_nh);
 
@@ -77,7 +79,11 @@ private:
 
   std::vector<hardware_interface::JointHandle> joints_;
   RealtimeGoalHandlePtr                        rt_active_goal_;
-  Trajectory trajectory_;
+  realtime_tools::RealtimeBuffer<Trajectory>   trajectory_;
+  typename Segment::State                      state_; ///< Workspace variable preallocated to the appripriate size
+
+  ros::Time     time_;   ///< Time of last update cycle
+  ros::Duration period_; ///< Period of last update cycle
 
   void trajectoryCommandCB(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh = RealtimeGoalHandlePtr());
   void goalCB(GoalHandle gh);

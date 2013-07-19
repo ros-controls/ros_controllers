@@ -189,8 +189,16 @@ Trajectory init(const trajectory_msgs::JointTrajectory& msg, const ros::Time& ti
   else
   {
     ++it;                    // Points to first point after current time OR sequence end
-    ROS_WARN_STREAM("Dropping first " << std::distance(msg.points.begin(), it) <<
-                    " trajectory points, as they occur before the specified time.");
+    if (it == msg.points.end())
+    {
+      ROS_WARN_STREAM("Dropping all " << msg.points.size() <<
+                      " trajectory points, as they occur before the specified time.");
+    }
+    else
+    {
+      ROS_WARN_STREAM("Dropping first " << std::distance(msg.points.begin(), it) <<
+                      " trajectory points out of " << msg.points.size() << ", as they occur before the specified time.");
+    }
   }
 
   // Construct all trajectory segments occurring after current time
@@ -202,8 +210,16 @@ Trajectory init(const trajectory_msgs::JointTrajectory& msg, const ros::Time& ti
     MsgPointConstIterator next_it = it; ++next_it;
     Segment segment(msg_start_time, *it, *next_it);
     trajectory.push_back(segment);
-
     ++it;
+  }
+  if (trajectory.empty())
+  {
+    ROS_DEBUG_STREAM("Created empty trajectory, as there were less than two valid trajectory points.");
+  }
+  else
+  {
+    ROS_DEBUG_STREAM("Created trajectory from " << (trajectory.size() + 1) << " points (has " << trajectory.size() <<
+                    " segments).");
   }
 
   return trajectory;

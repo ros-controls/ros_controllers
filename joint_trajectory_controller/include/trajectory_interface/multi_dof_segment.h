@@ -66,7 +66,7 @@ public:
   MultiDofSegment() {}
 
   /**
-   * \brief Creates a multi-dof segment by aggregating multiple \p Segment instances.
+   * \brief Construct a multi-dof segment by aggregating multiple \p Segment instances.
    *
    * \param start_time Time at which the segment state equals \p start_state.
    * \param start_state State at \p start_time.

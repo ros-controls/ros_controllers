@@ -32,7 +32,6 @@
 
 #include <algorithm>
 #include <iterator>
-#include <stdexcept>
 
 #include <ros/console.h>
 #include <ros/time.h>
@@ -62,19 +61,19 @@ private:
 
 /**
  * \param msg Trajectory message.
- * \param time Current time.
- * \return Start time specified in message. If unspecified (set to zero) return current time.
+ * \param time Trajectory start time, if unspecified in message.
+ * \return Start time specified in message. If unspecified (set to zero) return \p time.
  */
 inline ros::Time startTime(const trajectory_msgs::JointTrajectory& msg,
-                           const ros::Time&                        current_time)
+                           const ros::Time&                        time)
 {
-  return msg.header.stamp.isZero() ? current_time : msg.header.stamp;
+  return msg.header.stamp.isZero() ? time : msg.header.stamp;
 }
 
 } // namespace
 
 /**
- * \param msg Trajectory point message.
+ * \param point Trajectory point message.
  * \param joint_dim Expected dimension of the position, velocity and acceleration fields.
  * \return True if sizes of the position, velocity and acceleration fields are consistent. An empty field means that
  * it's unspecified, so in this particular case its dimension must not coincide with \p joint_dim.
@@ -147,14 +146,30 @@ findPoint(const trajectory_msgs::JointTrajectory& msg,
 }
 
 /**
- * \brief init
- * \param msg
- * \param time
- * \tparam Trajectory TODO: Must be a multi-dof segment implementing pos, vel, acc
- * TODO: pre on init function
+ * \brief Initialize a joint trajectory from ROS message data.
+ *
+ * \param msg Trajectory message.
+ * \param time Time from which data is to be extracted. All trajectory points in \p msg occurring \b after
+ * \p time <b>will be extracted</b>; or put otherwise, all points occurring at a time <b>less or equal</b> than \p time
+ * <b>will be discarded</b>. Set this value to zero to process all points in \p msg.
+ * \return Trajectory container.
+ *
+ * \tparam Trajectory Trajectory type. Should be a \e sequence container \e sorted by segment start time.
+ * Additionally, the contained segment type must comply with these requirements:
+ *  - Allow for multi-dimensional data (ie. multiple joints)
+ *  - Be able to deal with states containing position, velocity and acceleration data.
+ *  - Implement a constructor with the following signature:
+ * \code
+ * Segment(const ros::Time&                             traj_start_time,
+ *         const trajectory_msgs::JointTrajectoryPoint& start_point,
+ *         const trajectory_msgs::JointTrajectoryPoint& end_point)
+ * \endcode
+ *
+ * \note This function does not throw any exceptions by itself, but the segment constructor might.
+ * In such a case, this method should be wrapped inside a \p try block.
  */
 template <class Trajectory>
-Trajectory init(const trajectory_msgs::JointTrajectory&msg, const ros::Time& time)
+Trajectory init(const trajectory_msgs::JointTrajectory& msg, const ros::Time& time)
 {
   typedef typename Trajectory::value_type Segment;
   typedef std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator MsgPointConstIterator;
@@ -174,8 +189,8 @@ Trajectory init(const trajectory_msgs::JointTrajectory&msg, const ros::Time& tim
   else
   {
     ++it;                    // Points to first point after current time OR sequence end
-    ROS_DEBUG_STREAM("Dropping first " << std::distance(msg.points.begin(), it) <<
-                     " trajectory points, as they occur in the past.");
+    ROS_WARN_STREAM("Dropping first " << std::distance(msg.points.begin(), it) <<
+                    " trajectory points, as they occur before the specified time.");
   }
 
   // Construct all trajectory segments occurring after current time

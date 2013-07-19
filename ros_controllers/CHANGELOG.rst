@@ -2,6 +2,10 @@
 Changelog for package ros_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.1 (2013-07-16)
+-----------
+* Added to maintainer list
+
 0.5.0 (2013-07-16)
 ------------------
 * Added force_torque_sensor_controller

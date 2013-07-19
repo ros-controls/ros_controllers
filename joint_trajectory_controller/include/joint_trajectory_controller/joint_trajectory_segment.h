@@ -49,9 +49,27 @@ template <class Scalar>
 class JointTrajectorySegment : public MultiDofSegment<QuinticSplineSegment<Scalar> >
 {
 public:
+  typedef typename MultiDofSegment<QuinticSplineSegment<Scalar> >::Time  Time;
+  typedef typename MultiDofSegment<QuinticSplineSegment<Scalar> >::State State;
 
   /**
-   * \brief Construct segment from start and end points (boundary conditions) specified in ROS message format.
+   * \brief Construct segment from start and end states (boundary conditions).
+   *
+   * \param start_time Time at which the segment state equals \p start_state.
+   * \param start_state State at \p start_time.
+   * \param end_time Time at which the segment state equals \p end_state.
+   * \param end_state State at time \p end_time.
+   */
+  JointTrajectorySegment(const Time&  start_time,
+                         const State& start_state,
+                         const Time&  end_time,
+                         const State& end_state)
+  {
+    MultiDofSegment<QuinticSplineSegment<Scalar> >::init(start_time, start_state, end_time, end_state);
+  }
+
+  /**
+   * \brief Construct a segment from start and end points (boundary conditions) specified in ROS message format.
    *
    *
    * \param traj_start_time Time at which the trajectory containing the segment starts. Note that this is \e not the

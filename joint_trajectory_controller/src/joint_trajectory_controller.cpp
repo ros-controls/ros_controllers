@@ -26,25 +26,161 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
+// C++ standard
+#include <algorithm> // TODO: Remove?
+#include <cassert>
+#include <string>
+
+#include <urdf/model.h>
+
 // Project
 #include <joint_trajectory_controller/joint_trajectory_controller.h>
 #include <trajectory_interface/trajectory_interface.h>
 #include <joint_trajectory_controller/trajectory_interface_ros.h>
 
+namespace
+{
+
+// TODO: Move these convenience functions elsewhere?
+std::vector<std::string> getStrings(const ros::NodeHandle& nh, const std::string& param_name)
+{
+  using namespace XmlRpc;
+  XmlRpcValue xml_array;
+  if (!nh.getParam(param_name, xml_array))
+  {
+    ROS_ERROR_STREAM("Could not find '" << param_name << "' parameter in controller (namespace: " <<
+                     nh.getNamespace() << ").");
+    return std::vector<std::string>();
+  }
+  if (xml_array.getType() != XmlRpcValue::TypeArray)
+  {
+    ROS_ERROR_STREAM("The '" << param_name << "' parameter is not an array (namespace: " <<
+                     nh.getNamespace() << ").");
+    return std::vector<std::string>();
+  }
+
+  std::vector<std::string> out;
+  for (int i = 0; i < xml_array.size(); ++i)
+  {
+    if (xml_array[i].getType() != XmlRpcValue::TypeString)
+    {
+      ROS_ERROR_STREAM("The '" << param_name << "' parameter contains a non-string element (namespace: " <<
+                       nh.getNamespace() << ").");
+      return std::vector<std::string>();
+    }
+    out.push_back(static_cast<std::string>(xml_array[i]));
+  }
+  return out;
+}
+
+boost::shared_ptr<urdf::Model> getUrdf(const ros::NodeHandle& nh, const std::string& param_name)
+{
+  boost::shared_ptr<urdf::Model> urdf(new urdf::Model);
+  std::string urdf_str;
+  if (!nh.getParam(param_name, urdf_str))
+  {
+    ROS_ERROR_STREAM("Could not find '" << param_name << "' parameter (namespace: " <<
+                     nh.getNamespace() << ").");
+    return boost::shared_ptr<urdf::Model>();
+  }
+  if (!urdf->initString(urdf_str))
+  {
+    ROS_ERROR_STREAM("Failed to parse URDF contained in '" << param_name << "' parameter (namespace: " <<
+                     nh.getNamespace() << ").");
+    return boost::shared_ptr<urdf::Model>();
+  }
+  return urdf;
+}
+
+typedef boost::shared_ptr<const urdf::Joint> UrdfJointConstPtr;
+std::vector<UrdfJointConstPtr> getUrdfJoints(const urdf::Model& urdf, const std::vector<std::string>& joint_names)
+{
+  std::vector<UrdfJointConstPtr> out;
+  for (unsigned int i = 0; i < joint_names.size(); ++i)
+  {
+    UrdfJointConstPtr urdf_joint = urdf.getJoint(joint_names[i]);
+    if (urdf_joint)
+    {
+      out.push_back(urdf_joint);
+    }
+    else
+    {
+      ROS_ERROR_STREAM("Could not find joint '" << joint_names[i] << "' in URDF model.");
+      return std::vector<UrdfJointConstPtr>();
+    }
+  }
+  return out;
+}
+
+} // namespace
+
 namespace joint_trajectory_controller
 {
 
+using std::string;
+using std::vector;
+
 JointTrajectoryController::JointTrajectoryController()
   : joints_(),
+    is_continuous_joint_(),
     rt_active_goal_(),
     trajectory_(),
+    state_(),
     time_(0.0),
     period_(0.0)
 {}
 
-bool JointTrajectoryController::init(hardware_interface::PositionJointInterface* hw, ros::NodeHandle& controller_nh)
+// TODO: joints vs. joint_names, command vs trajectory_command
+bool JointTrajectoryController::init(hardware_interface::PositionJointInterface* hw,
+                                     ros::NodeHandle& root_nh,
+                                     ros::NodeHandle& controller_nh)
 {
-  // TODO: Preallocate state_
+  // List of controlled joints
+  vector<string> joint_names = getStrings(controller_nh, "joints");
+  if (joint_names.empty()) {return false;}
+  const unsigned int n_joints = joint_names.size();
+
+  // URDF joints
+  boost::shared_ptr<urdf::Model> urdf = getUrdf(root_nh, "robot_description");
+  if (!urdf) {return false;}
+
+  std::vector<UrdfJointConstPtr> urdf_joints = getUrdfJoints(*urdf, joint_names);
+  if (urdf_joints.empty()) {return false;}
+  assert(n_joints == urdf_joints.size());
+
+  // Initialize members
+  joints_.resize(n_joints);
+  is_continuous_joint_.resize(n_joints);
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+    // Joint handle
+    try {joints_[i] = hw->getHandle(joint_names[i]);}
+    catch (...)
+    {
+      ROS_ERROR_STREAM("Could not find joint '" << joint_names[i] << "' in '" << getHardwareInterfaceType() << "'.");
+      return false;
+    }
+
+    // Whether a joint is continuous
+    is_continuous_joint_[i] = urdf_joints[i]->type == urdf::Joint::CONTINUOUS;
+    const string not_if = is_continuous_joint_[i] ? "" : "non-";
+
+    ROS_DEBUG_STREAM("Found " << not_if << "continuous joint '" << joint_names[i] << "' in '" <<
+                     getHardwareInterfaceType() << "'.");
+  }
+
+  assert(joints_.size() == is_continuous_joint_.size());
+  ROS_INFO_STREAM("Initialized controller of type '" << getHardwareInterfaceType() << "' with " <<
+                  joints_.size() << " joints.");
+
+  // Preeallocate resources
+  state_.resize(n_joints);
+
+  // ROS API
+  trajectory_command_sub_ = controller_nh.subscribe("command", 1, &JointTrajectoryController::trajectoryCommandCB, this);
+
+//  controller_state_publisher_.reset(new ControllerStatePublisher(controller_nh, "state", 1));
+  // TODO: Preallocate message
 
   return true;
 }
@@ -76,7 +212,7 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
 }
 
 
-void JointTrajectoryController::trajectoryCommandCB(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
+void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
 {
   // Preconditions
   if (!msg)
@@ -108,17 +244,16 @@ void JointTrajectoryController::trajectoryCommandCB(const JointTrajectoryConstPt
   typedef typename Trajectory::iterator TrajIter;
   TrajIter first = findSegment(curr_traj, curr_time.toSec()); // Currently active segment
   TrajIter last  = findSegment(curr_traj, msg_start_time);    // Segment active when new trajectory starts
-
   if (first == curr_traj.end() || last == curr_traj.end())
   {
     ROS_ERROR("Unexpected error: Could not find segments in current trajectory. Please contact the package maintainer.");
     return;
   }
+  ++last; // Range [first,last) of current trajectory will still be executed
 
   // Segment bridging current and new trajectories
-  const typename Segment::Time start_time = msg_start_time;
-  const typename Segment::Time end_time   = new_traj.front().startTime();
-
+  const typename Segment::Time start_time = std::max(msg_start_time, curr_time.toSec());
+  const typename Segment::Time end_time   = new_traj.begin()->startTime();
   using trajectory_interface::sample;
   typename Segment::State start_state, end_state;
   sample(curr_traj, start_time, start_state); // Start: Sample current trajectory at the message start time
@@ -128,8 +263,8 @@ void JointTrajectoryController::trajectoryCommandCB(const JointTrajectoryConstPt
 
   // Combine current and new trajectories
   Trajectory combined_traj;
-  combined_traj.insert(combined_traj.begin(), first, ++last); // Add parts of current trajectory still to be executed
-  combined_traj.push_back(bridge_seg); // Add segment bridging current and new trajectories
+  combined_traj.insert(combined_traj.begin(), first, last); // Add parts of current trajectory still to be executed
+  combined_traj.push_back(bridge_seg);                      // Add segment bridging current and new trajectories
   combined_traj.insert(combined_traj.end(), new_traj.begin(), new_traj.end()); // Add new trajectory
 
   // Update currently executing trajectory

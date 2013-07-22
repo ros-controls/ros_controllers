@@ -33,9 +33,13 @@
 
 // Boost
 #include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 
 // Actionlib
 #include <actionlib/server/action_server.h>
+
+// ros
+#include <ros/node_handle.h>
 
 // ros messages
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -43,6 +47,7 @@
 
 // realtime_tools
 #include <realtime_tools/realtime_buffer.h>
+#include <realtime_tools/realtime_publisher.h>
 
 // ros_control
 #include <realtime_tools/realtime_server_goal_handle.h>
@@ -61,7 +66,7 @@ class JointTrajectoryController : public controller_interface::Controller<hardwa
 public:
   JointTrajectoryController();
 
-  bool init(hardware_interface::PositionJointInterface* hw, ros::NodeHandle& controller_nh);
+  bool init(hardware_interface::PositionJointInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
 
   void starting(const ros::Time& time);
 
@@ -73,11 +78,13 @@ private:
   typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
   typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
+//  typedef realtime_tools::RealtimePublisher<controllers_msgs::JointControllerState>           ControllerStatePublisher;
 
   typedef trajectory_interface::JointTrajectorySegment<double> Segment;
   typedef std::vector<Segment> Trajectory;
 
   std::vector<hardware_interface::JointHandle> joints_;
+  std::vector<bool>                            is_continuous_joint_;
   RealtimeGoalHandlePtr                        rt_active_goal_;
   realtime_tools::RealtimeBuffer<Trajectory>   trajectory_;
   typename Segment::State                      state_; ///< Workspace variable preallocated to the appripriate size
@@ -85,7 +92,12 @@ private:
   ros::Time     time_;   ///< Time of last update cycle
   ros::Duration period_; ///< Period of last update cycle
 
-  void trajectoryCommandCB(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh = RealtimeGoalHandlePtr());
+  // ROS API
+  ros::Subscriber                             trajectory_command_sub_;
+//  boost::scoped_ptr<ControllerStatePublisher> controller_state_publisher_;
+
+  void updateTtrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh);
+  void trajectoryCommandCB(const JointTrajectoryConstPtr& msg) {updateTtrajectoryCommand(msg, RealtimeGoalHandlePtr());}
   void goalCB(GoalHandle gh);
   void cancelCB(GoalHandle gh);
   void preemptActiveGoal();

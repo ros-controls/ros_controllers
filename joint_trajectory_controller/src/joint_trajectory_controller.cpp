@@ -126,6 +126,7 @@ JointTrajectoryController::JointTrajectoryController()
     rt_active_goal_(),
     trajectory_(),
     state_(),
+    joint_names_(),
     time_(0.0),
     period_(0.0)
 {}
@@ -136,15 +137,15 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
                                      ros::NodeHandle& controller_nh)
 {
   // List of controlled joints
-  vector<string> joint_names = getStrings(controller_nh, "joints");
-  if (joint_names.empty()) {return false;}
-  const unsigned int n_joints = joint_names.size();
+  joint_names_ = getStrings(controller_nh, "joints");
+  if (joint_names_.empty()) {return false;}
+  const unsigned int n_joints = joint_names_.size();
 
   // URDF joints
   boost::shared_ptr<urdf::Model> urdf = getUrdf(root_nh, "robot_description");
   if (!urdf) {return false;}
 
-  std::vector<UrdfJointConstPtr> urdf_joints = getUrdfJoints(*urdf, joint_names);
+  std::vector<UrdfJointConstPtr> urdf_joints = getUrdfJoints(*urdf, joint_names_);
   if (urdf_joints.empty()) {return false;}
   assert(n_joints == urdf_joints.size());
 
@@ -154,10 +155,10 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
   for (unsigned int i = 0; i < n_joints; ++i)
   {
     // Joint handle
-    try {joints_[i] = hw->getHandle(joint_names[i]);}
+    try {joints_[i] = hw->getHandle(joint_names_[i]);}
     catch (...)
     {
-      ROS_ERROR_STREAM("Could not find joint '" << joint_names[i] << "' in '" << getHardwareInterfaceType() << "'.");
+      ROS_ERROR_STREAM("Could not find joint '" << joint_names_[i] << "' in '" << getHardwareInterfaceType() << "'.");
       return false;
     }
 
@@ -165,7 +166,7 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
     is_continuous_joint_[i] = urdf_joints[i]->type == urdf::Joint::CONTINUOUS;
     const string not_if = is_continuous_joint_[i] ? "" : "non-";
 
-    ROS_DEBUG_STREAM("Found " << not_if << "continuous joint '" << joint_names[i] << "' in '" <<
+    ROS_DEBUG_STREAM("Found " << not_if << "continuous joint '" << joint_names_[i] << "' in '" <<
                      getHardwareInterfaceType() << "'.");
   }
 
@@ -236,7 +237,7 @@ void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryCo
   }
 
   // New trajectory: Get segments of trajectory message that start after the current time
-  Trajectory new_traj = trajectory_interface::init<Trajectory>(*msg, curr_time); // TODO: Add tolerances
+  Trajectory new_traj = trajectory_interface::init<Trajectory>(*msg, curr_time, joint_names_); // TODO: Add tolerances
   if (new_traj.empty()) {return;} // Nothing to do, keep executing current trajectory
 
   // Current trajectory
@@ -252,7 +253,7 @@ void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryCo
   ++last; // Range [first,last) of current trajectory will still be executed
 
   // Segment bridging current and new trajectories
-  const typename Segment::Time start_time = std::max(msg_start_time, curr_time.toSec());
+  const typename Segment::Time start_time = std::max(msg_start_time, curr_time.toSec()); // Important!
   const typename Segment::Time end_time   = new_traj.begin()->startTime();
   using trajectory_interface::sample;
   typename Segment::State start_state, end_state;

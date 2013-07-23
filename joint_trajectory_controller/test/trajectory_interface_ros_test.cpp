@@ -28,6 +28,8 @@
 /// \author Adolfo Rodriguez Tsouroukdissian
 
 #include <cmath>
+#include <string>
+#include <vector>
 
 #include <gtest/gtest.h>
 #include <joint_trajectory_controller/joint_trajectory_segment.h>
@@ -36,6 +38,7 @@
 using namespace trajectory_interface;
 using namespace trajectory_msgs;
 using std::vector;
+using std::string;
 
 // Floating-point value comparison threshold
 const double EPS = 1e-9;
@@ -62,6 +65,48 @@ TEST(StartTimeTest, StartTime)
     msg.header.stamp = ros::Time(2.0);
     EXPECT_EQ(msg.header.stamp, internal::startTime(msg, now));
     EXPECT_NE(now, internal::startTime(msg, now));
+  }
+}
+
+TEST(PermutationTest, Permutation)
+{
+  vector<string> t1(3);
+  t1[0] = "A";
+  t1[1] = "B";
+  t1[2] = "C";
+
+  vector<string> t2(3);
+  t2[0] = "B";
+  t2[1] = "A";
+  t2[2] = "C";
+
+  typedef vector<vector<string>::size_type> PermutationType;
+  PermutationType ground_truth(3);
+  ground_truth[0] = 1;
+  ground_truth[1] = 0;
+  ground_truth[2] = 2;
+
+  // Mismatching sizes: Return empty permutation vector
+  {
+    vector<string> t2_bad(1,"A");
+    PermutationType perm = internal::permutation(t1, t2_bad);
+    EXPECT_TRUE(perm.empty());
+  }
+
+  // Mismatching contents: Return empty permutation vector
+  {
+    vector<string> t2_bad(3,"A");
+    PermutationType perm = internal::permutation(t1, t2_bad);
+    EXPECT_TRUE(perm.empty());
+  }
+
+  // Valid parameters
+  {
+    PermutationType perm = internal::permutation(t1, t2);
+    EXPECT_EQ(ground_truth.size(), perm.size());
+    EXPECT_EQ(ground_truth[0], perm[0]);
+    EXPECT_EQ(ground_truth[1], perm[1]);
+    EXPECT_EQ(ground_truth[2], perm[2]);
   }
 }
 
@@ -275,8 +320,7 @@ TEST_F(TrajectoryInterfaceRosTest, InitValues)
   const ros::Time msg_start_time = trajectory_msg.header.stamp;
   const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
 
-  // Input time is...
-  // Before first point: Return full trajectory (2 segments)
+  // Input time is before first point: Return full trajectory (2 segments)
   const ros::Time time = msg_start_time;
   Trajectory trajectory = init<Trajectory>(trajectory_msg, time);
   ASSERT_EQ(points.size() - 1, trajectory.size());
@@ -313,6 +357,73 @@ TEST_F(TrajectoryInterfaceRosTest, InitValues)
       EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
       EXPECT_EQ(p_end.accelerations.front(), state.front().acceleration);
     }
+  }
+}
+
+TEST_F(TrajectoryInterfaceRosTest, PermutationTest)
+{
+  // Add an extra joint to the trajectory message created in the fixture
+  trajectory_msg.points[0].positions.push_back(-2.0);
+  trajectory_msg.points[0].velocities.push_back(0.0);
+  trajectory_msg.points[0].accelerations.push_back(0.0);
+
+  trajectory_msg.points[1].positions.push_back(-4.0);
+  trajectory_msg.points[1].velocities.push_back(0.0);
+  trajectory_msg.points[1].accelerations.push_back(0.0);
+
+  trajectory_msg.points[2].positions.push_back(-3.0);
+  trajectory_msg.points[2].velocities.push_back(0.0);
+  trajectory_msg.points[2].accelerations.push_back(0.0);
+
+  trajectory_msg.joint_names.push_back("bar_joint");
+
+  // No reference joint names: Original message order is preserved
+  {
+    Trajectory trajectory = init<Trajectory>(trajectory_msg, trajectory_msg.header.stamp);
+
+    // Check position values only
+    const Segment& segment = trajectory.front();
+    typename Segment::State state;
+    segment.sample(segment.startTime(), state);
+    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state[0].position);
+    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state[1].position);
+  }
+
+  // Reference joint names vector that reverses joint order
+  {
+    vector<string> joint_names; // Joints are reversed
+    joint_names.push_back(trajectory_msg.joint_names[1]);
+    joint_names.push_back(trajectory_msg.joint_names[0]);
+
+    Trajectory trajectory = init<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, joint_names);
+
+    // Check position values only
+    const Segment& segment = trajectory.front();
+    typename Segment::State state;
+    segment.sample(segment.startTime(), state);
+    EXPECT_NE(trajectory_msg.points[0].positions[0],  state[0].position);
+    EXPECT_NE(trajectory_msg.points[0].positions[1],  state[1].position);
+    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state[1].position);
+    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state[0].position);
+  }
+
+  // Reference joint names size mismatch
+  {
+    vector<string> joint_names;
+    joint_names.push_back(trajectory_msg.joint_names[0]);
+
+    Trajectory trajectory = init<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, joint_names);
+    EXPECT_TRUE(trajectory.empty());
+  }
+
+  // Reference joint names value mismatch
+  {
+    vector<string> joint_names;
+    joint_names.push_back(trajectory_msg.joint_names[0]);
+    joint_names.push_back("baz_joint");
+
+    Trajectory trajectory = init<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, joint_names);
+    EXPECT_TRUE(trajectory.empty());
   }
 }
 

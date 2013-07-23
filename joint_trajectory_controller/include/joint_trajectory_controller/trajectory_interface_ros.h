@@ -70,6 +70,39 @@ inline ros::Time startTime(const trajectory_msgs::JointTrajectory& msg,
   return msg.header.stamp.isZero() ? time : msg.header.stamp;
 }
 
+/**
+ * \return The permutation vector between two containers.
+ * If \p t1 is <tt>"{A, B, C}"</tt> and \p t2 is <tt>"{B, A, C}"</tt>, the associated permutation vector is
+ * <tt>"{1, 0, 2}"</tt>.
+ */
+template <class T>
+std::vector<typename T::size_type> permutation(const T& t1, const T& t2)
+{
+  typedef typename T::size_type SizeType;
+
+  // Arguments must have the same size
+  if (t1.size() != t2.size()) {return std::vector<SizeType>();}
+  const SizeType size = t1.size();
+
+  std::vector<SizeType> permutation_vector(size);
+  for (SizeType i = 0; i < size; ++i)
+  {
+    bool found = false;
+    for (SizeType j = 0; j < size; ++j)
+    {
+      if (t1[i] == t2[j])
+      {
+        permutation_vector[i] = j;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {return std::vector<SizeType>();}
+  }
+
+  return permutation_vector;
+}
+
 } // namespace
 
 /**
@@ -152,6 +185,12 @@ findPoint(const trajectory_msgs::JointTrajectory& msg,
  * \param time Time from which data is to be extracted. All trajectory points in \p msg occurring \b after
  * \p time <b>will be extracted</b>; or put otherwise, all points occurring at a time <b>less or equal</b> than \p time
  * <b>will be discarded</b>. Set this value to zero to process all points in \p msg.
+ * \param joint_names Joints expected to be found in \p msg. If specified, this function will return an empty trajectory
+ * when \p msg contains joints that differ in number or names to \p joint_names. If \p msg contains the same joints as
+ * \p  joint_names, but in a different order, the resulting trajectory will be ordered according to \p joint_names
+ * (and not \p msg). Finally, if this parameter is unspecified (empty), no checks will be performed against expected
+ * joints, and the resulting trajectory will preserve the joint ordering of \p msg.
+ *
  * \return Trajectory container.
  *
  * \tparam Trajectory Trajectory type. Should be a \e sequence container \e sorted by segment start time.
@@ -162,22 +201,38 @@ findPoint(const trajectory_msgs::JointTrajectory& msg,
  * \code
  * Segment(const ros::Time&                             traj_start_time,
  *         const trajectory_msgs::JointTrajectoryPoint& start_point,
- *         const trajectory_msgs::JointTrajectoryPoint& end_point)
+ *         const trajectory_msgs::JointTrajectoryPoint& end_point,
+ *         const Segment::Options&                      options)
  * \endcode
  *
  * \note This function does not throw any exceptions by itself, but the segment constructor might.
  * In such a case, this method should be wrapped inside a \p try block.
  */
 template <class Trajectory>
-Trajectory init(const trajectory_msgs::JointTrajectory& msg, const ros::Time& time)
+Trajectory init(const trajectory_msgs::JointTrajectory& msg,
+                const ros::Time&                        time,
+                const std::vector<std::string>&         joint_names = std::vector<std::string>())
 {
   typedef typename Trajectory::value_type Segment;
   typedef std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator MsgPointConstIterator;
 
+  // Empty trajectory
   if (msg.points.empty())
   {
-    ROS_DEBUG("Message contains empty trajectory. Nothing to convert");
-    return Trajectory(); // Empty trajectory
+    ROS_DEBUG("Trajectory message contains empty trajectory. Nothing to convert.");
+    return Trajectory();
+  }
+
+  // Permutation vector mapping message joint order to expected one. If unspecified, a trivial map (no permutation)
+  // is computed
+  typedef std::vector<std::string>::size_type SizeType;
+  std::vector<SizeType> permutation_vector = joint_names.empty() ?
+                                             internal::permutation(msg.joint_names, msg.joint_names) : // Trivial map
+                                             internal::permutation(joint_names,     msg.joint_names);
+  if (permutation_vector.empty())
+  {
+    ROS_ERROR_STREAM("Cannot create trajectory from message. It does not contain the expected joints.");
+    return Trajectory();
   }
 
   // Find first trajectory point occurring after current time
@@ -208,7 +263,9 @@ Trajectory init(const trajectory_msgs::JointTrajectory& msg, const ros::Time& ti
   while (std::distance(it, msg.points.end()) >= 2)
   {
     MsgPointConstIterator next_it = it; ++next_it;
-    Segment segment(msg_start_time, *it, *next_it);
+    typename Segment::Options options;
+    options.permutation = permutation_vector;
+    Segment segment(msg_start_time, *it, *next_it, options);
     trajectory.push_back(segment);
     ++it;
   }

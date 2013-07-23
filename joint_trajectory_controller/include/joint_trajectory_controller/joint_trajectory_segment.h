@@ -31,6 +31,7 @@
 #define TRAJECTORY_INTERFACE_JOINT_TRAJECTORY_SEGMENT_H
 
 #include <stdexcept>
+#include <vector>
 
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 
@@ -40,6 +41,7 @@
 
 namespace trajectory_interface
 {
+
 /**
  * \brief Class representing a multi-dimensional quintic spline segment with a start and end time.
  *
@@ -51,6 +53,35 @@ class JointTrajectorySegment : public MultiDofSegment<QuinticSplineSegment<Scala
 public:
   typedef typename MultiDofSegment<QuinticSplineSegment<Scalar> >::Time  Time;
   typedef typename MultiDofSegment<QuinticSplineSegment<Scalar> >::State State;
+
+  struct Options
+  {
+    Options()
+      : permutation(std::vector<unsigned int>()),
+        is_continuous(std::vector<bool>())
+    {}
+
+    /**
+     * \brief Permutation vector for mapping the joint order of a \p trajectory_msgs::JointTrajectoryPoint
+     * to a desired order.
+     *
+     * For instance, if a trajectory point message contains data associated to joints <tt>"{B, A, C}"</tt>, and we are
+     * interested in constructing a segment with joints ordered as <tt>"{A, B, C}"</tt>, the permutation vector should
+     * be set to <tt>"{1, 0, 2}"</tt>.
+     *
+     * \note If unspecified (empty), the joint order of the \p trajectory_msgs::JointTrajectoryPoint instances is
+     * preserved. If specified, its size must coincide with the number of joints contained in the segment.
+     */
+    std::vector<std::vector<std::string>::size_type> permutation;
+
+    /**
+     * \brief Specifies which joints are continuous (ie. wrap around). Elements set to true correspond to continuous
+     * joints.
+     *
+     * \note If unspecified (empty), all joints are assumed to be non-continuous.
+     */
+    std::vector<bool> is_continuous;
+  };
 
   /**
    * \brief Construct segment from start and end states (boundary conditions).
@@ -71,17 +102,18 @@ public:
   /**
    * \brief Construct a segment from start and end points (boundary conditions) specified in ROS message format.
    *
-   *
    * \param traj_start_time Time at which the trajectory containing the segment starts. Note that this is \e not the
    * segment start time.
    * \param start_point Start state in ROS message format.
    * \param end_point End state in ROS message format.
+   * \param options Options that determine how the segment will be constructed.
    *
    * \throw std::invalid_argument If input parameters are inconsistent and a valid segment can't be constructed.
    */
   JointTrajectorySegment(const ros::Time&                             traj_start_time,
                          const trajectory_msgs::JointTrajectoryPoint& start_point,
-                         const trajectory_msgs::JointTrajectoryPoint& end_point)
+                         const trajectory_msgs::JointTrajectoryPoint& end_point,
+                         const Options&                               options = Options())
   {
     using std::invalid_argument;
 
@@ -94,7 +126,9 @@ public:
     {
       throw(invalid_argument("Can't construct segment from ROS message: Start/end points data size mismatch."));
     }
+
     const unsigned int joint_dim = start_point.positions.size();
+
     if (!isValid(start_point, joint_dim))
     {
       throw(invalid_argument("Can't construct segment from ROS message: "
@@ -105,6 +139,27 @@ public:
       throw(invalid_argument("Can't construct segment from ROS message: "
                              "End point has a size mismatch in position, velocity or acceleration data."));
     }
+    if (!options.permutation.empty() && joint_dim != options.permutation.size())
+    {
+      throw(invalid_argument("Can't construct segment from ROS message: "
+                             "Permutation vector has incorrect size."));
+    }
+    for (unsigned int i = 0; i < options.permutation.size(); ++i)
+    {
+      if (options.permutation[i] >= joint_dim)
+      {
+        throw(invalid_argument("Can't construct segment from ROS message: "
+                               "Permutation vector contains out-of-range indices."));
+      }
+    }
+    if (!options.is_continuous.empty() && joint_dim != options.is_continuous.size())
+    {
+      throw(invalid_argument("Can't construct segment from ROS message: "
+                             "Vector specifying whether joints are continuous has incorrect size."));
+    }
+
+    // If unspecified,joints are assumed to be non-continuous
+//    if (options.is_continuous.empty()) {options.is_continuous.resize(joint_dim, false);}
 
     // Construct start and end time/state from message data
     const bool has_velocity     = !start_point.velocities.empty() && !end_point.velocities.empty();
@@ -116,9 +171,9 @@ public:
     const typename MultiDofSegment::Time start_time = (traj_start_time + start_point.time_from_start).toSec();
     const typename MultiDofSegment::Time end_time   = (traj_start_time + end_point.time_from_start).toSec();
 
-    std::vector<typename SingleDofSegment::State> multi_dof_start_state;
-    std::vector<typename SingleDofSegment::State> multi_dof_end_state;
-    for (unsigned int i = 0; i < start_point.positions.size(); ++i)
+    std::vector<typename SingleDofSegment::State> multi_dof_start_state(joint_dim);
+    std::vector<typename SingleDofSegment::State> multi_dof_end_state(joint_dim);
+    for (unsigned int i = 0; i < joint_dim; ++i)
     {
       typename SingleDofSegment::State start_state;
       typename SingleDofSegment::State end_state;
@@ -131,8 +186,11 @@ public:
       if (has_velocity)     {end_state.velocity     = end_point.velocities[i];}
       if (has_acceleration) {end_state.acceleration = end_point.accelerations[i];}
 
-      multi_dof_start_state.push_back(start_state);
-      multi_dof_end_state.push_back(end_state);
+      //Apply permutation only if it was specified, otherwise preserve original message order
+      const unsigned int id = options.permutation.empty() ? i : options.permutation[i];
+
+      multi_dof_start_state[id] = start_state;
+      multi_dof_end_state[id]   = end_state;
     }
 
     this->init(start_time, multi_dof_start_state,

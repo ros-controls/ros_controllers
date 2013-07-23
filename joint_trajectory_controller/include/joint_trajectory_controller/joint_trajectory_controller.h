@@ -88,6 +88,7 @@ private:
   RealtimeGoalHandlePtr                        rt_active_goal_;
   realtime_tools::RealtimeBuffer<Trajectory>   trajectory_;
   typename Segment::State                      state_; ///< Workspace variable preallocated to the appripriate size
+  std::vector<std::string>                     joint_names_;
 
   ros::Time     time_;   ///< Time of last update cycle
   ros::Duration period_; ///< Period of last update cycle

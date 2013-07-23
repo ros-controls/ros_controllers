@@ -107,6 +107,24 @@ TEST_F(JointTrajectorySegmentTest, InvalidSegmentConstruction)
     try {Segment(traj_start_time, p_start, p_end_bad);}
     catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
   }
+
+  // Invalid permutation vector size
+  {
+    typename Segment::Options options;
+    options.permutation.resize(2, 1);
+    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, options), std::invalid_argument);
+    try {Segment(traj_start_time, p_start, p_end, options);}
+    catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
+  }
+
+  // Invalid permutation vector indices
+  {
+    typename Segment::Options options;
+    options.permutation.resize(1, 1);
+    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, options), std::invalid_argument);
+    try {Segment(traj_start_time, p_start, p_end, options);}
+    catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
+  }
 }
 
 TEST_F(JointTrajectorySegmentTest, ValidSegmentConstructionRos)
@@ -168,6 +186,68 @@ TEST_F(JointTrajectorySegmentTest, ValidSegmentConstruction)
     segment.sample(segment.endTime(), state);
     EXPECT_EQ(p_end.positions.front(),  state.front().position);
     EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
+  }
+}
+
+
+TEST_F(JointTrajectorySegmentTest, PermutationTest)
+{
+  // Add an extra joint to the trajectory point messages created in the fixture
+  p_start.positions.push_back(-p_start.positions.front());
+  p_start.velocities.push_back(-p_start.velocities.front());
+
+  p_end.positions.push_back(-p_end.positions.front());
+  p_end.velocities.push_back(-p_end.velocities.front());
+
+  // No permutation vector
+  {
+    // Construct segment from ROS message
+    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end));
+    Segment segment(traj_start_time, p_start, p_end);
+
+    // Check position values of start state only
+    typename Segment::State state;
+    segment.sample(segment.startTime(), state);
+    EXPECT_EQ(p_start.positions[0], state[0].position);
+    EXPECT_EQ(p_start.positions[1], state[1].position);
+  }
+
+  // Permutation vector preserving trajectory message joint order
+  {
+    typename Segment::Options options;
+    options.permutation.resize(2);
+    options.permutation[0] = 0;
+    options.permutation[1] = 1;
+
+    // Construct segment from ROS message
+    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, options));
+    Segment segment(traj_start_time, p_start, p_end, options);
+
+    // Check position values of start state only
+    typename Segment::State state;
+    segment.sample(segment.startTime(), state);
+    EXPECT_EQ(p_start.positions[0], state[0].position);
+    EXPECT_EQ(p_start.positions[1], state[1].position);
+  }
+
+  // Permutation vector reversing trajectory message joint order
+  {
+    typename Segment::Options options;
+    options.permutation.resize(2);
+    options.permutation[0] = 1;
+    options.permutation[1] = 0;
+
+    // Construct segment from ROS message
+    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, options));
+    Segment segment(traj_start_time, p_start, p_end, options);
+
+    // Check position values of start state only
+    typename Segment::State state;
+    segment.sample(segment.startTime(), state);
+    EXPECT_NE(p_start.positions[0], state[0].position);
+    EXPECT_NE(p_start.positions[1], state[1].position);
+    EXPECT_EQ(p_start.positions[0], state[1].position);
+    EXPECT_EQ(p_start.positions[1], state[0].position);
   }
 }
 

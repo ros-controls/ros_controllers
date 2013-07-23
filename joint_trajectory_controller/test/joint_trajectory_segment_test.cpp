@@ -50,12 +50,25 @@ public:
     p_end.positions.resize(1, 4.0);
     p_end.velocities.resize(1, -2.0);
     p_end.time_from_start = ros::Duration(2.0);
+
+    start_time = (traj_start_time + p_start.time_from_start).toSec();
+    start_state.resize(1);
+    start_state.front().position = p_start.positions.front();
+    start_state.front().velocity = p_start.velocities.front();
+
+    end_time = (traj_start_time + p_end.time_from_start).toSec();
+    end_state.resize(1);
+    end_state.front().position = p_end.positions.front();
+    end_state.front().velocity = p_end.velocities.front();
   }
 
 protected:
   ros::Time traj_start_time;
   JointTrajectoryPoint p_start;
   JointTrajectoryPoint p_end;
+
+  typename Segment::Time start_time, end_time;
+  typename Segment::State start_state, end_state;
 };
 
 TEST_F(JointTrajectorySegmentTest, InvalidSegmentConstruction)
@@ -96,11 +109,42 @@ TEST_F(JointTrajectorySegmentTest, InvalidSegmentConstruction)
   }
 }
 
-TEST_F(JointTrajectorySegmentTest, ValidSegmentConstruction)
+TEST_F(JointTrajectorySegmentTest, ValidSegmentConstructionRos)
 {
-  // Construct segment
+  // Construct segment from ROS message
   EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end));
   Segment segment(traj_start_time, p_start, p_end);
+
+  // Check start/end times
+  {
+    const typename Segment::Time start_time = (traj_start_time + p_start.time_from_start).toSec();
+    const typename Segment::Time end_time   = (traj_start_time + p_end.time_from_start).toSec();
+    EXPECT_EQ(start_time, segment.startTime());
+    EXPECT_EQ(end_time,   segment.endTime());
+  }
+
+  // Check start state
+  {
+    typename Segment::State state;
+    segment.sample(segment.startTime(), state);
+    EXPECT_EQ(p_start.positions.front(),  state.front().position);
+    EXPECT_EQ(p_start.velocities.front(), state.front().velocity);
+  }
+
+  // Check end state
+  {
+    typename Segment::State state;
+    segment.sample(segment.endTime(), state);
+    EXPECT_EQ(p_end.positions.front(),  state.front().position);
+    EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
+  }
+}
+
+TEST_F(JointTrajectorySegmentTest, ValidSegmentConstruction)
+{
+  // Construct segment from ROS message
+  EXPECT_NO_THROW(Segment(start_time,start_state, end_time, end_state));
+  Segment segment(start_time,start_state, end_time, end_state);
 
   // Check start/end times
   {

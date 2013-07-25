@@ -82,24 +82,19 @@ inline std::vector<typename T::size_type> permutation(const T& t1, const T& t2)
 
   // Arguments must have the same size
   if (t1.size() != t2.size()) {return std::vector<SizeType>();}
-  const SizeType size = t1.size();
 
-  std::vector<SizeType> permutation_vector(size);
-  for (SizeType t1_it = 0; t1_it < size; ++t1_it)
+  std::vector<SizeType> permutation_vector(t1.size()); // Return value
+  for (typename T::const_iterator t1_it = t1.begin(); t1_it != t1.end(); ++t1_it)
   {
-    bool found = false;
-    for (SizeType t2_it = 0; t2_it < size; ++t2_it)
+    typename T::const_iterator t2_it = std::find(t2.begin(), t2.end(), *t1_it);
+    if (t2.end() == t2_it) {return std::vector<SizeType>();}
+    else
     {
-      if (t1[t1_it] == t2[t2_it])
-      {
-        permutation_vector[t1_it] = t2_it;
-        found = true;
-        break;
-      }
+      const typename T::size_type t1_dist = std::distance(t1.begin(), t1_it);
+      const typename T::size_type t2_dist = std::distance(t2.begin(), t2_it);
+      permutation_vector[t1_dist] = t2_dist;
     }
-    if (!found) {return std::vector<SizeType>();}
   }
-
   return permutation_vector;
 }
 

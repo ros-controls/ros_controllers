@@ -70,21 +70,24 @@ TEST(StartTimeTest, StartTime)
 
 TEST(PermutationTest, Permutation)
 {
-  vector<string> t1(3);
+  vector<string> t1(4);
   t1[0] = "A";
   t1[1] = "B";
   t1[2] = "C";
+  t1[3] = "D";
 
-  vector<string> t2(3);
+  vector<string> t2(4);
   t2[0] = "B";
-  t2[1] = "A";
-  t2[2] = "C";
+  t2[1] = "D";
+  t2[2] = "A";
+  t2[3] = "C";
 
   typedef vector<vector<string>::size_type> PermutationType;
-  PermutationType ground_truth(3);
-  ground_truth[0] = 1;
+  PermutationType ground_truth(4);
+  ground_truth[0] = 2;
   ground_truth[1] = 0;
-  ground_truth[2] = 2;
+  ground_truth[2] = 3;
+  ground_truth[3] = 1;
 
   // Mismatching sizes: Return empty permutation vector
   {
@@ -107,6 +110,17 @@ TEST(PermutationTest, Permutation)
     EXPECT_EQ(ground_truth[0], perm[0]);
     EXPECT_EQ(ground_truth[1], perm[1]);
     EXPECT_EQ(ground_truth[2], perm[2]);
+    EXPECT_EQ(ground_truth[3], perm[3]);
+  }
+
+  // Valid parameters, inverse parameter order yields inverse permutation vector
+  {
+    PermutationType perm = internal::permutation(t2, t1);
+    EXPECT_EQ(ground_truth.size(), perm.size());
+    EXPECT_EQ(ground_truth[3], perm[0]);
+    EXPECT_EQ(ground_truth[2], perm[1]);
+    EXPECT_EQ(ground_truth[1], perm[2]);
+    EXPECT_EQ(ground_truth[0], perm[3]);
   }
 }
 

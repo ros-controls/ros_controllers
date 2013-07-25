@@ -215,6 +215,36 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
 
 void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
 {
+  // Input:
+  // - Currently followed trajectory
+  // - Trajectory message
+  // - Joint names in the same order as the currently followed trajectory
+  // - Vector specifying whether which joints are continuous.
+  //
+  // Output:
+  // - New trajectory to follow containing useful parts of currently followed one + message. Empty if something's amiss.
+  //
+  // Acronyms:
+  // - SI: Segment implementation independent. Only leverages common segment API.
+  // - SD: Segment implementation dependent. Requires knowledge of the segment implementation.
+  //
+  // Algorithm:
+  // - SI: Compute permutation vector mapping message joint order to current trajectory order.
+  //
+  // - SI: Get useful segments of current trajectory.
+  // - SI: Get last useful (time, state) of current trajectory.
+  //
+  // - SD: Get first useful state of new trajectory taking into account the permutation vector.
+  // - SI: Compute wrapping offset vector (affects only continuous joints).
+  // - SD: Convert useful segments of trajectory message taking into account the permutation vector and wrapping offsets.
+  // - SI: Append useful segments of new trajectory to useful segments of current trajectory.
+  //
+  // SD functionality to implement:
+  // - Construct state from trajectory point message, and optionally permutation vector and wrapping offsets (3 params).
+  // - Construct segment from trajectory start time, start/end trajectory points, and optionally permutation vector and
+  //   wrapping offsets (5 params).
+
+
   // Preconditions
   if (!msg)
   {
@@ -237,7 +267,10 @@ void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryCo
   }
 
   // New trajectory: Get segments of trajectory message that start after the current time
-  Trajectory new_traj = trajectory_interface::init<Trajectory>(*msg, curr_time, joint_names_); // TODO: Add tolerances
+  Trajectory new_traj = trajectory_interface::init<Trajectory>(*msg,
+                                                               curr_time,
+                                                               joint_names_ ,
+                                                               is_continuous_joint_);
   if (new_traj.empty()) {return;} // Nothing to do, keep executing current trajectory
 
   // Current trajectory

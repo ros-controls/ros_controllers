@@ -110,19 +110,26 @@ TEST_F(JointTrajectorySegmentTest, InvalidSegmentConstruction)
 
   // Invalid permutation vector size
   {
-    typename Segment::Options options;
-    options.permutation.resize(2, 1);
-    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, options), std::invalid_argument);
-    try {Segment(traj_start_time, p_start, p_end, options);}
+    std::vector<unsigned int> permutation(2, 1);
+    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, permutation), std::invalid_argument);
+    try {Segment(traj_start_time, p_start, p_end, permutation);}
     catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
   }
 
   // Invalid permutation vector indices
   {
-    typename Segment::Options options;
-    options.permutation.resize(1, 1);
-    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, options), std::invalid_argument);
-    try {Segment(traj_start_time, p_start, p_end, options);}
+    std::vector<unsigned int> permutation(1, 1);
+    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, permutation), std::invalid_argument);
+    try {Segment(traj_start_time, p_start, p_end, permutation);}
+    catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
+  }
+
+  // Invalid joint wraparound specification
+  {
+    std::vector<unsigned int> permutation;
+    std::vector<double> pos_offset(2);
+    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, permutation, pos_offset), std::invalid_argument);
+    try {Segment(traj_start_time, p_start, p_end, permutation, pos_offset);}
     catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
   }
 }
@@ -214,14 +221,13 @@ TEST_F(JointTrajectorySegmentTest, PermutationTest)
 
   // Permutation vector preserving trajectory message joint order
   {
-    typename Segment::Options options;
-    options.permutation.resize(2);
-    options.permutation[0] = 0;
-    options.permutation[1] = 1;
+    std::vector<unsigned int> permutation(2);
+    permutation[0] = 0;
+    permutation[1] = 1;
 
     // Construct segment from ROS message
-    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, options));
-    Segment segment(traj_start_time, p_start, p_end, options);
+    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, permutation));
+    Segment segment(traj_start_time, p_start, p_end, permutation);
 
     // Check position values of start state only
     typename Segment::State state;
@@ -232,14 +238,13 @@ TEST_F(JointTrajectorySegmentTest, PermutationTest)
 
   // Permutation vector reversing trajectory message joint order
   {
-    typename Segment::Options options;
-    options.permutation.resize(2);
-    options.permutation[0] = 1;
-    options.permutation[1] = 0;
+    std::vector<unsigned int> permutation(2);
+    permutation[0] = 1;
+    permutation[1] = 0;
 
     // Construct segment from ROS message
-    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, options));
-    Segment segment(traj_start_time, p_start, p_end, options);
+    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, permutation));
+    Segment segment(traj_start_time, p_start, p_end, permutation);
 
     // Check position values of start state only
     typename Segment::State state;

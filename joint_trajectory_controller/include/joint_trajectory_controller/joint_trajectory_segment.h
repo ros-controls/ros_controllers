@@ -159,7 +159,7 @@ public:
   {
     if (start_point.positions.size() != end_point.positions.size())
     {
-      throw(std::invalid_argument("Can't construct trajectory segment from ROS message:"
+      throw(std::invalid_argument("Can't construct segment from ROS message: "
                                   "Start/end points data size mismatch."));
     }
 
@@ -176,7 +176,7 @@ public:
     }
     catch(const std::invalid_argument& ex)
     {
-      std::string msg = "Can't construct trajectory segment from ROS message: " + std::string(ex.what());
+      std::string msg = "Can't construct segment from ROS message: " + std::string(ex.what());
       throw(std::invalid_argument(msg));
     }
   }

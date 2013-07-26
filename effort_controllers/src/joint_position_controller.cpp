@@ -210,12 +210,10 @@ void JointPositionController::enforceJointLimits(double &command)
     if( command > joint_urdf_->limits->upper ) // above upper limnit
     {
       command = joint_urdf_->limits->upper;
-      ROS_WARN_STREAM_NAMED("temp","Command value is greater than upper limit");
     }
     else if( command < joint_urdf_->limits->lower ) // below lower limit
     {
       command = joint_urdf_->limits->lower;
-      ROS_WARN_STREAM_NAMED("temp","Command value is less than lower limit");
     }
   }
 }

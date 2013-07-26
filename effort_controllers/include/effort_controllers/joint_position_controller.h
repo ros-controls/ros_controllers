@@ -151,6 +151,13 @@ private:
    */
   void setCommandCB(const std_msgs::Float64ConstPtr& msg);
 
+  /**
+   * \brief Check that the command is within the hard limits of the joint. Checks for joint
+   *        type first. Sets command to limit if out of bounds.
+   * \param command - the input to test
+   */
+  void enforceJointLimits(double &command);
+
 };
 
 } // namespace

@@ -39,7 +39,7 @@ namespace joint_state_controller
 
   bool JointStateController::init(hardware_interface::JointStateInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle& controller_nh)
   {
-    // get all joint states from the hardware interface
+    // get all joint names from the hardware interface
     const std::vector<std::string>& joint_names = hw->getNames();
     for (unsigned i=0; i<joint_names.size(); i++)
       ROS_DEBUG("Got joint %s", joint_names[i].c_str());
@@ -78,17 +78,17 @@ namespace joint_state_controller
 
       // try to publish
       if (realtime_pub_->trylock()){
-  // we're actually publishing, so increment time
-  last_publish_time_ = last_publish_time_ + ros::Duration(1.0/publish_rate_);
+        // we're actually publishing, so increment time
+        last_publish_time_ = last_publish_time_ + ros::Duration(1.0/publish_rate_);
 
-  // populate joint state message
-  realtime_pub_->msg_.header.stamp = time;
-  for (unsigned i=0; i<joint_state_.size(); i++){
-    realtime_pub_->msg_.position[i] = joint_state_[i].getPosition();
-    realtime_pub_->msg_.velocity[i] = joint_state_[i].getVelocity();
-    realtime_pub_->msg_.effort[i] = joint_state_[i].getEffort();
-  }
-  realtime_pub_->unlockAndPublish();
+        // populate joint state message
+        realtime_pub_->msg_.header.stamp = time;
+        for (unsigned i=0; i<joint_state_.size(); i++){
+          realtime_pub_->msg_.position[i] = joint_state_[i].getPosition();
+          realtime_pub_->msg_.velocity[i] = joint_state_[i].getVelocity();
+          realtime_pub_->msg_.effort[i] = joint_state_[i].getEffort();
+        }
+        realtime_pub_->unlockAndPublish();
       }
     }
   }

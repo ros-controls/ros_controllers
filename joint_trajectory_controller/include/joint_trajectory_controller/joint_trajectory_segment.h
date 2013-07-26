@@ -30,10 +30,14 @@
 #ifndef TRAJECTORY_INTERFACE_JOINT_TRAJECTORY_SEGMENT_H
 #define TRAJECTORY_INTERFACE_JOINT_TRAJECTORY_SEGMENT_H
 
+#include <cassert>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #include <trajectory_msgs/JointTrajectoryPoint.h>
+
+#include <angles/angles.h>
 
 #include <trajectory_interface/quintic_spline_segment.h> // TODO: Remove?
 #include <trajectory_interface/multi_dof_segment.h>
@@ -56,6 +60,7 @@ public:
   struct State : public MultiDofSegment<QuinticSplineSegment<Scalar> >::State // NOTE: Inheriting from std::vector, not particularly nice!
   {
     State() : MultiDofSegment<QuinticSplineSegment<Scalar> >::State() {}
+    State(unsigned int size) : MultiDofSegment<QuinticSplineSegment<Scalar> >::State(size) {} // TODO: Remove!
 
     /**
      * \param point Trajectory point.
@@ -66,8 +71,8 @@ public:
      * be set to <tt>"{2, 0, 3, 1}"</tt>.
      * If unspecified (empty), the joint order of \p point is preserved; if specified, its size must coincide with that
      * of \p point.
-     * This vector can be computed using the \ref trajectory_interface::permutation()
-     * "trajectory_interface::permutation" utility function.
+     * This vector can be computed using the \ref trajectory_interface::internal::permutation()
+     * "permutation" utility function.
      *
      * \param position_offset Position offset to applpy to the data in \p point. This parameter is useful for handling
      * joints that wrap around (ie. continuous), to compensate for multi-turn offsets.
@@ -181,6 +186,32 @@ public:
     }
   }
 };
+
+// TODO: Not double, but scalar!
+// TODO: Make a State member? not really...
+template <class Scalar>
+std::vector<double> wraparoundOffset(const typename JointTrajectorySegment<Scalar>::State&    prev_state,
+                                     const typename JointTrajectorySegment<Scalar>::State&    next_state,
+                                     const std::vector<bool>&                                 is_continuous_joint)
+{
+  // Preconditions
+  const unsigned int n_joints = is_continuous_joint.size();
+  assert(n_joints == prev_state.size());
+  assert(n_joints == next_state.size());
+
+  // Return value
+  std::vector<double> pos_offset(n_joints, 0.0);
+
+  for (unsigned int i = 0; i < is_continuous_joint.size(); ++i)
+  {
+    if (is_continuous_joint[i])
+    {
+      const double dist = angles::shortest_angular_distance(prev_state[i].position, next_state[i].position);
+      pos_offset[i] = (prev_state[i].position + dist) - next_state[i].position;
+    }
+  }
+  return pos_offset;
+}
 
 } // namespace
 

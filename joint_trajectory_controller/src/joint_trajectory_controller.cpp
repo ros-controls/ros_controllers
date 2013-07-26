@@ -27,8 +27,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 // C++ standard
-#include <algorithm> // TODO: Remove?
 #include <cassert>
+#include <iterator>
 #include <string>
 
 #include <urdf/model.h>
@@ -36,7 +36,7 @@
 // Project
 #include <joint_trajectory_controller/joint_trajectory_controller.h>
 #include <trajectory_interface/trajectory_interface.h>
-#include <joint_trajectory_controller/trajectory_interface_ros.h>
+#include <joint_trajectory_controller/init_joint_trajectory.h>
 
 namespace
 {
@@ -199,11 +199,15 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
 
   // Sample trajectory at current time
   Trajectory& curr_traj = *(trajectory_.readFromRT());
-  if (curr_traj.end() == sample(curr_traj, time.toSec(), state_)) // TODO: Se if we can test tolerances by using a weak_ptr trick
+  typename Trajectory::const_iterator segment_it = sample(curr_traj, time.toSec(), state_);
+  if (curr_traj.end() == segment_it)
   {
     ROS_ERROR_STREAM("Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
     return;
   }
+
+  // Use this to get the joint tolerances to check, once we implement them:
+  // tolerances_it = std::advance(tolerances.begin(), std::distance(curr_traj.begin(), segment_it));
 
   // Send commands
   for (unsigned int i = 0; i < joints_.size(); ++i)
@@ -215,36 +219,6 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
 
 void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
 {
-  // Input:
-  // - Currently followed trajectory
-  // - Trajectory message
-  // - Joint names in the same order as the currently followed trajectory
-  // - Vector specifying whether which joints are continuous.
-  //
-  // Output:
-  // - New trajectory to follow containing useful parts of currently followed one + message. Empty if something's amiss.
-  //
-  // Acronyms:
-  // - SI: Segment implementation independent. Only leverages common segment API.
-  // - SD: Segment implementation dependent. Requires knowledge of the segment implementation.
-  //
-  // Algorithm:
-  // - SI: Compute permutation vector mapping message joint order to current trajectory order.
-  //
-  // - SI: Get useful segments of current trajectory.
-  // - SI: Get last useful (time, state) of current trajectory.
-  //
-  // - SD: Get first useful state of new trajectory taking into account the permutation vector.
-  // - SI: Compute wrapping offset vector (affects only continuous joints).
-  // - SD: Convert useful segments of trajectory message taking into account the permutation vector and wrapping offsets.
-  // - SI: Append useful segments of new trajectory to useful segments of current trajectory.
-  //
-  // SD functionality to implement:
-  // - Construct state from trajectory point message, and optionally permutation vector and wrapping offsets (3 params).
-  // - Construct segment from trajectory start time, start/end trajectory points, and optionally permutation vector and
-  //   wrapping offsets (5 params).
-
-
   // Preconditions
   if (!msg)
   {
@@ -253,56 +227,17 @@ void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryCo
   }
 
   // Useful time variables
-  const typename Segment::Time msg_start_time = msg->header.stamp.toSec(); // Message start time
   const ros::Time curr_time = time_ + period_; // Period added because data will get processed at the next update
 
-  ROS_DEBUG_STREAM("Figuring out new trajectory at " << curr_time.toSec() << ", with data from " << msg_start_time);
-
-  // Hold current position if trajectory is empty
-  if (msg->points.empty())
-  {
-    ROS_DEBUG("Empty trajectory command, stopping.");
-    starting(curr_time); // TODO: Separate hold trajectory method
-    return;
-  }
-
-  // New trajectory: Get segments of trajectory message that start after the current time
-  Trajectory new_traj = trajectory_interface::init<Trajectory>(*msg,
-                                                               curr_time,
-                                                               joint_names_ ,
-                                                               is_continuous_joint_);
-  if (new_traj.empty()) {return;} // Nothing to do, keep executing current trajectory
-
-  // Current trajectory
-  Trajectory& curr_traj = *(trajectory_.readFromRT());
-  typedef typename Trajectory::iterator TrajIter;
-  TrajIter first = findSegment(curr_traj, curr_time.toSec()); // Currently active segment
-  TrajIter last  = findSegment(curr_traj, msg_start_time);    // Segment active when new trajectory starts
-  if (first == curr_traj.end() || last == curr_traj.end())
-  {
-    ROS_ERROR("Unexpected error: Could not find segments in current trajectory. Please contact the package maintainer.");
-    return;
-  }
-  ++last; // Range [first,last) of current trajectory will still be executed
-
-  // Segment bridging current and new trajectories
-  const typename Segment::Time start_time = std::max(msg_start_time, curr_time.toSec()); // Important!
-  const typename Segment::Time end_time   = new_traj.begin()->startTime();
-  using trajectory_interface::sample;
-  typename Segment::State start_state, end_state;
-  sample(curr_traj, start_time, start_state); // Start: Sample current trajectory at the message start time
-  sample(new_traj,  end_time,   end_state);   // End:   Sample first point of new trajectory
-  Segment bridge_seg(start_time, start_state,
-                     end_time,   end_state);
-
-  // Combine current and new trajectories
-  Trajectory combined_traj;
-  combined_traj.insert(combined_traj.begin(), first, last); // Add parts of current trajectory still to be executed
-  combined_traj.push_back(bridge_seg);                      // Add segment bridging current and new trajectories
-  combined_traj.insert(combined_traj.end(), new_traj.begin(), new_traj.end()); // Add new trajectory
+  const Trajectory& curr_traj = *(trajectory_.readFromRT());
+  Trajectory new_traj = trajectory_interface::initJointTrajectory<Trajectory>(*msg,
+                                                                              curr_time,
+                                                                              curr_traj,
+                                                                              joint_names_ ,
+                                                                              is_continuous_joint_);
 
   // Update currently executing trajectory
-  trajectory_.writeFromNonRT(combined_traj);
+  trajectory_.writeFromNonRT(new_traj);
 }
 
 void JointTrajectoryController::goalCB(GoalHandle gh)

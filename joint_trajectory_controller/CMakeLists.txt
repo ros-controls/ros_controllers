@@ -22,6 +22,7 @@ if(USE_ROSBUILD)
   rosbuild_add_gtest(trajectory_interface_test     test/trajectory_interface_test.cpp)
   rosbuild_add_gtest(trajectory_interface_ros_test test/trajectory_interface_ros_test.cpp)
   rosbuild_add_gtest(joint_trajectory_segment_test test/joint_trajectory_segment_test.cpp)
+  rosbuild_add_gtest(init_joint_trajectory_test    test/init_joint_trajectory_test.cpp)
 
   # TODO: why is it explicitly needed???, without it the linker fails.
   target_link_libraries(quintic_spline_segment_test   pthread)
@@ -29,6 +30,7 @@ if(USE_ROSBUILD)
   target_link_libraries(trajectory_interface_test     pthread)
   target_link_libraries(trajectory_interface_ros_test pthread)
   target_link_libraries(joint_trajectory_segment_test pthread)
+  target_link_libraries(init_joint_trajectory_test    pthread)
 else()
   # TODO
 

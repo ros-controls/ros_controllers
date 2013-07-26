@@ -27,6 +27,7 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
+#include <cmath>
 #include <stdexcept>
 #include <gtest/gtest.h>
 #include <ros/console.h>
@@ -35,7 +36,117 @@
 using namespace trajectory_interface;
 using namespace trajectory_msgs;
 
+// Floating-point value comparison threshold
+const double EPS = 1e-9;
+
 typedef JointTrajectorySegment<double> Segment;
+
+TEST(WraparoundOffsetTest, WrappingPositions)
+{
+  typedef  typename JointTrajectorySegment<double>::State State;
+
+  // Setup with state increments that cause multi-loop wrapping
+  const double half_pi = M_PI / 2.0;
+  const double two_pi  = 2.0 * M_PI;
+
+  State state1(2);
+  state1[0].position =  half_pi / 2.0;
+  state1[1].position =  half_pi / 2.0;
+
+  State state2(2);
+  state2[0].position =  two_pi + half_pi;
+  state2[1].position =  2.0 * two_pi + half_pi;
+
+  // No wrapping joints
+  {
+    std::vector<bool> is_wrapping(2, false);
+    std::vector<double> wrap_offset = wraparoundOffset<double>(state1, state2, is_wrapping);
+    EXPECT_NEAR(state1.size(), wrap_offset.size(), EPS);
+    EXPECT_NEAR(0.0, wrap_offset[0], EPS);
+    EXPECT_NEAR(0.0, wrap_offset[1], EPS);
+  }
+
+  // Single wrapping joint
+  {
+    std::vector<bool> is_wrapping(2);
+    is_wrapping[0] = true;
+    is_wrapping[1] = false;
+
+    // From state1 to state2
+    {
+      std::vector<double> wrap_offset = wraparoundOffset<double>(state1, state2, is_wrapping);
+      EXPECT_NEAR(state1.size(), wrap_offset.size(), EPS);
+      EXPECT_NEAR(-two_pi, wrap_offset[0], EPS);
+      EXPECT_NEAR(0.0, wrap_offset[1], EPS);
+    }
+
+    // From state2 to state1
+    {
+      std::vector<double> wrap_offset = wraparoundOffset<double>(state2, state1, is_wrapping);
+      EXPECT_NEAR(state1.size(), wrap_offset.size(), EPS);
+      EXPECT_NEAR(two_pi, wrap_offset[0], EPS);
+      EXPECT_NEAR(0.0, wrap_offset[1], EPS);
+    }
+  }
+
+  // Both wrapping joints
+  {
+    std::vector<bool> is_wrapping(2, true);
+
+    // From state1 to state2
+    {
+      std::vector<double> wrap_offset = wraparoundOffset<double>(state1, state2, is_wrapping);
+      EXPECT_NEAR(state1.size(), wrap_offset.size(), EPS);
+      EXPECT_NEAR(-two_pi, wrap_offset[0], EPS);
+      EXPECT_NEAR(-2.0 * two_pi, wrap_offset[1], EPS);
+    }
+
+    // From state2 to state1
+    {
+      std::vector<double> wrap_offset = wraparoundOffset<double>(state2, state1, is_wrapping);
+      EXPECT_NEAR(state1.size(), wrap_offset.size(), EPS);
+      EXPECT_NEAR(two_pi, wrap_offset[0], EPS);
+      EXPECT_NEAR(2.0 * two_pi, wrap_offset[1], EPS);
+    }
+  }
+}
+
+TEST(WraparoundOffsetTest, NonWrappingPositions)
+{
+  typedef  typename JointTrajectorySegment<double>::State State;
+
+  // Setup with state increments that don't cause multi-loop wrapping
+  const double half_pi = M_PI / 2.0;
+
+  State state1(2);
+  state1[0].position =  half_pi / 2.0;
+  state1[1].position =  half_pi / 2.0;
+
+  State state2(2);
+  state2[0].position =  0.0;
+  state2[1].position =  2.0 * half_pi;
+
+  // Both wrapping joints
+  {
+    std::vector<bool> is_wrapping(2, true);
+
+    // From state1 to state2
+    {
+      std::vector<double> wrap_offset = wraparoundOffset<double>(state1, state2, is_wrapping);
+      EXPECT_NEAR(state1.size(), wrap_offset.size(), EPS);
+      EXPECT_NEAR(0.0, wrap_offset[0], EPS);
+      EXPECT_NEAR(0.0, wrap_offset[1], EPS);
+    }
+
+    // From state2 to state1
+    {
+      std::vector<double> wrap_offset = wraparoundOffset<double>(state2, state1, is_wrapping);
+      EXPECT_NEAR(state1.size(), wrap_offset.size(), EPS);
+      EXPECT_NEAR(0.0, wrap_offset[0], EPS);
+      EXPECT_NEAR(0.0, wrap_offset[1], EPS);
+    }
+  }
+}
 
 class JointTrajectorySegmentTest : public ::testing::Test
 {
@@ -196,7 +307,7 @@ TEST_F(JointTrajectorySegmentTest, ValidSegmentConstruction)
   }
 }
 
-
+// TODO: Test with dimension four data
 TEST_F(JointTrajectorySegmentTest, PermutationTest)
 {
   // Add an extra joint to the trajectory point messages created in the fixture

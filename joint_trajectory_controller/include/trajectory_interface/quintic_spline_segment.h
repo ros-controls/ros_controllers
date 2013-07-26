@@ -129,6 +129,9 @@ public:
   /** \return Segment end time. */
   Time endTime() const {return start_time_ + duration_;}
 
+  /** \return Segment size (dimension). */
+  unsigned int size() const {return 1;}
+
 protected:
   typedef boost::array<Scalar, 6> SplineCoefficients;
 

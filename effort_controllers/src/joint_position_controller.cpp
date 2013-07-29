@@ -122,9 +122,6 @@ void JointPositionController::setCommand(double cmd)
 
 void JointPositionController::starting(const ros::Time& time)
 {
-  ROS_DEBUG_STREAM_NAMED("joint_position_controller","Starting '" << joint_.getName()
-    << "' controller with initial position " << joint_.getPosition() );
-
   double command = joint_.getPosition();
 
   // Make sure joint is within limits if applicable

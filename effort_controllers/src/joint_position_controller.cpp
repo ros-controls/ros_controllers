@@ -122,7 +122,12 @@ void JointPositionController::setCommand(double cmd)
 
 void JointPositionController::starting(const ros::Time& time)
 {
-  command_.initRT(joint_.getPosition());
+  double command = joint_.getPosition();
+
+  // Make sure joint is within limits if applicable
+  enforceJointLimits(command);
+
+  command_.initRT(command);
   pid_controller_->reset();
 }
 
@@ -132,10 +137,16 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
 
   double error, vel_error;
 
+  double current_position = joint_.getPosition();
+
+  // Make sure joint is within limits if applicable
+  enforceJointLimits(command);
+
   // Compute position error
   if (joint_urdf_->type == urdf::Joint::REVOLUTE)
   {
-    angles::shortest_angular_distance_with_limits(joint_.getPosition(),
+   angles::shortest_angular_distance_with_limits(
+      current_position,
       command,
       joint_urdf_->limits->lower,
       joint_urdf_->limits->upper,
@@ -143,11 +154,11 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   }
   else if (joint_urdf_->type == urdf::Joint::CONTINUOUS)
   {
-    error = angles::shortest_angular_distance(joint_.getPosition(), command);
+    error = angles::shortest_angular_distance(current_position, command);
   }
   else //prismatic
   {
-    error = command - joint_.getPosition();
+    error = command - current_position;
   }
 
   // Compute velocity error assuming desired velocity is 0
@@ -158,7 +169,6 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   double commanded_effort = pid_controller_->computeCommand(error, vel_error, period);
   joint_.setCommand(commanded_effort);
 
-
   // publish state
   if (loop_count_ % 10 == 0)
   {
@@ -166,7 +176,7 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
     {
       controller_state_publisher_->msg_.header.stamp = time;
       controller_state_publisher_->msg_.set_point = command;
-      controller_state_publisher_->msg_.process_value = joint_.getPosition();
+      controller_state_publisher_->msg_.process_value = current_position;
       controller_state_publisher_->msg_.process_value_dot = joint_.getVelocity();
       controller_state_publisher_->msg_.error = error;
       controller_state_publisher_->msg_.time_step = period.toSec();
@@ -187,6 +197,22 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
 void JointPositionController::setCommandCB(const std_msgs::Float64ConstPtr& msg)
 {
   setCommand(msg->data);
+}
+
+void JointPositionController::enforceJointLimits(double &command)
+{
+  // Check that this joint has applicable limits
+  if (joint_urdf_->type == urdf::Joint::REVOLUTE || joint_urdf_->type == urdf::Joint::PRISMATIC)
+  {
+    if( command > joint_urdf_->limits->upper ) // above upper limnit
+    {
+      command = joint_urdf_->limits->upper;
+    }
+    else if( command < joint_urdf_->limits->lower ) // below lower limit
+    {
+      command = joint_urdf_->limits->lower;
+    }
+  }
 }
 
 } // namespace

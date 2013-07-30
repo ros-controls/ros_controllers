@@ -683,6 +683,62 @@ TEST_F(InitTrajectoryTest, WrappingSpec)
   }
 }
 
+// If current trajectory is not specified, but wrapping joints are, then the wrapping spec is ignored
+TEST_F(InitTrajectoryTest, IgnoreWrappingSpec)
+{
+  const ros::Time msg_start_time = trajectory_msg.header.stamp;
+  const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
+
+  // Modify trajectory message created in the fixture to wrap around
+  const double wrap = 4 * M_PI;
+  for (unsigned int i = 0; i < trajectory_msg.points.size(); ++i)
+  {
+    trajectory_msg.points[i].positions[0] += wrap; // Add wrapping value to all points
+  }
+
+  // Before first point: Return 2 segments: Full message
+  const ros::Time time(curr_traj.front().startTime());
+  std::vector<bool> angle_wraparound(1, true);
+  InitJointTrajectoryOptions<Trajectory> options;
+  options.angle_wraparound = &angle_wraparound;
+
+  Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
+  ASSERT_EQ(points.size() - 1, trajectory.size());
+
+  // Check all segment start/end times and states (2 segments)
+  for (unsigned int i = 0; i < trajectory.size(); ++i)
+  {
+    const Segment& segment = trajectory[i];
+    const JointTrajectoryPoint& p_start = msg_points[i];
+    const JointTrajectoryPoint& p_end   = msg_points[i + 1];
+
+    // Check start/end times
+    {
+      const typename Segment::Time start_time = (msg_start_time + p_start.time_from_start).toSec();
+      const typename Segment::Time end_time   = (msg_start_time + p_end.time_from_start).toSec();
+      EXPECT_EQ(start_time, segment.startTime());
+      EXPECT_EQ(end_time,   segment.endTime());
+    }
+
+    // Check start state
+    {
+      typename Segment::State state;
+      segment.sample(segment.startTime(), state);
+      EXPECT_EQ(p_start.positions.front(),  state.front().position);
+      EXPECT_EQ(p_start.velocities.front(), state.front().velocity);
+      EXPECT_EQ(p_start.accelerations.front(), state.front().acceleration);
+    }
+
+    // Check end state
+    {
+      typename Segment::State state;
+      segment.sample(segment.endTime(), state);
+      EXPECT_EQ(p_end.positions.front(),  state.front().position);
+      EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
+      EXPECT_EQ(p_end.accelerations.front(), state.front().acceleration);
+    }
+  }
+}
 
 int main(int argc, char** argv)
 {

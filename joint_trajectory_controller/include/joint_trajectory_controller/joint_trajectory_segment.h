@@ -30,7 +30,6 @@
 #ifndef TRAJECTORY_INTERFACE_JOINT_TRAJECTORY_SEGMENT_H
 #define TRAJECTORY_INTERFACE_JOINT_TRAJECTORY_SEGMENT_H
 
-#include <cassert>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -196,8 +195,7 @@ std::vector<double> wraparoundOffset(const typename JointTrajectorySegment<Scala
 {
   // Preconditions
   const unsigned int n_joints = is_continuous_joint.size();
-  assert(n_joints == prev_state.size());
-  assert(n_joints == next_state.size());
+  if (n_joints != prev_state.size() || n_joints != next_state.size()) {return std::vector<double>();}
 
   // Return value
   std::vector<double> pos_offset(n_joints, 0.0);

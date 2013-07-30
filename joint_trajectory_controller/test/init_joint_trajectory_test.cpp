@@ -102,12 +102,13 @@ TEST(PermutationTest, Permutation)
   }
 }
 
-class TrajectoryInterfaceRosTest : public ::testing::Test
+class InitTrajectoryTest : public ::testing::Test
 {
 public:
-  TrajectoryInterfaceRosTest()
+  InitTrajectoryTest()
     : points(3)
   {
+    // Trajectory message
     points[0].positions.resize(1, 2.0);
     points[0].velocities.resize(1, 0.0);
     points[0].accelerations.resize(1, 0.0);
@@ -126,197 +127,545 @@ public:
     trajectory_msg.header.stamp = ros::Time(0.5);
     trajectory_msg.joint_names.resize(1, "foo_joint");
     trajectory_msg.points = points;
+
+    // Current trajectory
+    typename Segment::State state[2];
+
+    state[0].resize(1);
+    state[0].front().position     = 0.0;
+    state[0].front().velocity     = 0.0;
+    state[0].front().acceleration = 0.0;
+
+    state[1].resize(1);
+    state[1].front().position     = 1.0;
+    state[1].front().velocity     = 1.0;
+    state[1].front().acceleration = 1.0;
+
+    curr_traj.push_back(Segment(0.0, state[0],
+                                1.0, state[1]));
+
+    curr_traj.push_back(Segment(3.0,  state[1],
+                                10.0, state[0])); // This is just junk that should be discarded in the tests
   }
 
 protected:
+  // Trajectory message to parse
   vector<JointTrajectoryPoint> points;
   trajectory_msgs::JointTrajectory trajectory_msg;
+
+  // Currently executed trajectory
+  Trajectory curr_traj;
 };
 
-//TEST_F(TrajectoryInterfaceRosTest, InitException)
-//{
-//  // Invalid input should throw an exception
-//  trajectory_msg.points.back().positions.push_back(0.0); // Inconsistent size in last element
-//  EXPECT_THROW(init<Trajectory>(trajectory_msg, trajectory_msg.header.stamp), std::invalid_argument);
-//}
+TEST_F(InitTrajectoryTest, InitException)
+{
+  // Invalid input should throw an exception
+  trajectory_msg.points.back().positions.push_back(0.0); // Inconsistent size in last element
+  EXPECT_THROW(initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp), std::invalid_argument);
+}
 
-//TEST_F(TrajectoryInterfaceRosTest, InitLogic)
-//{
-//  const ros::Time msg_start_time = trajectory_msg.header.stamp;
-//  const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
+// Test logic of parsing a trajectory message. No current trajectory is specified
+TEST_F(InitTrajectoryTest, InitLogic)
+{
+  const ros::Time msg_start_time = trajectory_msg.header.stamp;
+  const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
 
-//  // Empty trajectory message: Return empty trajectory
-//  {
-//    const ros::Time time = msg_start_time;
-//    Trajectory trajectory = init<Trajectory>(trajectory_msgs::JointTrajectory(), msg_start_time);
-//    EXPECT_TRUE(trajectory.empty());
-//  }
+  // Empty trajectory message: Return empty trajectory
+  {
+    const ros::Time time = msg_start_time;
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msgs::JointTrajectory(), msg_start_time);
+    EXPECT_TRUE(trajectory.empty());
+  }
 
-//  // Input time is...
+  // Input time is...
 
-//  // Before first point: Return full trajectory (2 segments)
-//  {
-//    const ros::Time time = msg_start_time;
-//    Trajectory trajectory = init<Trajectory>(trajectory_msg, time);
-//    EXPECT_EQ(points.size() - 1, trajectory.size());
-//  }
+  // Before first point: Return full trajectory (2 segments)
+  {
+    const ros::Time time = msg_start_time;
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
+    EXPECT_EQ(points.size() - 1, trajectory.size());
+  }
 
-//  // First point: Return partial trajectory (last segment)
-//  {
-//    const ros::Time time = msg_start_time + msg_points.begin()->time_from_start;
-//    Trajectory trajectory = init<Trajectory>(trajectory_msg, time);
-//    EXPECT_EQ(points.size() - 2, trajectory.size());
-//  }
+  // First point: Return partial trajectory (last segment)
+  {
+    const ros::Time time = msg_start_time + msg_points.begin()->time_from_start;
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
+    EXPECT_EQ(points.size() - 2, trajectory.size());
+  }
 
-//  // Between the first and second points: Return partial trajectory (last segment)
-//  {
-//    const ros::Time time = msg_start_time +
-//    ros::Duration((msg_points.begin()->time_from_start + (++msg_points.begin())->time_from_start).toSec() / 2.0);
-//    Trajectory trajectory = init<Trajectory>(trajectory_msg, time);
-//    EXPECT_EQ(msg_points.size() - 2, trajectory.size());
-//  }
+  // Between the first and second points: Return partial trajectory (last segment)
+  {
+    const ros::Time time = msg_start_time +
+    ros::Duration((msg_points.begin()->time_from_start + (++msg_points.begin())->time_from_start).toSec() / 2.0);
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
+    EXPECT_EQ(msg_points.size() - 2, trajectory.size());
+  }
 
-//  // Second point: Return empty trajectory
-//  {
-//    const ros::Time time = msg_start_time + (++msg_points.begin())->time_from_start;
-//    Trajectory trajectory = init<Trajectory>(trajectory_msg, time);
-//    EXPECT_TRUE(trajectory.empty());
-//  }
+  // Second point: Return empty trajectory
+  {
+    const ros::Time time = msg_start_time + (++msg_points.begin())->time_from_start;
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
+    EXPECT_TRUE(trajectory.empty());
+  }
 
-//  // Between the second and third points: Return empty trajectory
-//  {
-//    const ros::Time time = msg_start_time +
-//    ros::Duration(((++msg_points.begin())->time_from_start + (--msg_points.end())->time_from_start).toSec() / 2.0);
-//    Trajectory trajectory = init<Trajectory>(trajectory_msg, time);
-//    EXPECT_TRUE(trajectory.empty());
-//  }
+  // Between the second and third points: Return empty trajectory
+  {
+    const ros::Time time = msg_start_time +
+    ros::Duration(((++msg_points.begin())->time_from_start + (--msg_points.end())->time_from_start).toSec() / 2.0);
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
+    EXPECT_TRUE(trajectory.empty());
+  }
 
-//  // Last point: Return empty trajectory
-//  {
-//    const ros::Time time = msg_start_time + (--msg_points.end())->time_from_start;
-//    Trajectory trajectory = init<Trajectory>(trajectory_msg, time);
-//    EXPECT_TRUE(trajectory.empty());
-//  }
+  // Last point: Return empty trajectory
+  {
+    const ros::Time time = msg_start_time + (--msg_points.end())->time_from_start;
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
+    EXPECT_TRUE(trajectory.empty());
+  }
 
-//  // After the last point: Return empty trajectory
-//  {
-//    const ros::Time time(msg_start_time + msg_points.back().time_from_start + ros::Duration(1.0));
-//    Trajectory trajectory = init<Trajectory>(trajectory_msg, time);
-//    EXPECT_TRUE(trajectory.empty());
-//  }
-//}
+  // After the last point: Return empty trajectory
+  {
+    const ros::Time time(msg_start_time + msg_points.back().time_from_start + ros::Duration(1.0));
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
+    EXPECT_TRUE(trajectory.empty());
+  }
+}
 
-//TEST_F(TrajectoryInterfaceRosTest, InitValues)
-//{
-//  const ros::Time msg_start_time = trajectory_msg.header.stamp;
-//  const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
+// Test logic of parsing a trajectory message. Current trajectory is specified, hence trajectory combination takes place
+TEST_F(InitTrajectoryTest, InitLogicCombine)
+{
+  const ros::Time msg_start_time = trajectory_msg.header.stamp;
+  const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
 
-//  // Input time is before first point: Return full trajectory (2 segments)
-//  const ros::Time time = msg_start_time;
-//  Trajectory trajectory = init<Trajectory>(trajectory_msg, time);
-//  ASSERT_EQ(points.size() - 1, trajectory.size());
+  // Empty trajectory message: Return empty trajectory
+  {
+    const ros::Time time = msg_start_time;
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msgs::JointTrajectory(),
+                                                       msg_start_time,
+                                                       curr_traj);
+    EXPECT_TRUE(trajectory.empty());
+  }
 
-//  // Check all segment start/end times and states
-//  for (unsigned int i = 0; i < trajectory.size(); ++i)
-//  {
-//    const Segment& segment = trajectory[i];
-//    const JointTrajectoryPoint& p_start = msg_points[i];
-//    const JointTrajectoryPoint& p_end   = msg_points[i + 1];
+  // Input time is...
 
-//    // Check start/end times
-//    {
-//      const typename Segment::Time start_time = (msg_start_time + p_start.time_from_start).toSec();
-//      const typename Segment::Time end_time   = (msg_start_time + p_end.time_from_start).toSec();
-//      EXPECT_EQ(start_time, segment.startTime());
-//      EXPECT_EQ(end_time,   segment.endTime());
-//    }
+  // Before first point, starting the current trajectory: Return 4 segments: Last of current + bridge + full message
+  {
+    const ros::Time time(curr_traj.front().startTime());
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, curr_traj);
+    EXPECT_EQ(points.size() + 1, trajectory.size());
+  }
 
-//    // Check start state
-//    {
-//      typename Segment::State state;
-//      segment.sample(segment.startTime(), state);
-//      EXPECT_EQ(p_start.positions.front(),  state.front().position);
-//      EXPECT_EQ(p_start.velocities.front(), state.front().velocity);
-//      EXPECT_EQ(p_start.accelerations.front(), state.front().acceleration);
-//    }
+  // Before first point: Return 4 segments: Last of current + bridge + full message
+  {
+    const ros::Time time = msg_start_time;
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, curr_traj);
+    EXPECT_EQ(points.size() + 1, trajectory.size());
+  }
 
-//    // Check end state
-//    {
-//      typename Segment::State state;
-//      segment.sample(segment.endTime(), state);
-//      EXPECT_EQ(p_end.positions.front(),  state.front().position);
-//      EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
-//      EXPECT_EQ(p_end.accelerations.front(), state.front().acceleration);
-//    }
-//  }
-//}
+  // First point: Return partial trajectory, 3 segments: Last of current + bridge + last of message
+  {
+    const ros::Time time = msg_start_time + msg_points.begin()->time_from_start;
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, curr_traj);
+    EXPECT_EQ(points.size(), trajectory.size());
+  }
 
-//TEST_F(TrajectoryInterfaceRosTest, PermutationTest)
-//{
-//  // Add an extra joint to the trajectory message created in the fixture
-//  trajectory_msg.points[0].positions.push_back(-2.0);
-//  trajectory_msg.points[0].velocities.push_back(0.0);
-//  trajectory_msg.points[0].accelerations.push_back(0.0);
+  // Between the first and second points: Same as before
+  {
+    const ros::Time time = msg_start_time +
+    ros::Duration((msg_points.begin()->time_from_start + (++msg_points.begin())->time_from_start).toSec() / 2.0);
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, curr_traj);
+    EXPECT_EQ(msg_points.size(), trajectory.size());
+  }
 
-//  trajectory_msg.points[1].positions.push_back(-4.0);
-//  trajectory_msg.points[1].velocities.push_back(0.0);
-//  trajectory_msg.points[1].accelerations.push_back(0.0);
+  // Second point: Return partial trajectory, 2 segments: Last of current + bridge (only one point of message made it)
+  {
+    const ros::Time time = msg_start_time + (++msg_points.begin())->time_from_start;
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, curr_traj);
+    EXPECT_EQ(msg_points.size() - 1, trajectory.size());
+  }
 
-//  trajectory_msg.points[2].positions.push_back(-3.0);
-//  trajectory_msg.points[2].velocities.push_back(0.0);
-//  trajectory_msg.points[2].accelerations.push_back(0.0);
+  // Between the second and third points: Same as before
+  {
+    const ros::Time time = msg_start_time +
+    ros::Duration(((++msg_points.begin())->time_from_start + (--msg_points.end())->time_from_start).toSec() / 2.0);
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, curr_traj);
+    EXPECT_EQ(msg_points.size() - 1, trajectory.size());
+  }
 
-//  trajectory_msg.joint_names.push_back("bar_joint");
+  // Last point: Return empty trajectory
+  {
+    const ros::Time time = msg_start_time + (--msg_points.end())->time_from_start;
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, curr_traj);
+    EXPECT_TRUE(trajectory.empty());
+  }
 
-//  // No reference joint names: Original message order is preserved
-//  {
-//    Trajectory trajectory = init<Trajectory>(trajectory_msg, trajectory_msg.header.stamp);
+  // After the last point: Return empty trajectory
+  {
+    const ros::Time time(msg_start_time + msg_points.back().time_from_start + ros::Duration(1.0));
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, curr_traj);
+    EXPECT_TRUE(trajectory.empty());
+  }
+}
 
-//    // Check position values only
-//    const Segment& segment = trajectory.front();
-//    typename Segment::State state;
-//    segment.sample(segment.startTime(), state);
-//    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state[0].position);
-//    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state[1].position);
-//  }
+TEST_F(InitTrajectoryTest, InitValues)
+{
+  const ros::Time msg_start_time = trajectory_msg.header.stamp;
+  const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
 
-//  // Reference joint names vector that reverses joint order
-//  {
-//    vector<string> joint_names; // Joints are reversed
-//    joint_names.push_back(trajectory_msg.joint_names[1]);
-//    joint_names.push_back(trajectory_msg.joint_names[0]);
+  // Input time is before first point: Return full trajectory (2 segments)
+  const ros::Time time = msg_start_time;
+  Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
+  ASSERT_EQ(points.size() - 1, trajectory.size());
 
-//    Trajectory trajectory = init<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, joint_names);
+  // Check all segment start/end times and states
+  for (unsigned int i = 0; i < trajectory.size(); ++i)
+  {
+    const Segment& segment = trajectory[i];
+    const JointTrajectoryPoint& p_start = msg_points[i];
+    const JointTrajectoryPoint& p_end   = msg_points[i + 1];
 
-//    // Check position values only
-//    const Segment& segment = trajectory.front();
-//    typename Segment::State state;
-//    segment.sample(segment.startTime(), state);
-//    EXPECT_NE(trajectory_msg.points[0].positions[0],  state[0].position);
-//    EXPECT_NE(trajectory_msg.points[0].positions[1],  state[1].position);
-//    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state[1].position);
-//    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state[0].position);
-//  }
+    // Check start/end times
+    {
+      const typename Segment::Time start_time = (msg_start_time + p_start.time_from_start).toSec();
+      const typename Segment::Time end_time   = (msg_start_time + p_end.time_from_start).toSec();
+      EXPECT_EQ(start_time, segment.startTime());
+      EXPECT_EQ(end_time,   segment.endTime());
+    }
 
-//  // Reference joint names size mismatch
-//  {
-//    vector<string> joint_names;
-//    joint_names.push_back(trajectory_msg.joint_names[0]);
+    // Check start state
+    {
+      typename Segment::State state;
+      segment.sample(segment.startTime(), state);
+      EXPECT_EQ(p_start.positions.front(),  state.front().position);
+      EXPECT_EQ(p_start.velocities.front(), state.front().velocity);
+      EXPECT_EQ(p_start.accelerations.front(), state.front().acceleration);
+    }
 
-//    Trajectory trajectory = init<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, joint_names);
-//    EXPECT_TRUE(trajectory.empty());
-//  }
+    // Check end state
+    {
+      typename Segment::State state;
+      segment.sample(segment.endTime(), state);
+      EXPECT_EQ(p_end.positions.front(),  state.front().position);
+      EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
+      EXPECT_EQ(p_end.accelerations.front(), state.front().acceleration);
+    }
+  }
+}
 
-//  // Reference joint names value mismatch
-//  {
-//    vector<string> joint_names;
-//    joint_names.push_back(trajectory_msg.joint_names[0]);
-//    joint_names.push_back("baz_joint");
+TEST_F(InitTrajectoryTest, InitValuesCombine)
+{
+  // Before first point: Return 4 segments: Last of current + bridge + full message
+  const ros::Time time(curr_traj.front().startTime());
+  Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, curr_traj);
+  ASSERT_EQ(points.size() + 1, trajectory.size());
 
-//    Trajectory trajectory = init<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, joint_names);
-//    EXPECT_TRUE(trajectory.empty());
-//  }
-//}
+  // Check current trajectory segment start/end times and states (only one)
+  {
+    const Segment& ref_segment = curr_traj.front();
+    const Segment& segment     = trajectory.front();
+
+    // Check start/end times
+    {
+      EXPECT_EQ(ref_segment.startTime(), segment.startTime());
+      EXPECT_EQ(ref_segment.endTime(),   segment.endTime());
+    }
+
+    // Check start state
+    {
+      typename Segment::State ref_state, state;
+      ref_segment.sample(ref_segment.startTime(), ref_state);
+      segment.sample(segment.startTime(), state);
+      EXPECT_EQ(ref_state.front().position,     state.front().position);
+      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
+      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+    }
+
+    // Check end state
+    {
+      typename Segment::State ref_state, state;
+      ref_segment.sample(ref_segment.endTime(), ref_state);
+      segment.sample(segment.endTime(), state);
+      EXPECT_EQ(ref_state.front().position,     state.front().position);
+      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
+      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+    }
+  }
+
+  // Check bridge trajectory segment start/end times and states (only one)
+  {
+    const Segment& ref_segment = curr_traj.front();
+    const Segment& segment     = trajectory[1];
+
+    const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
+
+    // Segment start time should correspond to message start time
+    // Segment end time should correspond to first trajectory message point
+    const ros::Time msg_start_time = trajectory_msg.header.stamp;
+    const typename Segment::Time start_time = msg_start_time.toSec();
+    const typename Segment::Time end_time   = (msg_start_time +  msg_points.front().time_from_start).toSec();
+
+    // Check start/end times
+    {
+      EXPECT_EQ(start_time, segment.startTime());
+      EXPECT_EQ(end_time,   segment.endTime());
+    }
+
+    // Check start state. Corresponds to current trajectory sampled at start_time
+    {
+      typename Segment::State ref_state, state;
+      ref_segment.sample(start_time, ref_state);
+      segment.sample(segment.startTime(), state);
+      EXPECT_EQ(ref_state.front().position,     state.front().position);
+      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
+      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+    }
+
+    // Check end state. Corresponds to first trajectory message point
+    {
+      typename Segment::State state;
+      segment.sample(segment.endTime(), state);
+      EXPECT_EQ(msg_points.front().positions.front(),     state.front().position);
+      EXPECT_EQ(msg_points.front().velocities.front(),    state.front().velocity);
+      EXPECT_EQ(msg_points.front().accelerations.front(), state.front().acceleration);
+    }
+  }
+
+  // Check all segment start/end times and states (2 segments)
+  for (unsigned int traj_it = 2, msg_it = 0; traj_it < trajectory.size(); ++traj_it, ++msg_it)
+  {
+    const ros::Time msg_start_time = trajectory_msg.header.stamp;
+    const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
+
+    const Segment& segment = trajectory[traj_it];
+    const JointTrajectoryPoint& p_start = msg_points[msg_it];
+    const JointTrajectoryPoint& p_end   = msg_points[msg_it + 1];
+
+    // Check start/end times
+    {
+      const typename Segment::Time start_time = (msg_start_time + p_start.time_from_start).toSec();
+      const typename Segment::Time end_time   = (msg_start_time + p_end.time_from_start).toSec();
+      EXPECT_EQ(start_time, segment.startTime());
+      EXPECT_EQ(end_time,   segment.endTime());
+    }
+
+    // Check start state
+    {
+      typename Segment::State state;
+      segment.sample(segment.startTime(), state);
+      EXPECT_EQ(p_start.positions.front(),  state.front().position);
+      EXPECT_EQ(p_start.velocities.front(), state.front().velocity);
+      EXPECT_EQ(p_start.accelerations.front(), state.front().acceleration);
+    }
+
+    // Check end state
+    {
+      typename Segment::State state;
+      segment.sample(segment.endTime(), state);
+      EXPECT_EQ(p_end.positions.front(),  state.front().position);
+      EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
+      EXPECT_EQ(p_end.accelerations.front(), state.front().acceleration);
+    }
+  }
+}
+
+TEST_F(InitTrajectoryTest, JointPermutation)
+{
+  // Add an extra joint to the trajectory message created in the fixture
+  trajectory_msg.points[0].positions.push_back(-2.0);
+  trajectory_msg.points[0].velocities.push_back(0.0);
+  trajectory_msg.points[0].accelerations.push_back(0.0);
+
+  trajectory_msg.points[1].positions.push_back(-4.0);
+  trajectory_msg.points[1].velocities.push_back(0.0);
+  trajectory_msg.points[1].accelerations.push_back(0.0);
+
+  trajectory_msg.points[2].positions.push_back(-3.0);
+  trajectory_msg.points[2].velocities.push_back(0.0);
+  trajectory_msg.points[2].accelerations.push_back(0.0);
+
+  trajectory_msg.joint_names.push_back("bar_joint");
+
+  // No reference joint names: Original message order is preserved
+  {
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, Trajectory());
+
+    // Check position values only
+    const Segment& segment = trajectory.front();
+    typename Segment::State state;
+    segment.sample(segment.startTime(), state);
+    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state[0].position);
+    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state[1].position);
+  }
+
+  // Reference joint names vector that reverses joint order
+  {
+    vector<string> joint_names; // Joints are reversed
+    joint_names.push_back(trajectory_msg.joint_names[1]);
+    joint_names.push_back(trajectory_msg.joint_names[0]);
+
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, Trajectory(), joint_names);
+
+    // Check position values only
+    const Segment& segment = trajectory.front();
+    typename Segment::State state;
+    segment.sample(segment.startTime(), state);
+    EXPECT_NE(trajectory_msg.points[0].positions[0],  state[0].position);
+    EXPECT_NE(trajectory_msg.points[0].positions[1],  state[1].position);
+    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state[1].position);
+    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state[0].position);
+  }
+
+  // Reference joint names size mismatch
+  {
+    vector<string> joint_names;
+    joint_names.push_back(trajectory_msg.joint_names[0]);
+
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, Trajectory(), joint_names);
+    EXPECT_TRUE(trajectory.empty());
+  }
+
+  // Reference joint names value mismatch
+  {
+    vector<string> joint_names;
+    joint_names.push_back(trajectory_msg.joint_names[0]);
+    joint_names.push_back("baz_joint");
+
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, Trajectory(), joint_names);
+    EXPECT_TRUE(trajectory.empty());
+  }
+}
+
+TEST_F(InitTrajectoryTest, WrappingPositions)
+{
+  // Modify trajectory message created in the fixture to wrap around
+  const double wrap = 4 * M_PI;
+  for (unsigned int i = 0; i < trajectory_msg.points.size(); ++i)
+  {
+    trajectory_msg.points[i].positions[0] += wrap; // Add wrapping value to all points
+  }
+
+  // Before first point: Return 4 segments: Last of current + bridge + full message
+  const ros::Time time(curr_traj.front().startTime());
+  const std::vector<bool> is_wrapping(1, true);
+  Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, curr_traj, std::vector<std::string>(1, "foo_joint"), is_wrapping);
+  ASSERT_EQ(points.size() + 1, trajectory.size());
+
+  // Check current trajectory segment start/end times and states (only one)
+  {
+    const Segment& ref_segment = curr_traj.front();
+    const Segment& segment     = trajectory.front();
+
+    // Check start/end times
+    {
+      EXPECT_EQ(ref_segment.startTime(), segment.startTime());
+      EXPECT_EQ(ref_segment.endTime(),   segment.endTime());
+    }
+
+    // Check start state
+    {
+      typename Segment::State ref_state, state;
+      ref_segment.sample(ref_segment.startTime(), ref_state);
+      segment.sample(segment.startTime(), state);
+      EXPECT_EQ(ref_state.front().position,     state.front().position);
+      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
+      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+    }
+
+    // Check end state
+    {
+      typename Segment::State ref_state, state;
+      ref_segment.sample(ref_segment.endTime(), ref_state);
+      segment.sample(segment.endTime(), state);
+      EXPECT_EQ(ref_state.front().position,     state.front().position);
+      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
+      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+    }
+  }
+
+  // Check bridge trajectory segment start/end times and states (only one)
+  {
+    const Segment& ref_segment = curr_traj.front();
+    const Segment& segment     = trajectory[1];
+
+    const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
+
+    // Segment start time should correspond to message start time
+    // Segment end time should correspond to first trajectory message point
+    const ros::Time msg_start_time = trajectory_msg.header.stamp;
+    const typename Segment::Time start_time = msg_start_time.toSec();
+    const typename Segment::Time end_time   = (msg_start_time +  msg_points.front().time_from_start).toSec();
+
+    // Check start/end times
+    {
+      EXPECT_EQ(start_time, segment.startTime());
+      EXPECT_EQ(end_time,   segment.endTime());
+    }
+
+    // Check start state. Corresponds to current trajectory sampled at start_time
+    {
+      typename Segment::State ref_state, state;
+      ref_segment.sample(start_time, ref_state);
+      segment.sample(segment.startTime(), state);
+      EXPECT_EQ(ref_state.front().position,     state.front().position);
+      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
+      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+    }
+
+    // Check end state. Corresponds to first trajectory message point
+    {
+      typename Segment::State state;
+      segment.sample(segment.endTime(), state);
+      EXPECT_EQ(msg_points.front().positions.front() - wrap, state.front().position); // NOTE: Wrap used
+      EXPECT_EQ(msg_points.front().velocities.front(),       state.front().velocity);
+      EXPECT_EQ(msg_points.front().accelerations.front(),    state.front().acceleration);
+    }
+  }
+
+  // Check all segment start/end times and states (2 segments)
+  for (unsigned int traj_it = 2, msg_it = 0; traj_it < trajectory.size(); ++traj_it, ++msg_it)
+  {
+    const ros::Time msg_start_time = trajectory_msg.header.stamp;
+    const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
+
+    const Segment& segment = trajectory[traj_it];
+    const JointTrajectoryPoint& p_start = msg_points[msg_it];
+    const JointTrajectoryPoint& p_end   = msg_points[msg_it + 1];
+
+    // Check start/end times
+    {
+      const typename Segment::Time start_time = (msg_start_time + p_start.time_from_start).toSec();
+      const typename Segment::Time end_time   = (msg_start_time + p_end.time_from_start).toSec();
+      EXPECT_EQ(start_time, segment.startTime());
+      EXPECT_EQ(end_time,   segment.endTime());
+    }
+
+    // Check start state
+    {
+      typename Segment::State state;
+      segment.sample(segment.startTime(), state);
+      EXPECT_EQ(p_start.positions.front() - wrap, state.front().position); // NOTE: Wrap used
+      EXPECT_EQ(p_start.velocities.front(),       state.front().velocity);
+      EXPECT_EQ(p_start.accelerations.front(),    state.front().acceleration);
+    }
+
+    // Check end state
+    {
+      typename Segment::State state;
+      segment.sample(segment.endTime(), state);
+      EXPECT_EQ(p_end.positions.front() - wrap, state.front().position); // NOTE: Wrap used
+      EXPECT_EQ(p_end.velocities.front(),       state.front().velocity);
+      EXPECT_EQ(p_end.accelerations.front(),    state.front().acceleration);
+    }
+  }
+
+  // Reference joint names size mismatch
+  {
+    const std::vector<bool> is_wrapping(2, true);
+
+    Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, curr_traj, std::vector<std::string>(1, "foo_joint"), is_wrapping);
+    EXPECT_TRUE(trajectory.empty());
+  }
+}
 
 int main(int argc, char** argv)
 {

@@ -31,6 +31,7 @@
 #define TRAJECTORY_INTERFACE_INIT_JOINT_TRAJECTORY_H
 
 #include <algorithm>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
 
@@ -76,6 +77,7 @@ inline std::vector<typename T::size_type> permutation(const T& t1, const T& t2)
 
 } // namespace
 
+
 /**
  * \brief Initialize a joint trajectory from ROS message data.
  *
@@ -108,9 +110,10 @@ inline std::vector<typename T::size_type> permutation(const T& t1, const T& t2)
  * \note This function does not throw any exceptions by itself, but the segment constructor might.
  * In such a case, this method should be wrapped inside a \p try block.
  */
+// TODO: Return empty if input msg is invalid?
 template <class Trajectory>
 Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory& msg,
-                               const ros::Time&                        time                = ros::Time(0.0),
+                               const ros::Time&                        time,
                                const Trajectory&                       curr_traj           = Trajectory(),
                                const std::vector<std::string>&         joint_names         = std::vector<std::string>(),
                                const std::vector<bool>&                is_continuous_joint = std::vector<bool>())
@@ -169,7 +172,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory& msg,
 
   if (permutation_vector.empty())
   {
-    ROS_ERROR_STREAM("Cannot create trajectory from message. It does not contain the expected joints.");
+    ROS_ERROR("Cannot create trajectory from message. It does not contain the expected joints.");
     return Trajectory();
   }
 
@@ -203,47 +206,65 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory& msg,
   // - Useful segments of new trajectory (contained in ROS message)
   Trajectory result_traj; // Currently empty
 
-  // Add useful segments of current trajectory to result
+  // Initialize offsets due to wrapping joints to zero
+  std::vector<double> position_offset(msg.joint_names.size(), 0.0);
+
+  // Bridge current trajectory to new one
+  if (!curr_traj.empty())
   {
-    typedef typename Trajectory::const_iterator TrajIter;
-    TrajIter first = findSegment(curr_traj, time.toSec());      // Currently active segment
-    TrajIter last  = findSegment(curr_traj, msg_start_time.toSec()); // Segment active when new trajectory starts
-    if (first == curr_traj.end() || last == curr_traj.end())
+    // Get the last time and state that will be executed from the current trajectory
+    const typename Segment::Time last_curr_time = std::max(msg_start_time.toSec(), time.toSec()); // Important!
+    typename Segment::State last_curr_state;
+    sample(curr_traj, last_curr_time, last_curr_state);
+
+    // Get the first time and state that will be executed from the new trajectory
+    const typename Segment::Time first_new_time = msg_start_time.toSec() + (it->time_from_start).toSec();
+    typename Segment::State first_new_state(*it, permutation_vector); // Here offsets are not yet applied
+
+    // Compute offsets due to wrapping joints
+    if (!is_continuous_joint.empty())
     {
-      ROS_ERROR("Unexpected error: Could not find segments in current trajectory. Please contact the package maintainer.");
-      return Trajectory();
+      position_offset = wraparoundOffset<double>(last_curr_state,
+                                                 first_new_state,
+                                                 is_continuous_joint);
+      if (position_offset.empty())
+      {
+        ROS_ERROR("Cannot create trajectory from message. "
+                  "Vector specifying whether joints are continuous has an invalid size.");
+        return Trajectory();
+      }
     }
-    result_traj.insert(result_traj.begin(), first, ++last); // Range [first,last) will still be executed
+
+    // Apply offset to first state that will be executed from the new trajectory
+    first_new_state = typename Segment::State(*it, permutation_vector, position_offset); // Now offsets are applied
+
+    // Add useful segments of current trajectory to result
+    {
+      typedef typename Trajectory::const_iterator TrajIter;
+      TrajIter first = findSegment(curr_traj, time.toSec());   // Currently active segment
+      TrajIter last  = findSegment(curr_traj, last_curr_time); // Segment active when new trajectory starts
+      if (first == curr_traj.end() || last == curr_traj.end())
+      {
+        ROS_ERROR("Unexpected error: Could not find segments in current trajectory. Please contact the package maintainer.");
+        return Trajectory();
+      }
+      result_traj.insert(result_traj.begin(), first, ++last); // Range [first,last) will still be executed
+    }
+
+    // Add segment bridging current and new trajectories to result
+    Segment bridge_seg(last_curr_time, last_curr_state,
+                       first_new_time, first_new_state);
+
+    result_traj.push_back(bridge_seg);
   }
 
-  // Get the last time and state that will be executed from the current trajectory
-  const typename Segment::Time last_curr_time = std::max(msg_start_time.toSec(), time.toSec()); // Important!
-  typename Segment::State last_curr_state;
-  sample(curr_traj, last_curr_time, last_curr_state);
-
-  // Get the first time and state that will be executed from the new trajectory
-  const typename Segment::Time first_new_time = msg_start_time.toSec() + (it->time_from_start).toSec();
-  typename Segment::State first_new_state(*it, permutation_vector); // Here offsets are not yet applied
-
-  // Compute wraparound position offset vector (affects only continuous joints)
-  std::vector<double> position_offset = is_continuous_joint.empty() ?
-                                        std::vector<double>(msg.joint_names.size(), 0.0) : // No offset
-                                        wraparoundOffset<double>(last_curr_state,
-                                                                 first_new_state,
-                                                                 is_continuous_joint);
-
-  // Apply offset to first state that will be executed from the new trajectory
-  first_new_state = typename Segment::State(*it, permutation_vector, position_offset); // Now offsets are applied
-
-  // Add segment bridging current and new trajectories
-  Segment bridge_seg(last_curr_time, last_curr_state,
-                     first_new_time, first_new_state);
-  result_traj.push_back(bridge_seg);
+  // Constants used in log statement at the end
+  const unsigned int num_old_segments = result_traj.size() -1;
+  const unsigned int num_new_segments = std::distance(it, msg.points.end()) -1;
 
   // Add useful segments of new trajectory to result
   // - Construct all trajectory segments occurring after current time
   // - As long as there remain two trajectory points we can construct the next trajectory segment
-  const unsigned int n_good_points = std::distance(it, msg.points.end()); // Used in log statement below
   while (std::distance(it, msg.points.end()) >= 2)
   {
     std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator next_it = it; ++next_it;
@@ -252,7 +273,18 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory& msg,
     ++it;
   }
 
-  ROS_WARN_STREAM("Updated current trajectory with " << n_good_points << " new segments."); // TODO: Make debug
+  // Useful debug info
+  std::stringstream log_str;
+  log_str << "Trajectory has " << result_traj.size() << " segments";
+  if (!curr_traj.empty())
+  {
+    log_str << ":";
+    log_str << "\n- " << num_old_segments << " segments will still be executed from current trajectory.";
+    log_str << "\n- 1 segment for transitioning between the current trajectory and first point of the input message.";
+    if (num_new_segments > 0) {log_str << "\n- " << num_new_segments << " new segments taken from the input message.";}
+  }
+  else {log_str << ".";}
+  ROS_DEBUG_STREAM(log_str.str());
 
   return result_traj;
 }

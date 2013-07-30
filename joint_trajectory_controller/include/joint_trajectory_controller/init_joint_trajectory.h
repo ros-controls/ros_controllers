@@ -78,7 +78,8 @@ inline std::vector<typename T::size_type> permutation(const T& t1, const T& t2)
 } // namespace
 
 /**
- * TODO
+ * \brief Options used when initializing a joint trajectory from ROS message data.
+ * \sa initJointTrajectory
  */
 template <class Trajectory>
 struct InitJointTrajectoryOptions
@@ -100,16 +101,27 @@ struct InitJointTrajectoryOptions
  * \param msg Trajectory message.
  *
  * \param time Time from which data is to be extracted. All trajectory points in \p msg occurring \b after
- * \p time <b>will be extracted</b>; or put otherwise, all points occurring at a time <b>less or equal</b> than \p time
- * <b>will be discarded</b>. Set this value to zero to process all points in \p msg.
+ * \p time will be extracted; or put otherwise, all points occurring at a time <b>less or equal</b> than \p time
+ * will be discarded. Set this value to zero to process all points in \p msg.
  *
- * \param joint_names Joints expected to be found in \p msg. If specified, this function will return an empty trajectory
+ * \param options Options that change how the trajectory gets initialized.
+ *
+ * The \p options parameter is optional. The meaning of its different members follows:
+ * - \b current_trajectory Currently executed trajectory. Use this parameter if you want to update an existing
+ * trajectory with the data in \p msg; that is, keep the useful parts of \p current_trajectory and \p msg.
+ * If specified, the output trajectory will not only contain data in \p msg occurring \b after \p time, but will also
+ * contain data from \p current_trajectory \b between \p time and the start time of \p msg
+ * (which might not be equal to \p time).
+ *
+ * - \b joint_names Joints expected to be found in \p msg. If specified, this function will return an empty trajectory
  * when \p msg contains joints that differ in number or names to \p joint_names. If \p msg contains the same joints as
  * \p  joint_names, but in a different order, the resulting trajectory will be ordered according to \p joint_names
- * (and not \p msg). Finally, if this parameter is unspecified (empty), no checks will be performed against expected
- * joints, and the resulting trajectory will preserve the joint ordering of \p msg.
+ * (and not \p msg). If unspecified (empty), no checks will be performed against expected joints, and the resulting
+ * trajectory will preserve the joint ordering of \p msg.
  *
- * \param is_continuous_joint TODO
+ * - \b angle_wraparound Vector of booleans where true values correspond to joints that wrap around (ie. are continuous).
+ * If specified, combining \p current_trajectory with \p msg will not result in joints performing multiple turns at the
+ * transition. This parameter \b requires \p current_trajectory to also be specified, otherwise it is ignored.
  *
  * \return Trajectory container.
  *
@@ -120,7 +132,13 @@ struct InitJointTrajectoryOptions
  *         const trajectory_msgs::JointTrajectoryPoint& start_point,
  *         const trajectory_msgs::JointTrajectoryPoint& end_point,
  *         const std::vector<unsigned int>&             permutation,
-           const std::vector<double>&                   position_offset)
+ *         const std::vector<double>&                   position_offset)
+ * \endcode
+ * The following function must also be defined to properly handle continuous joints:
+ * \code
+ * std::vector<double> wraparoundOffset(const typename Segment::State&  prev_state,
+ *                                      const typename Segment::State&  next_state,
+ *                                      const std::vector<bool>&        angle_wraparound)
  * \endcode
  *
  * \note This function does not throw any exceptions by itself, but the segment constructor might.
@@ -133,8 +151,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
                                const InitJointTrajectoryOptions<Trajectory>& options =
                                InitJointTrajectoryOptions<Trajectory>())
 {
-  // TODO: Use single return instance to make sure that RVO kicks in?
-
   typedef typename Trajectory::value_type Segment;
   const ros::Time msg_start_time = internal::startTime(msg, time); // Message start time
 

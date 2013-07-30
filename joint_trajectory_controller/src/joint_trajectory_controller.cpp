@@ -122,7 +122,7 @@ using std::vector;
 
 JointTrajectoryController::JointTrajectoryController()
   : joints_(),
-    is_continuous_joint_(),
+    angle_wraparound_(),
     rt_active_goal_(),
     trajectory_(),
     state_(),
@@ -151,7 +151,7 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
 
   // Initialize members
   joints_.resize(n_joints);
-  is_continuous_joint_.resize(n_joints);
+  angle_wraparound_.resize(n_joints);
   for (unsigned int i = 0; i < n_joints; ++i)
   {
     // Joint handle
@@ -162,15 +162,15 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
       return false;
     }
 
-    // Whether a joint is continuous
-    is_continuous_joint_[i] = urdf_joints[i]->type == urdf::Joint::CONTINUOUS;
-    const string not_if = is_continuous_joint_[i] ? "" : "non-";
+    // Whether a joint is continuous (ie. has angle wraparound)
+    angle_wraparound_[i] = urdf_joints[i]->type == urdf::Joint::CONTINUOUS;
+    const string not_if = angle_wraparound_[i] ? "" : "non-";
 
     ROS_DEBUG_STREAM("Found " << not_if << "continuous joint '" << joint_names_[i] << "' in '" <<
                      getHardwareInterfaceType() << "'.");
   }
 
-  assert(joints_.size() == is_continuous_joint_.size());
+  assert(joints_.size() == angle_wraparound_.size());
   ROS_INFO_STREAM("Initialized controller of type '" << getHardwareInterfaceType() << "' with " <<
                   joints_.size() << " joints.");
 
@@ -236,7 +236,7 @@ void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryCo
   Options options;
   options.current_trajectory = trajectory_.readFromRT();
   options.joint_names        = &joint_names_;
-  options.is_wraparound      = &is_continuous_joint_;
+  options.angle_wraparound   = &angle_wraparound_;
 
   // Update currently executing trajectory
   Trajectory new_traj = initJointTrajectory<Trajectory>(*msg, curr_time, options);

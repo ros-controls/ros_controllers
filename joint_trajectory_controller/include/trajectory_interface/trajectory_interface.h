@@ -44,7 +44,6 @@
 // - Segments in original implementation are an open interval on the start time. We are making them closed
 // - If an action goal superceeds another and the new trajectory starts in the future, until that time no constraint
 //   enforcement will take place. Odd.
-// TODO: Add a traits class to ease wrapping of 3rd party code?
 
 namespace trajectory_interface
 {

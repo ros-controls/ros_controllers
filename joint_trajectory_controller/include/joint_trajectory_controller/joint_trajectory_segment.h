@@ -191,18 +191,18 @@ public:
 template <class Scalar>
 std::vector<double> wraparoundOffset(const typename JointTrajectorySegment<Scalar>::State&    prev_state,
                                      const typename JointTrajectorySegment<Scalar>::State&    next_state,
-                                     const std::vector<bool>&                                 is_continuous_joint)
+                                     const std::vector<bool>&                                 angle_wraparound)
 {
   // Preconditions
-  const unsigned int n_joints = is_continuous_joint.size();
+  const unsigned int n_joints = angle_wraparound.size();
   if (n_joints != prev_state.size() || n_joints != next_state.size()) {return std::vector<double>();}
 
   // Return value
   std::vector<double> pos_offset(n_joints, 0.0);
 
-  for (unsigned int i = 0; i < is_continuous_joint.size(); ++i)
+  for (unsigned int i = 0; i < angle_wraparound.size(); ++i)
   {
-    if (is_continuous_joint[i])
+    if (angle_wraparound[i])
     {
       const double dist = angles::shortest_angular_distance(prev_state[i].position, next_state[i].position);
       pos_offset[i] = (prev_state[i].position + dist) - next_state[i].position;

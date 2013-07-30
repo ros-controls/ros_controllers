@@ -86,12 +86,12 @@ struct InitJointTrajectoryOptions
   InitJointTrajectoryOptions()
     : current_trajectory(0),
       joint_names(0),
-      is_wraparound(0)
+      angle_wraparound(0)
   {}
 
   Trajectory*               current_trajectory;
   std::vector<std::string>* joint_names;
-  std::vector<bool>*        is_wraparound;
+  std::vector<bool>*        angle_wraparound;
 };
 
 /**
@@ -150,8 +150,8 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   // Validate options
   const bool has_current_trajectory = options.current_trajectory && !options.current_trajectory->empty();
   const bool has_joint_names        = options.joint_names        && !options.joint_names->empty();
-  const bool has_wrapping_spec      = options.is_wraparound      && !options.is_wraparound->empty();
-  if (!has_current_trajectory && has_wrapping_spec)
+  const bool has_angle_wraparound   = options.angle_wraparound   && !options.angle_wraparound->empty();
+  if (!has_current_trajectory && has_angle_wraparound)
   {
     ROS_WARN("Vector specifying whether joints wrap around will not be used because no current trajectory was given.");
   }
@@ -217,15 +217,15 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     typename Segment::State first_new_state(*it, permutation_vector); // Here offsets are not yet applied
 
     // Compute offsets due to wrapping joints
-    if (has_wrapping_spec)
+    if (has_angle_wraparound)
     {
       position_offset = wraparoundOffset<double>(last_curr_state,
                                                  first_new_state,
-                                                 *(options.is_wraparound));
+                                                 *(options.angle_wraparound));
       if (position_offset.empty())
       {
         ROS_ERROR("Cannot create trajectory from message. "
-                  "Vector specifying whether joints are continuous has an invalid size.");
+                  "Vector specifying whether joints wrap around has an invalid size.");
         return Trajectory();
       }
     }

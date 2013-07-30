@@ -84,7 +84,7 @@ private:
   typedef std::vector<Segment> Trajectory;
 
   std::vector<hardware_interface::JointHandle> joints_;
-  std::vector<bool>                            is_continuous_joint_;
+  std::vector<bool>                            angle_wraparound_;
   RealtimeGoalHandlePtr                        rt_active_goal_;
   realtime_tools::RealtimeBuffer<Trajectory>   trajectory_;
   typename Segment::State                      state_; ///< Workspace variable preallocated to the appripriate size

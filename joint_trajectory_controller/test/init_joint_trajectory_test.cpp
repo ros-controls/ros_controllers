@@ -544,7 +544,7 @@ TEST_F(InitTrajectoryTest, JointPermutation)
   }
 }
 
-TEST_F(InitTrajectoryTest, WrappingPositions)
+TEST_F(InitTrajectoryTest, WrappingSpec)
 {
   // Modify trajectory message created in the fixture to wrap around
   const double wrap = 4 * M_PI;
@@ -555,10 +555,10 @@ TEST_F(InitTrajectoryTest, WrappingPositions)
 
   // Before first point: Return 4 segments: Last of current + bridge + full message
   const ros::Time time(curr_traj.front().startTime());
-  std::vector<bool> is_wraparound(1, true);
+  std::vector<bool> angle_wraparound(1, true);
   InitJointTrajectoryOptions<Trajectory> options;
   options.current_trajectory = &curr_traj;
-  options.is_wraparound      = &is_wraparound;
+  options.angle_wraparound      = &angle_wraparound;
 
   Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
   ASSERT_EQ(points.size() + 1, trajectory.size());
@@ -673,15 +673,16 @@ TEST_F(InitTrajectoryTest, WrappingPositions)
 
   // Reference joint names size mismatch
   {
-    std::vector<bool> is_wraparound(2, true);
+    std::vector<bool> angle_wraparound(2, true);
     InitJointTrajectoryOptions<Trajectory> options;
     options.current_trajectory = &curr_traj;
-    options.is_wraparound      = &is_wraparound;
+    options.angle_wraparound      = &angle_wraparound;
 
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, options);
     EXPECT_TRUE(trajectory.empty());
   }
 }
+
 
 int main(int argc, char** argv)
 {

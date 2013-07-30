@@ -77,6 +77,22 @@ inline std::vector<typename T::size_type> permutation(const T& t1, const T& t2)
 
 } // namespace
 
+/**
+ * TODO
+ */
+template <class Trajectory>
+struct InitJointTrajectoryOptions
+{
+  InitJointTrajectoryOptions()
+    : current_trajectory(0),
+      joint_names(0),
+      is_wraparound(0)
+  {}
+
+  Trajectory*               current_trajectory;
+  std::vector<std::string>* joint_names;
+  std::vector<bool>*        is_wraparound;
+};
 
 /**
  * \brief Initialize a joint trajectory from ROS message data.
@@ -112,43 +128,11 @@ inline std::vector<typename T::size_type> permutation(const T& t1, const T& t2)
  */
 // TODO: Return empty if input msg is invalid?
 template <class Trajectory>
-Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory& msg,
-                               const ros::Time&                        time,
-                               const Trajectory&                       curr_traj           = Trajectory(),
-                               const std::vector<std::string>&         joint_names         = std::vector<std::string>(),
-                               const std::vector<bool>&                is_continuous_joint = std::vector<bool>())
+Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg,
+                               const ros::Time&                              time,
+                               const InitJointTrajectoryOptions<Trajectory>& options =
+                               InitJointTrajectoryOptions<Trajectory>())
 {
-  // Input:
-  // - Currently followed trajectory
-  // - Trajectory message
-  // - Joint names in the same order as the currently followed trajectory
-  // - Vector specifying whether which joints are continuous.
-  //
-  // Output:
-  // - New trajectory to follow containing useful parts of currently followed one + message. Empty if something's amiss.
-  //
-  // Acronyms:
-  // - SI: Segment implementation independent. Only leverages common segment API.
-  // - SD: Segment implementation dependent. Requires knowledge of the segment implementation.
-  //
-  // Algorithm:
-  // -* SI: Compute permutation vector mapping message joint order to current trajectory order.
-  //
-  // -* SI: Get useful segments of current trajectory.
-  // -* SI: Get last useful (time, state) of current trajectory.
-  //
-  // -* SI: Find first trajectory point occurring after current time.
-  // -* SD: Get first useful state of new trajectory taking into account the permutation vector.
-  // - SI: Compute wrapping offset vector (affects only continuous joints).
-  // - SI: Compute segment bridging current and new trajectories
-  // -* SD: Convert useful segments of trajectory message taking into account the permutation vector and wrapping offsets.
-  // -* SI: Append useful segments of new trajectory to useful segments of current trajectory.
-  //
-  // SD functionality to implement:
-  // - Construct state from trajectory point message, and optionally permutation vector and wrapping offsets (3 params).
-  // - Construct segment from trajectory start time, start/end trajectory points, and optionally permutation vector and
-  //   wrapping offsets (5 params).
-
   // TODO: Use single return instance to make sure that RVO kicks in?
 
   typedef typename Trajectory::value_type Segment;
@@ -163,12 +147,21 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory& msg,
     return Trajectory();
   }
 
+  // Validate options
+  const bool has_current_trajectory = options.current_trajectory && !options.current_trajectory->empty();
+  const bool has_joint_names        = options.joint_names        && !options.joint_names->empty();
+  const bool has_wrapping_spec      = options.is_wraparound      && !options.is_wraparound->empty();
+  if (!has_current_trajectory && has_wrapping_spec)
+  {
+    ROS_WARN("Vector specifying whether joints wrap around will not be used because no current trajectory was given.");
+  }
+
   // Permutation vector mapping the expected joint order to the message joint order
   // If unspecified, a trivial map (no permutation) is computed
   typedef std::vector<std::string>::size_type SizeType;
-  std::vector<SizeType> permutation_vector = joint_names.empty() ?
-                                             internal::permutation(msg.joint_names, msg.joint_names) : // Trivial map
-                                             internal::permutation(joint_names,     msg.joint_names);
+  std::vector<SizeType> permutation_vector = has_joint_names ?
+                                             internal::permutation(*(options.joint_names), msg.joint_names) :
+                                             internal::permutation(msg.joint_names, msg.joint_names); // Trivial map
 
   if (permutation_vector.empty())
   {
@@ -210,8 +203,10 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory& msg,
   std::vector<double> position_offset(msg.joint_names.size(), 0.0);
 
   // Bridge current trajectory to new one
-  if (!curr_traj.empty())
+  if (has_current_trajectory)
   {
+    const Trajectory& curr_traj = *(options.current_trajectory);
+
     // Get the last time and state that will be executed from the current trajectory
     const typename Segment::Time last_curr_time = std::max(msg_start_time.toSec(), time.toSec()); // Important!
     typename Segment::State last_curr_state;
@@ -222,11 +217,11 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory& msg,
     typename Segment::State first_new_state(*it, permutation_vector); // Here offsets are not yet applied
 
     // Compute offsets due to wrapping joints
-    if (!is_continuous_joint.empty())
+    if (has_wrapping_spec)
     {
       position_offset = wraparoundOffset<double>(last_curr_state,
                                                  first_new_state,
-                                                 is_continuous_joint);
+                                                 *(options.is_wraparound));
       if (position_offset.empty())
       {
         ROS_ERROR("Cannot create trajectory from message. "
@@ -276,7 +271,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory& msg,
   // Useful debug info
   std::stringstream log_str;
   log_str << "Trajectory has " << result_traj.size() << " segments";
-  if (!curr_traj.empty())
+  if (has_current_trajectory)
   {
     log_str << ":";
     log_str << "\n- " << num_old_segments << " segments will still be executed from current trajectory.";

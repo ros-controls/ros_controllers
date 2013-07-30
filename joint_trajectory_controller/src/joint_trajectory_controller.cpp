@@ -219,6 +219,9 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
 
 void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
 {
+  typedef trajectory_interface::InitJointTrajectoryOptions<Trajectory> Options;
+  using trajectory_interface::initJointTrajectory;
+
   // Preconditions
   if (!msg)
   {
@@ -226,18 +229,18 @@ void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryCo
     return;
   }
 
-  // Useful time variables
-  const ros::Time curr_time = time_ + period_; // Period added because data will get processed at the next update
+  // Time of the next update
+  const ros::Time curr_time = time_ + period_;
 
-  const Trajectory& curr_traj = *(trajectory_.readFromRT());
-  Trajectory new_traj = trajectory_interface::initJointTrajectory<Trajectory>(*msg,
-                                                                              curr_time,
-                                                                              curr_traj,
-                                                                              joint_names_ ,
-                                                                              is_continuous_joint_);
+  // Trajectory initialization options
+  Options options;
+  options.current_trajectory = trajectory_.readFromRT();
+  options.joint_names        = &joint_names_;
+  options.is_wraparound      = &is_continuous_joint_;
 
   // Update currently executing trajectory
-  trajectory_.writeFromNonRT(new_traj);
+  Trajectory new_traj = initJointTrajectory<Trajectory>(*msg, curr_time, options);
+  if (!new_traj.empty()) {trajectory_.writeFromNonRT(new_traj);}
 }
 
 void JointTrajectoryController::goalCB(GoalHandle gh)

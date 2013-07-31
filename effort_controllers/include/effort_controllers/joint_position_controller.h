@@ -103,7 +103,16 @@ public:
    *
    * \param command
    */
-  void setCommand(double cmd);
+  void setCommand(double pos_target);
+
+  /*!
+   * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
+   *        Also supports a target velocity
+   *
+   * \param pos_target - position setpoint
+   * \param vel_target - velocity setpoint
+   */
+  void setCommand(double pos_target, double vel_target);
 
   /** \brief This is called from within the realtime thread just before the
    * first call to \ref update
@@ -123,6 +132,11 @@ public:
   void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
 
   /**
+   * \brief Print debug info to console
+   */
+  void printDebug();
+
+  /**
    * \brief Get the PID parameters
    */
   void setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min);
@@ -132,9 +146,16 @@ public:
    */
   std::string getJointName();
 
+  /**
+   * \brief Get the current position of the joint
+   * \return current position
+   */
+  double getPosition();
+
   hardware_interface::JointHandle joint_;
   boost::shared_ptr<const urdf::Joint> joint_urdf_;
-  realtime_tools::RealtimeBuffer<double> command_;             /**< Last commanded position. */
+  realtime_tools::RealtimeBuffer<double> command_position_;             /**< Last commanded position. */
+  realtime_tools::RealtimeBuffer<double> command_velocity_;    /**< Last commanded velocity. */
 
 private:
   int loop_count_;

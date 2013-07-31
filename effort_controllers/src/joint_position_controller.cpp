@@ -106,18 +106,35 @@ void JointPositionController::getGains(double &p, double &i, double &d, double &
   pid_controller_->getGains(p,i,d,i_max,i_min);
 }
 
+void JointPositionController::printDebug()
+{
+  pid_controller_->printValues();
+}
+
 std::string JointPositionController::getJointName()
 {
   return joint_.getName();
 }
 
+double JointPositionController::getPosition()
+{
+  return joint_.getPosition();
+}
+
 // Set the joint position command
-void JointPositionController::setCommand(double cmd)
+void JointPositionController::setCommand(double pos_target)
 {
   // the writeFromNonRT can be used in RT, if you have the guarantee that
   //  * no non-rt thread is calling the same function (we're not subscribing to ros callbacks)
   //  * there is only one single rt thread
-  command_.writeFromNonRT(cmd);
+  command_position_.writeFromNonRT(pos_target);
+}
+
+// Set the joint position command with a velocity command as well
+void JointPositionController::setCommand(double pos_target, double vel_target)
+{
+  command_position_.writeFromNonRT(pos_target);
+  command_velocity_.writeFromNonRT(vel_target);  
 }
 
 void JointPositionController::starting(const ros::Time& time)
@@ -127,42 +144,44 @@ void JointPositionController::starting(const ros::Time& time)
   // Make sure joint is within limits if applicable
   enforceJointLimits(command);
 
-  command_.initRT(command);
+  command_position_.initRT(command);
+  command_velocity_.initRT(0.0); // be default target velocity is just zero
   pid_controller_->reset();
 }
 
 void JointPositionController::update(const ros::Time& time, const ros::Duration& period)
 {
-  double command = *(command_.readFromRT());
+  double command_position = *(command_position_.readFromRT());
+  double command_velocity = *(command_velocity_.readFromRT());
 
   double error, vel_error;
 
   double current_position = joint_.getPosition();
 
   // Make sure joint is within limits if applicable
-  enforceJointLimits(command);
+  enforceJointLimits(command_position);
 
   // Compute position error
   if (joint_urdf_->type == urdf::Joint::REVOLUTE)
   {
    angles::shortest_angular_distance_with_limits(
       current_position,
-      command,
+      command_position,
       joint_urdf_->limits->lower,
       joint_urdf_->limits->upper,
       error);
   }
   else if (joint_urdf_->type == urdf::Joint::CONTINUOUS)
   {
-    error = angles::shortest_angular_distance(current_position, command);
+    error = angles::shortest_angular_distance(current_position, command_position);
   }
   else //prismatic
   {
-    error = command - current_position;
+    error = command_position - current_position;
   }
 
-  // Compute velocity error assuming desired velocity is 0
-  vel_error = 0.0 - joint_.getVelocity();
+  // Compute velocity error. By default we assume desired velocity is 0 (velocity is not required)
+  vel_error = command_velocity - joint_.getVelocity();
 
   // Set the PID error and compute the PID command with nonuniform
   // time step size. This also allows the user to pass in a precomputed derivative error.
@@ -175,7 +194,7 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
     if(controller_state_publisher_ && controller_state_publisher_->trylock())
     {
       controller_state_publisher_->msg_.header.stamp = time;
-      controller_state_publisher_->msg_.set_point = command;
+      controller_state_publisher_->msg_.set_point = command_position;
       controller_state_publisher_->msg_.process_value = current_position;
       controller_state_publisher_->msg_.process_value_dot = joint_.getVelocity();
       controller_state_publisher_->msg_.error = error;
@@ -199,6 +218,7 @@ void JointPositionController::setCommandCB(const std_msgs::Float64ConstPtr& msg)
   setCommand(msg->data);
 }
 
+// Note: we may want to remove this function once issue https://github.com/ros/angles/issues/2 is resolved
 void JointPositionController::enforceJointLimits(double &command)
 {
   // Check that this joint has applicable limits

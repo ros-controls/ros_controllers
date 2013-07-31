@@ -35,15 +35,15 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 
-// Actionlib
-#include <actionlib/server/action_server.h>
-
-// ros
+// ROS
 #include <ros/node_handle.h>
 
-// ros messages
+// ROS messages
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <trajectory_msgs/JointTrajectory.h>
+
+// actionlib
+#include <actionlib/server/action_server.h>
 
 // realtime_tools
 #include <realtime_tools/realtime_buffer.h>
@@ -74,6 +74,7 @@ public:
 
 private:
   typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>                  ActionServer;
+  typedef boost::shared_ptr<ActionServer>                                                     ActionServerPtr;
   typedef ActionServer::GoalHandle                                                            GoalHandle;
   typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
@@ -87,21 +88,30 @@ private:
   std::vector<bool>                            angle_wraparound_;
   RealtimeGoalHandlePtr                        rt_active_goal_;
   realtime_tools::RealtimeBuffer<Trajectory>   trajectory_;
-  typename Segment::State                      state_; ///< Workspace variable preallocated to the appripriate size
+  typename Segment::State                      state_; ///< Workspace variable preallocated to the appropriate size
   std::vector<std::string>                     joint_names_;
 
   ros::Time     time_;   ///< Time of last update cycle
   ros::Duration period_; ///< Period of last update cycle
 
+  ros::Duration state_publish_period_;
+  ros::Duration action_monitor_period_;
+
   // ROS API
-  ros::Subscriber                             trajectory_command_sub_;
+  ros::NodeHandle controller_nh_;
+  ros::Timer      goal_handle_timer_;
+  ros::Subscriber trajectory_command_sub_;
+  ActionServerPtr action_server_;
+
 //  boost::scoped_ptr<ControllerStatePublisher> controller_state_publisher_;
 
-  void updateTtrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh);
-  void trajectoryCommandCB(const JointTrajectoryConstPtr& msg) {updateTtrajectoryCommand(msg, RealtimeGoalHandlePtr());}
+  void updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh);
+  void trajectoryCommandCB(const JointTrajectoryConstPtr& msg) {updateTrajectoryCommand(msg, RealtimeGoalHandlePtr());}
   void goalCB(GoalHandle gh);
   void cancelCB(GoalHandle gh);
   void preemptActiveGoal();
+
+  void setHoldPosition(const ros::Time& time);
 };
 
 inline void JointTrajectoryController::preemptActiveGoal()
@@ -116,6 +126,19 @@ inline void JointTrajectoryController::preemptActiveGoal()
     current_active_goal->gh_.setCanceled();
   }
 }
+
+namespace internal
+{
+
+template <class Enclosure, class Member>
+inline boost::shared_ptr<Member> share_member(boost::shared_ptr<Enclosure> enclosure, Member &member)
+{
+  actionlib::EnclosureDeleter<Enclosure> d(enclosure);
+  boost::shared_ptr<Member> p(&member, d);
+  return p;
+}
+
+} // namespace
 
 } // namespace
 

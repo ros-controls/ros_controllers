@@ -31,6 +31,10 @@
 #include <iterator>
 #include <string>
 
+// Pluginlib
+#include <pluginlib/class_list_macros.h>
+
+// URDF
 #include <urdf/model.h>
 
 // Project
@@ -121,13 +125,7 @@ using std::string;
 using std::vector;
 
 JointTrajectoryController::JointTrajectoryController()
-  : joints_(),
-    angle_wraparound_(),
-    rt_active_goal_(),
-    trajectory_(),
-    state_(),
-    joint_names_(),
-    time_(0.0),
+  : time_(0.0),
     period_(0.0)
 {}
 
@@ -136,8 +134,23 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
                                      ros::NodeHandle& root_nh,
                                      ros::NodeHandle& controller_nh)
 {
+  // Cache controller node handle
+  controller_nh_ = controller_nh;
+
+  // State publish rate
+  double state_publish_rate = 50.0;
+  controller_nh_.getParam("state_publish_rate", state_publish_rate);
+  ROS_WARN_STREAM("Controller state will be published at " << state_publish_rate << "Hz."); // TODO: Make DEBUG
+  state_publish_period_ = ros::Duration(1.0 / state_publish_rate);
+
+  // Action status checking update rate
+  double action_monitor_rate = 20.0;
+  controller_nh_.getParam("action_monitor_rate", action_monitor_rate);
+  action_monitor_period_ = ros::Duration(1.0 / action_monitor_rate);
+  ROS_WARN_STREAM("Action status changes will be monitored at " << action_monitor_rate << "Hz."); // TODO: Make DEBUG
+
   // List of controlled joints
-  joint_names_ = getStrings(controller_nh, "joints");
+  joint_names_ = getStrings(controller_nh_, "joints");
   if (joint_names_.empty()) {return false;}
   const unsigned int n_joints = joint_names_.size();
 
@@ -175,12 +188,18 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
                   joints_.size() << " joints.");
 
   // Preeallocate resources
-  state_.resize(n_joints);
+  state_.resize(n_joints); // TODO: Make general
 
   // ROS API
-  trajectory_command_sub_ = controller_nh.subscribe("command", 1, &JointTrajectoryController::trajectoryCommandCB, this);
+  trajectory_command_sub_ = controller_nh_.subscribe("command", 1, &JointTrajectoryController::trajectoryCommandCB, this);
 
-//  controller_state_publisher_.reset(new ControllerStatePublisher(controller_nh, "state", 1));
+  action_server_.reset(new ActionServer(controller_nh_, "follow_joint_trajectory",
+                                        boost::bind(&JointTrajectoryController::goalCB,   this, _1),
+                                        boost::bind(&JointTrajectoryController::cancelCB, this, _1),
+                                        false));
+  action_server_->start();
+
+//  controller_state_publisher_.reset(new ControllerStatePublisher(controller_nh_, "state", 1));
   // TODO: Preallocate message
 
   return true;
@@ -188,7 +207,7 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
 
 void JointTrajectoryController::starting(const ros::Time& time)
 {
-
+  setHoldPosition(time);
 }
 
 void JointTrajectoryController::update(const ros::Time& time, const ros::Duration& period)
@@ -206,8 +225,7 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
     return;
   }
 
-  // Use this to get the joint tolerances to check, once we implement them:
-  // tolerances_it = std::advance(tolerances.begin(), std::distance(curr_traj.begin(), segment_it));
+  // TODO: Use segment_it to check tolerances
 
   // Send commands
   for (unsigned int i = 0; i < joints_.size(); ++i)
@@ -217,7 +235,7 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
 }
 
 
-void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
+void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
 {
   typedef trajectory_interface::InitJointTrajectoryOptions<Trajectory> Options;
   using trajectory_interface::initJointTrajectory;
@@ -232,6 +250,14 @@ void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryCo
   // Time of the next update
   const ros::Time curr_time = time_ + period_;
 
+  // Hold current position if trajectory is empty
+  if (msg->points.empty())
+  {
+    setHoldPosition(curr_time);
+    ROS_DEBUG("Empty trajectory command, stopping.");
+    return;
+  }
+
   // Trajectory initialization options
   Options options;
   options.current_trajectory = trajectory_.readFromRT();
@@ -239,19 +265,89 @@ void JointTrajectoryController::updateTtrajectoryCommand(const JointTrajectoryCo
   options.angle_wraparound   = &angle_wraparound_;
 
   // Update currently executing trajectory
-  Trajectory new_traj = initJointTrajectory<Trajectory>(*msg, curr_time, options);
-  if (!new_traj.empty()) {trajectory_.writeFromNonRT(new_traj);}
+  try
+  {
+    Trajectory new_traj = initJointTrajectory<Trajectory>(*msg, curr_time, options);
+    if (!new_traj.empty()) {trajectory_.writeFromNonRT(new_traj);}
+  }
+  catch(...)
+  {
+    ROS_ERROR("Unexpected exception caught when initializing trajectory from ROS message data.");
+  }
 }
 
 void JointTrajectoryController::goalCB(GoalHandle gh)
 {
+  // Precondition
+  using trajectory_interface::internal::permutation;
+  std::vector<unsigned int> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
+  if (permutation_vector.empty())
+  {
+    ROS_ERROR("Ignoring goal. It does not contain the expected joints.");
+    control_msgs::FollowJointTrajectoryResult result;
+    result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;
+    gh.setRejected(result);
+    return;
+  }
 
+  // Accept new goal
+  preemptActiveGoal();
+  gh.setAccepted();
+
+  // Update trajectory and setup goal status checking timer
+  RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
+  goal_handle_timer_ = controller_nh_.createTimer(action_monitor_period_, &RealtimeGoalHandle::runNonRealtime, rt_goal);
+  updateTrajectoryCommand(internal::share_member(gh.getGoal(), gh.getGoal()->trajectory), rt_goal);
+  rt_active_goal_ = rt_goal;
+  goal_handle_timer_.start();
 }
 
 void JointTrajectoryController::cancelCB(GoalHandle gh)
 {
+  RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
 
+  // Check that cancel request refers to currently active goal (if any)
+  if (current_active_goal && current_active_goal->gh_ == gh)
+  {
+    // Reset current goal
+    rt_active_goal_.reset();
+
+    // Enter hold current position mode
+    const ros::Time curr_time = time_ + period_; // Time of the next update
+    setHoldPosition(curr_time);
+    ROS_DEBUG("Canceling active action goal.");
+
+    // Mark the current goal as canceled
+    current_active_goal->gh_.setCanceled();
+  }
+}
+
+void JointTrajectoryController::setHoldPosition(const ros::Time& time)
+{
+  // TODO: Reimplement properly reserving resources!
+  const unsigned int n_joints = joints_.size();
+
+  typename Segment::Time start_time = time.toSec() - 1.0;
+  typename Segment::Time end_time   = time.toSec();
+
+  typename Segment::State state;
+  state.resize(n_joints);
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+    state[i].position     = joints_[i].getPosition();
+    state[i].velocity     = 0.0;
+    state[i].acceleration = 0.0;
+  }
+
+  Segment segment(start_time, state,
+                  end_time,   state);
+  Trajectory hold_trajectory(1, segment);
+  trajectory_.writeFromNonRT(hold_trajectory);
 }
 
 } // namespace
 
+PLUGINLIB_DECLARE_CLASS(position_controllers,
+                        JointTrajectoryController,
+                        joint_trajectory_controller::JointTrajectoryController,
+                        controller_interface::ControllerBase)

@@ -123,10 +123,12 @@ void MultiDofSegment<Segment>::init(const Time&  start_time,
   typename State::const_iterator start_state_it = start_state.begin();
   typename State::const_iterator end_state_it   = end_state.begin();
 
+  multidof_segment_.resize(start_state.size());
   while (start_state_it != start_state.end())
   {
-    multidof_segment_.push_back(Segment(start_time, *start_state_it,
-                                        end_time,   *end_state_it));
+    const unsigned int id = std::distance(start_state.begin(), start_state_it);
+    multidof_segment_[id] = Segment(start_time, *start_state_it,
+                                    end_time,   *end_state_it);
     ++start_state_it; ++end_state_it;
   }
 }

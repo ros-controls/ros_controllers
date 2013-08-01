@@ -33,6 +33,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <trajectory_interface/quintic_spline_segment.h>
 #include <joint_trajectory_controller/init_joint_trajectory.h>
 
 using namespace trajectory_interface;
@@ -43,7 +44,7 @@ using std::string;
 // Floating-point value comparison threshold
 const double EPS = 1e-9;
 
-typedef JointTrajectorySegment<double> Segment;
+typedef JointTrajectorySegment<QuinticSplineSegment<double> > Segment;
 typedef vector<Segment>                Trajectory;
 
 TEST(PermutationTest, Permutation)
@@ -131,15 +132,13 @@ public:
     // Current trajectory
     typename Segment::State state[2];
 
-    state[0].resize(1);
-    state[0].front().position     = 0.0;
-    state[0].front().velocity     = 0.0;
-    state[0].front().acceleration = 0.0;
+    state[0].position.push_back(0.0);
+    state[0].velocity.push_back(0.0);
+    state[0].acceleration.push_back(0.0);
 
-    state[1].resize(1);
-    state[1].front().position     = 1.0;
-    state[1].front().velocity     = 1.0;
-    state[1].front().acceleration = 1.0;
+    state[1].position.push_back(1.0);
+    state[1].velocity.push_back(1.0);
+    state[1].acceleration.push_back(1.0);
 
     curr_traj.push_back(Segment(0.0, state[0],
                                 1.0, state[1]));
@@ -250,7 +249,7 @@ TEST_F(InitTrajectoryTest, InitLogicCombine)
 
   // Before first point, starting the current trajectory: Return 4 segments: Last of current + bridge + full message
   {
-    const ros::Time time(curr_traj.front().startTime());
+    const ros::Time time(curr_traj[0].startTime());
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
     EXPECT_EQ(points.size() + 1, trajectory.size());
   }
@@ -336,18 +335,18 @@ TEST_F(InitTrajectoryTest, InitValues)
     {
       typename Segment::State state;
       segment.sample(segment.startTime(), state);
-      EXPECT_EQ(p_start.positions.front(),  state.front().position);
-      EXPECT_EQ(p_start.velocities.front(), state.front().velocity);
-      EXPECT_EQ(p_start.accelerations.front(), state.front().acceleration);
+      EXPECT_EQ(p_start.positions[0],  state.position[0]);
+      EXPECT_EQ(p_start.velocities[0], state.velocity[0]);
+      EXPECT_EQ(p_start.accelerations[0], state.acceleration[0]);
     }
 
     // Check end state
     {
       typename Segment::State state;
       segment.sample(segment.endTime(), state);
-      EXPECT_EQ(p_end.positions.front(),  state.front().position);
-      EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
-      EXPECT_EQ(p_end.accelerations.front(), state.front().acceleration);
+      EXPECT_EQ(p_end.positions[0],  state.position[0]);
+      EXPECT_EQ(p_end.velocities[0], state.velocity[0]);
+      EXPECT_EQ(p_end.accelerations[0], state.acceleration[0]);
     }
   }
 }
@@ -355,7 +354,7 @@ TEST_F(InitTrajectoryTest, InitValues)
 TEST_F(InitTrajectoryTest, InitValuesCombine)
 {
   // Before first point: Return 4 segments: Last of current + bridge + full message
-  const ros::Time time(curr_traj.front().startTime());
+  const ros::Time time(curr_traj[0].startTime());
   InitJointTrajectoryOptions<Trajectory> options;
   options.current_trajectory = &curr_traj;
 
@@ -364,8 +363,8 @@ TEST_F(InitTrajectoryTest, InitValuesCombine)
 
   // Check current trajectory segment start/end times and states (only one)
   {
-    const Segment& ref_segment = curr_traj.front();
-    const Segment& segment     = trajectory.front();
+    const Segment& ref_segment = curr_traj[0];
+    const Segment& segment     = trajectory[0];
 
     // Check start/end times
     {
@@ -378,9 +377,9 @@ TEST_F(InitTrajectoryTest, InitValuesCombine)
       typename Segment::State ref_state, state;
       ref_segment.sample(ref_segment.startTime(), ref_state);
       segment.sample(segment.startTime(), state);
-      EXPECT_EQ(ref_state.front().position,     state.front().position);
-      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
-      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+      EXPECT_EQ(ref_state.position[0],     state.position[0]);
+      EXPECT_EQ(ref_state.velocity[0],     state.velocity[0]);
+      EXPECT_EQ(ref_state.acceleration[0], state.acceleration[0]);
     }
 
     // Check end state
@@ -388,15 +387,15 @@ TEST_F(InitTrajectoryTest, InitValuesCombine)
       typename Segment::State ref_state, state;
       ref_segment.sample(ref_segment.endTime(), ref_state);
       segment.sample(segment.endTime(), state);
-      EXPECT_EQ(ref_state.front().position,     state.front().position);
-      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
-      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+      EXPECT_EQ(ref_state.position[0],     state.position[0]);
+      EXPECT_EQ(ref_state.velocity[0],     state.velocity[0]);
+      EXPECT_EQ(ref_state.acceleration[0], state.acceleration[0]);
     }
   }
 
   // Check bridge trajectory segment start/end times and states (only one)
   {
-    const Segment& ref_segment = curr_traj.front();
+    const Segment& ref_segment = curr_traj[0];
     const Segment& segment     = trajectory[1];
 
     const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
@@ -405,7 +404,7 @@ TEST_F(InitTrajectoryTest, InitValuesCombine)
     // Segment end time should correspond to first trajectory message point
     const ros::Time msg_start_time = trajectory_msg.header.stamp;
     const typename Segment::Time start_time = msg_start_time.toSec();
-    const typename Segment::Time end_time   = (msg_start_time +  msg_points.front().time_from_start).toSec();
+    const typename Segment::Time end_time   = (msg_start_time +  msg_points[0].time_from_start).toSec();
 
     // Check start/end times
     {
@@ -418,18 +417,18 @@ TEST_F(InitTrajectoryTest, InitValuesCombine)
       typename Segment::State ref_state, state;
       ref_segment.sample(start_time, ref_state);
       segment.sample(segment.startTime(), state);
-      EXPECT_EQ(ref_state.front().position,     state.front().position);
-      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
-      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+      EXPECT_EQ(ref_state.position[0],     state.position[0]);
+      EXPECT_EQ(ref_state.velocity[0],     state.velocity[0]);
+      EXPECT_EQ(ref_state.acceleration[0], state.acceleration[0]);
     }
 
     // Check end state. Corresponds to first trajectory message point
     {
       typename Segment::State state;
       segment.sample(segment.endTime(), state);
-      EXPECT_EQ(msg_points.front().positions.front(),     state.front().position);
-      EXPECT_EQ(msg_points.front().velocities.front(),    state.front().velocity);
-      EXPECT_EQ(msg_points.front().accelerations.front(), state.front().acceleration);
+      EXPECT_EQ(msg_points[0].positions[0],     state.position[0]);
+      EXPECT_EQ(msg_points[0].velocities[0],    state.velocity[0]);
+      EXPECT_EQ(msg_points[0].accelerations[0], state.acceleration[0]);
     }
   }
 
@@ -455,18 +454,18 @@ TEST_F(InitTrajectoryTest, InitValuesCombine)
     {
       typename Segment::State state;
       segment.sample(segment.startTime(), state);
-      EXPECT_EQ(p_start.positions.front(),  state.front().position);
-      EXPECT_EQ(p_start.velocities.front(), state.front().velocity);
-      EXPECT_EQ(p_start.accelerations.front(), state.front().acceleration);
+      EXPECT_EQ(p_start.positions[0],  state.position[0]);
+      EXPECT_EQ(p_start.velocities[0], state.velocity[0]);
+      EXPECT_EQ(p_start.accelerations[0], state.acceleration[0]);
     }
 
     // Check end state
     {
       typename Segment::State state;
       segment.sample(segment.endTime(), state);
-      EXPECT_EQ(p_end.positions.front(),  state.front().position);
-      EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
-      EXPECT_EQ(p_end.accelerations.front(), state.front().acceleration);
+      EXPECT_EQ(p_end.positions[0],  state.position[0]);
+      EXPECT_EQ(p_end.velocities[0], state.velocity[0]);
+      EXPECT_EQ(p_end.accelerations[0], state.acceleration[0]);
     }
   }
 }
@@ -493,11 +492,11 @@ TEST_F(InitTrajectoryTest, JointPermutation)
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp);
 
     // Check position values only
-    const Segment& segment = trajectory.front();
+    const Segment& segment = trajectory[0];
     typename Segment::State state;
     segment.sample(segment.startTime(), state);
-    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state[0].position);
-    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state[1].position);
+    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state.position[0]);
+    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state.position[1]);
   }
 
   // Reference joint names vector that reverses joint order
@@ -511,13 +510,13 @@ TEST_F(InitTrajectoryTest, JointPermutation)
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, options);
 
     // Check position values only
-    const Segment& segment = trajectory.front();
+    const Segment& segment = trajectory[0];
     typename Segment::State state;
     segment.sample(segment.startTime(), state);
-    EXPECT_NE(trajectory_msg.points[0].positions[0],  state[0].position);
-    EXPECT_NE(trajectory_msg.points[0].positions[1],  state[1].position);
-    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state[1].position);
-    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state[0].position);
+    EXPECT_NE(trajectory_msg.points[0].positions[0],  state.position[0]);
+    EXPECT_NE(trajectory_msg.points[0].positions[1],  state.position[1]);
+    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state.position[1]);
+    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state.position[0]);
   }
 
   // Reference joint names size mismatch
@@ -554,7 +553,7 @@ TEST_F(InitTrajectoryTest, WrappingSpec)
   }
 
   // Before first point: Return 4 segments: Last of current + bridge + full message
-  const ros::Time time(curr_traj.front().startTime());
+  const ros::Time time(curr_traj[0].startTime());
   std::vector<bool> angle_wraparound(1, true);
   InitJointTrajectoryOptions<Trajectory> options;
   options.current_trajectory = &curr_traj;
@@ -565,8 +564,8 @@ TEST_F(InitTrajectoryTest, WrappingSpec)
 
   // Check current trajectory segment start/end times and states (only one)
   {
-    const Segment& ref_segment = curr_traj.front();
-    const Segment& segment     = trajectory.front();
+    const Segment& ref_segment = curr_traj[0];
+    const Segment& segment     = trajectory[0];
 
     // Check start/end times
     {
@@ -579,9 +578,9 @@ TEST_F(InitTrajectoryTest, WrappingSpec)
       typename Segment::State ref_state, state;
       ref_segment.sample(ref_segment.startTime(), ref_state);
       segment.sample(segment.startTime(), state);
-      EXPECT_EQ(ref_state.front().position,     state.front().position);
-      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
-      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+      EXPECT_EQ(ref_state.position[0],     state.position[0]);
+      EXPECT_EQ(ref_state.velocity[0],     state.velocity[0]);
+      EXPECT_EQ(ref_state.acceleration[0], state.acceleration[0]);
     }
 
     // Check end state
@@ -589,15 +588,15 @@ TEST_F(InitTrajectoryTest, WrappingSpec)
       typename Segment::State ref_state, state;
       ref_segment.sample(ref_segment.endTime(), ref_state);
       segment.sample(segment.endTime(), state);
-      EXPECT_EQ(ref_state.front().position,     state.front().position);
-      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
-      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+      EXPECT_EQ(ref_state.position[0],     state.position[0]);
+      EXPECT_EQ(ref_state.velocity[0],     state.velocity[0]);
+      EXPECT_EQ(ref_state.acceleration[0], state.acceleration[0]);
     }
   }
 
   // Check bridge trajectory segment start/end times and states (only one)
   {
-    const Segment& ref_segment = curr_traj.front();
+    const Segment& ref_segment = curr_traj[0];
     const Segment& segment     = trajectory[1];
 
     const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
@@ -606,7 +605,7 @@ TEST_F(InitTrajectoryTest, WrappingSpec)
     // Segment end time should correspond to first trajectory message point
     const ros::Time msg_start_time = trajectory_msg.header.stamp;
     const typename Segment::Time start_time = msg_start_time.toSec();
-    const typename Segment::Time end_time   = (msg_start_time +  msg_points.front().time_from_start).toSec();
+    const typename Segment::Time end_time   = (msg_start_time +  msg_points[0].time_from_start).toSec();
 
     // Check start/end times
     {
@@ -619,18 +618,18 @@ TEST_F(InitTrajectoryTest, WrappingSpec)
       typename Segment::State ref_state, state;
       ref_segment.sample(start_time, ref_state);
       segment.sample(segment.startTime(), state);
-      EXPECT_EQ(ref_state.front().position,     state.front().position);
-      EXPECT_EQ(ref_state.front().velocity,     state.front().velocity);
-      EXPECT_EQ(ref_state.front().acceleration, state.front().acceleration);
+      EXPECT_EQ(ref_state.position[0],     state.position[0]);
+      EXPECT_EQ(ref_state.velocity[0],     state.velocity[0]);
+      EXPECT_EQ(ref_state.acceleration[0], state.acceleration[0]);
     }
 
     // Check end state. Corresponds to first trajectory message point
     {
       typename Segment::State state;
       segment.sample(segment.endTime(), state);
-      EXPECT_EQ(msg_points.front().positions.front() - wrap, state.front().position); // NOTE: Wrap used
-      EXPECT_EQ(msg_points.front().velocities.front(),       state.front().velocity);
-      EXPECT_EQ(msg_points.front().accelerations.front(),    state.front().acceleration);
+      EXPECT_EQ(msg_points[0].positions[0] - wrap, state.position[0]); // NOTE: Wrap used
+      EXPECT_EQ(msg_points[0].velocities[0],       state.velocity[0]);
+      EXPECT_EQ(msg_points[0].accelerations[0],    state.acceleration[0]);
     }
   }
 
@@ -656,18 +655,18 @@ TEST_F(InitTrajectoryTest, WrappingSpec)
     {
       typename Segment::State state;
       segment.sample(segment.startTime(), state);
-      EXPECT_EQ(p_start.positions.front() - wrap, state.front().position); // NOTE: Wrap used
-      EXPECT_EQ(p_start.velocities.front(),       state.front().velocity);
-      EXPECT_EQ(p_start.accelerations.front(),    state.front().acceleration);
+      EXPECT_EQ(p_start.positions[0] - wrap, state.position[0]); // NOTE: Wrap used
+      EXPECT_EQ(p_start.velocities[0],       state.velocity[0]);
+      EXPECT_EQ(p_start.accelerations[0],    state.acceleration[0]);
     }
 
     // Check end state
     {
       typename Segment::State state;
       segment.sample(segment.endTime(), state);
-      EXPECT_EQ(p_end.positions.front() - wrap, state.front().position); // NOTE: Wrap used
-      EXPECT_EQ(p_end.velocities.front(),       state.front().velocity);
-      EXPECT_EQ(p_end.accelerations.front(),    state.front().acceleration);
+      EXPECT_EQ(p_end.positions[0] - wrap, state.position[0]); // NOTE: Wrap used
+      EXPECT_EQ(p_end.velocities[0],       state.velocity[0]);
+      EXPECT_EQ(p_end.accelerations[0],    state.acceleration[0]);
     }
   }
 
@@ -697,7 +696,7 @@ TEST_F(InitTrajectoryTest, IgnoreWrappingSpec)
   }
 
   // Before first point: Return 2 segments: Full message
-  const ros::Time time(curr_traj.front().startTime());
+  const ros::Time time(curr_traj[0].startTime());
   std::vector<bool> angle_wraparound(1, true);
   InitJointTrajectoryOptions<Trajectory> options;
   options.angle_wraparound = &angle_wraparound;
@@ -724,18 +723,18 @@ TEST_F(InitTrajectoryTest, IgnoreWrappingSpec)
     {
       typename Segment::State state;
       segment.sample(segment.startTime(), state);
-      EXPECT_EQ(p_start.positions.front(),  state.front().position);
-      EXPECT_EQ(p_start.velocities.front(), state.front().velocity);
-      EXPECT_EQ(p_start.accelerations.front(), state.front().acceleration);
+      EXPECT_EQ(p_start.positions[0],  state.position[0]);
+      EXPECT_EQ(p_start.velocities[0], state.velocity[0]);
+      EXPECT_EQ(p_start.accelerations[0], state.acceleration[0]);
     }
 
     // Check end state
     {
       typename Segment::State state;
       segment.sample(segment.endTime(), state);
-      EXPECT_EQ(p_end.positions.front(),  state.front().position);
-      EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
-      EXPECT_EQ(p_end.accelerations.front(), state.front().acceleration);
+      EXPECT_EQ(p_end.positions[0],  state.position[0]);
+      EXPECT_EQ(p_end.velocities[0], state.velocity[0]);
+      EXPECT_EQ(p_end.accelerations[0], state.acceleration[0]);
     }
   }
 }

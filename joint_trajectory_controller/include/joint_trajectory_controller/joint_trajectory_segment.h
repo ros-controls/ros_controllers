@@ -38,8 +38,6 @@
 
 #include <angles/angles.h>
 
-#include <trajectory_interface/quintic_spline_segment.h> // TODO: Remove?
-#include <trajectory_interface/multi_dof_segment.h>
 #include <joint_trajectory_controller/trajectory_interface_ros.h>
 
 namespace trajectory_interface
@@ -49,17 +47,25 @@ namespace trajectory_interface
  * \brief Class representing a multi-dimensional quintic spline segment with a start and end time.
  *
  * It additionally allows to construct the segment and its state type from ROS message data.
+ *
+ * \tparam Segment Segment type. The state type (\p Segment::State) must have the following public members:
+ * \code
+ * std::vector<Scalar> position;
+ * std::vector<Scalar> velocity;
+ * std::vector<Scalar> acceleration;
+ * \endcode
+ * where \p Scalar is any type convertible to \p double.
  */
-template <class Scalar>
-class JointTrajectorySegment : public MultiDofSegment<QuinticSplineSegment<Scalar> >
+template <class Segment>
+class JointTrajectorySegment : public Segment
 {
 public:
-  typedef typename MultiDofSegment<QuinticSplineSegment<Scalar> >::Time  Time;
+  typedef typename Segment::Time  Time;
 
-  struct State : public MultiDofSegment<QuinticSplineSegment<Scalar> >::State // NOTE: Inheriting from std::vector, not particularly nice!
+  struct State : public Segment::State
   {
-    State() : MultiDofSegment<QuinticSplineSegment<Scalar> >::State() {}
-    State(unsigned int size) : MultiDofSegment<QuinticSplineSegment<Scalar> >::State(size) {} // TODO: Remove!
+    State() : Segment::State() {}
+    State(unsigned int size) : Segment::State(size) {}
 
     /**
      * \param point Trajectory point.
@@ -84,9 +90,18 @@ public:
           const std::vector<unsigned int>&             permutation     = std::vector<unsigned int>(),
           const std::vector<double>&                   position_offset = std::vector<double>())
     {
+      init(point, permutation, position_offset);
+    }
+
+    void init(const trajectory_msgs::JointTrajectoryPoint& point,
+              const std::vector<unsigned int>&             permutation     = std::vector<unsigned int>(),
+              const std::vector<double>&                   position_offset = std::vector<double>())
+    {
       using std::invalid_argument;
 
       const unsigned int joint_dim = point.positions.size();
+
+      // Preconditions
       if (!isValid(point, joint_dim))
       {
         throw(invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
@@ -108,7 +123,11 @@ public:
                                "and vector specifying whether joints wrap around."));
       }
 
-      this->resize(joint_dim);
+      // Initialize state
+      this->position.resize(joint_dim);
+      this->velocity.resize(joint_dim);
+      this->acceleration.resize(joint_dim);
+
       for (unsigned int i = 0; i < joint_dim; ++i)
       {
         // Apply permutation only if it was specified, otherwise preserve original message order
@@ -117,12 +136,9 @@ public:
         // Apply position offset only if it was specified
         const double offset = position_offset.empty() ? 0.0 : position_offset[i];
 
-        typename QuinticSplineSegment<Scalar>::State single_joint_state;
-        if (!point.positions.empty())     {single_joint_state.position     = point.positions[id] + offset;}
-        if (!point.velocities.empty())    {single_joint_state.velocity     = point.velocities[id];}
-        if (!point.accelerations.empty()) {single_joint_state.acceleration = point.accelerations[id];}
-
-        (*this)[i] = single_joint_state;
+        if (!point.positions.empty())     {this->position[i]     = point.positions[id] + offset;}
+        if (!point.velocities.empty())    {this->velocity[i]     = point.velocities[id];}
+        if (!point.accelerations.empty()) {this->acceleration[i] = point.accelerations[id];}
       }
     }
   };
@@ -140,7 +156,7 @@ public:
                          const Time&  end_time,
                          const State& end_state)
   {
-    MultiDofSegment<QuinticSplineSegment<Scalar> >::init(start_time, start_state, end_time, end_state);
+    Segment::init(start_time, start_state, end_time, end_state);
   }
 
   /**
@@ -186,16 +202,15 @@ public:
   }
 };
 
-// TODO: Not double, but scalar!
-// TODO: Make a State member? not really...
+// TODO: Doc!, move elsewhere!
 template <class Scalar>
-std::vector<double> wraparoundOffset(const typename JointTrajectorySegment<Scalar>::State&    prev_state,
-                                     const typename JointTrajectorySegment<Scalar>::State&    next_state,
-                                     const std::vector<bool>&                                 angle_wraparound)
+std::vector<Scalar> wraparoundOffset(const std::vector<Scalar>& prev_position,
+                                     const std::vector<Scalar>& next_position,
+                                     const std::vector<bool>&   angle_wraparound)
 {
   // Preconditions
   const unsigned int n_joints = angle_wraparound.size();
-  if (n_joints != prev_state.size() || n_joints != next_state.size()) {return std::vector<double>();}
+  if (n_joints != prev_position.size() || n_joints != next_position.size()) {return std::vector<double>();}
 
   // Return value
   std::vector<double> pos_offset(n_joints, 0.0);
@@ -204,8 +219,8 @@ std::vector<double> wraparoundOffset(const typename JointTrajectorySegment<Scala
   {
     if (angle_wraparound[i])
     {
-      const double dist = angles::shortest_angular_distance(prev_state[i].position, next_state[i].position);
-      pos_offset[i] = (prev_state[i].position + dist) - next_state[i].position;
+      const double dist = angles::shortest_angular_distance(prev_position[i], next_position[i]);
+      pos_offset[i] = (prev_position[i] + dist) - next_position[i];
     }
   }
   return pos_offset;

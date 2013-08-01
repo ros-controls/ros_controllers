@@ -32,7 +32,6 @@
 #include <vector>
 
 #include <gtest/gtest.h>
-#include <joint_trajectory_controller/joint_trajectory_segment.h>
 #include <joint_trajectory_controller/trajectory_interface_ros.h>
 
 using namespace trajectory_interface;
@@ -42,11 +41,6 @@ using std::string;
 
 // Floating-point value comparison threshold
 const double EPS = 1e-9;
-
-
-typedef JointTrajectorySegment<double> Segment;
-typedef vector<Segment>           Trajectory;
-
 
 TEST(StartTimeTest, StartTime)
 {

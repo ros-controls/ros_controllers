@@ -235,9 +235,9 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     // Compute offsets due to wrapping joints
     if (has_angle_wraparound)
     {
-      position_offset = wraparoundOffset<double>(last_curr_state,
-                                                 first_new_state,
-                                                 *(options.angle_wraparound));
+      position_offset = wraparoundOffset(last_curr_state.position,
+                                         first_new_state.position,
+                                         *(options.angle_wraparound));
       if (position_offset.empty())
       {
         ROS_ERROR("Cannot create trajectory from message. "

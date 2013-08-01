@@ -55,6 +55,7 @@
 #include <hardware_interface/joint_command_interface.h>
 
 // Project
+#include <trajectory_interface/quintic_spline_segment.h> // TODO: Make segment type a template parameter
 #include <joint_trajectory_controller/joint_trajectory_segment.h>
 
 namespace joint_trajectory_controller
@@ -81,7 +82,7 @@ private:
   typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
 //  typedef realtime_tools::RealtimePublisher<controllers_msgs::JointControllerState>           ControllerStatePublisher;
 
-  typedef trajectory_interface::JointTrajectorySegment<double> Segment;
+  typedef trajectory_interface::JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
   typedef std::vector<Segment> Trajectory;
 
   std::vector<hardware_interface::JointHandle> joints_;

@@ -31,6 +31,7 @@
 #include <stdexcept>
 #include <gtest/gtest.h>
 #include <ros/console.h>
+#include <trajectory_interface/quintic_spline_segment.h>
 #include <joint_trajectory_controller/joint_trajectory_segment.h>
 
 using namespace trajectory_interface;
@@ -39,29 +40,27 @@ using namespace trajectory_msgs;
 // Floating-point value comparison threshold
 const double EPS = 1e-9;
 
-typedef JointTrajectorySegment<double> Segment;
+typedef JointTrajectorySegment<QuinticSplineSegment<double> > Segment;
 
 TEST(WraparoundOffsetTest, WrappingPositions)
 {
-  typedef  typename JointTrajectorySegment<double>::State State;
-
   // Setup with state increments that cause multi-loop wrapping
   const double half_pi = M_PI / 2.0;
   const double two_pi  = 2.0 * M_PI;
 
-  State state1(2);
-  state1[0].position =  half_pi / 2.0;
-  state1[1].position =  half_pi / 2.0;
+  std::vector<double> pos1(2);
+  pos1[0] =  half_pi / 2.0;
+  pos1[1] =  half_pi / 2.0;
 
-  State state2(2);
-  state2[0].position =  two_pi + half_pi;
-  state2[1].position =  2.0 * two_pi + half_pi;
+  std::vector<double> pos2(2);
+  pos2[0] =  two_pi + half_pi;
+  pos2[1] =  2.0 * two_pi + half_pi;
 
   // No wrapping joints
   {
     std::vector<bool> angle_wraparound(2, false);
-    std::vector<double> wraparound_offset = wraparoundOffset<double>(state1, state2, angle_wraparound);
-    EXPECT_NEAR(state1.size(), wraparound_offset.size(), EPS);
+    std::vector<double> wraparound_offset = wraparoundOffset(pos1, pos2, angle_wraparound);
+    EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
     EXPECT_NEAR(0.0, wraparound_offset[0], EPS);
     EXPECT_NEAR(0.0, wraparound_offset[1], EPS);
   }
@@ -74,16 +73,16 @@ TEST(WraparoundOffsetTest, WrappingPositions)
 
     // From state1 to state2
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(state1, state2, angle_wraparound);
-      EXPECT_NEAR(state1.size(), wraparound_offset.size(), EPS);
+      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos1, pos2, angle_wraparound);
+      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
       EXPECT_NEAR(-two_pi, wraparound_offset[0], EPS);
       EXPECT_NEAR(0.0, wraparound_offset[1], EPS);
     }
 
     // From state2 to state1
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(state2, state1, angle_wraparound);
-      EXPECT_NEAR(state1.size(), wraparound_offset.size(), EPS);
+      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos2, pos1, angle_wraparound);
+      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
       EXPECT_NEAR(two_pi, wraparound_offset[0], EPS);
       EXPECT_NEAR(0.0, wraparound_offset[1], EPS);
     }
@@ -95,16 +94,16 @@ TEST(WraparoundOffsetTest, WrappingPositions)
 
     // From state1 to state2
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(state1, state2, angle_wraparound);
-      EXPECT_NEAR(state1.size(), wraparound_offset.size(), EPS);
+      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos1, pos2, angle_wraparound);
+      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
       EXPECT_NEAR(-two_pi, wraparound_offset[0], EPS);
       EXPECT_NEAR(-2.0 * two_pi, wraparound_offset[1], EPS);
     }
 
     // From state2 to state1
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(state2, state1, angle_wraparound);
-      EXPECT_NEAR(state1.size(), wraparound_offset.size(), EPS);
+      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos2, pos1, angle_wraparound);
+      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
       EXPECT_NEAR(two_pi, wraparound_offset[0], EPS);
       EXPECT_NEAR(2.0 * two_pi, wraparound_offset[1], EPS);
     }
@@ -113,18 +112,16 @@ TEST(WraparoundOffsetTest, WrappingPositions)
 
 TEST(WraparoundOffsetTest, NonWrappingPositions)
 {
-  typedef  typename JointTrajectorySegment<double>::State State;
-
   // Setup with state increments that don't cause multi-loop wrapping
   const double half_pi = M_PI / 2.0;
 
-  State state1(2);
-  state1[0].position =  half_pi / 2.0;
-  state1[1].position =  half_pi / 2.0;
+  std::vector<double> pos1(2);
+  pos1[0] =  half_pi / 2.0;
+  pos1[1] =  half_pi / 2.0;
 
-  State state2(2);
-  state2[0].position =  0.0;
-  state2[1].position =  2.0 * half_pi;
+  std::vector<double> pos2(2);
+  pos2[0] =  0.0;
+  pos2[1] =  2.0 * half_pi;
 
   // Both wrapping joints
   {
@@ -132,16 +129,16 @@ TEST(WraparoundOffsetTest, NonWrappingPositions)
 
     // From state1 to state2
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(state1, state2, angle_wraparound);
-      EXPECT_NEAR(state1.size(), wraparound_offset.size(), EPS);
+      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos1, pos2, angle_wraparound);
+      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
       EXPECT_NEAR(0.0, wraparound_offset[0], EPS);
       EXPECT_NEAR(0.0, wraparound_offset[1], EPS);
     }
 
     // From state2 to state1
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(state2, state1, angle_wraparound);
-      EXPECT_NEAR(state1.size(), wraparound_offset.size(), EPS);
+      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos2, pos1, angle_wraparound);
+      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
       EXPECT_NEAR(0.0, wraparound_offset[0], EPS);
       EXPECT_NEAR(0.0, wraparound_offset[1], EPS);
     }
@@ -163,22 +160,20 @@ public:
     p_end.time_from_start = ros::Duration(2.0);
 
     start_time = (traj_start_time + p_start.time_from_start).toSec();
-    start_state.resize(1);
-    start_state.front().position = p_start.positions.front();
-    start_state.front().velocity = p_start.velocities.front();
+    start_state.position.push_back(p_start.positions.front());
+    start_state.velocity.push_back(p_start.velocities.front());
 
     end_time = (traj_start_time + p_end.time_from_start).toSec();
-    end_state.resize(1);
-    end_state.front().position = p_end.positions.front();
-    end_state.front().velocity = p_end.velocities.front();
+    end_state.position.push_back(p_end.positions.front());
+    end_state.velocity.push_back(p_end.velocities.front());
   }
 
 protected:
-  ros::Time traj_start_time;
+  ros::Time            traj_start_time;
   JointTrajectoryPoint p_start;
   JointTrajectoryPoint p_end;
 
-  typename Segment::Time start_time, end_time;
+  typename Segment::Time  start_time,  end_time;
   typename Segment::State start_state, end_state;
 };
 
@@ -263,16 +258,16 @@ TEST_F(JointTrajectorySegmentTest, ValidSegmentConstructionRos)
   {
     typename Segment::State state;
     segment.sample(segment.startTime(), state);
-    EXPECT_EQ(p_start.positions.front(),  state.front().position);
-    EXPECT_EQ(p_start.velocities.front(), state.front().velocity);
+    EXPECT_EQ(p_start.positions[0],  state.position[0]);
+    EXPECT_EQ(p_start.velocities[0], state.velocity[0]);
   }
 
   // Check end state
   {
     typename Segment::State state;
     segment.sample(segment.endTime(), state);
-    EXPECT_EQ(p_end.positions.front(),  state.front().position);
-    EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
+    EXPECT_EQ(p_end.positions[0],  state.position[0]);
+    EXPECT_EQ(p_end.velocities[0], state.velocity[0]);
   }
 }
 
@@ -280,7 +275,7 @@ TEST_F(JointTrajectorySegmentTest, ValidSegmentConstruction)
 {
   // Construct segment from ROS message
   EXPECT_NO_THROW(Segment(start_time,start_state, end_time, end_state));
-  Segment segment(start_time,start_state, end_time, end_state);
+  Segment segment(start_time, start_state, end_time, end_state);
 
   // Check start/end times
   {
@@ -294,16 +289,16 @@ TEST_F(JointTrajectorySegmentTest, ValidSegmentConstruction)
   {
     typename Segment::State state;
     segment.sample(segment.startTime(), state);
-    EXPECT_EQ(p_start.positions.front(),  state.front().position);
-    EXPECT_EQ(p_start.velocities.front(), state.front().velocity);
+    EXPECT_EQ(p_start.positions[0],  state.position[0]);
+    EXPECT_EQ(p_start.velocities[0], state.velocity[0]);
   }
 
   // Check end state
   {
     typename Segment::State state;
     segment.sample(segment.endTime(), state);
-    EXPECT_EQ(p_end.positions.front(),  state.front().position);
-    EXPECT_EQ(p_end.velocities.front(), state.front().velocity);
+    EXPECT_EQ(p_end.positions[0],  state.position[0]);
+    EXPECT_EQ(p_end.velocities[0], state.velocity[0]);
   }
 }
 
@@ -311,11 +306,11 @@ TEST_F(JointTrajectorySegmentTest, ValidSegmentConstruction)
 TEST_F(JointTrajectorySegmentTest, PermutationTest)
 {
   // Add an extra joint to the trajectory point messages created in the fixture
-  p_start.positions.push_back(-p_start.positions.front());
-  p_start.velocities.push_back(-p_start.velocities.front());
+  p_start.positions.push_back(-p_start.positions[0]);
+  p_start.velocities.push_back(-p_start.velocities[0]);
 
-  p_end.positions.push_back(-p_end.positions.front());
-  p_end.velocities.push_back(-p_end.velocities.front());
+  p_end.positions.push_back(-p_end.positions[0]);
+  p_end.velocities.push_back(-p_end.velocities[0]);
 
   // No permutation vector
   {
@@ -326,8 +321,8 @@ TEST_F(JointTrajectorySegmentTest, PermutationTest)
     // Check position values of start state only
     typename Segment::State state;
     segment.sample(segment.startTime(), state);
-    EXPECT_EQ(p_start.positions[0], state[0].position);
-    EXPECT_EQ(p_start.positions[1], state[1].position);
+    EXPECT_EQ(p_start.positions[0], state.position[0]);
+    EXPECT_EQ(p_start.positions[1], state.position[1]);
   }
 
   // Permutation vector preserving trajectory message joint order
@@ -343,8 +338,8 @@ TEST_F(JointTrajectorySegmentTest, PermutationTest)
     // Check position values of start state only
     typename Segment::State state;
     segment.sample(segment.startTime(), state);
-    EXPECT_EQ(p_start.positions[0], state[0].position);
-    EXPECT_EQ(p_start.positions[1], state[1].position);
+    EXPECT_EQ(p_start.positions[0], state.position[0]);
+    EXPECT_EQ(p_start.positions[1], state.position[1]);
   }
 
   // Permutation vector reversing trajectory message joint order
@@ -360,10 +355,10 @@ TEST_F(JointTrajectorySegmentTest, PermutationTest)
     // Check position values of start state only
     typename Segment::State state;
     segment.sample(segment.startTime(), state);
-    EXPECT_NE(p_start.positions[0], state[0].position);
-    EXPECT_NE(p_start.positions[1], state[1].position);
-    EXPECT_EQ(p_start.positions[0], state[1].position);
-    EXPECT_EQ(p_start.positions[1], state[0].position);
+    EXPECT_NE(p_start.positions[0], state.position[0]);
+    EXPECT_NE(p_start.positions[1], state.position[1]);
+    EXPECT_EQ(p_start.positions[0], state.position[1]);
+    EXPECT_EQ(p_start.positions[1], state.position[0]);
   }
 }
 

@@ -140,14 +140,14 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
   // State publish rate
   double state_publish_rate = 50.0;
   controller_nh_.getParam("state_publish_rate", state_publish_rate);
-  ROS_WARN_STREAM("Controller state will be published at " << state_publish_rate << "Hz."); // TODO: Make DEBUG
+  ROS_DEBUG_STREAM("Controller state will be published at " << state_publish_rate << "Hz.");
   state_publish_period_ = ros::Duration(1.0 / state_publish_rate);
 
   // Action status checking update rate
   double action_monitor_rate = 20.0;
   controller_nh_.getParam("action_monitor_rate", action_monitor_rate);
   action_monitor_period_ = ros::Duration(1.0 / action_monitor_rate);
-  ROS_WARN_STREAM("Action status changes will be monitored at " << action_monitor_rate << "Hz."); // TODO: Make DEBUG
+  ROS_DEBUG_STREAM("Action status changes will be monitored at " << action_monitor_rate << "Hz.");
 
   // List of controlled joints
   joint_names_ = getStrings(controller_nh_, "joints");
@@ -188,7 +188,7 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
                   joints_.size() << " joints.");
 
   // Preeallocate resources
-  state_.resize(n_joints); // TODO: Make general
+  state_ = typename Segment::State(n_joints);
 
   // ROS API
   trajectory_command_sub_ = controller_nh_.subscribe("command", 1, &JointTrajectoryController::trajectoryCommandCB, this);
@@ -230,10 +230,9 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
   // Send commands
   for (unsigned int i = 0; i < joints_.size(); ++i)
   {
-    joints_[i].setCommand(state_[i].position);
+    joints_[i].setCommand(state_.position[i]);
   }
 }
-
 
 void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
 {
@@ -330,13 +329,12 @@ void JointTrajectoryController::setHoldPosition(const ros::Time& time)
   typename Segment::Time start_time = time.toSec() - 1.0;
   typename Segment::Time end_time   = time.toSec();
 
-  typename Segment::State state;
-  state.resize(n_joints);
+  typename Segment::State state(n_joints);
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-    state[i].position     = joints_[i].getPosition();
-    state[i].velocity     = 0.0;
-    state[i].acceleration = 0.0;
+    state.position[i]     = joints_[i].getPosition();
+    state.velocity[i]     = 0.0;
+    state.acceleration[i] = 0.0;
   }
 
   Segment segment(start_time, state,

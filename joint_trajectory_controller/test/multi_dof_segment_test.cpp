@@ -51,17 +51,17 @@ public:
       start_time(1.0), end_time(2.0),
       start_states(dim), end_states(dim), states(dim)
   {
-    start_states[0].position =  0.0;
-    start_states[1].position = -1.0;
+    start_states[0].position.push_back(0.0);
+    start_states[1].position.push_back(-1.0);
 
-    end_states[0].position =  1.0;
-    end_states[1].position = -2.0;
+    end_states[0].position.push_back(1.0);
+    end_states[1].position.push_back(-2.0);
   }
 
 protected:
   unsigned int dim;
   Time start_time, end_time;
-  std::vector<State> start_states, end_states ,states;
+  std::vector<State> start_states, end_states, states;
 };
 
 TEST_F(MultiDofSegmentTest, DefaultConstructor)
@@ -113,9 +113,9 @@ TEST_F(MultiDofSegmentTest, SegmentSampler)
 
     for (unsigned int i = 0; i < segments.size(); ++i)
     {
-      EXPECT_NEAR(start_states[i].position, states[i].position, EPS);
-      EXPECT_NEAR(0.0, states[i].velocity, EPS);
-      EXPECT_NEAR(0.0, states[i].acceleration, EPS);
+      EXPECT_NEAR(start_states[i].position[0], states[i].position[0], EPS);
+      EXPECT_NEAR(0.0, states[i].velocity[0], EPS);
+      EXPECT_NEAR(0.0, states[i].acceleration[0], EPS);
     }
   }
 
@@ -126,11 +126,11 @@ TEST_F(MultiDofSegmentTest, SegmentSampler)
 
     for (unsigned int i = 0; i < segments.size(); ++i)
     {
-      const double position = (end_states[i].position + start_states[i].position) / 2.0;
-      const double velocity = (end_states[i].position - start_states[i].position) / duration;
-      EXPECT_NEAR(position, states[i].position, EPS);
-      EXPECT_NEAR(velocity, states[i].velocity, EPS);
-      EXPECT_NEAR(0.0, states[i].acceleration, EPS);
+      const double position = (end_states[i].position[0] + start_states[i].position[0]) / 2.0;
+      const double velocity = (end_states[i].position[0] - start_states[i].position[0]) / duration;
+      EXPECT_NEAR(position, states[i].position[0], EPS);
+      EXPECT_NEAR(velocity, states[i].velocity[0], EPS);
+      EXPECT_NEAR(0.0, states[i].acceleration[0], EPS);
     }
   }
 
@@ -141,9 +141,9 @@ TEST_F(MultiDofSegmentTest, SegmentSampler)
 
     for (unsigned int i = 0; i < segments.size(); ++i)
     {
-      EXPECT_NEAR(end_states[i].position, states[i].position, EPS);
-      EXPECT_NEAR(0.0, states[i].velocity, EPS);
-      EXPECT_NEAR(0.0, states[i].acceleration, EPS);
+      EXPECT_NEAR(end_states[i].position[0], states[i].position[0], EPS);
+      EXPECT_NEAR(0.0, states[i].velocity[0], EPS);
+      EXPECT_NEAR(0.0, states[i].acceleration[0], EPS);
     }
   }
 }

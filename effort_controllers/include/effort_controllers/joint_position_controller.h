@@ -80,6 +80,15 @@ class JointPositionController: public controller_interface::Controller<hardware_
 {
 public:
 
+  /**
+   * \brief Store position and velocity command in struct to allow easier realtime buffer usage
+   */
+  struct Commands
+  {
+    double position_; // Last commanded position
+    double velocity_; // Last commanded velocity
+  };
+
   JointPositionController();
   ~JointPositionController();
 
@@ -154,8 +163,8 @@ public:
 
   hardware_interface::JointHandle joint_;
   boost::shared_ptr<const urdf::Joint> joint_urdf_;
-  realtime_tools::RealtimeBuffer<double> command_position_;             /**< Last commanded position. */
-  realtime_tools::RealtimeBuffer<double> command_velocity_;    /**< Last commanded velocity. */
+  realtime_tools::RealtimeBuffer<Commands> command_;
+  Commands command_struct_; // pre-allocated memory that is re-used to set the realtime buffer
 
 private:
   int loop_count_;

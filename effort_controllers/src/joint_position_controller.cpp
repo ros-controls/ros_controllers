@@ -122,37 +122,46 @@ double JointPositionController::getPosition()
 }
 
 // Set the joint position command
-void JointPositionController::setCommand(double pos_target)
+void JointPositionController::setCommand(double pos_command)
 {
+  command_struct_.position_ = pos_command;
+  command_struct_.velocity_ = 0;
+
   // the writeFromNonRT can be used in RT, if you have the guarantee that
   //  * no non-rt thread is calling the same function (we're not subscribing to ros callbacks)
   //  * there is only one single rt thread
-  command_position_.writeFromNonRT(pos_target);
+  command_.writeFromNonRT(command_struct_);
 }
 
 // Set the joint position command with a velocity command as well
-void JointPositionController::setCommand(double pos_target, double vel_target)
+void JointPositionController::setCommand(double pos_command, double vel_command)
 {
-  command_position_.writeFromNonRT(pos_target);
-  command_velocity_.writeFromNonRT(vel_target);  
+  command_struct_.position_ = pos_command;
+  command_struct_.velocity_ = vel_command;
+
+  command_.writeFromNonRT(command_struct_);
 }
 
 void JointPositionController::starting(const ros::Time& time)
 {
-  double command = joint_.getPosition();
+  double pos_command = joint_.getPosition();
 
   // Make sure joint is within limits if applicable
-  enforceJointLimits(command);
+  enforceJointLimits(pos_command);
 
-  command_position_.initRT(command);
-  command_velocity_.initRT(0.0); // be default target velocity is just zero
+  command_struct_.position_ = pos_command;
+  command_struct_.velocity_ = 0;
+
+  command_.initRT(command_struct_);
+
   pid_controller_->reset();
 }
 
 void JointPositionController::update(const ros::Time& time, const ros::Duration& period)
 {
-  double command_position = *(command_position_.readFromRT());
-  double command_velocity = *(command_velocity_.readFromRT());
+  command_struct_ = *(command_.readFromRT());
+  double command_position = command_struct_.position_;
+  double command_velocity = command_struct_.velocity_;
 
   double error, vel_error;
 

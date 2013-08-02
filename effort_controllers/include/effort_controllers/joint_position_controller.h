@@ -62,7 +62,6 @@
 #include <ros/node_handle.h>
 #include <urdf/model.h>
 #include <control_toolbox/pid.h>
-#include <control_toolbox/pid_gains_setter.h>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread/condition.hpp>
 #include <realtime_tools/realtime_publisher.h>
@@ -96,7 +95,7 @@ public:
    * non-realtime thread with a pointer to the hardware interface, itself,
    * instead of a pointer to a RobotHW.
    *
-   * \param hw The specific hardware interface used by this controller.
+   * \param robot The specific hardware interface used by this controller.
    *
    * \param n A NodeHandle in the namespace from which the controller
    * should read its configuration, and where it should set up its ROS
@@ -136,7 +135,7 @@ public:
   void update(const ros::Time& time, const ros::Duration& period);
 
   /**
-   * \brief Set the PID parameters
+   * \brief Get the PID parameters
    */
   void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
 
@@ -168,7 +167,7 @@ public:
 
 private:
   int loop_count_;
-  boost::scoped_ptr<control_toolbox::Pid> pid_controller_;       /**< Internal PID controller. */
+  control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
 
   boost::scoped_ptr<
     realtime_tools::RealtimePublisher<

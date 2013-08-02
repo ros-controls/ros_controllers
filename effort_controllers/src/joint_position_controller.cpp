@@ -35,7 +35,7 @@
 
 /*
  Author: Vijay Pradeep
- Contributors: Jonathan Bohren, Wim Meeussen, Dave Coleman
+ Contributors: Dave Coleman, Jonathan Bohren, Wim Meeussen
  Desc: Effort(force)-based position controller using basic PID loop
 */
 
@@ -65,8 +65,7 @@ bool JointPositionController::init(hardware_interface::EffortJointInterface *rob
   }
 
   // Load PID Controller using gains set on parameter server
-  pid_controller_.reset(new control_toolbox::Pid());
-  if (!pid_controller_->init(ros::NodeHandle(n, "pid")))
+  if (!pid_controller_.init(ros::NodeHandle(n, "pid")))
     return false;
 
   // Start realtime state publisher
@@ -98,17 +97,17 @@ bool JointPositionController::init(hardware_interface::EffortJointInterface *rob
 
 void JointPositionController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
 {
-  pid_controller_->setGains(p,i,d,i_max,i_min);
+  pid_controller_.setGains(p,i,d,i_max,i_min);
 }
 
 void JointPositionController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
 {
-  pid_controller_->getGains(p,i,d,i_max,i_min);
+  pid_controller_.getGains(p,i,d,i_max,i_min);
 }
 
 void JointPositionController::printDebug()
 {
-  pid_controller_->printValues();
+  pid_controller_.printValues();
 }
 
 std::string JointPositionController::getJointName()
@@ -154,7 +153,7 @@ void JointPositionController::starting(const ros::Time& time)
 
   command_.initRT(command_struct_);
 
-  pid_controller_->reset();
+  pid_controller_.reset();
 }
 
 void JointPositionController::update(const ros::Time& time, const ros::Duration& period)
@@ -194,7 +193,7 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
 
   // Set the PID error and compute the PID command with nonuniform
   // time step size. This also allows the user to pass in a precomputed derivative error.
-  double commanded_effort = pid_controller_->computeCommand(error, vel_error, period);
+  double commanded_effort = pid_controller_.computeCommand(error, vel_error, period);
   joint_.setCommand(commanded_effort);
 
   // publish state

@@ -33,8 +33,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef EFFORT_CONTROLLERS_JOINT_VELOCITY_CONTROLLER_H
-#define EFFORT_CONTROLLERS_JOINT_VELOCITY_CONTROLLER_H
+#ifndef EFFORT_CONTROLLERS__JOINT_VELOCITY_CONTROLLER_H
+#define EFFORT_CONTROLLERS__JOINT_VELOCITY_CONTROLLER_H
 
 /**
    @class effort_controllers::JointVelocityController

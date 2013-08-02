@@ -30,15 +30,23 @@
 #ifndef TRAJECTORY_INTERFACE_INIT_JOINT_TRAJECTORY_H
 #define TRAJECTORY_INTERFACE_INIT_JOINT_TRAJECTORY_H
 
+// C++ standard
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
 
+// Boost
+#include <boost/shared_ptr.hpp>
+
+// ROS messages
+#include <control_msgs/FollowJointTrajectoryAction.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 
-#include <angles/angles.h>
+// ros_controls
+#include <realtime_tools/realtime_server_goal_handle.h>
 
+// Project
 #include <joint_trajectory_controller/trajectory_interface_ros.h>
 #include <joint_trajectory_controller/joint_trajectory_segment.h>
 
@@ -84,15 +92,20 @@ inline std::vector<typename T::size_type> permutation(const T& t1, const T& t2)
 template <class Trajectory>
 struct InitJointTrajectoryOptions
 {
+  typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
+  typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
+
   InitJointTrajectoryOptions()
     : current_trajectory(0),
       joint_names(0),
-      angle_wraparound(0)
+      angle_wraparound(0),
+      rt_goal_handle()
   {}
 
   Trajectory*               current_trajectory;
   std::vector<std::string>* joint_names;
   std::vector<bool>*        angle_wraparound;
+  RealtimeGoalHandlePtr     rt_goal_handle;
 };
 
 /**
@@ -144,7 +157,7 @@ struct InitJointTrajectoryOptions
  * \note This function does not throw any exceptions by itself, but the segment constructor might.
  * In such a case, this method should be wrapped inside a \p try block.
  */
-// TODO: Return empty if input msg is invalid?
+// TODO: Return useful bits of current trajectory if input msg is useless?
 template <class Trajectory>
 Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg,
                                const ros::Time&                              time,
@@ -265,7 +278,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     // Add segment bridging current and new trajectories to result
     Segment bridge_seg(last_curr_time, last_curr_state,
                        first_new_time, first_new_state);
-
+    bridge_seg.setGoalHandle(options.rt_goal_handle);
     result_traj.push_back(bridge_seg);
   }
 
@@ -280,6 +293,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   {
     std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator next_it = it; ++next_it;
     Segment segment(msg_start_time, *it, *next_it, permutation_vector, position_offset);
+    segment.setGoalHandle(options.rt_goal_handle);
     result_traj.push_back(segment);
     ++it;
   }

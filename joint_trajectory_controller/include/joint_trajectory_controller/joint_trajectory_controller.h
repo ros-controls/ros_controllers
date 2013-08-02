@@ -49,7 +49,7 @@
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
 
-// ros_control
+// ros_controls
 #include <realtime_tools/realtime_server_goal_handle.h>
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
@@ -89,7 +89,8 @@ private:
   std::vector<bool>                            angle_wraparound_;
   RealtimeGoalHandlePtr                        rt_active_goal_;
   realtime_tools::RealtimeBuffer<Trajectory>   trajectory_;
-  typename Segment::State                      state_; ///< Workspace variable preallocated to the appropriate size
+  typename Segment::State                      state_;       ///< Workspace variable preallocated to the appropriate size
+  typename Segment::State                      state_error_; ///< Workspace variable preallocated to the appropriate size
   std::vector<std::string>                     joint_names_;
 
   ros::Time     time_;   ///< Time of last update cycle

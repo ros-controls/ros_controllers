@@ -30,18 +30,128 @@
 #ifndef TRAJECTORY_INTERFACE_JOINT_TRAJECTORY_SEGMENT_H
 #define TRAJECTORY_INTERFACE_JOINT_TRAJECTORY_SEGMENT_H
 
+// C++ standard
+#include <cassert>
+#include <cmath>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#include <trajectory_msgs/JointTrajectoryPoint.h>
-
+// angles
 #include <angles/angles.h>
 
+// ROS messages
+#include <control_msgs/FollowJointTrajectoryAction.h>
+#include <trajectory_msgs/JointTrajectoryPoint.h>
+
+// ros_controls
+#include <realtime_tools/realtime_server_goal_handle.h>
+
+// Project
 #include <joint_trajectory_controller/trajectory_interface_ros.h>
 
 namespace trajectory_interface
 {
+
+/**
+ * \brief TODO: Doc!
+ */
+struct StateTolerances
+{
+  StateTolerances(double position_tolerance     = 0.0,
+                 double velocity_tolerance     = 0.0,
+                 double acceleration_tolerance = 0.0)
+    : position(position_tolerance),
+      velocity(velocity_tolerance),
+      acceleration(acceleration_tolerance)
+  {}
+
+  double position;
+  double velocity;
+  double acceleration;
+};
+
+struct SegmentTolerances
+{
+  SegmentTolerances(const typename std::vector<StateTolerances>::size_type& size = 0)
+    : state_tolerance(size),
+      goal_state_tolerance(size),
+      goal_time_tolerance(0.0)
+  {}
+
+  std::vector<StateTolerances> state_tolerance;      ///< Tolerances to check on mid-segment states.
+  std::vector<StateTolerances> goal_state_tolerance; ///< Tolerances to check when the end state should be reached.
+  double                       goal_time_tolerance;  ///< Time tolerance to check when the end state should be reached.
+};
+
+typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
+typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
+
+template <class State>
+inline bool checkStateTolerance(const State&                       state_error,
+                                const std::vector<StateTolerances>& state_tolerance)
+{
+  const unsigned int n_joints = state_tolerance.size();
+
+  // Preconditions
+  assert(n_joints == state_error.position.size());
+  assert(n_joints == state_error.velocity.size());
+  assert(n_joints == state_error.acceleration.size());
+
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+    using std::abs;
+    const StateTolerances& tol = state_tolerance[i]; // Alias for brevity
+    const bool is_valid = !(tol.position     > 0.0 && abs(state_error.position[i])     > tol.position) &&
+                          !(tol.velocity     > 0.0 && abs(state_error.velocity[i])     > tol.velocity) &&
+                          !(tol.acceleration > 0.0 && abs(state_error.acceleration[i]) > tol.acceleration);
+
+    if (!is_valid) {return false;}
+  }
+  return true;
+}
+
+/** TODO: Doc!*/
+template <class Segment>
+inline void checkStateTolerances(const typename Segment::State&      state_error,
+                                 const Segment&                      segment,
+                                 RealtimeGoalHandlePtr               gh)
+{
+  const SegmentTolerances& tolerances = segment.getTolerances();
+  if (!checkStateTolerance(state_error, tolerances.state_tolerance))
+  {
+    gh->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
+    gh->setAborted(gh->preallocated_result_);
+  }
+}
+
+template <class Segment>
+inline void checkGoalTolerances(const typename Segment::State&      state_error,
+                                const typename Segment::Time&       time,
+                                const Segment&                      segment,
+                                RealtimeGoalHandlePtr               gh)
+{
+  // Checks that we have ended inside the goal tolerances
+  const SegmentTolerances& tolerances = segment.getTolerances();
+  const bool inside_goal_constraints = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
+
+  if (inside_goal_constraints)
+  {
+    gh.reset();
+    segment.getGoalHandle()->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL; // TODO: Use gh, reset later?
+    segment.getGoalHandle()->setSucceeded(segment.getGoalHandle()->preallocated_result_);
+  }
+  else if (time < segment.endTime() + tolerances.goal_time_tolerance)
+  {
+    // Still have some time left to meet the goal state tolerances
+  }
+  else
+  {
+    gh.reset();
+    segment.getGoalHandle()->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED; // TODO: Use gh, reset later?
+    segment.getGoalHandle()->setAborted(segment.getGoalHandle()->preallocated_result_);
+  }
+}
 
 /**
  * \brief Class representing a multi-dimensional quintic spline segment with a start and end time.
@@ -61,6 +171,9 @@ class JointTrajectorySegment : public Segment
 {
 public:
   typedef typename Segment::Time  Time;
+
+  typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
+  typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
 
   struct State : public Segment::State
   {
@@ -155,6 +268,8 @@ public:
                          const State& start_state,
                          const Time&  end_time,
                          const State& end_state)
+    : rt_goal_handle_(),
+      tolerances_(start_state.position.size())
   {
     Segment::init(start_time, start_state, end_time, end_state);
   }
@@ -176,6 +291,8 @@ public:
                          const trajectory_msgs::JointTrajectoryPoint& end_point,
                          const std::vector<unsigned int>&             permutation     = std::vector<unsigned int>(),
                          const std::vector<double>&                   position_offset = std::vector<double>())
+    : rt_goal_handle_(),
+      tolerances_(start_point.positions.size())
   {
     if (start_point.positions.size() != end_point.positions.size())
     {
@@ -200,6 +317,18 @@ public:
       throw(std::invalid_argument(msg));
     }
   }
+
+  /** \return Pointer to (realtime) goal handle associated to this segment. */
+  RealtimeGoalHandlePtr getGoalHandle() const {return rt_goal_handle_;}
+  void setGoalHandle(RealtimeGoalHandlePtr rt_goal_handle) {rt_goal_handle_ = rt_goal_handle;}
+
+  /** \return Tolerances this segment is associated to. */
+  const SegmentTolerances& getTolerances() const {return tolerances_;}
+  void setTolerances(const SegmentTolerances& tolerances) {tolerances_ = tolerances;}
+
+private:
+  RealtimeGoalHandlePtr rt_goal_handle_;
+  SegmentTolerances     tolerances_;
 };
 
 // TODO: Doc!, move elsewhere!

@@ -189,6 +189,7 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
 
   // Preeallocate resources
   state_ = typename Segment::State(n_joints);
+  state_error_ = typename Segment::State(n_joints);
 
   // ROS API
   trajectory_command_sub_ = controller_nh_.subscribe("command", 1, &JointTrajectoryController::trajectoryCommandCB, this);
@@ -216,16 +217,46 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
   time_   = time;
   period_ = period;
 
+  const typename Segment::Time time_sec = time.toSec();
+
   // Sample trajectory at current time
   Trajectory& curr_traj = *(trajectory_.readFromRT());
-  typename Trajectory::const_iterator segment_it = sample(curr_traj, time.toSec(), state_);
+  typename Trajectory::const_iterator segment_it = sample(curr_traj, time_sec, state_);
   if (curr_traj.end() == segment_it)
   {
     ROS_ERROR_STREAM("Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
     return;
   }
 
-  // TODO: Use segment_it to check tolerances
+  // Check tolerances if segment corresponds to currently active action goal
+  const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
+  if (rt_segment_goal && rt_segment_goal == rt_active_goal_)
+  {
+    // State error
+    for (unsigned int i = 0; i < joints_.size(); ++i)
+    {
+      state_error_.position[i] = joints_[i].getPosition() - state_.position[i];
+      state_error_.velocity[i] = joints_[i].getVelocity() - state_.velocity[i];
+      state_error_.acceleration[i] = 0.0; // There's no acceleration data available in a joint handle
+    }
+
+    // Set the current goal to succeeded if the goal has been reached, or to aborted or if tolerances are violated
+    if (time_sec < segment_it->endTime())
+    {
+      // Currently executing a segment: check path tolerances
+      trajectory_interface::checkStateTolerances<Segment>(state_error_,
+                                                          *segment_it,
+                                                          rt_active_goal_);
+    }
+    else if (segment_it == --curr_traj.end())
+    {
+      // Finished executing the LAST segment: check goal tolerances
+      trajectory_interface::checkGoalTolerances<Segment>(state_error_,
+                                                         time_sec,
+                                                         *segment_it,
+                                                         rt_active_goal_);
+    }
+  }
 
   // Send commands
   for (unsigned int i = 0; i < joints_.size(); ++i)
@@ -262,6 +293,8 @@ void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryCon
   options.current_trajectory = trajectory_.readFromRT();
   options.joint_names        = &joint_names_;
   options.angle_wraparound   = &angle_wraparound_;
+  options.rt_goal_handle     = gh;
+//  options.tolerances         = TODO
 
   // Update currently executing trajectory
   try

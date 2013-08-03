@@ -51,8 +51,10 @@ JointVelocityController::~JointVelocityController()
 bool JointVelocityController::init(hardware_interface::EffortJointInterface *robot, 
   const std::string &joint_name, const control_toolbox::Pid &pid)
 {
-  joint_ = robot->getHandle(joint_name);
   pid_controller_ = pid;
+
+  // Get joint handle from hardware interface
+  joint_ = robot->getHandle(joint_name);
 
   return true;
 }
@@ -65,6 +67,9 @@ bool JointVelocityController::init(hardware_interface::EffortJointInterface *rob
     ROS_ERROR("No joint given (namespace: %s)", n.getNamespace().c_str());
     return false;
   }
+
+  // Get joint handle from hardware interface
+  joint_ = robot->getHandle(joint_name);
 
   // Load PID Controller using gains set on parameter server
   if (!pid_controller_.init(ros::NodeHandle(n, "pid")))
@@ -123,7 +128,7 @@ void JointVelocityController::starting(const ros::Time& time)
 
 void JointVelocityController::update(const ros::Time& time, const ros::Duration& period)
 {
-  double error = 0; // \todo TEMP!! command_ - joint_.getVelocity();
+  double error = command_ - joint_.getVelocity();
 
   // Set the PID error and compute the PID command with nonuniform time
   // step size. The derivative error is computed from the change in the error

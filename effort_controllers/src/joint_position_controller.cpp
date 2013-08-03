@@ -35,7 +35,7 @@
 
 /*
  Author: Vijay Pradeep
- Contributors: Dave Coleman, Jonathan Bohren, Wim Meeussen
+ Contributors: Jonathan Bohren, Wim Meeussen, Dave Coleman
  Desc: Effort(force)-based position controller using basic PID loop
 */
 

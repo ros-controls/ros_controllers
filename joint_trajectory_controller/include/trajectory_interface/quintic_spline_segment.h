@@ -70,6 +70,20 @@ public:
   /**
    * \brief Construct segment from start and end states (boundary conditions).
    *
+   * Please refer to the \ref init method documentation for the description of each parameter and the exceptions that
+   * can be thrown.
+   */
+  QuinticSplineSegment(const Time&  start_time,
+                       const State& start_state,
+                       const Time&  end_time,
+                       const State& end_state)
+  {
+    init(start_time, start_state, end_time, end_state);
+  }
+
+  /**
+   * \brief Initialize segment from start and end states (boundary conditions).
+   *
    * The start and end states need not necessarily be specified all the way to the acceleration level:
    * - If only \b positions are specified, linear interpolation will be used.
    * - If \b positions and \b velocities are specified, a cubic spline will be used.
@@ -87,13 +101,10 @@ public:
    * \throw std::invalid_argument If the \p end_time is earlier than \p start_time or if one of the states is
    * uninitialized.
    */
-  QuinticSplineSegment(const Time&  start_time,
-                       const State& start_state,
-                       const Time&  end_time,
-                       const State& end_state)
-  {
-    init(start_time, start_state, end_time, end_state);
-  }
+  void init(const Time&  start_time,
+            const State& start_state,
+            const Time&  end_time,
+            const State& end_state);
 
   /**
    * \brief Sample the segment at a specified time.
@@ -131,7 +142,7 @@ public:
   /** \return Segment size (dimension). */
   unsigned int size() const {return coefs_.size();}
 
-protected:
+private:
   typedef boost::array<Scalar, 6> SplineCoefficients;
 
   /** Coefficients represent a quintic polynomial like so:
@@ -141,13 +152,6 @@ protected:
   std::vector<SplineCoefficients> coefs_;
   Time duration_;
   Time start_time_;
-
-  void init(const Time&  start_time,
-            const State& start_state,
-            const Time&  end_time,
-            const State& end_state);
-
-private:
 
   // These methods are borrowed from the previous controller's implementation
   // TODO: Clean their implementation, use the Horner algorithm for more numerically stable polynomial evaluation

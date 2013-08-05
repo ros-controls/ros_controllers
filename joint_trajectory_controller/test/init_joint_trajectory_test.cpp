@@ -33,6 +33,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <actionlib/server/action_server.h>
 #include <trajectory_interface/quintic_spline_segment.h>
 #include <joint_trajectory_controller/init_joint_trajectory.h>
 
@@ -737,6 +738,37 @@ TEST_F(InitTrajectoryTest, IgnoreWrappingSpec)
       EXPECT_EQ(p_end.accelerations[0], state.acceleration[0]);
     }
   }
+}
+
+// If current trajectory is not specified, but wrapping joints are, then the wrapping spec is ignored
+TEST_F(InitTrajectoryTest, GoalHandleTest)
+{
+  typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>                  ActionServer;
+  typedef ActionServer::GoalHandle                                                            GoalHandle;
+  typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
+  typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
+
+  GoalHandle gh;
+  RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
+
+  // Before first point: Return 4 segments: Last of current + bridge + full message
+  const ros::Time time(curr_traj[0].startTime());
+  InitJointTrajectoryOptions<Trajectory> options;
+  options.current_trajectory = &curr_traj;
+  options.rt_goal_handle     = rt_goal;
+
+  Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
+  ASSERT_EQ(points.size() + 1, trajectory.size());
+
+  // Segment of current trajectory preserves existing null goal handle
+  ASSERT_FALSE(trajectory[0].getGoalHandle());
+
+  // All further segments should be associated to the new goal handle
+  for (unsigned int i = 1; i < trajectory.size(); ++i) // NOTE: Start index != 0
+  {
+    ASSERT_EQ(rt_goal, trajectory[i].getGoalHandle());
+  }
+
 }
 
 int main(int argc, char** argv)

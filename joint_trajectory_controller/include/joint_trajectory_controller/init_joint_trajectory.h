@@ -100,13 +100,15 @@ struct InitJointTrajectoryOptions
     : current_trajectory(0),
       joint_names(0),
       angle_wraparound(0),
-      rt_goal_handle()
+      rt_goal_handle(),
+      other_time_base(0)
   {}
 
   Trajectory*               current_trajectory;
   std::vector<std::string>* joint_names;
   std::vector<bool>*        angle_wraparound;
   RealtimeGoalHandlePtr     rt_goal_handle;
+  ros::Time*                other_time_base;
 };
 
 /**
@@ -120,7 +122,7 @@ struct InitJointTrajectoryOptions
  *
  * \param options Options that change how the trajectory gets initialized.
  *
- * The \p options parameter is optional. The meaning of its different members follows:
+ * The \ref InitJointTrajectoryOptions "options" parameter is optional. The meaning of its different members follows:
  * - \b current_trajectory Currently executed trajectory. Use this parameter if you want to update an existing
  * trajectory with the data in \p msg; that is, keep the useful parts of \p current_trajectory and \p msg.
  * If specified, the output trajectory will not only contain data in \p msg occurring \b after \p time, but will also
@@ -136,6 +138,15 @@ struct InitJointTrajectoryOptions
  * - \b angle_wraparound Vector of booleans where true values correspond to joints that wrap around (ie. are continuous).
  * If specified, combining \p current_trajectory with \p msg will not result in joints performing multiple turns at the
  * transition. This parameter \b requires \p current_trajectory to also be specified, otherwise it is ignored.
+ *
+ * - \b rt_goal_handle Goal Handle associated to the new trajectory. If specified, newly added segments will have a
+ * pointer to it, and to the trajectory following tolerances it contains (if any).
+ *
+ * - \b other_time_base When initializing a new trajectory, it might be the case that we desire the result expressed in
+ * a \b different time base than that contained in \p msg. If specified, the value of this variable should be the
+ * equivalent of the \p time parameter, but expressed in the desired time base.
+ * An example usecase for this variable is when the \p current_trajectory option is specified, and contains data in
+ * a different time base (eg. monotonically increasing) than \p msg (eg. system-clock synchronized).
  *
  * \return Trajectory container.
  *
@@ -184,9 +195,28 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   const bool has_current_trajectory = options.current_trajectory && !options.current_trajectory->empty();
   const bool has_joint_names        = options.joint_names        && !options.joint_names->empty();
   const bool has_angle_wraparound   = options.angle_wraparound   && !options.angle_wraparound->empty();
+  const bool has_other_time_base    = options.other_time_base;
   if (!has_current_trajectory && has_angle_wraparound)
   {
     ROS_WARN("Vector specifying whether joints wrap around will not be used because no current trajectory was given.");
+  }
+
+  // Compute trajectory start time and data extraction time associated to the 'other' time base, if it applies
+  // The o_ prefix indicates that time values are represented in this 'other' time base.
+  ros::Time o_time;
+  ros::Time o_msg_start_time;
+  if (has_other_time_base)
+  {
+    ros::Duration msg_start_duration = msg_start_time - time;
+    o_time = *options.other_time_base;
+    o_msg_start_time = o_time + msg_start_duration;
+    ROS_DEBUG_STREAM("Using alternate time base. On it, the new trajectory starts at time "
+                     << std::fixed << std::setprecision(3) << o_msg_start_time.toSec());
+  }
+  else
+  {
+    o_time = time;
+    o_msg_start_time = msg_start_time;
   }
 
   // Permutation vector mapping the expected joint order to the message joint order
@@ -206,7 +236,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   // This point is used later on in this function, but is computed here, in advance because if the trajectory message
   // contains a trajectory in the past, we can quickly return without spending additional computational resources
   std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator
-  it = findPoint(msg, time); // Points to last point occurring before current time
+  it = findPoint(msg, o_time); // Points to last point occurring before current time
   if (it == msg.points.end())
   {
     it = msg.points.begin();  // Entire trajectory is after current time
@@ -241,12 +271,12 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     const Trajectory& curr_traj = *(options.current_trajectory);
 
     // Get the last time and state that will be executed from the current trajectory
-    const typename Segment::Time last_curr_time = std::max(msg_start_time.toSec(), time.toSec()); // Important!
+    const typename Segment::Time last_curr_time = std::max(o_msg_start_time.toSec(), o_time.toSec()); // Important!
     typename Segment::State last_curr_state;
     sample(curr_traj, last_curr_time, last_curr_state);
 
     // Get the first time and state that will be executed from the new trajectory
-    const typename Segment::Time first_new_time = msg_start_time.toSec() + (it->time_from_start).toSec();
+    const typename Segment::Time first_new_time = o_msg_start_time.toSec() + (it->time_from_start).toSec();
     typename Segment::State first_new_state(*it, permutation_vector); // Here offsets are not yet applied
 
     // Compute offsets due to wrapping joints
@@ -269,7 +299,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     // Add useful segments of current trajectory to result
     {
       typedef typename Trajectory::const_iterator TrajIter;
-      TrajIter first = findSegment(curr_traj, time.toSec());   // Currently active segment
+      TrajIter first = findSegment(curr_traj, o_time.toSec());   // Currently active segment
       TrajIter last  = findSegment(curr_traj, last_curr_time); // Segment active when new trajectory starts
       if (first == curr_traj.end() || last == curr_traj.end())
       {
@@ -296,7 +326,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   while (std::distance(it, msg.points.end()) >= 2)
   {
     std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator next_it = it; ++next_it;
-    Segment segment(msg_start_time, *it, *next_it, permutation_vector, position_offset);
+    Segment segment(o_msg_start_time, *it, *next_it, permutation_vector, position_offset);
     segment.setGoalHandle(options.rt_goal_handle);
     result_traj.push_back(segment);
     ++it;

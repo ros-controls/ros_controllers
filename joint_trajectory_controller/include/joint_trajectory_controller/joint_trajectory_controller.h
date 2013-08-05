@@ -73,10 +73,10 @@ public:
   bool init(hardware_interface::PositionJointInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
 
   /** \brief Holds the current position. */
-  void starting(const ros::Time& time) {setHoldPosition(time);}
+  void starting(const ros::Time& time);
 
   /** \brief Cancels the active action goal, if any. */
-  void stopping(const ros::Time& time) {preemptActiveGoal();}
+  void stopping(const ros::Time& time);
 
   void update(const ros::Time& time, const ros::Duration& period);
 
@@ -111,11 +111,14 @@ private:
   Trajectory                                   msg_trajectory_;  ///< Last trajectory received from a ROS message.
   Trajectory                                   hold_trajectory_; ///< Last hold trajectory values.
 
-  typename Segment::State                      state_;       ///< Workspace variable preallocated to the appropriate size.
-  typename Segment::State                      state_error_; ///< Workspace variable preallocated to the appropriate size.
+  typename Segment::State state_;             ///< Preallocated workspace variable.
+  typename Segment::State state_error_;       ///< Preallocated workspace variable.
+  typename Segment::State hold_start_state_;  ///< Preallocated workspace variable.
+  typename Segment::State hold_end_state_;    ///< Preallocated workspace variable.
 
   ros::Time     time_;   ///< Time of last update cycle
   ros::Duration period_; ///< Period of last update cycle
+  ros::Time     uptime_; ///< Controller uptime. Set to zero at every restart.
 
   ros::Duration state_publish_period_;
   ros::Duration action_monitor_period_;
@@ -129,7 +132,7 @@ private:
 //  boost::scoped_ptr<ControllerStatePublisher> controller_state_publisher_;
 
   void updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh);
-  void trajectoryCommandCB(const JointTrajectoryConstPtr& msg) {updateTrajectoryCommand(msg, RealtimeGoalHandlePtr());}
+  void trajectoryCommandCB(const JointTrajectoryConstPtr& msg);
   void goalCB(GoalHandle gh);
   void cancelCB(GoalHandle gh);
   void preemptActiveGoal();
@@ -163,6 +166,23 @@ private:
   void checkGoalTolerances(const typename Segment::State& state_error,
                            const Segment&                 segment);
 };
+
+inline void JointTrajectoryController::starting(const ros::Time& time)
+{
+  uptime_ = ros::Time(0.0);
+  setHoldPosition(uptime_);
+}
+
+inline void JointTrajectoryController::stopping(const ros::Time& time)
+{
+  preemptActiveGoal();
+}
+
+inline void JointTrajectoryController::trajectoryCommandCB(const JointTrajectoryConstPtr& msg)
+{
+  preemptActiveGoal();
+  updateTrajectoryCommand(msg, RealtimeGoalHandlePtr());
+}
 
 inline void JointTrajectoryController::preemptActiveGoal()
 {
@@ -205,7 +225,7 @@ inline void JointTrajectoryController::checkGoalTolerances(const typename Segmen
     rt_active_goal_->setSucceeded(rt_active_goal_->preallocated_result_);
     rt_active_goal_.reset();
   }
-  else if (time_.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
+  else if (uptime_.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
   {
     // Still have some time left to meet the goal state tolerances
   }

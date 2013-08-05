@@ -126,7 +126,8 @@ using std::vector;
 
 JointTrajectoryController::JointTrajectoryController()
   : time_(0.0),
-    period_(0.0)
+    period_(0.0),
+    uptime_(0.0)
 {}
 
 // TODO: joints vs. joint_names, command vs trajectory_command
@@ -188,8 +189,11 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
                   joints_.size() << " joints.");
 
   // Preeallocate resources
-  state_       = typename Segment::State(n_joints);
-  state_error_ = typename Segment::State(n_joints);
+  state_            = typename Segment::State(n_joints);
+  state_error_      = typename Segment::State(n_joints);
+  hold_start_state_ = typename Segment::State(n_joints);
+  hold_end_state_   = typename Segment::State(n_joints);
+
 
   Segment hold_segment(0.0, state_, 0.0, state_);
   hold_trajectory_.resize(1, hold_segment);
@@ -215,11 +219,15 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
   time_   = time;
   period_ = period;
 
+  // Update controller uptime
+  uptime_ += period;
+
   // Sample trajectory at current time
   Trajectory& curr_traj = **(curr_trajectory_ptr_.readFromRT());
-  typename Trajectory::const_iterator segment_it = sample(curr_traj, time.toSec(), state_);
+  typename Trajectory::const_iterator segment_it = sample(curr_traj, uptime_.toSec(), state_);
   if (curr_traj.end() == segment_it)
   {
+    // Non-realtime safe, but should never happen under normal operation
     ROS_ERROR_STREAM("Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
     return;
   }
@@ -237,7 +245,7 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
     }
 
     // Check tolerances
-    if (time.toSec() < segment_it->endTime())
+    if (uptime_.toSec() < segment_it->endTime())
     {
       // Currently executing a segment: check path tolerances
       checkPathTolerances(state_error_,
@@ -270,18 +278,22 @@ void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryCon
   }
 
   // Time of the next update
-  const ros::Time curr_time = time_ + period_;
+  const ros::Time next_update_time = time_ + period_;
+
+  // Uptime of the next update
+  ros::Time next_update_uptime = uptime_ + period_;
 
   // Hold current position if trajectory is empty
   if (msg->points.empty())
   {
-    setHoldPosition(curr_time);
+    setHoldPosition(uptime_);
     ROS_DEBUG("Empty trajectory command, stopping.");
     return;
   }
 
   // Trajectory initialization options
   Options options;
+  options.other_time_base    = &next_update_uptime;
   options.current_trajectory = *(curr_trajectory_ptr_.readFromNonRT());
   options.joint_names        = &joint_names_;
   options.angle_wraparound   = &angle_wraparound_;
@@ -291,7 +303,7 @@ void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryCon
   // Update currently executing trajectory
   try
   {
-    msg_trajectory_ = initJointTrajectory<Trajectory>(*msg, curr_time, options);
+    msg_trajectory_ = initJointTrajectory<Trajectory>(*msg, next_update_time, options);
     if (!msg_trajectory_.empty()) {curr_trajectory_ptr_.writeFromNonRT(&msg_trajectory_);}
   }
   catch(...)
@@ -337,8 +349,7 @@ void JointTrajectoryController::cancelCB(GoalHandle gh)
     rt_active_goal_.reset();
 
     // Enter hold current position mode
-    const ros::Time curr_time = time_ + period_; // Time of the next update
-    setHoldPosition(curr_time);
+    setHoldPosition(uptime_);
     ROS_DEBUG("Canceling active action goal.");
 
     // Mark the current goal as canceled
@@ -349,20 +360,26 @@ void JointTrajectoryController::cancelCB(GoalHandle gh)
 void JointTrajectoryController::setHoldPosition(const ros::Time& time)
 {
   // NOTE: This is realtime-safe
-  typename Segment::Time start_time = time.toSec() - 1.0;
-  typename Segment::Time end_time   = time.toSec();
+
+  // Segment boundary conditions: Settle current position in a fixed time
+  typename Segment::Time start_time = time.toSec();
+  typename Segment::Time end_time   = time.toSec() + 2.0; // NOTE: Magic value
 
   const unsigned int n_joints = joints_.size();
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-    state_.position[i]     = joints_[i].getPosition();
-    state_.velocity[i]     = 0.0;
-    state_.acceleration[i] = 0.0;
+    hold_start_state_.position[i]     = joints_[i].getPosition();
+    hold_start_state_.velocity[i]     = joints_[i].getVelocity();
+    hold_start_state_.acceleration[i] = 0.0;
+
+    hold_end_state_.position[i]       = joints_[i].getPosition();
+    hold_end_state_.velocity[i]       = 0.0;
+    hold_end_state_.acceleration[i]   = 0.0;
   }
 
   assert(1 == hold_trajectory_.size());
-  hold_trajectory_.front().init(start_time, state_,
-                                end_time,   state_);
+  hold_trajectory_.front().init(start_time, hold_start_state_,
+                                end_time,   hold_end_state_);
   curr_trajectory_ptr_.initRT(&hold_trajectory_);
 }
 

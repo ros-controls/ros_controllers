@@ -16,23 +16,37 @@ if(USE_ROSBUILD)
 
 else()
   # Load catkin and all dependencies required for this package
-  find_package(catkin REQUIRED COMPONENTS controller_interface control_msgs forward_command_controller control_toolbox realtime_tools urdf)
+  find_package(catkin REQUIRED COMPONENTS
+    controller_interface
+    control_msgs
+    forward_command_controller
+    control_toolbox
+    realtime_tools
+    urdf
+  )
 
   include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
-  add_library(${PROJECT_NAME} 
-    src/joint_effort_controller.cpp include/effort_controllers/joint_effort_controller.h
-    src/joint_velocity_controller.cpp include/effort_controllers/joint_velocity_controller.h
-    src/joint_position_controller.cpp include/effort_controllers/joint_position_controller.h)
-
-  target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
-
   # Declare catkin package
   catkin_package(
-    CATKIN_DEPENDS controller_interface control_msgs control_toolbox realtime_tools urdf forward_command_controller 
+    CATKIN_DEPENDS 
+      controller_interface
+      control_msgs
+      control_toolbox
+      realtime_tools
+      urdf
+      forward_command_controller
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
     )
+
+  add_library(${PROJECT_NAME} 
+    src/joint_effort_controller.cpp 
+    src/joint_velocity_controller.cpp
+    src/joint_position_controller.cpp
+  )
+
+  target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
   # Install
   install(DIRECTORY include/${PROJECT_NAME}/

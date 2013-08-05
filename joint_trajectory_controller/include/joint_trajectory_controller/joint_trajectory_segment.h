@@ -115,7 +115,7 @@ inline bool checkStateTolerance(const State&                       state_error,
 template <class Segment>
 inline void checkStateTolerances(const typename Segment::State&      state_error,
                                  const Segment&                      segment,
-                                 RealtimeGoalHandlePtr               gh)
+                                 RealtimeGoalHandlePtr&              gh)
 {
   const SegmentTolerances& tolerances = segment.getTolerances();
   if (!checkStateTolerance(state_error, tolerances.state_tolerance))
@@ -129,7 +129,7 @@ template <class Segment>
 inline void checkGoalTolerances(const typename Segment::State&      state_error,
                                 const typename Segment::Time&       time,
                                 const Segment&                      segment,
-                                RealtimeGoalHandlePtr               gh)
+                                RealtimeGoalHandlePtr&              gh)
 {
   // Checks that we have ended inside the goal tolerances
   const SegmentTolerances& tolerances = segment.getTolerances();

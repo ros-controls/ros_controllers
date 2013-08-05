@@ -32,7 +32,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
-#include <joint_trajectory_controller/trajectory_interface_ros.h>
+#include <joint_trajectory_controller/joint_trajectory_msg_utils.h>
 
 using namespace joint_trajectory_controller;
 using namespace trajectory_msgs;

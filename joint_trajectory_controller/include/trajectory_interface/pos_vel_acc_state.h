@@ -59,6 +59,7 @@ struct PosVelAccState
     * // 2-dimensional state specifying zero position
     * State zero_pos;
     * zero_pos.position.resize(2);
+    * \endcode
     */
   PosVelAccState(const typename std::vector<Scalar>::size_type size)
     : position(    std::vector<Scalar>(size, static_cast<Scalar>(0))),

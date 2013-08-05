@@ -99,7 +99,7 @@ public:
   /*!
    * \brief Give set velocity of the joint for next update: revolute (angle) and prismatic (velocity)
    *
-   * pp\param double pos Velocity command to issue
+   * \param double pos Velocity command to issue
    */
   void setCommand(double cmd);
 

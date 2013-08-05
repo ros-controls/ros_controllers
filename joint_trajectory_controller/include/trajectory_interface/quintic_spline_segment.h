@@ -43,13 +43,14 @@ namespace trajectory_interface
 /**
  * \brief Class representing a multi-dimensional quintic spline segment with a start and end time.
  *
- * \tparam Scalar Scalar type
+ * \tparam ScalarType Scalar type
  */
-template<class Scalar>
+template<class ScalarType>
 class QuinticSplineSegment
 {
 public:
-  typedef Scalar Time;
+  typedef ScalarType Scalar;
+  typedef Scalar     Time;
 
   /**
    * \brief Quintic spline sample state.
@@ -202,11 +203,11 @@ private:
                                   Scalar& position, Scalar& velocity, Scalar& acceleration);
 };
 
-template<class Scalar>
-void QuinticSplineSegment<Scalar>::init(const Time&  start_time,
-                                        const State& start_state,
-                                        const Time&  end_time,
-                                        const State& end_state)
+template<class ScalarType>
+void QuinticSplineSegment<ScalarType>::init(const Time&  start_time,
+                                            const State& start_state,
+                                            const Time&  end_time,
+                                            const State& end_state)
 {
   // Preconditions
   if (end_time < start_time)
@@ -292,8 +293,8 @@ void QuinticSplineSegment<Scalar>::init(const Time&  start_time,
   }
 }
 
-template<class Scalar>
-inline void QuinticSplineSegment<Scalar>::generatePowers(int n, const Scalar& x, Scalar* powers)
+template<class ScalarType>
+inline void QuinticSplineSegment<ScalarType>::generatePowers(int n, const Scalar& x, Scalar* powers)
 {
   powers[0] = 1.0;
   for (int i=1; i<=n; ++i)
@@ -302,8 +303,8 @@ inline void QuinticSplineSegment<Scalar>::generatePowers(int n, const Scalar& x,
   }
 }
 
-template<class Scalar>
-void QuinticSplineSegment<Scalar>::
+template<class ScalarType>
+void QuinticSplineSegment<ScalarType>::
 computeCoefficients(const Scalar& start_pos,
                     const Scalar& end_pos,
                     const Scalar& time,
@@ -317,8 +318,8 @@ computeCoefficients(const Scalar& start_pos,
   coefficients[5] = 0.0;
 }
 
-template<class Scalar>
-void QuinticSplineSegment<Scalar>::
+template<class ScalarType>
+void QuinticSplineSegment<ScalarType>::
 computeCoefficients(const Scalar& start_pos, const Scalar& start_vel,
                     const Scalar& end_pos,   const Scalar& end_vel,
                     const Scalar& time,
@@ -345,8 +346,8 @@ computeCoefficients(const Scalar& start_pos, const Scalar& start_vel,
   coefficients[5] = 0.0;
 }
 
-template<class Scalar>
-void QuinticSplineSegment<Scalar>::
+template<class ScalarType>
+void QuinticSplineSegment<ScalarType>::
 computeCoefficients(const Scalar& start_pos, const Scalar& start_vel, const Scalar& start_acc,
                     const Scalar& end_pos,   const Scalar& end_vel,   const Scalar& end_acc,
                     const Scalar& time,
@@ -378,8 +379,8 @@ computeCoefficients(const Scalar& start_pos, const Scalar& start_vel, const Scal
   }
 }
 
-template<class Scalar>
-void QuinticSplineSegment<Scalar>::
+template<class ScalarType>
+void QuinticSplineSegment<ScalarType>::
 sample(const SplineCoefficients& coefficients, const Scalar& time,
        Scalar& position, Scalar& velocity, Scalar& acceleration)
 {
@@ -406,8 +407,8 @@ sample(const SplineCoefficients& coefficients, const Scalar& time,
                 20.0*t[3]*coefficients[5];
 }
 
-template<class Scalar>
-void QuinticSplineSegment<Scalar>::
+template<class ScalarType>
+void QuinticSplineSegment<ScalarType>::
 sampleWithTimeBounds(const SplineCoefficients& coefficients, const Scalar& duration, const Scalar& time,
                      Scalar& position, Scalar& velocity, Scalar& acceleration)
 {

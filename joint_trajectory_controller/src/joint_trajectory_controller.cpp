@@ -238,17 +238,17 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
       state_error_.acceleration[i] = 0.0; // There's no acceleration data available in a joint handle
     }
 
-    // Check constraints
+    // Check tolerances
     if (time.toSec() < segment_it->endTime())
     {
-      // Currently executing a segment: check path constraints
-      checkPathConstraints(state_error_,
-                           *segment_it);
+      // Currently executing a segment: check path tolerances
+      checkPathTolerances(state_error_,
+                          *segment_it);
     }
     else if (segment_it == --curr_traj.end())
     {
-      // Finished executing the LAST segment: check goal constraints
-      checkGoalConstraints(state_error_,
+      // Finished executing the LAST segment: check goal tolerances
+      checkGoalTolerances(state_error_,
                            *segment_it);
     }
   }

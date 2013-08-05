@@ -191,6 +191,9 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
   state_       = typename Segment::State(n_joints);
   state_error_ = typename Segment::State(n_joints);
 
+  Segment hold_segment(0.0, state_, 0.0, state_);
+  hold_trajectory_.resize(1, hold_segment);
+
   // ROS API
   trajectory_command_sub_ = controller_nh_.subscribe("command", 1, &JointTrajectoryController::trajectoryCommandCB, this);
 
@@ -206,11 +209,6 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
   return true;
 }
 
-void JointTrajectoryController::starting(const ros::Time& time)
-{
-  setHoldPosition(time);
-}
-
 void JointTrajectoryController::update(const ros::Time& time, const ros::Duration& period)
 {
   // Cache current time and control period
@@ -218,7 +216,7 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
   period_ = period;
 
   // Sample trajectory at current time
-  Trajectory& curr_traj = *(trajectory_.readFromRT());
+  Trajectory& curr_traj = **(curr_trajectory_ptr_.readFromRT());
   typename Trajectory::const_iterator segment_it = sample(curr_traj, time.toSec(), state_);
   if (curr_traj.end() == segment_it)
   {
@@ -284,7 +282,7 @@ void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryCon
 
   // Trajectory initialization options
   Options options;
-  options.current_trajectory = trajectory_.readFromRT();
+  options.current_trajectory = *(curr_trajectory_ptr_.readFromNonRT());
   options.joint_names        = &joint_names_;
   options.angle_wraparound   = &angle_wraparound_;
   options.rt_goal_handle     = gh;
@@ -293,8 +291,8 @@ void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryCon
   // Update currently executing trajectory
   try
   {
-    Trajectory new_traj = initJointTrajectory<Trajectory>(*msg, curr_time, options);
-    if (!new_traj.empty()) {trajectory_.writeFromNonRT(new_traj);}
+    msg_trajectory_ = initJointTrajectory<Trajectory>(*msg, curr_time, options);
+    if (!msg_trajectory_.empty()) {curr_trajectory_ptr_.writeFromNonRT(&msg_trajectory_);}
   }
   catch(...)
   {
@@ -350,24 +348,22 @@ void JointTrajectoryController::cancelCB(GoalHandle gh)
 
 void JointTrajectoryController::setHoldPosition(const ros::Time& time)
 {
-  // TODO: Reimplement properly reserving resources!
-  const unsigned int n_joints = joints_.size();
-
+  // NOTE: This is realtime-safe
   typename Segment::Time start_time = time.toSec() - 1.0;
   typename Segment::Time end_time   = time.toSec();
 
-  typename Segment::State state(n_joints);
+  const unsigned int n_joints = joints_.size();
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-    state.position[i]     = joints_[i].getPosition();
-    state.velocity[i]     = 0.0;
-    state.acceleration[i] = 0.0;
+    state_.position[i]     = joints_[i].getPosition();
+    state_.velocity[i]     = 0.0;
+    state_.acceleration[i] = 0.0;
   }
 
-  Segment segment(start_time, state,
-                  end_time,   state);
-  Trajectory hold_trajectory(1, segment);
-  trajectory_.writeFromNonRT(hold_trajectory);
+  assert(1 == hold_trajectory_.size());
+  hold_trajectory_.front().init(start_time, state_,
+                                end_time,   state_);
+  curr_trajectory_ptr_.initRT(&hold_trajectory_);
 }
 
 } // namespace

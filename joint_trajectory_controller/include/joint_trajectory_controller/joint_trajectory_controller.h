@@ -72,7 +72,11 @@ public:
 
   bool init(hardware_interface::PositionJointInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
 
-  void starting(const ros::Time& time);
+  /** \brief Holds the current position. */
+  void starting(const ros::Time& time) {setHoldPosition(time);}
+
+  /** \brief Cancels the active action goal, if any. */
+  void stopping(const ros::Time& time) {preemptActiveGoal();}
 
   void update(const ros::Time& time, const ros::Duration& period);
 
@@ -89,13 +93,26 @@ private:
   typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<Scalar> > Segment;
   typedef std::vector<Segment> Trajectory;
 
-  std::vector<hardware_interface::JointHandle> joints_;
-  std::vector<bool>                            angle_wraparound_;
-  RealtimeGoalHandlePtr                        rt_active_goal_;
-  realtime_tools::RealtimeBuffer<Trajectory>   trajectory_;
-  typename Segment::State                      state_;       ///< Workspace variable preallocated to the appropriate size
-  typename Segment::State                      state_error_; ///< Workspace variable preallocated to the appropriate size
-  std::vector<std::string>                     joint_names_;
+  std::vector<hardware_interface::JointHandle> joints_;           ///< Handles to controlled joints.
+  std::vector<bool>                            angle_wraparound_; ///< Whether controlled joints wrap around or not.
+  std::vector<std::string>                     joint_names_;      ///< Controlled joint names.
+
+  RealtimeGoalHandlePtr                        rt_active_goal_;   ///< Currently active action goal, if any.
+
+  /**
+   * Pointer to trajectory currently being followed. Can be either a hold trajectory or a trajectory received from a
+   * ROS message.
+   *
+   * We store separately hold and message trajectories because the \p starting(time) method must be realtime-safe.
+   * Because of this, the (single segment) hold trajectory is be preallocated at initialization time and its size is
+   * kept unchanged.
+   */
+  realtime_tools::RealtimeBuffer<Trajectory*>  curr_trajectory_ptr_;
+  Trajectory                                   msg_trajectory_;  ///< Last trajectory received from a ROS message.
+  Trajectory                                   hold_trajectory_; ///< Last hold trajectory values.
+
+  typename Segment::State                      state_;       ///< Workspace variable preallocated to the appropriate size.
+  typename Segment::State                      state_error_; ///< Workspace variable preallocated to the appropriate size.
 
   ros::Time     time_;   ///< Time of last update cycle
   ros::Duration period_; ///< Period of last update cycle

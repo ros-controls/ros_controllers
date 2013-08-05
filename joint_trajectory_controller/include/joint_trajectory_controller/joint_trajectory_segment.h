@@ -290,10 +290,14 @@ public:
 
   /** \return Pointer to (realtime) goal handle associated to this segment. */
   RealtimeGoalHandlePtr getGoalHandle() const {return rt_goal_handle_;}
+
+  /** \brief Set the (realtime) goal handle associated to this segment. */
   void setGoalHandle(RealtimeGoalHandlePtr rt_goal_handle) {rt_goal_handle_ = rt_goal_handle;}
 
   /** \return Tolerances this segment is associated to. */
   const SegmentTolerances& getTolerances() const {return tolerances_;}
+
+  /** \brief Set the tolerances this segment is associated to. */
   void setTolerances(const SegmentTolerances& tolerances) {tolerances_ = tolerances;}
 
 private:

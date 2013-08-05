@@ -188,7 +188,7 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
                   joints_.size() << " joints.");
 
   // Preeallocate resources
-  state_ = typename Segment::State(n_joints);
+  state_       = typename Segment::State(n_joints);
   state_error_ = typename Segment::State(n_joints);
 
   // ROS API
@@ -217,11 +217,9 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
   time_   = time;
   period_ = period;
 
-  const typename Segment::Time time_sec = time.toSec();
-
   // Sample trajectory at current time
   Trajectory& curr_traj = *(trajectory_.readFromRT());
-  typename Trajectory::const_iterator segment_it = sample(curr_traj, time_sec, state_);
+  typename Trajectory::const_iterator segment_it = sample(curr_traj, time.toSec(), state_);
   if (curr_traj.end() == segment_it)
   {
     ROS_ERROR_STREAM("Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
@@ -240,21 +238,18 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
       state_error_.acceleration[i] = 0.0; // There's no acceleration data available in a joint handle
     }
 
-    // Set the current goal to succeeded if the goal has been reached, or to aborted or if tolerances are violated
-    if (time_sec < segment_it->endTime())
+    // Check constraints
+    if (time.toSec() < segment_it->endTime())
     {
-      // Currently executing a segment: check path tolerances
-      trajectory_interface::checkStateTolerances<Segment>(state_error_,
-                                                          *segment_it,
-                                                          rt_active_goal_);
+      // Currently executing a segment: check path constraints
+      checkPathConstraints(state_error_,
+                           *segment_it);
     }
     else if (segment_it == --curr_traj.end())
     {
-      // Finished executing the LAST segment: check goal tolerances
-      trajectory_interface::checkGoalTolerances<Segment>(state_error_,
-                                                         time_sec,
-                                                         *segment_it,
-                                                         rt_active_goal_);
+      // Finished executing the LAST segment: check goal constraints
+      checkGoalConstraints(state_error_,
+                           *segment_it);
     }
   }
 

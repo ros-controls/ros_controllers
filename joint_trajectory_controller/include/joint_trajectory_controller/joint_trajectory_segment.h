@@ -54,13 +54,15 @@ namespace trajectory_interface
 {
 
 /**
- * \brief TODO: Doc!
+ * \brief Trajectory state tolerances.
+ *
+ * A tolerance of zero means that no tolerance will be applied for that variable.
  */
 struct StateTolerances
 {
   StateTolerances(double position_tolerance     = 0.0,
-                 double velocity_tolerance     = 0.0,
-                 double acceleration_tolerance = 0.0)
+                  double velocity_tolerance     = 0.0,
+                  double acceleration_tolerance = 0.0)
     : position(position_tolerance),
       velocity(velocity_tolerance),
       acceleration(acceleration_tolerance)
@@ -71,6 +73,9 @@ struct StateTolerances
   double acceleration;
 };
 
+/**
+ * \brief Trajectory segment tolerances.
+ */
 struct SegmentTolerances
 {
   SegmentTolerances(const typename std::vector<StateTolerances>::size_type& size = 0)
@@ -79,16 +84,23 @@ struct SegmentTolerances
       goal_time_tolerance(0.0)
   {}
 
-  std::vector<StateTolerances> state_tolerance;      ///< Tolerances to check on mid-segment states.
-  std::vector<StateTolerances> goal_state_tolerance; ///< Tolerances to check when the end state should be reached.
-  double                       goal_time_tolerance;  ///< Time tolerance to check when the end state should be reached.
+  /** State tolerances that appply during segment execution. */
+  std::vector<StateTolerances> state_tolerance;
+
+  /** State tolerances that apply for the goal state only.*/
+  std::vector<StateTolerances> goal_state_tolerance;
+
+  /** Extra time after the segment end time allowed to reach the goal state tolerances. */
+  double goal_time_tolerance;
 };
 
-typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
-typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
-
+/**
+ * \param state_error State error to check.
+ * \param state_tolerance State tolerances to check \p state_error against.
+ * \return True if \p state_error fulfills \p state_tolerance.
+ */
 template <class State>
-inline bool checkStateTolerance(const State&                       state_error,
+inline bool checkStateTolerance(const State&                        state_error,
                                 const std::vector<StateTolerances>& state_tolerance)
 {
   const unsigned int n_joints = state_tolerance.size();
@@ -109,48 +121,6 @@ inline bool checkStateTolerance(const State&                       state_error,
     if (!is_valid) {return false;}
   }
   return true;
-}
-
-/** TODO: Doc!*/
-template <class Segment>
-inline void checkStateTolerances(const typename Segment::State&      state_error,
-                                 const Segment&                      segment,
-                                 RealtimeGoalHandlePtr&              gh)
-{
-  const SegmentTolerances& tolerances = segment.getTolerances();
-  if (!checkStateTolerance(state_error, tolerances.state_tolerance))
-  {
-    gh->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
-    gh->setAborted(gh->preallocated_result_);
-  }
-}
-
-template <class Segment>
-inline void checkGoalTolerances(const typename Segment::State&      state_error,
-                                const typename Segment::Time&       time,
-                                const Segment&                      segment,
-                                RealtimeGoalHandlePtr&              gh)
-{
-  // Checks that we have ended inside the goal tolerances
-  const SegmentTolerances& tolerances = segment.getTolerances();
-  const bool inside_goal_constraints = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
-
-  if (inside_goal_constraints)
-  {
-    gh.reset();
-    segment.getGoalHandle()->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL; // TODO: Use gh, reset later?
-    segment.getGoalHandle()->setSucceeded(segment.getGoalHandle()->preallocated_result_);
-  }
-  else if (time < segment.endTime() + tolerances.goal_time_tolerance)
-  {
-    // Still have some time left to meet the goal state tolerances
-  }
-  else
-  {
-    gh.reset();
-    segment.getGoalHandle()->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED; // TODO: Use gh, reset later?
-    segment.getGoalHandle()->setAborted(segment.getGoalHandle()->preallocated_result_);
-  }
 }
 
 /**

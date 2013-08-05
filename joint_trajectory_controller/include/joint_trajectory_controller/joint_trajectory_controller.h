@@ -31,6 +31,9 @@
 #ifndef JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_CONTROLLER_H
 #define JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_CONTROLLER_H
 
+// C++ standard
+#include <cassert>
+
 // Boost
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -114,6 +117,33 @@ private:
   void preemptActiveGoal();
 
   void setHoldPosition(const ros::Time& time);
+
+  /**
+   * \brief Check path constraints.
+   *
+   * If path constraints are violated, the currently active action goal will be aborted.
+   *
+   * \param state_error Error between the current and desired trajectory states.
+   * \param segment Currently active trajectory segment.
+   *
+   * \pre \p segment is associated to the active goal handle.
+   **/
+  void checkPathConstraints(const typename Segment::State& state_error,
+                            const Segment&                 segment);
+
+  /**
+   * \brief Check goal constraints.
+   *
+   * If goal constraints are fulfilled, the currently active action goal will be considered successful.
+   * If they are violated, the action goal will be aborted.
+   *
+   * \param state_error Error between the current and desired trajectory states.
+   * \param segment Currently active trajectory segment.
+   *
+   * \pre \p segment is associated to the active goal handle.
+   **/
+  void checkGoalConstraints(const typename Segment::State& state_error,
+                            const Segment&                 segment);
 };
 
 inline void JointTrajectoryController::preemptActiveGoal()
@@ -126,6 +156,49 @@ inline void JointTrajectoryController::preemptActiveGoal()
     // Marks the current goal as canceled
     rt_active_goal_.reset();
     current_active_goal->gh_.setCanceled();
+  }
+}
+
+inline void JointTrajectoryController::checkPathConstraints(const typename Segment::State& state_error,
+                                                            const Segment&                 segment)
+{
+  assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
+
+  using namespace trajectory_interface;
+  const SegmentTolerances& tolerances = segment.getTolerances();
+  if (!checkStateTolerance(state_error, tolerances.state_tolerance))
+  {
+    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
+    rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
+  }
+}
+
+inline void JointTrajectoryController::checkGoalConstraints(const typename Segment::State& state_error,
+                                                            const Segment&                 segment)
+{
+  assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
+
+  using namespace trajectory_interface;
+
+  // Checks that we have ended inside the goal tolerances
+  const SegmentTolerances& tolerances = segment.getTolerances();
+  const bool inside_goal_constraints = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
+
+  if (inside_goal_constraints)
+  {
+    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
+    rt_active_goal_->setSucceeded(rt_active_goal_->preallocated_result_);
+    rt_active_goal_.reset();
+  }
+  else if (time_.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
+  {
+    // Still have some time left to meet the goal state tolerances
+  }
+  else
+  {
+    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
+    rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
+    rt_active_goal_.reset();
   }
 }
 

@@ -32,6 +32,7 @@
 
 // C++ standard
 #include <algorithm>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -167,7 +168,8 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   typedef typename Trajectory::value_type Segment;
   const ros::Time msg_start_time = internal::startTime(msg, time); // Message start time
 
-  ROS_DEBUG_STREAM("Figuring out new trajectory starting at time " << msg_start_time.toSec());
+  ROS_DEBUG_STREAM("Figuring out new trajectory starting at time "
+                   << std::fixed << std::setprecision(3) << msg_start_time.toSec());
 
   //Empty trajectory
   if (msg.points.empty())

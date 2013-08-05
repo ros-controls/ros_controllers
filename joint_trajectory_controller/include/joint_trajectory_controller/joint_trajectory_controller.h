@@ -85,7 +85,7 @@ private:
   typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
 //  typedef realtime_tools::RealtimePublisher<controllers_msgs::JointControllerState>           ControllerStatePublisher;
 
-  typedef trajectory_interface::JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
+  typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
   typedef std::vector<Segment> Trajectory;
 
   std::vector<hardware_interface::JointHandle> joints_;
@@ -164,7 +164,6 @@ inline void JointTrajectoryController::checkPathConstraints(const typename Segme
 {
   assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
 
-  using namespace trajectory_interface;
   const SegmentTolerances& tolerances = segment.getTolerances();
   if (!checkStateTolerance(state_error, tolerances.state_tolerance))
   {
@@ -177,8 +176,6 @@ inline void JointTrajectoryController::checkGoalConstraints(const typename Segme
                                                             const Segment&                 segment)
 {
   assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
-
-  using namespace trajectory_interface;
 
   // Checks that we have ended inside the goal tolerances
   const SegmentTolerances& tolerances = segment.getTolerances();

@@ -27,8 +27,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef TRAJECTORY_INTERFACE_INIT_JOINT_TRAJECTORY_H
-#define TRAJECTORY_INTERFACE_INIT_JOINT_TRAJECTORY_H
+#ifndef JOINT_TRAJECTORY_CONTROLLER_INIT_JOINT_TRAJECTORY_H
+#define JOINT_TRAJECTORY_CONTROLLER_INIT_JOINT_TRAJECTORY_H
 
 // C++ standard
 #include <algorithm>
@@ -51,7 +51,7 @@
 #include <joint_trajectory_controller/trajectory_interface_ros.h>
 #include <joint_trajectory_controller/joint_trajectory_segment.h>
 
-namespace trajectory_interface
+namespace joint_trajectory_controller
 {
 
 namespace internal

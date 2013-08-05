@@ -36,7 +36,7 @@
 #include <trajectory_interface/quintic_spline_segment.h>
 #include <joint_trajectory_controller/init_joint_trajectory.h>
 
-using namespace trajectory_interface;
+using namespace joint_trajectory_controller;
 using namespace trajectory_msgs;
 using std::vector;
 using std::string;
@@ -44,7 +44,7 @@ using std::string;
 // Floating-point value comparison threshold
 const double EPS = 1e-9;
 
-typedef JointTrajectorySegment<QuinticSplineSegment<double> > Segment;
+typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
 typedef vector<Segment>                Trajectory;
 
 TEST(PermutationTest, Permutation)

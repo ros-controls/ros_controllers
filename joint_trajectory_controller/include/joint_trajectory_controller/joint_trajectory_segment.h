@@ -27,8 +27,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef TRAJECTORY_INTERFACE_JOINT_TRAJECTORY_SEGMENT_H
-#define TRAJECTORY_INTERFACE_JOINT_TRAJECTORY_SEGMENT_H
+#ifndef JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_SEGMENT_H
+#define JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_SEGMENT_H
 
 // C++ standard
 #include <cassert>
@@ -50,7 +50,7 @@
 // Project
 #include <joint_trajectory_controller/trajectory_interface_ros.h>
 
-namespace trajectory_interface
+namespace joint_trajectory_controller
 {
 
 /**

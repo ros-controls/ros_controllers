@@ -27,8 +27,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef TRAJECTORY_INTERFACE_TRAJECTORY_INTERFACE_ROS_H
-#define TRAJECTORY_INTERFACE_TRAJECTORY_INTERFACE_ROS_H
+#ifndef JOINT_TRAJECTORY_CONTROLLER_TRAJECTORY_INTERFACE_ROS_H
+#define JOINT_TRAJECTORY_CONTROLLER_TRAJECTORY_INTERFACE_ROS_H
 
 #include <algorithm>
 #include <iterator>
@@ -41,7 +41,7 @@
 
 #include <trajectory_interface/trajectory_interface.h>
 
-namespace trajectory_interface
+namespace joint_trajectory_controller
 {
 namespace internal
 {

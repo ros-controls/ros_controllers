@@ -34,13 +34,13 @@
 #include <trajectory_interface/quintic_spline_segment.h>
 #include <joint_trajectory_controller/joint_trajectory_segment.h>
 
-using namespace trajectory_interface;
+using namespace joint_trajectory_controller;
 using namespace trajectory_msgs;
 
 // Floating-point value comparison threshold
 const double EPS = 1e-9;
 
-typedef JointTrajectorySegment<QuinticSplineSegment<double> > Segment;
+typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
 
 TEST(WraparoundOffsetTest, WrappingPositions)
 {

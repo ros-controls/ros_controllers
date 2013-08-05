@@ -34,7 +34,7 @@
 #include <gtest/gtest.h>
 #include <joint_trajectory_controller/trajectory_interface_ros.h>
 
-using namespace trajectory_interface;
+using namespace joint_trajectory_controller;
 using namespace trajectory_msgs;
 using std::vector;
 using std::string;

@@ -262,8 +262,7 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
 
 void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
 {
-  typedef trajectory_interface::InitJointTrajectoryOptions<Trajectory> Options;
-  using trajectory_interface::initJointTrajectory;
+  typedef InitJointTrajectoryOptions<Trajectory> Options;
 
   // Preconditions
   if (!msg)
@@ -306,7 +305,7 @@ void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryCon
 void JointTrajectoryController::goalCB(GoalHandle gh)
 {
   // Precondition
-  using trajectory_interface::internal::permutation;
+  using internal::permutation;
   std::vector<unsigned int> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
   if (permutation_vector.empty())
   {

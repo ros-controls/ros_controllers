@@ -305,7 +305,15 @@ private:
   SegmentTolerances     tolerances_;
 };
 
-// TODO: Doc!, move elsewhere!
+/**
+ * \param prev_position Previous position from which to compute the wraparound offset.
+ * \param next_position Next position from which to compute the wraparound offset.
+ * \param angle_wraparound Vector of booleans where true values correspond to joints that wrap around
+ * (ie. are continuous). Offsets will be computed only for these joints, otherwise they are set to zero.
+ * \return Wraparound offsets that should be applied to \p next_position such that no multi-turns are performed when
+ * transitioning from \p prev_position.
+ * \tparam Scalar Scalar type.
+ */
 template <class Scalar>
 std::vector<Scalar> wraparoundOffset(const std::vector<Scalar>& prev_position,
                                      const std::vector<Scalar>& next_position,

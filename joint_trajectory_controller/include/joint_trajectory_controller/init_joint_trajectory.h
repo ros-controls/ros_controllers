@@ -146,11 +146,11 @@ struct InitJointTrajectoryOptions
  *         const trajectory_msgs::JointTrajectoryPoint& start_point,
  *         const trajectory_msgs::JointTrajectoryPoint& end_point,
  *         const std::vector<unsigned int>&             permutation,
- *         const std::vector<double>&                   position_offset)
+ *         const std::vector<Scalar>&                   position_offset)
  * \endcode
  * The following function must also be defined to properly handle continuous joints:
  * \code
- * std::vector<double> wraparoundOffset(const typename Segment::State&  prev_state,
+ * std::vector<Scalar> wraparoundOffset(const typename Segment::State&  prev_state,
  *                                      const typename Segment::State&  next_state,
  *                                      const std::vector<bool>&        angle_wraparound)
  * \endcode
@@ -166,6 +166,8 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
                                InitJointTrajectoryOptions<Trajectory>())
 {
   typedef typename Trajectory::value_type Segment;
+  typedef typename Segment::Scalar Scalar;
+
   const ros::Time msg_start_time = internal::startTime(msg, time); // Message start time
 
   ROS_DEBUG_STREAM("Figuring out new trajectory starting at time "
@@ -231,7 +233,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   Trajectory result_traj; // Currently empty
 
   // Initialize offsets due to wrapping joints to zero
-  std::vector<double> position_offset(msg.joint_names.size(), 0.0);
+  std::vector<Scalar> position_offset(msg.joint_names.size(), 0.0);
 
   // Bridge current trajectory to new one
   if (has_current_trajectory)

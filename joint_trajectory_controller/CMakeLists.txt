@@ -14,7 +14,8 @@ if(USE_ROSBUILD)
     include/joint_trajectory_controller/joint_trajectory_msg_utils.h
     include/joint_trajectory_controller/joint_trajectory_segment.h
     include/trajectory_interface/trajectory_interface.h
-    include/trajectory_interface/quintic_spline_segment.h)
+    include/trajectory_interface/quintic_spline_segment.h
+    include/trajectory_interface/pos_vel_acc_state.h)
 
   rosbuild_add_gtest(quintic_spline_segment_test     test/quintic_spline_segment_test.cpp)
   rosbuild_add_gtest(trajectory_interface_test       test/trajectory_interface_test.cpp)

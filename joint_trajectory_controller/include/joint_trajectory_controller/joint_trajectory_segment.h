@@ -58,40 +58,42 @@ namespace joint_trajectory_controller
  *
  * A tolerance of zero means that no tolerance will be applied for that variable.
  */
+template<class Scalar>
 struct StateTolerances
 {
-  StateTolerances(double position_tolerance     = 0.0,
-                  double velocity_tolerance     = 0.0,
-                  double acceleration_tolerance = 0.0)
+  StateTolerances(Scalar position_tolerance     = static_cast<Scalar>(0.0),
+                  Scalar velocity_tolerance     = static_cast<Scalar>(0.0),
+                  Scalar acceleration_tolerance = static_cast<Scalar>(0.0))
     : position(position_tolerance),
       velocity(velocity_tolerance),
       acceleration(acceleration_tolerance)
   {}
 
-  double position;
-  double velocity;
-  double acceleration;
+  Scalar position;
+  Scalar velocity;
+  Scalar acceleration;
 };
 
 /**
  * \brief Trajectory segment tolerances.
  */
+template<class Scalar>
 struct SegmentTolerances
 {
-  SegmentTolerances(const typename std::vector<StateTolerances>::size_type& size = 0)
+  SegmentTolerances(const typename std::vector<StateTolerances<Scalar> >::size_type& size = 0)
     : state_tolerance(size),
       goal_state_tolerance(size),
-      goal_time_tolerance(0.0)
+      goal_time_tolerance(static_cast<Scalar>(0.0))
   {}
 
   /** State tolerances that appply during segment execution. */
-  std::vector<StateTolerances> state_tolerance;
+  std::vector<StateTolerances<Scalar> > state_tolerance;
 
   /** State tolerances that apply for the goal state only.*/
-  std::vector<StateTolerances> goal_state_tolerance;
+  std::vector<StateTolerances<Scalar> > goal_state_tolerance;
 
   /** Extra time after the segment end time allowed to reach the goal state tolerances. */
-  double goal_time_tolerance;
+  Scalar goal_time_tolerance;
 };
 
 /**
@@ -100,8 +102,8 @@ struct SegmentTolerances
  * \return True if \p state_error fulfills \p state_tolerance.
  */
 template <class State>
-inline bool checkStateTolerance(const State&                        state_error,
-                                const std::vector<StateTolerances>& state_tolerance)
+inline bool checkStateTolerance(const State&                                                 state_error,
+                                const std::vector<StateTolerances<typename State::Scalar> >& state_tolerance)
 {
   const unsigned int n_joints = state_tolerance.size();
 
@@ -113,7 +115,7 @@ inline bool checkStateTolerance(const State&                        state_error,
   for (unsigned int i = 0; i < n_joints; ++i)
   {
     using std::abs;
-    const StateTolerances& tol = state_tolerance[i]; // Alias for brevity
+    const StateTolerances<typename State::Scalar>& tol = state_tolerance[i]; // Alias for brevity
     const bool is_valid = !(tol.position     > 0.0 && abs(state_error.position[i])     > tol.position) &&
                           !(tol.velocity     > 0.0 && abs(state_error.velocity[i])     > tol.velocity) &&
                           !(tol.acceleration > 0.0 && abs(state_error.acceleration[i]) > tol.acceleration);
@@ -122,6 +124,8 @@ inline bool checkStateTolerance(const State&                        state_error,
   }
   return true;
 }
+
+
 
 /**
  * \brief Class representing a multi-dimensional quintic spline segment with a start and end time.
@@ -140,13 +144,15 @@ template <class Segment>
 class JointTrajectorySegment : public Segment
 {
 public:
-  typedef typename Segment::Time  Time;
+  typedef typename Segment::Scalar Scalar;
+  typedef typename Segment::Time   Time;
 
   typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
 
   struct State : public Segment::State
   {
+    typedef typename Segment::State::Scalar Scalar;
     State() : Segment::State() {}
     State(unsigned int size) : Segment::State(size) {}
 
@@ -171,14 +177,14 @@ public:
      */
     State(const trajectory_msgs::JointTrajectoryPoint& point,
           const std::vector<unsigned int>&             permutation     = std::vector<unsigned int>(),
-          const std::vector<double>&                   position_offset = std::vector<double>())
+          const std::vector<Scalar>&                   position_offset = std::vector<Scalar>())
     {
       init(point, permutation, position_offset);
     }
 
     void init(const trajectory_msgs::JointTrajectoryPoint& point,
               const std::vector<unsigned int>&             permutation     = std::vector<unsigned int>(),
-              const std::vector<double>&                   position_offset = std::vector<double>())
+              const std::vector<Scalar>&                   position_offset = std::vector<Scalar>())
     {
       using std::invalid_argument;
 
@@ -217,7 +223,7 @@ public:
         const unsigned int id = permutation.empty() ? i : permutation[i];
 
         // Apply position offset only if it was specified
-        const double offset = position_offset.empty() ? 0.0 : position_offset[i];
+        const Scalar offset = position_offset.empty() ? 0.0 : position_offset[i];
 
         if (!point.positions.empty())     {this->position[i]     = point.positions[id] + offset;}
         if (!point.velocities.empty())    {this->velocity[i]     = point.velocities[id];}
@@ -260,7 +266,7 @@ public:
                          const trajectory_msgs::JointTrajectoryPoint& start_point,
                          const trajectory_msgs::JointTrajectoryPoint& end_point,
                          const std::vector<unsigned int>&             permutation     = std::vector<unsigned int>(),
-                         const std::vector<double>&                   position_offset = std::vector<double>())
+                         const std::vector<Scalar>&                   position_offset = std::vector<Scalar>())
     : rt_goal_handle_(),
       tolerances_(start_point.positions.size())
   {
@@ -295,14 +301,14 @@ public:
   void setGoalHandle(RealtimeGoalHandlePtr rt_goal_handle) {rt_goal_handle_ = rt_goal_handle;}
 
   /** \return Tolerances this segment is associated to. */
-  const SegmentTolerances& getTolerances() const {return tolerances_;}
+  const SegmentTolerances<Scalar>& getTolerances() const {return tolerances_;}
 
   /** \brief Set the tolerances this segment is associated to. */
-  void setTolerances(const SegmentTolerances& tolerances) {tolerances_ = tolerances;}
+  void setTolerances(const SegmentTolerances<Scalar>& tolerances) {tolerances_ = tolerances;}
 
 private:
-  RealtimeGoalHandlePtr rt_goal_handle_;
-  SegmentTolerances     tolerances_;
+  RealtimeGoalHandlePtr     rt_goal_handle_;
+  SegmentTolerances<Scalar> tolerances_;
 };
 
 /**
@@ -321,16 +327,16 @@ std::vector<Scalar> wraparoundOffset(const std::vector<Scalar>& prev_position,
 {
   // Preconditions
   const unsigned int n_joints = angle_wraparound.size();
-  if (n_joints != prev_position.size() || n_joints != next_position.size()) {return std::vector<double>();}
+  if (n_joints != prev_position.size() || n_joints != next_position.size()) {return std::vector<Scalar>();}
 
   // Return value
-  std::vector<double> pos_offset(n_joints, 0.0);
+  std::vector<Scalar> pos_offset(n_joints, 0.0);
 
   for (unsigned int i = 0; i < angle_wraparound.size(); ++i)
   {
     if (angle_wraparound[i])
     {
-      const double dist = angles::shortest_angular_distance(prev_position[i], next_position[i]);
+      const Scalar dist = angles::shortest_angular_distance(prev_position[i], next_position[i]);
       pos_offset[i] = (prev_position[i] + dist) - next_position[i];
     }
   }

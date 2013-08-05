@@ -365,6 +365,7 @@ TEST_F(JointTrajectorySegmentTest, PermutationTest)
 TEST(CheckStateToleranceTest, checkStateTolerance)
 {
   const double tol = 1.0;
+  typedef StateTolerances<double> StateTols;
 
   typename Segment::State state_error_ok;
   state_error_ok.position.resize(2, -tol);
@@ -373,16 +374,16 @@ TEST(CheckStateToleranceTest, checkStateTolerance)
 
   // Empty tolerances: No checks take place
   {
-    std::vector<StateTolerances> state_tols(2);
+    std::vector<StateTols> state_tols(2);
     EXPECT_TRUE(checkStateTolerance(state_error_ok, state_tols));
   }
 
   // Check position-only tolerances
   {
     typename Segment::State state_error = state_error_ok;
-    StateTolerances state_tol;
+    StateTols state_tol;
     state_tol.position = tol;
-    std::vector<StateTolerances> state_tols(2, state_tol);
+    std::vector<StateTols> state_tols(2, state_tol);
 
     // Tolerances OK
     EXPECT_TRUE(checkStateTolerance(state_error, state_tols));
@@ -402,9 +403,9 @@ TEST(CheckStateToleranceTest, checkStateTolerance)
   // Check velocity-only tolerances
   {
     typename Segment::State state_error = state_error_ok;
-    StateTolerances state_tol;
+    StateTols state_tol;
     state_tol.velocity = tol;
-    std::vector<StateTolerances> state_tols(2, state_tol);
+    std::vector<StateTols> state_tols(2, state_tol);
 
     // Tolerances OK
     EXPECT_TRUE(checkStateTolerance(state_error, state_tols));
@@ -424,9 +425,9 @@ TEST(CheckStateToleranceTest, checkStateTolerance)
   // Check acceleration-only tolerances
   {
     typename Segment::State state_error = state_error_ok;
-    StateTolerances state_tol;
+    StateTols state_tol;
     state_tol.acceleration = tol;
-    std::vector<StateTolerances> state_tols(2, state_tol);
+    std::vector<StateTols> state_tols(2, state_tol);
 
     // Tolerances OK
     EXPECT_TRUE(checkStateTolerance(state_error, state_tols));

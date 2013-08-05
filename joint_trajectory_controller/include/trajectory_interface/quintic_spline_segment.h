@@ -37,6 +37,8 @@
 #include <boost/array.hpp>
 #include <boost/foreach.hpp>
 
+#include <trajectory_interface/pos_vel_acc_state.h>
+
 namespace trajectory_interface
 {
 
@@ -49,39 +51,9 @@ template<class ScalarType>
 class QuinticSplineSegment
 {
 public:
-  typedef ScalarType Scalar;
-  typedef Scalar     Time;
-
-  /**
-   * \brief Quintic spline sample state.
-   */
-  struct State
-  {
-    State() {}
-
-     /**
-      * \brief Resource-preallocating constructor.
-      *
-      * Position, velocity and acceleration vectors are resized to \p size, and their values are set to zero.
-      * Note that these two situations are different:
-      * \code
-      * // 2-dimensional state specifying zero position, velocity and acceleration
-      * State zero_pos_vel_acc(2);
-      *
-      * // 2-dimensional state specifying zero position
-      * State zero_pos;
-      * zero_pos.position.resize(2);
-      */
-    State(const typename std::vector<Scalar>::size_type size)
-      : position(    std::vector<Scalar>(size, static_cast<Scalar>(0))),
-        velocity(    std::vector<Scalar>(size, static_cast<Scalar>(0))),
-        acceleration(std::vector<Scalar>(size, static_cast<Scalar>(0)))
-    {}
-
-    std::vector<Scalar> position;
-    std::vector<Scalar> velocity;
-    std::vector<Scalar> acceleration;
-  };
+  typedef ScalarType             Scalar;
+  typedef Scalar                 Time;
+  typedef PosVelAccState<Scalar> State;
 
   /**
    * \brief Creates an empty segment.
@@ -334,7 +306,7 @@ computeCoefficients(const Scalar& start_pos, const Scalar& start_vel,
   }
   else
   {
-    double T[4];
+    Scalar T[4];
     generatePowers(3, time, T);
 
     coefficients[0] = start_pos;
@@ -364,7 +336,7 @@ computeCoefficients(const Scalar& start_pos, const Scalar& start_vel, const Scal
   }
   else
   {
-    double T[6];
+    Scalar T[6];
     generatePowers(5, time, T);
 
     coefficients[0] = start_pos;
@@ -385,7 +357,7 @@ sample(const SplineCoefficients& coefficients, const Scalar& time,
        Scalar& position, Scalar& velocity, Scalar& acceleration)
 {
   // create powers of time:
-  double t[6];
+  Scalar t[6];
   generatePowers(5, time, t);
 
   position = t[0]*coefficients[0] +

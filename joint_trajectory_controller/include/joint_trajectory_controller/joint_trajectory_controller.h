@@ -85,7 +85,8 @@ private:
   typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
 //  typedef realtime_tools::RealtimePublisher<controllers_msgs::JointControllerState>           ControllerStatePublisher;
 
-  typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
+  typedef double Scalar;
+  typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<Scalar> > Segment;
   typedef std::vector<Segment> Trajectory;
 
   std::vector<hardware_interface::JointHandle> joints_;
@@ -164,7 +165,7 @@ inline void JointTrajectoryController::checkPathTolerances(const typename Segmen
 {
   assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
 
-  const SegmentTolerances& tolerances = segment.getTolerances();
+  const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
   if (!checkStateTolerance(state_error, tolerances.state_tolerance))
   {
     rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
@@ -178,7 +179,7 @@ inline void JointTrajectoryController::checkGoalTolerances(const typename Segmen
   assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
 
   // Checks that we have ended inside the goal tolerances
-  const SegmentTolerances& tolerances = segment.getTolerances();
+  const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
   const bool inside_goal_tolerances = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
 
   if (inside_goal_tolerances)

@@ -48,30 +48,39 @@ JointVelocityController::~JointVelocityController()
   sub_command_.shutdown();
 }
 
-  bool JointVelocityController::init(hardware_interface::EffortJointInterface *robot, 
-				     const std::string &joint_name, const control_toolbox::Pid &pid)
+bool JointVelocityController::init(hardware_interface::EffortJointInterface *robot, 
+  const std::string &joint_name, const control_toolbox::Pid &pid)
 {
-  joint_ = robot->getHandle(joint_name);
   pid_controller_ = pid;
+
+  // Get joint handle from hardware interface
+  joint_ = robot->getHandle(joint_name);
 
   return true;
 }
 
-  bool JointVelocityController::init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n)
+bool JointVelocityController::init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n)
 {
+  // Get joint name from parameter server
   std::string joint_name;
   if (!n.getParam("joint", joint_name)) {
     ROS_ERROR("No joint given (namespace: %s)", n.getNamespace().c_str());
     return false;
   }
 
+  // Get joint handle from hardware interface
+  joint_ = robot->getHandle(joint_name);
+
+  // Load PID Controller using gains set on parameter server
   if (!pid_controller_.init(ros::NodeHandle(n, "pid")))
     return false;
 
+  // Start realtime state publisher
   controller_state_publisher_.reset(
     new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>
     (n, "state", 1));
 
+  // Start command subscriber
   sub_command_ = n.subscribe<std_msgs::Float64>("command", 1, &JointVelocityController::setCommandCB, this);
 
   return true;
@@ -89,6 +98,11 @@ void JointVelocityController::getGains(double &p, double &i, double &d, double &
   pid_controller_.getGains(p,i,d,i_max,i_min);
 }
 
+void JointVelocityController::printDebug()
+{
+  pid_controller_.printValues();
+}
+
 std::string JointVelocityController::getJointName()
 {
   return joint_.getName();
@@ -101,9 +115,15 @@ void JointVelocityController::setCommand(double cmd)
 }
 
 // Return the current velocity command
-void JointVelocityController::getCommand(double  & cmd)
+void JointVelocityController::getCommand(double& cmd)
 {
   cmd = command_;
+}
+
+void JointVelocityController::starting(const ros::Time& time)
+{
+  command_ = 0.0;
+  pid_controller_.reset();
 }
 
 void JointVelocityController::update(const ros::Time& time, const ros::Duration& period)
@@ -113,9 +133,9 @@ void JointVelocityController::update(const ros::Time& time, const ros::Duration&
   // Set the PID error and compute the PID command with nonuniform time
   // step size. The derivative error is computed from the change in the error
   // and the timestep dt.
-  double command = pid_controller_.computeCommand(error, period);
+  double commanded_effort = pid_controller_.computeCommand(error, period);
 
-  joint_.setCommand(command);
+  joint_.setCommand(commanded_effort);
 
   if(loop_count_ % 10 == 0)
   {
@@ -126,7 +146,7 @@ void JointVelocityController::update(const ros::Time& time, const ros::Duration&
       controller_state_publisher_->msg_.process_value = joint_.getVelocity();
       controller_state_publisher_->msg_.error = error;
       controller_state_publisher_->msg_.time_step = period.toSec();
-      controller_state_publisher_->msg_.command = command;
+      controller_state_publisher_->msg_.command = commanded_effort;
 
       double dummy;
       getGains(controller_state_publisher_->msg_.p,

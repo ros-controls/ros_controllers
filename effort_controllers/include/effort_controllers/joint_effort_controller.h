@@ -34,8 +34,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef EFFORT_CONTROLLERS_JOINT_EFFORT_CONTROLLER_H
-#define EFFORT_CONTROLLERS_JOINT_EFFORT_CONTROLLER_H
+#ifndef EFFORT_CONTROLLERS__JOINT_EFFORT_CONTROLLER_H
+#define EFFORT_CONTROLLERS__JOINT_EFFORT_CONTROLLER_H
 
 #include <forward_command_controller/forward_command_controller.h>
 

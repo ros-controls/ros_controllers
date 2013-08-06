@@ -126,7 +126,6 @@ using std::vector;
 
 JointTrajectoryController::JointTrajectoryController() {}
 
-// TODO: joints vs. joint_names, command vs trajectory_command
 bool JointTrajectoryController::init(hardware_interface::PositionJointInterface* hw,
                                      ros::NodeHandle& root_nh,
                                      ros::NodeHandle& controller_nh)
@@ -138,7 +137,7 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
   double state_publish_rate = 50.0;
   controller_nh_.getParam("state_publish_rate", state_publish_rate);
   ROS_DEBUG_STREAM("Controller state will be published at " << state_publish_rate << "Hz.");
-  state_publish_period_ = ros::Duration(1.0 / state_publish_rate);
+  state_publisher_period_ = ros::Duration(1.0 / state_publish_rate);
 
   // Action status checking update rate
   double action_monitor_rate = 20.0;
@@ -184,27 +183,46 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
   ROS_INFO_STREAM("Initialized controller of type '" << getHardwareInterfaceType() << "' with " <<
                   joints_.size() << " joints.");
 
-  // Preeallocate resources
-  state_            = typename Segment::State(n_joints);
-  state_error_      = typename Segment::State(n_joints);
-  hold_start_state_ = typename Segment::State(n_joints);
-  hold_end_state_   = typename Segment::State(n_joints);
-
-
-  Segment hold_segment(0.0, state_, 0.0, state_);
-  hold_trajectory_.resize(1, hold_segment);
-
-  // ROS API
+  // ROS API: Subscribed topics
   trajectory_command_sub_ = controller_nh_.subscribe("command", 1, &JointTrajectoryController::trajectoryCommandCB, this);
 
+  // ROS API: Published topics
+  state_publisher_.reset(new StatePublisher(controller_nh_, "state", 1));
+
+  // ROS API: Action interface
   action_server_.reset(new ActionServer(controller_nh_, "follow_joint_trajectory",
                                         boost::bind(&JointTrajectoryController::goalCB,   this, _1),
                                         boost::bind(&JointTrajectoryController::cancelCB, this, _1),
                                         false));
   action_server_->start();
 
-//  controller_state_publisher_.reset(new ControllerStatePublisher(controller_nh_, "state", 1));
-  // TODO: Preallocate message
+  // ROS_API: Provided services
+  query_state_service_ = controller_nh_.advertiseService("query_state",
+                                                         &JointTrajectoryController::queryStateService,
+                                                         this);
+
+  // Preeallocate resources
+  current_state_    = typename Segment::State(n_joints);
+  desired_state_    = typename Segment::State(n_joints);
+  state_error_      = typename Segment::State(n_joints);
+  hold_start_state_ = typename Segment::State(n_joints);
+  hold_end_state_   = typename Segment::State(n_joints);
+
+  Segment hold_segment(0.0, current_state_, 0.0, current_state_);
+  hold_trajectory_.resize(1, hold_segment);
+
+  {
+    state_publisher_->lock();
+    state_publisher_->msg_.joint_names = joint_names_;
+    state_publisher_->msg_.desired.positions.resize(n_joints);
+    state_publisher_->msg_.desired.velocities.resize(n_joints);
+    state_publisher_->msg_.desired.accelerations.resize(n_joints);
+    state_publisher_->msg_.actual.positions.resize(n_joints);
+    state_publisher_->msg_.actual.velocities.resize(n_joints);
+    state_publisher_->msg_.error.positions.resize(n_joints);
+    state_publisher_->msg_.error.velocities.resize(n_joints);
+    state_publisher_->unlock();
+  }
 
   return true;
 }
@@ -218,9 +236,9 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
   time_data.uptime = time_data_.readFromRT()->uptime + period; // Update controller uptime
   time_data_.writeFromNonRT(time_data); // TODO: Grrr, we need a lock-free data structure here!
 
-  // Sample trajectory at current time
+  // Update desired state: sample trajectory at current time
   Trajectory& curr_traj = **(curr_trajectory_ptr_.readFromRT());
-  typename Trajectory::const_iterator segment_it = sample(curr_traj, time_data.uptime.toSec(), state_);
+  typename Trajectory::const_iterator segment_it = sample(curr_traj, time_data.uptime.toSec(), desired_state_);
   if (curr_traj.end() == segment_it)
   {
     // Non-realtime safe, but should never happen under normal operation
@@ -228,18 +246,22 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
     return;
   }
 
+  // Update current state and state error
+  for (unsigned int i = 0; i < joints_.size(); ++i)
+  {
+    current_state_.position[i] = joints_[i].getPosition();
+    current_state_.velocity[i] = joints_[i].getVelocity();
+    // There's no acceleration data available in a joint handle
+
+    state_error_.position[i] = current_state_.position[i] - desired_state_.position[i];
+    state_error_.velocity[i] = current_state_.velocity[i] - desired_state_.velocity[i];
+    state_error_.acceleration[i] = 0.0;
+  }
+
   // Check tolerances if segment corresponds to currently active action goal
   const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
   if (rt_segment_goal && rt_segment_goal == rt_active_goal_)
   {
-    // State error
-    for (unsigned int i = 0; i < joints_.size(); ++i)
-    {
-      state_error_.position[i] = joints_[i].getPosition() - state_.position[i];
-      state_error_.velocity[i] = joints_[i].getVelocity() - state_.velocity[i];
-      state_error_.acceleration[i] = 0.0; // There's no acceleration data available in a joint handle
-    }
-
     // Check tolerances
     if (time_data.uptime.toSec() < segment_it->endTime())
     {
@@ -258,8 +280,11 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
   // Send commands
   for (unsigned int i = 0; i < joints_.size(); ++i)
   {
-    joints_[i].setCommand(state_.position[i]);
+    joints_[i].setCommand(desired_state_.position[i]);
   }
+
+  // Publish state
+  publishState(time_data.uptime);
 }
 
 void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
@@ -267,6 +292,12 @@ void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryCon
   typedef InitJointTrajectoryOptions<Trajectory> Options;
 
   // Preconditions
+  if (!isRunning())
+  {
+    ROS_ERROR("Can't accept new commands. Controller is not running.");
+    return;
+  }
+
   if (!msg)
   {
     ROS_WARN("Received null-pointer trajectory message, skipping.");
@@ -313,7 +344,16 @@ void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryCon
 
 void JointTrajectoryController::goalCB(GoalHandle gh)
 {
-  // Precondition
+  // Preconditions
+  if (!isRunning())
+  {
+    ROS_ERROR("Can't accept new action goals. Controller is not running.");
+    control_msgs::FollowJointTrajectoryResult result;
+    result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL; // TODO: Add better error status to msg?
+    gh.setRejected(result);
+    return;
+  }
+
   using internal::permutation;
   std::vector<unsigned int> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
   if (permutation_vector.empty())
@@ -359,10 +399,66 @@ void JointTrajectoryController::cancelCB(GoalHandle gh)
   }
 }
 
+
+bool JointTrajectoryController::queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
+                                                  control_msgs::QueryTrajectoryState::Response& resp)
+{
+  // Preconditions
+  if (!isRunning())
+  {
+    ROS_ERROR("Can't sample trajectory. Controller is not running.");
+    return false;
+  }
+
+  // Convert request time to internal monotonic representation
+  TimeData* time_data = time_data_.readFromRT();
+  const ros::Duration time_offset = req.time - time_data->time;
+  const ros::Time sample_time = time_data->uptime + time_offset;
+
+  // Sample trajectory at requested time
+  Trajectory& curr_traj = **(curr_trajectory_ptr_.readFromRT());
+  Segment::State state;
+  typename Trajectory::const_iterator segment_it = sample(curr_traj, sample_time.toSec(), state);
+  if (curr_traj.end() == segment_it)
+  {
+    ROS_ERROR_STREAM("Requested sample time preceeds trajectory start time.");
+    return false;
+  }
+
+  // Populate response
+  resp.name         = joint_names_;
+  resp.position     = state.position;
+  resp.velocity     = state.velocity;
+  resp.acceleration = state.acceleration;
+
+  return true;
+}
+
+void JointTrajectoryController::publishState(const ros::Time& time)
+{
+  // Check if it's time to publish
+  if (!state_publisher_period_.isZero() && last_state_publish_time_ + state_publisher_period_ < time)
+  {
+    if (state_publisher_ && state_publisher_->trylock())
+    {
+      last_state_publish_time_ += state_publisher_period_;
+
+      state_publisher_->msg_.header.stamp          = time_data_.readFromRT()->time;
+      state_publisher_->msg_.desired.positions     = desired_state_.position;
+      state_publisher_->msg_.desired.velocities    = desired_state_.velocity;
+      state_publisher_->msg_.desired.accelerations = desired_state_.acceleration;
+      state_publisher_->msg_.actual.positions      = current_state_.position;
+      state_publisher_->msg_.actual.velocities     = current_state_.velocity;
+      state_publisher_->msg_.error.positions       = state_error_.position;
+      state_publisher_->msg_.error.velocities      = state_error_.velocity;
+
+      state_publisher_->unlockAndPublish();
+    }
+  }
+}
+
 void JointTrajectoryController::setHoldPosition(const ros::Time& time)
 {
-  // NOTE: This is realtime-safe
-
   // Segment boundary conditions: Settle current position in a fixed time
   typename Segment::Time start_time = time.toSec();
   typename Segment::Time end_time   = time.toSec() + 2.0; // NOTE: Magic value

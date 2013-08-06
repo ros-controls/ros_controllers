@@ -43,6 +43,8 @@
 
 // ROS messages
 #include <control_msgs/FollowJointTrajectoryAction.h>
+#include <control_msgs/JointTrajectoryControllerState.h>
+#include <control_msgs/QueryTrajectoryState.h>
 #include <trajectory_msgs/JointTrajectory.h>
 
 // actionlib
@@ -68,10 +70,16 @@ namespace joint_trajectory_controller
 class JointTrajectoryController : public controller_interface::Controller<hardware_interface::PositionJointInterface>
 {
 public:
+
   JointTrajectoryController();
 
+  /** \name Non Real-Time Safe Functions
+   *\{*/
   bool init(hardware_interface::PositionJointInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
+  /*\}*/
 
+  /** \name Real-Time Safe Functions
+   *\{*/
   /** \brief Holds the current position. */
   void starting(const ros::Time& time);
 
@@ -79,6 +87,7 @@ public:
   void stopping(const ros::Time& time);
 
   void update(const ros::Time& time, const ros::Duration& period);
+  /*\}*/
 
 private:
   struct TimeData
@@ -96,7 +105,8 @@ private:
   typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
   typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
-//  typedef realtime_tools::RealtimePublisher<controllers_msgs::JointControllerState>           ControllerStatePublisher;
+  typedef realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>     StatePublisher;
+  typedef boost::scoped_ptr<StatePublisher>                                                   StatePublisherPtr;
 
   typedef double Scalar;
   typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<Scalar> > Segment;
@@ -120,30 +130,49 @@ private:
   Trajectory                                   msg_trajectory_;  ///< Last trajectory received from a ROS message.
   Trajectory                                   hold_trajectory_; ///< Last hold trajectory values.
 
-  typename Segment::State state_;             ///< Preallocated workspace variable.
+  typename Segment::State current_state_;     ///< Preallocated workspace variable.
+  typename Segment::State desired_state_;     ///< Preallocated workspace variable.
   typename Segment::State state_error_;       ///< Preallocated workspace variable.
   typename Segment::State hold_start_state_;  ///< Preallocated workspace variable.
   typename Segment::State hold_end_state_;    ///< Preallocated workspace variable.
 
   realtime_tools::RealtimeBuffer<TimeData> time_data_;
 
-  ros::Duration state_publish_period_;
+  ros::Duration state_publisher_period_;
   ros::Duration action_monitor_period_;
 
   // ROS API
-  ros::NodeHandle controller_nh_;
-  ros::Timer      goal_handle_timer_;
-  ros::Subscriber trajectory_command_sub_;
-  ActionServerPtr action_server_;
+  ros::NodeHandle    controller_nh_;
+  ros::Subscriber    trajectory_command_sub_;
+  ActionServerPtr    action_server_;
+  ros::ServiceServer query_state_service_;
+  StatePublisherPtr  state_publisher_;
 
-//  boost::scoped_ptr<ControllerStatePublisher> controller_state_publisher_;
+  ros::Timer         goal_handle_timer_;
+  ros::Time          last_state_publish_time_;
 
   void updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh);
   void trajectoryCommandCB(const JointTrajectoryConstPtr& msg);
   void goalCB(GoalHandle gh);
   void cancelCB(GoalHandle gh);
   void preemptActiveGoal();
+  bool queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
+                         control_msgs::QueryTrajectoryState::Response& resp);
 
+  /**
+   * \brief Publish current controller state at a throttled frequency.
+   * \note This method is realtime-safe and is meant to be called from \ref update, as it shares data with it without
+   * any locking.
+   */
+  void publishState(const ros::Time& time);
+
+  /**
+   * \brief Hold the current position.
+   *
+   * Substitutes the current trajectory with a single-segment one going from the current position and velocity to the
+   * current position and zero velocity.
+   * \note This method is realtime-safe.
+   */
   void setHoldPosition(const ros::Time& time);
 
   /**
@@ -182,7 +211,11 @@ inline void JointTrajectoryController::starting(const ros::Time& time)
   time_data.uptime = ros::Time(0.0);
   time_data_.initRT(time_data);
 
+  // Hold current position
   setHoldPosition(time_data.uptime);
+
+  // Initialize last state update time
+  last_state_publish_time_ = time_data.uptime;
 }
 
 inline void JointTrajectoryController::stopping(const ros::Time& time)

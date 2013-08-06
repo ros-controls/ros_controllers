@@ -768,7 +768,74 @@ TEST_F(InitTrajectoryTest, GoalHandleTest)
   {
     ASSERT_EQ(rt_goal, trajectory[i].getGoalHandle());
   }
+}
 
+TEST_F(InitTrajectoryTest, OtherTimeBase)
+{
+  const ros::Time msg_start_time = trajectory_msg.header.stamp;
+  const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
+
+  // Options with a different time base
+  InitJointTrajectoryOptions<Trajectory> options;
+  ros::Duration time_offset(1.0);
+  ros::Time other_time_base = msg_start_time + time_offset;
+  options.current_trajectory = &curr_traj;
+  options.other_time_base = &other_time_base;
+
+  // Before first point: Return 4 segments: Last of current + bridge + full message
+  const ros::Time time = msg_start_time;
+  Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
+  ASSERT_EQ(points.size() + 1, trajectory.size());
+
+  // Check current trajectory segment start/end times (only one). Time offset does NOT apply
+  {
+    const Segment& ref_segment = curr_traj[0];
+    const Segment& segment     = trajectory[0];
+
+    // Check start/end times
+    {
+      EXPECT_EQ(ref_segment.startTime(), segment.startTime());
+      EXPECT_EQ(ref_segment.endTime(),   segment.endTime());
+    }
+  }
+
+  // Check bridge trajectory segment start/end times and states (only one). Time offset applies to end state only
+  {
+    const Segment& segment = trajectory[1];
+
+    const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
+
+    // Segment start time should correspond to message start time
+    // Segment end time should correspond to first trajectory message point
+    const ros::Time msg_start_time = trajectory_msg.header.stamp;
+    const typename Segment::Time start_time = msg_start_time.toSec();
+    const typename Segment::Time end_time   = (msg_start_time +  msg_points[0].time_from_start).toSec();
+
+    // Check start/end times
+    {
+      EXPECT_EQ(start_time + time_offset.toSec(), segment.startTime()); // NOTE: offsets applied
+      EXPECT_EQ(end_time   + time_offset.toSec(), segment.endTime());
+    }
+  }
+
+  // Check all segment start/end times and states (2 segments). Time offset does apply
+  for (unsigned int traj_it = 2, msg_it = 0; traj_it < trajectory.size(); ++traj_it, ++msg_it)
+  {
+    const ros::Time msg_start_time = trajectory_msg.header.stamp;
+    const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
+
+    const Segment& segment = trajectory[traj_it];
+    const JointTrajectoryPoint& p_start = msg_points[msg_it];
+    const JointTrajectoryPoint& p_end   = msg_points[msg_it + 1];
+
+    // Check start/end times
+    {
+      const typename Segment::Time start_time = (msg_start_time + p_start.time_from_start).toSec();
+      const typename Segment::Time end_time   = (msg_start_time + p_end.time_from_start).toSec();
+      EXPECT_EQ(start_time + time_offset.toSec(), segment.startTime()); // NOTE: offsets applied
+      EXPECT_EQ(end_time   + time_offset.toSec(), segment.endTime());
+    }
+  }
 }
 
 int main(int argc, char** argv)

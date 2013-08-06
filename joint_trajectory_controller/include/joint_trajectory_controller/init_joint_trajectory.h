@@ -145,7 +145,8 @@ struct InitJointTrajectoryOptions
  * - \b other_time_base When initializing a new trajectory, it might be the case that we desire the result expressed in
  * a \b different time base than that contained in \p msg. If specified, the value of this variable should be the
  * equivalent of the \p time parameter, but expressed in the desired time base.
- * An example usecase for this variable is when the \p current_trajectory option is specified, and contains data in
+ * If the \p current_trajectory option is also specified, it must be expressed in \p other_time_base.
+ * The typical usecase for this variable is when the \p current_trajectory option is specified, and contains data in
  * a different time base (eg. monotonically increasing) than \p msg (eg. system-clock synchronized).
  *
  * \return Trajectory container.
@@ -236,7 +237,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   // This point is used later on in this function, but is computed here, in advance because if the trajectory message
   // contains a trajectory in the past, we can quickly return without spending additional computational resources
   std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator
-  it = findPoint(msg, o_time); // Points to last point occurring before current time
+  it = findPoint(msg, time); // Points to last point occurring before current time (NOTE: Using time, not o_time)
   if (it == msg.points.end())
   {
     it = msg.points.begin();  // Entire trajectory is after current time

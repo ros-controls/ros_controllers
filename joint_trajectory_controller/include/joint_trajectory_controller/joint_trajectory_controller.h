@@ -81,6 +81,15 @@ public:
   void update(const ros::Time& time, const ros::Duration& period);
 
 private:
+  struct TimeData
+  {
+    TimeData() : time(0.0), period(0.0), uptime(0.0) {}
+
+    ros::Time     time;   ///< Time of last update cycle
+    ros::Duration period; ///< Period of last update cycle
+    ros::Time     uptime; ///< Controller uptime. Set to zero at every restart.
+  };
+
   typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>                  ActionServer;
   typedef boost::shared_ptr<ActionServer>                                                     ActionServerPtr;
   typedef ActionServer::GoalHandle                                                            GoalHandle;
@@ -116,9 +125,7 @@ private:
   typename Segment::State hold_start_state_;  ///< Preallocated workspace variable.
   typename Segment::State hold_end_state_;    ///< Preallocated workspace variable.
 
-  ros::Time     time_;   ///< Time of last update cycle
-  ros::Duration period_; ///< Period of last update cycle
-  ros::Time     uptime_; ///< Controller uptime. Set to zero at every restart.
+  realtime_tools::RealtimeBuffer<TimeData> time_data_;
 
   ros::Duration state_publish_period_;
   ros::Duration action_monitor_period_;
@@ -169,8 +176,13 @@ private:
 
 inline void JointTrajectoryController::starting(const ros::Time& time)
 {
-  uptime_ = ros::Time(0.0);
-  setHoldPosition(uptime_);
+  // Update time data
+  TimeData time_data;
+  time_data.time   = time;
+  time_data.uptime = ros::Time(0.0);
+  time_data_.initRT(time_data);
+
+  setHoldPosition(time_data.uptime);
 }
 
 inline void JointTrajectoryController::stopping(const ros::Time& time)
@@ -215,6 +227,9 @@ inline void JointTrajectoryController::checkGoalTolerances(const typename Segmen
 {
   assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
 
+  // Controller uptime
+  const ros::Time uptime = time_data_.readFromRT()->uptime;
+
   // Checks that we have ended inside the goal tolerances
   const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
   const bool inside_goal_tolerances = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
@@ -225,7 +240,7 @@ inline void JointTrajectoryController::checkGoalTolerances(const typename Segmen
     rt_active_goal_->setSucceeded(rt_active_goal_->preallocated_result_);
     rt_active_goal_.reset();
   }
-  else if (uptime_.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
+  else if (uptime.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
   {
     // Still have some time left to meet the goal state tolerances
   }

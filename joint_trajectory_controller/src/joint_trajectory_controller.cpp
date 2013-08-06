@@ -124,11 +124,7 @@ namespace joint_trajectory_controller
 using std::string;
 using std::vector;
 
-JointTrajectoryController::JointTrajectoryController()
-  : time_(0.0),
-    period_(0.0),
-    uptime_(0.0)
-{}
+JointTrajectoryController::JointTrajectoryController() {}
 
 // TODO: joints vs. joint_names, command vs trajectory_command
 bool JointTrajectoryController::init(hardware_interface::PositionJointInterface* hw,
@@ -215,16 +211,16 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
 
 void JointTrajectoryController::update(const ros::Time& time, const ros::Duration& period)
 {
-  // Cache current time and control period
-  time_   = time;
-  period_ = period;
-
-  // Update controller uptime
-  uptime_ += period;
+  // Updated time data
+  TimeData time_data;
+  time_data.time   = time;                                     // Cache current time
+  time_data.period = period;                                   // Cache current control period
+  time_data.uptime = time_data_.readFromRT()->uptime + period; // Update controller uptime
+  time_data_.writeFromNonRT(time_data); // TODO: Grrr, we need a lock-free data structure here!
 
   // Sample trajectory at current time
   Trajectory& curr_traj = **(curr_trajectory_ptr_.readFromRT());
-  typename Trajectory::const_iterator segment_it = sample(curr_traj, uptime_.toSec(), state_);
+  typename Trajectory::const_iterator segment_it = sample(curr_traj, time_data.uptime.toSec(), state_);
   if (curr_traj.end() == segment_it)
   {
     // Non-realtime safe, but should never happen under normal operation
@@ -245,7 +241,7 @@ void JointTrajectoryController::update(const ros::Time& time, const ros::Duratio
     }
 
     // Check tolerances
-    if (uptime_.toSec() < segment_it->endTime())
+    if (time_data.uptime.toSec() < segment_it->endTime())
     {
       // Currently executing a segment: check path tolerances
       checkPathTolerances(state_error_,
@@ -277,16 +273,19 @@ void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryCon
     return;
   }
 
+  // Time data
+  TimeData* time_data = time_data_.readFromRT(); // TODO: Grrr, we need a lock-free data structure here!
+
   // Time of the next update
-  const ros::Time next_update_time = time_ + period_;
+  const ros::Time next_update_time = time_data->time + time_data->period;
 
   // Uptime of the next update
-  ros::Time next_update_uptime = uptime_ + period_;
+  ros::Time next_update_uptime = time_data->uptime + time_data->period;
 
   // Hold current position if trajectory is empty
   if (msg->points.empty())
   {
-    setHoldPosition(uptime_);
+    setHoldPosition(time_data->uptime);
     ROS_DEBUG("Empty trajectory command, stopping.");
     return;
   }
@@ -348,8 +347,11 @@ void JointTrajectoryController::cancelCB(GoalHandle gh)
     // Reset current goal
     rt_active_goal_.reset();
 
+    // Controller uptime
+    const ros::Time uptime = time_data_.readFromRT()->uptime;
+
     // Enter hold current position mode
-    setHoldPosition(uptime_);
+    setHoldPosition(uptime);
     ROS_DEBUG("Canceling active action goal.");
 
     // Mark the current goal as canceled

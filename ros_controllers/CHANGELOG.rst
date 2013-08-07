@@ -2,6 +2,9 @@
 Changelog for package ros_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.2 (2013-08-06)
+-----------
+
 0.5.1 (2013-07-16)
 -----------
 * Added to maintainer list

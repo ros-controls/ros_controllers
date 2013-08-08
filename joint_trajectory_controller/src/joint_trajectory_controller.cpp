@@ -44,8 +44,6 @@
 
 namespace
 {
-
-// TODO: Move these convenience functions elsewhere?
 std::vector<std::string> getStrings(const ros::NodeHandle& nh, const std::string& param_name)
 {
   using namespace XmlRpc;
@@ -182,6 +180,10 @@ bool JointTrajectoryController::init(hardware_interface::PositionJointInterface*
   assert(joints_.size() == angle_wraparound_.size());
   ROS_INFO_STREAM("Initialized controller of type '" << getHardwareInterfaceType() << "' with " <<
                   joints_.size() << " joints.");
+
+  // Default tolerances
+  ros::NodeHandle tol_nh(controller_nh_, "constraints");
+  default_tolerances_ = getSegmentTolerances<Scalar>(tol_nh, joint_names_);
 
   // ROS API: Subscribed topics
   trajectory_command_sub_ = controller_nh_.subscribe("command", 1, &JointTrajectoryController::trajectoryCommandCB, this);
@@ -328,7 +330,7 @@ void JointTrajectoryController::updateTrajectoryCommand(const JointTrajectoryCon
   options.joint_names        = &joint_names_;
   options.angle_wraparound   = &angle_wraparound_;
   options.rt_goal_handle     = gh;
-//  options.tolerances         = TODO
+  options.default_tolerances = &default_tolerances_;
 
   // Update currently executing trajectory
   try

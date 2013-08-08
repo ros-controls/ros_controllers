@@ -95,20 +95,23 @@ struct InitJointTrajectoryOptions
 {
   typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
+  typedef typename Trajectory::value_type::Scalar                                             Scalar;
 
   InitJointTrajectoryOptions()
     : current_trajectory(0),
       joint_names(0),
       angle_wraparound(0),
       rt_goal_handle(),
+      default_tolerances(0),
       other_time_base(0)
   {}
 
-  Trajectory*               current_trajectory;
-  std::vector<std::string>* joint_names;
-  std::vector<bool>*        angle_wraparound;
-  RealtimeGoalHandlePtr     rt_goal_handle;
-  ros::Time*                other_time_base;
+  Trajectory*                current_trajectory;
+  std::vector<std::string>*  joint_names;
+  std::vector<bool>*         angle_wraparound;
+  RealtimeGoalHandlePtr      rt_goal_handle;
+  SegmentTolerances<Scalar>* default_tolerances;
+  ros::Time*                 other_time_base;
 };
 
 /**
@@ -139,8 +142,12 @@ struct InitJointTrajectoryOptions
  * If specified, combining \p current_trajectory with \p msg will not result in joints performing multiple turns at the
  * transition. This parameter \b requires \p current_trajectory to also be specified, otherwise it is ignored.
  *
- * - \b rt_goal_handle Goal Handle associated to the new trajectory. If specified, newly added segments will have a
- * pointer to it, and to the trajectory following tolerances it contains (if any).
+ * - \b rt_goal_handle Action goal handle associated to the new trajectory. If specified, newly added segments will have
+ * a pointer to it, and to the trajectory tolerances it contains (if any).
+ *
+ * - \b default_tolerances Default trajectory tolerances. This option is only used when \p rt_goal_handle is also
+ * specified. It contains the default tolernaces to check when executing an action goal. If the action goal specifies
+ * tolerances (totally or partially), these values will take precedence over the defaults.
  *
  * - \b other_time_base When initializing a new trajectory, it might be the case that we desire the result expressed in
  * a \b different time base than that contained in \p msg. If specified, the value of this variable should be the
@@ -180,6 +187,8 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   typedef typename Trajectory::value_type Segment;
   typedef typename Segment::Scalar Scalar;
 
+  const unsigned int n_joints = msg.joint_names.size();
+
   const ros::Time msg_start_time = internal::startTime(msg, time); // Message start time
 
   ROS_DEBUG_STREAM("Figuring out new trajectory starting at time "
@@ -196,7 +205,10 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   const bool has_current_trajectory = options.current_trajectory && !options.current_trajectory->empty();
   const bool has_joint_names        = options.joint_names        && !options.joint_names->empty();
   const bool has_angle_wraparound   = options.angle_wraparound   && !options.angle_wraparound->empty();
+  const bool has_rt_goal_handle     = options.rt_goal_handle;
   const bool has_other_time_base    = options.other_time_base;
+  const bool has_default_tolerances = options.default_tolerances;
+
   if (!has_current_trajectory && has_angle_wraparound)
   {
     ROS_WARN("Vector specifying whether joints wrap around will not be used because no current trajectory was given.");
@@ -222,15 +234,24 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
 
   // Permutation vector mapping the expected joint order to the message joint order
   // If unspecified, a trivial map (no permutation) is computed
+  const std::vector<std::string> joint_names = has_joint_names ? *(options.joint_names) : msg.joint_names;
+
   typedef std::vector<std::string>::size_type SizeType;
-  std::vector<SizeType> permutation_vector = has_joint_names ?
-                                             internal::permutation(*(options.joint_names), msg.joint_names) :
-                                             internal::permutation(msg.joint_names, msg.joint_names); // Trivial map
+  std::vector<SizeType> permutation_vector = internal::permutation(joint_names, msg.joint_names);
 
   if (permutation_vector.empty())
   {
     ROS_ERROR("Cannot create trajectory from message. It does not contain the expected joints.");
     return Trajectory();
+  }
+
+  // Tolerances to be used in all new segments
+  SegmentTolerances<Scalar> tolerances = has_default_tolerances ?
+                                         *(options.default_tolerances) : SegmentTolerances<Scalar>(n_joints);
+
+  if (has_rt_goal_handle && options.rt_goal_handle->gh_.getGoal())
+  {
+    updateSegmentTolerances<Scalar>(*(options.rt_goal_handle->gh_.getGoal()), joint_names, tolerances);
   }
 
   // Find first point of new trajectory occurring after current time
@@ -264,7 +285,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   Trajectory result_traj; // Currently empty
 
   // Initialize offsets due to wrapping joints to zero
-  std::vector<Scalar> position_offset(msg.joint_names.size(), 0.0);
+  std::vector<Scalar> position_offset(n_joints, 0.0);
 
   // Bridge current trajectory to new one
   if (has_current_trajectory)
@@ -314,6 +335,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     Segment bridge_seg(last_curr_time, last_curr_state,
                        first_new_time, first_new_state);
     bridge_seg.setGoalHandle(options.rt_goal_handle);
+    if (has_rt_goal_handle) {bridge_seg.setTolerances(tolerances);}
     result_traj.push_back(bridge_seg);
   }
 
@@ -329,6 +351,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator next_it = it; ++next_it;
     Segment segment(o_msg_start_time, *it, *next_it, permutation_vector, position_offset);
     segment.setGoalHandle(options.rt_goal_handle);
+    if (has_rt_goal_handle) {segment.setTolerances(tolerances);}
     result_traj.push_back(segment);
     ++it;
   }
@@ -341,7 +364,8 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     log_str << ":";
     log_str << "\n- " << num_old_segments << " segments will still be executed from current trajectory.";
     log_str << "\n- 1 segment for transitioning between the current trajectory and first point of the input message.";
-    if (num_new_segments > 0) {log_str << "\n- " << num_new_segments << " new segments taken from the input message.";}
+    if (num_new_segments > 0) {log_str << "\n- " << num_new_segments << " new segments (" << (num_new_segments + 1) <<
+                               " points) taken from the input message.";}
   }
   else {log_str << ".";}
   ROS_DEBUG_STREAM(log_str.str());

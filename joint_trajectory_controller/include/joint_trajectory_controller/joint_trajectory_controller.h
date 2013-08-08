@@ -112,9 +112,10 @@ private:
   typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<Scalar> > Segment;
   typedef std::vector<Segment> Trajectory;
 
-  std::vector<hardware_interface::JointHandle> joints_;           ///< Handles to controlled joints.
-  std::vector<bool>                            angle_wraparound_; ///< Whether controlled joints wrap around or not.
-  std::vector<std::string>                     joint_names_;      ///< Controlled joint names.
+  std::vector<hardware_interface::JointHandle> joints_;             ///< Handles to controlled joints.
+  std::vector<bool>                            angle_wraparound_;   ///< Whether controlled joints wrap around or not.
+  std::vector<std::string>                     joint_names_;        ///< Controlled joint names.
+  SegmentTolerances<Scalar>                    default_tolerances_; ///< Default trajectory segment tolerances.
 
   RealtimeGoalHandlePtr                        rt_active_goal_;   ///< Currently active action goal, if any.
 

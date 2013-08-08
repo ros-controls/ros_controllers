@@ -31,7 +31,6 @@
 #define JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_SEGMENT_H
 
 // C++ standard
-#include <cassert>
 #include <cmath>
 #include <stdexcept>
 #include <string>
@@ -49,96 +48,23 @@
 
 // Project
 #include <joint_trajectory_controller/joint_trajectory_msg_utils.h>
+#include <joint_trajectory_controller/tolerances.h>
 
 namespace joint_trajectory_controller
 {
-
-/**
- * \brief Trajectory state tolerances.
- *
- * A tolerance of zero means that no tolerance will be applied for that variable.
- */
-template<class Scalar>
-struct StateTolerances
-{
-  StateTolerances(Scalar position_tolerance     = static_cast<Scalar>(0.0),
-                  Scalar velocity_tolerance     = static_cast<Scalar>(0.0),
-                  Scalar acceleration_tolerance = static_cast<Scalar>(0.0))
-    : position(position_tolerance),
-      velocity(velocity_tolerance),
-      acceleration(acceleration_tolerance)
-  {}
-
-  Scalar position;
-  Scalar velocity;
-  Scalar acceleration;
-};
-
-/**
- * \brief Trajectory segment tolerances.
- */
-template<class Scalar>
-struct SegmentTolerances
-{
-  SegmentTolerances(const typename std::vector<StateTolerances<Scalar> >::size_type& size = 0)
-    : state_tolerance(size),
-      goal_state_tolerance(size),
-      goal_time_tolerance(static_cast<Scalar>(0.0))
-  {}
-
-  /** State tolerances that appply during segment execution. */
-  std::vector<StateTolerances<Scalar> > state_tolerance;
-
-  /** State tolerances that apply for the goal state only.*/
-  std::vector<StateTolerances<Scalar> > goal_state_tolerance;
-
-  /** Extra time after the segment end time allowed to reach the goal state tolerances. */
-  Scalar goal_time_tolerance;
-};
-
-/**
- * \param state_error State error to check.
- * \param state_tolerance State tolerances to check \p state_error against.
- * \return True if \p state_error fulfills \p state_tolerance.
- */
-template <class State>
-inline bool checkStateTolerance(const State&                                                 state_error,
-                                const std::vector<StateTolerances<typename State::Scalar> >& state_tolerance)
-{
-  const unsigned int n_joints = state_tolerance.size();
-
-  // Preconditions
-  assert(n_joints == state_error.position.size());
-  assert(n_joints == state_error.velocity.size());
-  assert(n_joints == state_error.acceleration.size());
-
-  for (unsigned int i = 0; i < n_joints; ++i)
-  {
-    using std::abs;
-    const StateTolerances<typename State::Scalar>& tol = state_tolerance[i]; // Alias for brevity
-    const bool is_valid = !(tol.position     > 0.0 && abs(state_error.position[i])     > tol.position) &&
-                          !(tol.velocity     > 0.0 && abs(state_error.velocity[i])     > tol.velocity) &&
-                          !(tol.acceleration > 0.0 && abs(state_error.acceleration[i]) > tol.acceleration);
-
-    if (!is_valid) {return false;}
-  }
-  return true;
-}
-
-
 
 /**
  * \brief Class representing a multi-dimensional quintic spline segment with a start and end time.
  *
  * It additionally allows to construct the segment and its state type from ROS message data.
  *
- * \tparam Segment Segment type. The state type (\p Segment::State) must have the following public members:
+ * \tparam Segment Segment type. The state type (\p Segment::State) must define a \p Scalar type
+ * (\p Segment::State::Scalar), which can be anything convertible to a \p double; and have the following public members:
  * \code
  * std::vector<Scalar> position;
  * std::vector<Scalar> velocity;
  * std::vector<Scalar> acceleration;
  * \endcode
- * where \p Scalar is any type convertible to \p double.
  */
 template <class Segment>
 class JointTrajectorySegment : public Segment

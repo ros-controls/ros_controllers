@@ -112,9 +112,6 @@ inline bool isValid(const trajectory_msgs::JointTrajectory& msg)
   return true;
 }
 
-// TODO: Add similar method for action goal message
-
-
 /**
  * \brief Find an iterator to the trajectory point with the greatest start time < \p time.
  *

@@ -22,6 +22,8 @@
   <depend package="control_msgs"/>
   <depend package="trajectory_msgs"/>
 
+  <depend package="rostest" />
+
   <export>
     <controller_interface plugin="${prefix}/ros_control_plugins.xml" />
   </export>

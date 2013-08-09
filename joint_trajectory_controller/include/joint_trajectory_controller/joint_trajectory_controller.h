@@ -33,6 +33,8 @@
 
 // C++ standard
 #include <cassert>
+#include <iterator>
+#include <string>
 
 // Boost
 #include <boost/shared_ptr.hpp>
@@ -40,6 +42,9 @@
 
 // ROS
 #include <ros/node_handle.h>
+
+// URDF
+#include <urdf/model.h>
 
 // ROS messages
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -60,14 +65,18 @@
 #include <hardware_interface/joint_command_interface.h>
 
 // Project
-#include <trajectory_interface/quintic_spline_segment.h> // TODO: Make segment type a template parameter
+#include <trajectory_interface/trajectory_interface.h>
+
 #include <joint_trajectory_controller/joint_trajectory_segment.h>
+#include <joint_trajectory_controller/init_joint_trajectory.h>
+#include <joint_trajectory_controller/hardware_interface_adapter.h>
 
 namespace joint_trajectory_controller
 {
 
 // TODO: Make interface-agnostic
-class JointTrajectoryController : public controller_interface::Controller<hardware_interface::PositionJointInterface>
+template <class SegmentImpl, class HardwareInterface>
+class JointTrajectoryController : public controller_interface::Controller<HardwareInterface>
 {
 public:
 
@@ -108,16 +117,20 @@ private:
   typedef realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>     StatePublisher;
   typedef boost::scoped_ptr<StatePublisher>                                                   StatePublisherPtr;
 
-  typedef double Scalar;
-  typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<Scalar> > Segment;
+  typedef JointTrajectorySegment<SegmentImpl> Segment;
   typedef std::vector<Segment> Trajectory;
+  typedef typename Segment::Scalar Scalar;
+
+  typedef HardwareInterfaceAdapter<HardwareInterface, typename Segment::State> HwIfaceAdapter;
 
   std::vector<hardware_interface::JointHandle> joints_;             ///< Handles to controlled joints.
   std::vector<bool>                            angle_wraparound_;   ///< Whether controlled joints wrap around or not.
   std::vector<std::string>                     joint_names_;        ///< Controlled joint names.
   SegmentTolerances<Scalar>                    default_tolerances_; ///< Default trajectory segment tolerances.
+  HwIfaceAdapter                               hw_iface_adapter_;   ///< Adapts desired trajectory state to HW interface.
+  std::vector<Scalar>                          command_;            ///< Command to be applied to the joint handles.
 
-  RealtimeGoalHandlePtr                        rt_active_goal_;   ///< Currently active action goal, if any.
+  RealtimeGoalHandlePtr                        rt_active_goal_;     ///< Currently active action goal, if any.
 
   /**
    * Pointer to trajectory currently being followed. Can be either a hold trajectory or a trajectory received from a
@@ -204,101 +217,8 @@ private:
                            const Segment&                 segment);
 };
 
-inline void JointTrajectoryController::starting(const ros::Time& time)
-{
-  // Update time data
-  TimeData time_data;
-  time_data.time   = time;
-  time_data.uptime = ros::Time(0.0);
-  time_data_.initRT(time_data);
-
-  // Hold current position
-  setHoldPosition(time_data.uptime);
-
-  // Initialize last state update time
-  last_state_publish_time_ = time_data.uptime;
-}
-
-inline void JointTrajectoryController::stopping(const ros::Time& time)
-{
-  preemptActiveGoal();
-}
-
-inline void JointTrajectoryController::trajectoryCommandCB(const JointTrajectoryConstPtr& msg)
-{
-  preemptActiveGoal();
-  updateTrajectoryCommand(msg, RealtimeGoalHandlePtr());
-}
-
-inline void JointTrajectoryController::preemptActiveGoal()
-{
-  RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
-
-  // Cancels the currently active goal
-  if (current_active_goal)
-  {
-    // Marks the current goal as canceled
-    rt_active_goal_.reset();
-    current_active_goal->gh_.setCanceled();
-  }
-}
-
-inline void JointTrajectoryController::checkPathTolerances(const typename Segment::State& state_error,
-                                                           const Segment&                 segment)
-{
-  assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
-
-  const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
-  if (!checkStateTolerance(state_error, tolerances.state_tolerance))
-  {
-    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
-    rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
-  }
-}
-
-inline void JointTrajectoryController::checkGoalTolerances(const typename Segment::State& state_error,
-                                                           const Segment&                 segment)
-{
-  assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
-
-  // Controller uptime
-  const ros::Time uptime = time_data_.readFromRT()->uptime;
-
-  // Checks that we have ended inside the goal tolerances
-  const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
-  const bool inside_goal_tolerances = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
-
-  if (inside_goal_tolerances)
-  {
-    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
-    rt_active_goal_->setSucceeded(rt_active_goal_->preallocated_result_);
-    rt_active_goal_.reset();
-  }
-  else if (uptime.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
-  {
-    // Still have some time left to meet the goal state tolerances
-  }
-  else
-  {
-    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
-    rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
-    rt_active_goal_.reset();
-  }
-}
-
-namespace internal
-{
-
-template <class Enclosure, class Member>
-inline boost::shared_ptr<Member> share_member(boost::shared_ptr<Enclosure> enclosure, Member &member)
-{
-  actionlib::EnclosureDeleter<Enclosure> d(enclosure);
-  boost::shared_ptr<Member> p(&member, d);
-  return p;
-}
-
 } // namespace
 
-} // namespace
+#include <joint_trajectory_controller/joint_trajectory_controller_impl.h>
 
-#endif
+#endif // header guard

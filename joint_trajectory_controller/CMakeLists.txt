@@ -10,7 +10,9 @@ if(USE_ROSBUILD)
   set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
   rosbuild_add_library(${PROJECT_NAME}
-    src/joint_trajectory_controller.cpp include/joint_trajectory_controller/joint_trajectory_controller.h
+    src/joint_trajectory_controller.cpp
+    include/joint_trajectory_controller/joint_trajectory_controller.h
+    include/joint_trajectory_controller/joint_trajectory_controller_impl.h
     include/joint_trajectory_controller/joint_trajectory_msg_utils.h
     include/joint_trajectory_controller/joint_trajectory_segment.h
     include/trajectory_interface/trajectory_interface.h

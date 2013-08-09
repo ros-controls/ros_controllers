@@ -14,6 +14,7 @@
   <depend package="roscpp" />
   <depend package="urdf"/>
 
+  <depend package="control_toolbox" />
   <depend package="realtime_tools" />
   <depend package="controller_interface"/>
   <depend package="hardware_interface"/>

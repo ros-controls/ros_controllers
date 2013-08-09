@@ -63,6 +63,7 @@
 #include <realtime_tools/realtime_server_goal_handle.h>
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
+#include <hardware_interface/internal/demangle_symbol.h>
 
 // Project
 #include <trajectory_interface/trajectory_interface.h>
@@ -123,6 +124,7 @@ private:
 
   typedef HardwareInterfaceAdapter<HardwareInterface, typename Segment::State> HwIfaceAdapter;
 
+  std::string                                  name_;               ///< Controller name.
   std::vector<hardware_interface::JointHandle> joints_;             ///< Handles to controlled joints.
   std::vector<bool>                            angle_wraparound_;   ///< Whether controlled joints wrap around or not.
   std::vector<std::string>                     joint_names_;        ///< Controlled joint names.
@@ -215,6 +217,7 @@ private:
    **/
   void checkGoalTolerances(const typename Segment::State& state_error,
                            const Segment&                 segment);
+
 };
 
 } // namespace

@@ -52,8 +52,7 @@ std::vector<std::string> getStrings(const ros::NodeHandle& nh, const std::string
   XmlRpcValue xml_array;
   if (!nh.getParam(param_name, xml_array))
   {
-    ROS_ERROR_STREAM("Could not find '" << param_name << "' parameter in controller (namespace: " <<
-                     nh.getNamespace() << ").");
+    ROS_ERROR_STREAM("Could not find '" << param_name << "' parameter (namespace: " << nh.getNamespace() << ").");
     return std::vector<std::string>();
   }
   if (xml_array.getType() != XmlRpcValue::TypeArray)
@@ -114,6 +113,13 @@ std::vector<UrdfJointConstPtr> getUrdfJoints(const urdf::Model& urdf, const std:
     }
   }
   return out;
+}
+
+std::string getLeafNamespace(const ros::NodeHandle& nh)
+{
+  const std::string complete_ns = nh.getNamespace();
+  std::size_t id   = complete_ns.find_last_of("/");
+  return complete_ns.substr(id + 1);
 }
 
 } // namespace
@@ -230,17 +236,20 @@ init(hardware_interface::PositionJointInterface* hw,
   // Cache controller node handle
   controller_nh_ = controller_nh;
 
+  // Controller name
+  name_ = getLeafNamespace(controller_nh_);
+
   // State publish rate
   double state_publish_rate = 50.0;
   controller_nh_.getParam("state_publish_rate", state_publish_rate);
-  ROS_DEBUG_STREAM("Controller state will be published at " << state_publish_rate << "Hz.");
+  ROS_DEBUG_STREAM_NAMED(name_, "Controller state will be published at " << state_publish_rate << "Hz.");
   state_publisher_period_ = ros::Duration(1.0 / state_publish_rate);
 
   // Action status checking update rate
   double action_monitor_rate = 20.0;
   controller_nh_.getParam("action_monitor_rate", action_monitor_rate);
   action_monitor_period_ = ros::Duration(1.0 / action_monitor_rate);
-  ROS_DEBUG_STREAM("Action status changes will be monitored at " << action_monitor_rate << "Hz.");
+  ROS_DEBUG_STREAM_NAMED(name_, "Action status changes will be monitored at " << action_monitor_rate << "Hz.");
 
   // List of controlled joints
   joint_names_ = getStrings(controller_nh_, "joints");
@@ -264,8 +273,8 @@ init(hardware_interface::PositionJointInterface* hw,
     try {joints_[i] = hw->getHandle(joint_names_[i]);}
     catch (...)
     {
-      ROS_ERROR_STREAM("Could not find joint '" << joint_names_[i] << "' in '" <<
-                       this->getHardwareInterfaceType() << "'.");
+      ROS_ERROR_STREAM_NAMED(name_, "Could not find joint '" << joint_names_[i] << "' in '" <<
+                                    this->getHardwareInterfaceType() << "'.");
       return false;
     }
 
@@ -273,13 +282,15 @@ init(hardware_interface::PositionJointInterface* hw,
     angle_wraparound_[i] = urdf_joints[i]->type == urdf::Joint::CONTINUOUS;
     const std::string not_if = angle_wraparound_[i] ? "" : "non-";
 
-    ROS_DEBUG_STREAM("Found " << not_if << "continuous joint '" << joint_names_[i] << "' in '" <<
-                     this->getHardwareInterfaceType() << "'.");
+    ROS_DEBUG_STREAM_NAMED(name_, "Found " << not_if << "continuous joint '" << joint_names_[i] << "' in '" <<
+                                  this->getHardwareInterfaceType() << "'.");
   }
 
   assert(joints_.size() == angle_wraparound_.size());
-  ROS_INFO_STREAM("Initialized controller of type '" << this->getHardwareInterfaceType() << "' with " <<
-                  joints_.size() << " joints.");
+  ROS_INFO_STREAM_NAMED(name_, "Initialized controller '" << name_ << "' with:" <<
+                        "\n- Number of joints: " << joints_.size() <<
+                        "\n- Hardware interface type: '" << this->getHardwareInterfaceType() << "'" <<
+                        "\n- Trajectory segment type: '" << hardware_interface::internal::demangledTypeName<SegmentImpl>() << "'");
 
   // Default tolerances
   ros::NodeHandle tol_nh(controller_nh_, "constraints");
@@ -301,7 +312,7 @@ init(hardware_interface::PositionJointInterface* hw,
                                         false));
   action_server_->start();
 
-  // ROS_API: Provided services
+  // ROS API: Provided services
   query_state_service_ = controller_nh_.advertiseService("query_state",
                                                          &JointTrajectoryController::queryStateService,
                                                          this);
@@ -350,7 +361,8 @@ update(const ros::Time& time, const ros::Duration& period)
   if (curr_traj.end() == segment_it)
   {
     // Non-realtime safe, but should never happen under normal operation
-    ROS_ERROR_STREAM("Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
+    ROS_ERROR_NAMED(name_,
+                    "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
     return;
   }
 
@@ -409,13 +421,13 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   // Preconditions
   if (!this->isRunning())
   {
-    ROS_ERROR("Can't accept new commands. Controller is not running.");
+    ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
     return;
   }
 
   if (!msg)
   {
-    ROS_WARN("Received null-pointer trajectory message, skipping.");
+    ROS_WARN_NAMED(name_, "Received null-pointer trajectory message, skipping.");
     return;
   }
 
@@ -432,7 +444,7 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   if (msg->points.empty())
   {
     setHoldPosition(time_data->uptime);
-    ROS_DEBUG("Empty trajectory command, stopping.");
+    ROS_DEBUG_NAMED(name_, "Empty trajectory command, stopping.");
     return;
   }
 
@@ -453,7 +465,7 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   }
   catch(...)
   {
-    ROS_ERROR("Unexpected exception caught when initializing trajectory from ROS message data.");
+    ROS_ERROR_NAMED(name_, "Unexpected exception caught when initializing trajectory from ROS message data.");
   }
 }
 
@@ -464,7 +476,7 @@ goalCB(GoalHandle gh)
   // Preconditions
   if (!this->isRunning())
   {
-    ROS_ERROR("Can't accept new action goals. Controller is not running.");
+    ROS_ERROR_NAMED(name_, "Can't accept new action goals. Controller is not running.");
     control_msgs::FollowJointTrajectoryResult result;
     result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL; // TODO: Add better error status to msg?
     gh.setRejected(result);
@@ -475,7 +487,7 @@ goalCB(GoalHandle gh)
   std::vector<unsigned int> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
   if (permutation_vector.empty())
   {
-    ROS_ERROR("Ignoring goal. It does not contain the expected joints.");
+    ROS_ERROR_NAMED(name_, "Ignoring goal. It does not contain the expected joints.");
     control_msgs::FollowJointTrajectoryResult result;
     result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;
     gh.setRejected(result);
@@ -511,7 +523,7 @@ cancelCB(GoalHandle gh)
 
     // Enter hold current position mode
     setHoldPosition(uptime);
-    ROS_DEBUG("Canceling active action goal.");
+    ROS_DEBUG_NAMED(name_, "Canceling active action goal.");
 
     // Mark the current goal as canceled
     current_active_goal->gh_.setCanceled();
@@ -526,7 +538,7 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
   // Preconditions
   if (!this->isRunning())
   {
-    ROS_ERROR("Can't sample trajectory. Controller is not running.");
+    ROS_ERROR_NAMED(name_, "Can't sample trajectory. Controller is not running.");
     return false;
   }
 
@@ -541,7 +553,7 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
   typename Trajectory::const_iterator segment_it = sample(curr_traj, sample_time.toSec(), state);
   if (curr_traj.end() == segment_it)
   {
-    ROS_ERROR_STREAM("Requested sample time preceeds trajectory start time.");
+    ROS_ERROR_STREAM_NAMED(name_, "Requested sample time preceeds trajectory start time.");
     return false;
   }
 

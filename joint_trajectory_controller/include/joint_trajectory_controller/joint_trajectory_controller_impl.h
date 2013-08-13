@@ -321,7 +321,6 @@ init(hardware_interface::PositionJointInterface* hw,
                                                          this);
 
   // Preeallocate resources
-  command_.resize(n_joints, 0.0);
   current_state_    = typename Segment::State(n_joints);
   desired_state_    = typename Segment::State(n_joints);
   state_error_      = typename Segment::State(n_joints);
@@ -400,16 +399,9 @@ update(const ros::Time& time, const ros::Duration& period)
     }
   }
 
-  // Hardware interface adapter: Generate commands
-  hw_iface_adapter_.update(time_data.uptime, time_data.period,
-                           desired_state_, state_error_,
-                           command_);
-
-  // Send commands
-  for (unsigned int i = 0; i < joints_.size(); ++i)
-  {
-    joints_[i].setCommand(command_[i]);
-  }
+  // Hardware interface adapter: Generate and send commands
+  hw_iface_adapter_.updateCommand(time_data.uptime, time_data.period,
+                                  desired_state_, state_error_);
 
   // Publish state
   publishState(time_data.uptime);

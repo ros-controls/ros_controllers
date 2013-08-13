@@ -131,7 +131,6 @@ private:
   std::vector<std::string>                     joint_names_;        ///< Controlled joint names.
   SegmentTolerances<Scalar>                    default_tolerances_; ///< Default trajectory segment tolerances.
   HwIfaceAdapter                               hw_iface_adapter_;   ///< Adapts desired trajectory state to HW interface.
-  std::vector<Scalar>                          command_;            ///< Command to be applied to the joint handles.
 
   RealtimeGoalHandlePtr                        rt_active_goal_;     ///< Currently active action goal, if any.
 

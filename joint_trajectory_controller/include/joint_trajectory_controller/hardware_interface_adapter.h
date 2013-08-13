@@ -55,7 +55,7 @@ template <class HardwareInterface, class State>
 class HardwareInterfaceAdapter
 {
 public:
-  bool init(const std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& controller_nh)
+  bool init(std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& controller_nh)
   {
     return false;
   }
@@ -63,11 +63,10 @@ public:
   void starting(const ros::Time& time) {}
   void stopping(const ros::Time& time) {}
 
-  void update(const ros::Time&     time,
-              const ros::Duration& period,
-              const State&         desired_state,
-              const State&         state_error,
-              std::vector<double>& command) {}
+  void updateCommand(const ros::Time&     time,
+                     const ros::Duration& period,
+                     const State&         desired_state,
+                     const State&         state_error) {}
 };
 
 /**
@@ -77,26 +76,31 @@ template <class State>
 class HardwareInterfaceAdapter<hardware_interface::PositionJointInterface, State>
 {
 public:
-  bool init(const std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& controller_nh)
+  HardwareInterfaceAdapter() : joint_handles_ptr_(0) {}
+
+  bool init(std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& controller_nh)
   {
+    // Store pointer to joint handles
+    joint_handles_ptr_ = &joint_handles;
+
     return true;
   }
 
   void starting(const ros::Time& time) {}
   void stopping(const ros::Time& time) {}
 
-  void update(const ros::Time&     /*time*/,
-              const ros::Duration& /*period*/,
-              const State&         desired_state,
-              const State&         /*state_error*/,
-              std::vector<double>& command)
+  void updateCommand(const ros::Time&     /*time*/,
+                     const ros::Duration& /*period*/,
+                     const State&         desired_state,
+                     const State&         /*state_error*/)
   {
-    // Precondition
-    assert(desired_state.position.size() == command.size());
-
     // Forward desired position to command
-    for (unsigned int i = 0; i < command.size(); ++i) {command[i] = desired_state.position[i];}
+    const unsigned int n_joints = joint_handles_ptr_->size();
+    for (unsigned int i = 0; i < n_joints; ++i) {(*joint_handles_ptr_)[i].setCommand(desired_state.position[i]);}
   }
+
+private:
+  std::vector<hardware_interface::JointHandle>* joint_handles_ptr_;
 };
 
 /**
@@ -131,7 +135,7 @@ class HardwareInterfaceAdapter<hardware_interface::EffortJointInterface, State>
 public:
   HardwareInterfaceAdapter() : joint_handles_ptr_(0) {}
 
-  bool init(const std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& controller_nh)
+  bool init(std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& controller_nh)
   {
     // Store pointer to joint handles
     joint_handles_ptr_ = &joint_handles;
@@ -169,24 +173,23 @@ public:
 
   void stopping(const ros::Time& time) {}
 
-  void update(const ros::Time&     /*time*/,
-              const ros::Duration& period,
-              const State&         /*desired_state*/,
-              const State&         state_error,
-              std::vector<double>& command)
+  void updateCommand(const ros::Time&     /*time*/,
+                     const ros::Duration& period,
+                     const State&         /*desired_state*/,
+                     const State&         state_error)
   {
-    const unsigned int n_joints = pids_.size();
+    const unsigned int n_joints = joint_handles_ptr_->size();
 
     // Preconditions
     if (!joint_handles_ptr_) {return;}
     assert(n_joints == state_error.position.size());
     assert(n_joints == state_error.velocity.size());
-    assert(n_joints == command.size());
 
     // Update PIDs
     for (unsigned int i = 0; i < n_joints; ++i)
     {
-      command[i] = pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
+      const double command = pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
+      (*joint_handles_ptr_)[i].setCommand(command);
     }
   }
 

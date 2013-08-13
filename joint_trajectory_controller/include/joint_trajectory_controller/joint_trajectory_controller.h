@@ -75,7 +75,50 @@
 namespace joint_trajectory_controller
 {
 
-// TODO: Make interface-agnostic
+/**
+ * \brief Controller for executing joint-space trajectories on a set of joints.
+ *
+ * TODO: Point to detailed documentation (ros wiki page?)
+ *
+ * \tparam SegmentImpl Trajectory segment representation to use. The type must comply with the following structure:
+ * \code
+ * class FooSegment
+ * {
+ * public:
+ *   // Required types
+ *   typedef double                 Scalar; // Scalar can be anything convertible to double
+ *   typedef Scalar                 Time;
+ *   typedef PosVelAccState<Scalar> State;
+ *
+ *   // Default constructor
+ *   FooSegment();
+ *
+ *   // Constructor from start and end states (boundary conditions)
+ *   FooSegment(const Time&  start_time,
+ *              const State& start_state,
+ *              const Time&  end_time,
+ *              const State& end_state);
+ *
+ *   // Start and end states initializer (the guts of the above constructor)
+ *   // May throw std::invalid_argument if parameters are invalid
+ *   void init(const Time&  start_time,
+ *             const State& start_state,
+ *             const Time&  end_time,
+ *             const State& end_state);
+ *
+ *   // Sampler (realtime-safe)
+ *   void sample(const Time& time, State& state) const;
+ *
+ *   // Accesors (realtime-safe)
+ *   Time startTime()    const;
+ *   Time endTime()      const;
+ *   unsigned int size() const;
+ * };
+ * \endcode
+ *
+ * \tparam HardwareInterface Controller hardware interface. Currently \p hardware_interface::PositionJointInterface and
+ * \p hardware_interface::EffortJointInterface are supported out-of-the-box.
+ */
 template <class SegmentImpl, class HardwareInterface>
 class JointTrajectoryController : public controller_interface::Controller<HardwareInterface>
 {

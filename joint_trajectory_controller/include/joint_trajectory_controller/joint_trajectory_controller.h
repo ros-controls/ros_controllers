@@ -120,6 +120,7 @@ private:
 
   typedef JointTrajectorySegment<SegmentImpl> Segment;
   typedef std::vector<Segment> Trajectory;
+  typedef boost::shared_ptr<Trajectory> TrajectoryPtr;
   typedef typename Segment::Scalar Scalar;
 
   typedef HardwareInterfaceAdapter<HardwareInterface, typename Segment::State> HwIfaceAdapter;
@@ -143,14 +144,14 @@ private:
    * kept unchanged.
    */
   realtime_tools::RealtimeBuffer<Trajectory*>  curr_trajectory_ptr_;
-  Trajectory                                   msg_trajectory_;  ///< Last trajectory received from a ROS message.
-  Trajectory                                   hold_trajectory_; ///< Last hold trajectory values.
+  TrajectoryPtr                                msg_trajectory_ptr_;  ///< Last trajectory received from a ROS message.
+  TrajectoryPtr                                hold_trajectory_ptr_; ///< Last hold trajectory values.
 
-  typename Segment::State current_state_;     ///< Preallocated workspace variable.
-  typename Segment::State desired_state_;     ///< Preallocated workspace variable.
-  typename Segment::State state_error_;       ///< Preallocated workspace variable.
-  typename Segment::State hold_start_state_;  ///< Preallocated workspace variable.
-  typename Segment::State hold_end_state_;    ///< Preallocated workspace variable.
+  typename Segment::State current_state_;    ///< Preallocated workspace variable.
+  typename Segment::State desired_state_;    ///< Preallocated workspace variable.
+  typename Segment::State state_error_;      ///< Preallocated workspace variable.
+  typename Segment::State hold_start_state_; ///< Preallocated workspace variable.
+  typename Segment::State hold_end_state_;   ///< Preallocated workspace variable.
 
   realtime_tools::RealtimeBuffer<TimeData> time_data_;
 
@@ -167,7 +168,7 @@ private:
   ros::Timer         goal_handle_timer_;
   ros::Time          last_state_publish_time_;
 
-  void updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh);
+  bool updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh);
   void trajectoryCommandCB(const JointTrajectoryConstPtr& msg);
   void goalCB(GoalHandle gh);
   void cancelCB(GoalHandle gh);

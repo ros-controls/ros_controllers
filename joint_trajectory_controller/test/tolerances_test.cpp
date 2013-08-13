@@ -28,6 +28,7 @@
 /// \author Adolfo Rodriguez Tsouroukdissian
 
 #include <gtest/gtest.h>
+#include <ros/ros.h>
 #include <trajectory_interface/pos_vel_acc_state.h>
 #include <joint_trajectory_controller/tolerances.h>
 
@@ -314,6 +315,6 @@ TEST(TolerancesTest, getSegmentTolerances)
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "TolerancesTestNode");
+  ros::init(argc, argv, "tolerances_test");
   return RUN_ALL_TESTS();
 }

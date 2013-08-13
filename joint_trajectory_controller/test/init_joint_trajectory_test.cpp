@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) 2013, PAL Robotics S.L.
 //
@@ -843,4 +842,3 @@ int main(int argc, char** argv)
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-

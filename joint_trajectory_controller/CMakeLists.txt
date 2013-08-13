@@ -29,6 +29,12 @@ if(USE_ROSBUILD)
   rosbuild_add_gtest_build_flags(tolerances_test)
   rosbuild_add_rostest(test/tolerances.test)
 
+  rosbuild_add_executable(rrbot test/rrbot.cpp)
+
+  rosbuild_add_executable(joint_trajectory_controller_test test/joint_trajectory_controller_test.cpp)
+  rosbuild_add_gtest_build_flags(joint_trajectory_controller_test)
+  rosbuild_add_rostest(test/joint_trajectory_controller.test)
+
   # TODO: why is it explicitly needed???, without it the linker fails.
   target_link_libraries(quintic_spline_segment_test     pthread)
   target_link_libraries(trajectory_interface_test       pthread)
@@ -36,6 +42,7 @@ if(USE_ROSBUILD)
   target_link_libraries(joint_trajectory_msg_utils_test pthread)
   target_link_libraries(init_joint_trajectory_test      pthread)
   target_link_libraries(tolerances_test                 pthread)
+  target_link_libraries(joint_trajectory_controller     pthread)
 else()
   # TODO
 

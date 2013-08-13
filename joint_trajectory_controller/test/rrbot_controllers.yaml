@@ -1,0 +1,14 @@
+rrbot_controller:
+  type: "position_controllers/JointTrajectoryController"
+  joints:
+    - joint1
+    - joint2
+
+  constraints:
+    goal_time: 0.5
+    torso_1_joint:
+      goal:       0.01
+      trajectory: 0.05
+    torso_2_joint:
+      goal:       0.01
+      trajectory: 0.05

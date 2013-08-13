@@ -24,6 +24,8 @@
   <depend package="trajectory_msgs"/>
 
   <depend package="rostest" />
+  <depend package="controller_manager" /> <!--Tests-->
+  <depend package="xacro" /> <!--Tests-->
 
   <export>
     <controller_interface plugin="${prefix}/ros_control_plugins.xml" />

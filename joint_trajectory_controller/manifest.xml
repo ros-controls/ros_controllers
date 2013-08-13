@@ -15,10 +15,9 @@
   <depend package="urdf"/>
 
   <depend package="control_toolbox" />
-  <depend package="realtime_tools" />
   <depend package="controller_interface"/>
+  <depend package="realtime_tools" />
   <depend package="hardware_interface"/>
-  <depend package="joint_limits_interface"/>
 
   <depend package="control_msgs"/>
   <depend package="trajectory_msgs"/>

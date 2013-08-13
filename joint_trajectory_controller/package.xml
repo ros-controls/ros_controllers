@@ -1,32 +1,55 @@
 <package>
-  <name>effort_controllers</name>
-  <version>1.0.0</version>
-  <description>effort_controllers</description>
-  <maintainer email="vijay@hidof.com">Vijay Pradeep</maintainer>
+  <name>joint_trajectory_controller</name>
+  <version>0.5.2</version>
+  <description>joint_trajectory_controller</description>
+  <maintainer email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</maintainer>
 
   <license>BSD</license>
 
-  <url type="website">http://ros.org/wiki/effort_controllers</url>
-  <!-- <url type="bugtracker"></url> -->
+  <url type="website">https://github.com/ros-controls/ros_controllers/wiki</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros_controllers</url>
 
-  <author>Vijay Pradeep</author>
+  <author>Adolfo Rodriguez Tsouroukdissian</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>controller_interface</build_depend>
-  <build_depend>control_msgs</build_depend>
-  <build_depend>control_toolbox</build_depend>
-  <build_depend>realtime_tools</build_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>angles</build_depend>
+  <build_depend>roscpp</build_depend>
   <build_depend>urdf</build_depend>
-  <build_depend>forward_command_controller</build_depend>
-  <run_depend>forward_command_controller</run_depend>
-  <run_depend>controller_interface</run_depend>
-  <run_depend>control_msgs</run_depend>
-  <run_depend>control_toolbox</run_depend>
-  <run_depend>realtime_tools</run_depend>
+
+  <build_depend>control_toolbox</build_depend>
+  <build_depend>controller_interface</build_depend>
+  <build_depend>hardware_interface</build_depend>
+  <build_depend>realtime_tools</build_depend>
+
+  <build_depend>control_msgs</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+
+  <build_depend>rostest</build_depend>            <!--Tests-only!-->
+  <build_depend>controller_manager</build_depend> <!--Tests-only!-->
+  <build_depend>xacro</build_depend>              <!--Tests-only!-->
+
+
+  <run_depend>actionlib</run_depend>
+  <run_depend>angles</run_depend>
+  <run_depend>roscpp</run_depend>
   <run_depend>urdf</run_depend>
 
+  <run_depend>control_toolbox</run_depend>
+  <run_depend>controller_interface</run_depend>
+  <run_depend>hardware_interface</run_depend>
+  <run_depend>realtime_tools</run_depend>
+
+  <run_depend>control_msgs</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+
+  <run_depend>rostest</run_depend>            <!--Tests-only!-->
+  <run_depend>controller_manager</run_depend> <!--Tests-only!-->
+  <run_depend>xacro</run_depend>              <!--Tests-only!-->
+
   <export>
-    <controller_interface plugin="${prefix}/effort_controllers_plugins.xml"/>
+    <controller_interface plugin="${prefix}/ros_control_plugins.xml"/>
   </export>
 </package>

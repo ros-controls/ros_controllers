@@ -262,7 +262,13 @@ std::vector<Scalar> wraparoundOffset(const std::vector<Scalar>& prev_position,
   {
     if (angle_wraparound[i])
     {
-      const Scalar dist = angles::shortest_angular_distance(prev_position[i], next_position[i]);
+      Scalar dist = angles::shortest_angular_distance(prev_position[i], next_position[i]);
+
+      // Deal with singularity at M_PI shortest distance
+      if (std::abs(dist) - M_PI < 1e-9)
+      {
+        dist = next_position[i] > prev_position[i] ? std::abs(dist) : -std::abs(dist);
+      }
       pos_offset[i] = (prev_position[i] + dist) - next_position[i];
     }
   }

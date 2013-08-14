@@ -110,6 +110,30 @@ TEST(WraparoundOffsetTest, WrappingPositions)
   }
 }
 
+TEST(WraparoundOffsetTest, WrappingPositionsPiSingularity)
+{
+  // Setup with state increments that cause multi-loop wrapping
+  const double half_pi = M_PI / 2.0;
+
+  std::vector<double> pos1(1, -half_pi);
+  std::vector<double> pos2(1, half_pi);
+
+  std::vector<bool> angle_wraparound(1, true);
+  // From state1 to state2
+  {
+    std::vector<double> wraparound_offset = wraparoundOffset<double>(pos1, pos2, angle_wraparound);
+    EXPECT_EQ(pos1.size(), wraparound_offset.size());
+    EXPECT_NEAR(0.0, wraparound_offset[0], EPS);
+  }
+
+  // From state2 to state1
+  {
+    std::vector<double> wraparound_offset = wraparoundOffset<double>(pos2, pos1, angle_wraparound);
+    EXPECT_EQ(pos1.size(), wraparound_offset.size());
+    EXPECT_NEAR(0.0, wraparound_offset[0], EPS);
+  }
+}
+
 TEST(WraparoundOffsetTest, NonWrappingPositions)
 {
   // Setup with state increments that don't cause multi-loop wrapping

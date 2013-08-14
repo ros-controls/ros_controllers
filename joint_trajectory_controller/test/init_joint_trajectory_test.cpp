@@ -772,7 +772,6 @@ TEST_F(InitTrajectoryTest, GoalHandleTest)
 TEST_F(InitTrajectoryTest, OtherTimeBase)
 {
   const ros::Time msg_start_time = trajectory_msg.header.stamp;
-  const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
 
   // Options with a different time base
   InitJointTrajectoryOptions<Trajectory> options;

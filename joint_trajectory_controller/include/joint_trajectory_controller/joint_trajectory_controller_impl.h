@@ -468,6 +468,11 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
       return false;
     }
   }
+  catch(const std::invalid_argument& ex)
+  {
+    ROS_ERROR_STREAM_NAMED(name_, ex.what());
+    return false;
+  }
   catch(...)
   {
     ROS_ERROR_NAMED(name_, "Unexpected exception caught when initializing trajectory from ROS message data.");

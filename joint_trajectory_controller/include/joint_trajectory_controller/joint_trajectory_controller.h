@@ -34,6 +34,7 @@
 // C++ standard
 #include <cassert>
 #include <iterator>
+#include <stdexcept>
 #include <string>
 
 // Boost

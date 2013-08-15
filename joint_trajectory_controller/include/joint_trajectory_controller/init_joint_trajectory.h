@@ -223,7 +223,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     ros::Duration msg_start_duration = msg_start_time - time;
     o_time = *options.other_time_base;
     o_msg_start_time = o_time + msg_start_duration;
-    ROS_DEBUG_STREAM("Using alternate time base. On it, the new trajectory starts at time "
+    ROS_DEBUG_STREAM("Using alternate time base. In it, the new trajectory starts at time "
                      << std::fixed << std::setprecision(3) << o_msg_start_time.toSec());
   }
   else

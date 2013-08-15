@@ -201,6 +201,8 @@ private:
   ros::Duration state_publisher_period_;
   ros::Duration action_monitor_period_;
 
+  typename Segment::Time hold_trajectory_duration_;
+
   // ROS API
   ros::NodeHandle    controller_nh_;
   ros::Subscriber    trajectory_command_sub_;

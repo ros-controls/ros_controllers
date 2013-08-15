@@ -255,6 +255,11 @@ init(hardware_interface::PositionJointInterface* hw,
   action_monitor_period_ = ros::Duration(1.0 / action_monitor_rate);
   ROS_DEBUG_STREAM_NAMED(name_, "Action status changes will be monitored at " << action_monitor_rate << "Hz.");
 
+  // Hold trajectory duration
+  hold_trajectory_duration_ = 1.0;
+  controller_nh_.getParam("hold_trajectory_duration", hold_trajectory_duration_);
+  ROS_DEBUG_STREAM_NAMED(name_, "Hold trajectory has a duration of " << hold_trajectory_duration_ << "s.");
+
   // List of controlled joints
   joint_names_ = getStrings(controller_nh_, "joints");
   if (joint_names_.empty()) {return false;}
@@ -617,9 +622,11 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 setHoldPosition(const ros::Time& time)
 {
+  // TODO: Compute trajectory without direction reversals
+
   // Segment boundary conditions: Settle current position in a fixed time
-  typename Segment::Time start_time = time.toSec();
-  typename Segment::Time end_time   = time.toSec() + 2.0; // NOTE: Magic value
+  const typename Segment::Time start_time = time.toSec();
+  const typename Segment::Time end_time   = time.toSec() + hold_trajectory_duration_;
 
   const unsigned int n_joints = joints_.size();
   for (unsigned int i = 0; i < n_joints; ++i)
@@ -632,7 +639,6 @@ setHoldPosition(const ros::Time& time)
     hold_end_state_.velocity[i]       = 0.0;
     hold_end_state_.acceleration[i]   = 0.0;
   }
-
   assert(1 == hold_trajectory_ptr_->size());
   hold_trajectory_ptr_->front().init(start_time, hold_start_state_,
                                      end_time,   hold_end_state_);

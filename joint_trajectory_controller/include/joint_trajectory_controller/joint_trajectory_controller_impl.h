@@ -522,10 +522,8 @@ goalCB(GoalHandle gh)
     std::vector<unsigned int> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
 
     control_msgs::FollowJointTrajectoryResult result;
-    result.error_code = permutation_vector.empty() ?
-                        control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS :
-                        control_msgs::FollowJointTrajectoryResult::INVALID_GOAL;
-
+    if (permutation_vector.empty()) {result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;}
+    else                            {result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL;}
     gh.setRejected(result);
   }
 }

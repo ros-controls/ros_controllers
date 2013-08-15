@@ -29,25 +29,27 @@
 
 // ROS
 #include <ros/ros.h>
+#include <std_msgs/Float64.h>
 
 // ros_control
 #include <controller_manager/controller_manager.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/robot_hw.h>
+#include <realtime_tools/realtime_buffer.h>
 
 class RRbot : public hardware_interface::RobotHW
 {
 public:
   RRbot()
   {
-    // intialize raw data
+    // Intialize raw data
     pos_[0] = 0.0; pos_[1] = 0.0;
     vel_[0] = 0.0; vel_[1] = 0.0;
     eff_[0] = 0.0; eff_[1] = 0.0;
     cmd_[0] = 0.0; cmd_[1] = 0.0;
 
-    // connect and register the joint state interface
+    // Connect and register the joint state interface
     hardware_interface::JointStateHandle state_handle_1("joint1", &pos_[0], &vel_[0], &eff_[0]);
     jnt_state_interface_.registerHandle(state_handle_1);
 
@@ -56,7 +58,7 @@ public:
 
     registerInterface(&jnt_state_interface_);
 
-    // connect and register the joint position interface
+    // Connect and register the joint position interface
     hardware_interface::JointHandle pos_handle_1(jnt_state_interface_.getHandle("joint1"), &cmd_[0]);
     jnt_pos_interface_.registerHandle(pos_handle_1);
 
@@ -64,6 +66,10 @@ public:
     jnt_pos_interface_.registerHandle(pos_handle_2);
 
     registerInterface(&jnt_pos_interface_);
+
+    // Smoothing subscriber
+    smoothing_sub_ = ros::NodeHandle().subscribe("smoothing", 1, &RRbot::smoothingCB, this);
+    smoothing_.initRT(0.0);
   }
 
   ros::Time getTime() const {return ros::Time::now();}
@@ -73,13 +79,14 @@ public:
 
   void write()
   {
-    vel_[0] = (cmd_[0] - pos_[0]) / getPeriod().toSec();
-    vel_[1] = (cmd_[1] - pos_[1]) / getPeriod().toSec();
+    const double smoothing = *(smoothing_.readFromRT());
+    for (unsigned int i = 0; i < 2; ++i)
+    {
+      vel_[i] = (cmd_[i] - pos_[i]) / getPeriod().toSec();
 
-    pos_[0] = cmd_[0];
-    pos_[1] = cmd_[1];
-
-
+      const double next_pos = smoothing * pos_[i] +  (1.0 - smoothing) * cmd_[i];
+      pos_[i] = next_pos;
+    }
   }
 
 private:
@@ -89,6 +96,11 @@ private:
   double pos_[2];
   double vel_[2];
   double eff_[2];
+
+  realtime_tools::RealtimeBuffer<double> smoothing_;
+  void smoothingCB(const std_msgs::Float64& smoothing) {smoothing_.writeFromNonRT(smoothing.data);}
+
+  ros::Subscriber smoothing_sub_;
 };
 
 int main(int argc, char **argv)
@@ -104,10 +116,10 @@ int main(int argc, char **argv)
   spinner.start();
   while (ros::ok())
   {
-     robot.read();
-     cm.update(robot.getTime(), robot.getPeriod());
-     robot.write();
-     rate.sleep();
+    robot.read();
+    cm.update(robot.getTime(), robot.getPeriod());
+    robot.write();
+    rate.sleep();
   }
   spinner.stop();
 

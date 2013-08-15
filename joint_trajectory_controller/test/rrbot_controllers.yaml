@@ -6,9 +6,9 @@ rrbot_controller:
 
   constraints:
     goal_time: 0.5
-    torso_1_joint:
+    joint1:
       goal:       0.01
       trajectory: 0.05
-    torso_2_joint:
+    joint2:
       goal:       0.01
       trajectory: 0.05

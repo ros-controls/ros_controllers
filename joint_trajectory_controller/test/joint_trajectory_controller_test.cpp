@@ -38,6 +38,7 @@
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 
+#include <std_msgs/Float64.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <control_msgs/JointTrajectoryControllerState.h>
 #include <control_msgs/QueryTrajectoryState.h>
@@ -92,6 +93,9 @@ public:
     traj_home_goal.trajectory = traj_home;
     traj_goal.trajectory      = traj;
 
+    // Smoothing publisher (determines how well the robot follows a trajectory)
+    smoothing_pub = ros::NodeHandle().advertise<std_msgs::Float64>("smoothing", 1);
+
     // Trajectory publisher
     traj_pub = nh.advertise<trajectory_msgs::JointTrajectory>("command", 1);
 
@@ -136,6 +140,7 @@ protected:
   ros::Duration short_timeout;
   ros::Duration long_timeout;
 
+  ros::Publisher     smoothing_pub;
   ros::Publisher     traj_pub;
   ros::Subscriber    state_sub;
   ros::ServiceClient query_state_service;
@@ -260,6 +265,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
     bad_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
     action_client->sendGoal(bad_goal);
     ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS);
   }
 
   // Incompatible joint names
@@ -270,6 +276,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
     bad_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
     action_client->sendGoal(bad_goal);
     ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS);
   }
 
   // No position data
@@ -280,6 +287,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
     bad_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
     action_client->sendGoal(bad_goal);
     ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_GOAL);
   }
 
   // Incompatible data sizes
@@ -290,6 +298,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
     bad_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
     action_client->sendGoal(bad_goal);
     ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_GOAL);
   }
 }
 
@@ -343,6 +352,7 @@ TEST_F(JointTrajectoryControllerTest, actionSingleTraj)
 
   // Wait until done
   ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::SUCCESSFUL);
   ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations
 
   // Validate state topic values
@@ -471,7 +481,7 @@ TEST_F(JointTrajectoryControllerTest, jointWraparoundPiSingularity)
   goal2.trajectory.points.resize(1, point);
   goal2.trajectory.points[0].positions[0] = M_PI / 2.0;
   goal2.trajectory.points[0].positions[1] = 0.0;
-  goal2.trajectory.points[0].time_from_start = ros::Duration(1.0);
+  goal2.trajectory.points[0].time_from_start = ros::Duration(2.0);
 
   // Send trajectory
   goal1.trajectory.header.stamp = ros::Time(0); // Start immediately
@@ -701,6 +711,22 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTraj)
   }
 }
 
+TEST_F(JointTrajectoryControllerTest, cancelActionGoal)
+{
+  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+
+  // Send trajectory
+  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_goal);
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+
+  ros::Duration wait_duration = traj.points.front().time_from_start;
+  wait_duration.sleep(); // Wait until ~first waypoint
+
+  action_client->cancelGoal();
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::PREEMPTED, short_timeout));
+}
+
 // Ignore old trajectory points ////////////////////////////////////////////////////////////////////////////////////////
 
 TEST_F(JointTrajectoryControllerTest, ignoreOldTopicTraj)
@@ -797,8 +823,86 @@ TEST_F(JointTrajectoryControllerTest, ignorePartiallyOldActionTraj)
   }
 }
 
+TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
+{
+  ASSERT_TRUE(initState());
+  ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
+  // Go to home configuration, we need known initial conditions
+  traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_home_goal);
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
 
+  // Make robot respond with a delay
+  {
+    std_msgs::Float64 smoothing;
+    smoothing.data = 0.9;
+    smoothing_pub.publish(smoothing);
+    ros::Duration(0.5).sleep();
+  }
+
+  // Send trajectory
+  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_goal);
+  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+
+  // Wait until done
+  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ABORTED, long_timeout));
+  EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED);
+
+  // Restore perfect control
+  {
+    std_msgs::Float64 smoothing;
+    smoothing.data = 0.0;
+    smoothing_pub.publish(smoothing);
+    ros::Duration(0.5).sleep();
+  }
+}
+
+TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
+{
+  ASSERT_TRUE(initState());
+  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+
+  // Go to home configuration, we need known initial conditions
+  traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_home_goal);
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+
+  // Make robot respond with a delay
+  {
+    std_msgs::Float64 smoothing;
+    smoothing.data = 0.95;
+    smoothing_pub.publish(smoothing);
+    ros::Duration(0.5).sleep();
+  }
+
+  // Disable path constraints
+  traj_goal.path_tolerance.resize(2);
+  traj_goal.path_tolerance[0].name     = "joint1";
+  traj_goal.path_tolerance[0].position = -1.0;
+  traj_goal.path_tolerance[0].velocity = -1.0;
+  traj_goal.path_tolerance[1].name     = "joint2";
+  traj_goal.path_tolerance[1].position = -1.0;
+  traj_goal.path_tolerance[1].velocity = -1.0;
+
+  // Send trajectory
+  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_goal);
+  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+
+  // Wait until done
+  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ABORTED, long_timeout));
+  EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED);
+
+  // Restore perfect control
+  {
+    std_msgs::Float64 smoothing;
+    smoothing.data = 0.0;
+    smoothing_pub.publish(smoothing);
+    ros::Duration(0.5).sleep();
+  }
+}
 
 int main(int argc, char** argv)
 {

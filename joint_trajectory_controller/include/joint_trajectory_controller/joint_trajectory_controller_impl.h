@@ -186,6 +186,7 @@ checkPathTolerances(const typename Segment::State& state_error,
   {
     rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
     rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
+    rt_active_goal_.reset();
   }
 }
 

@@ -256,7 +256,7 @@ init(hardware_interface::PositionJointInterface* hw,
   ROS_DEBUG_STREAM_NAMED(name_, "Action status changes will be monitored at " << action_monitor_rate << "Hz.");
 
   // Hold trajectory duration
-  hold_trajectory_duration_ = 1.0;
+  hold_trajectory_duration_ = 0.5;
   controller_nh_.getParam("hold_trajectory_duration", hold_trajectory_duration_);
   ROS_DEBUG_STREAM_NAMED(name_, "Hold trajectory has a duration of " << hold_trajectory_duration_ << "s.");
 
@@ -622,26 +622,40 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 setHoldPosition(const ros::Time& time)
 {
-  // TODO: Compute trajectory without direction reversals
+  // Settle position in a fixed time. We do the following:
+  // - Create segment that goes from current (pos,vel) to (pos,-vel) in 2x the desired stop time
+  // - Assuming segment symmetry, sample segment at its midpoint (desired stop time). It should have zero velocity
+  // - Create segment that goes from current state to above zero velocity state, in the desired time
+  // NOTE: The symmetry assumption from the second point above might not hold for all possible segment types
 
-  // Segment boundary conditions: Settle current position in a fixed time
-  const typename Segment::Time start_time = time.toSec();
-  const typename Segment::Time end_time   = time.toSec() + hold_trajectory_duration_;
+  assert(1 == hold_trajectory_ptr_->size());
 
+  const typename Segment::Time start_time  = time.toSec();
+  const typename Segment::Time end_time    = time.toSec() + hold_trajectory_duration_;
+  const typename Segment::Time end_time_2x = time.toSec() + 2.0 * hold_trajectory_duration_;
+
+  // Create segment that goes from current (pos,vel) to (pos,-vel)
   const unsigned int n_joints = joints_.size();
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-    hold_start_state_.position[i]     = joints_[i].getPosition();
-    hold_start_state_.velocity[i]     = joints_[i].getVelocity();
-    hold_start_state_.acceleration[i] = 0.0;
+    hold_start_state_.position[i]     =  joints_[i].getPosition();
+    hold_start_state_.velocity[i]     =  joints_[i].getVelocity();
+    hold_start_state_.acceleration[i] =  0.0;
 
-    hold_end_state_.position[i]       = joints_[i].getPosition();
-    hold_end_state_.velocity[i]       = 0.0;
-    hold_end_state_.acceleration[i]   = 0.0;
+    hold_end_state_.position[i]       =  joints_[i].getPosition();
+    hold_end_state_.velocity[i]       = -joints_[i].getVelocity();
+    hold_end_state_.acceleration[i]   =  0.0;
   }
-  assert(1 == hold_trajectory_ptr_->size());
+  hold_trajectory_ptr_->front().init(start_time,  hold_start_state_,
+                                     end_time_2x, hold_end_state_);
+
+  // Sample segment at its midpoint, that should have zero velocity
+  hold_trajectory_ptr_->front().sample(end_time, hold_end_state_);
+
+  // Now create segment that goes from current state to one with zero end velocity
   hold_trajectory_ptr_->front().init(start_time, hold_start_state_,
                                      end_time,   hold_end_state_);
+
   curr_trajectory_ptr_.initRT(hold_trajectory_ptr_.get());
 }
 

@@ -55,12 +55,5 @@ namespace effort_controllers
           JointTrajectoryController;
 }
 
-PLUGINLIB_DECLARE_CLASS(position_controllers,
-                        JointTrajectoryController,
-                        position_controllers::JointTrajectoryController,
-                        controller_interface::ControllerBase)
-
-PLUGINLIB_DECLARE_CLASS(effort_controllers,
-                        JointTrajectoryController,
-                        effort_controllers::JointTrajectoryController,
-                        controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(position_controllers::JointTrajectoryController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(effort_controllers::JointTrajectoryController,   controller_interface::ControllerBase)

@@ -17,10 +17,10 @@
         args="rrbot_controller" />
 
   <!-- Rxplot monitoring -->
-  <node name="rrbot_monitor"
+ <!-- <node name="rrbot_monitor"
         pkg="rxtools"
         type="rxplot"
-        args="-b 10 -t RRbot-monitor /rrbot_controller/state/desired/positions[0]:positions[1],/rrbot_controller/state/actual/positions[0]:positions[1] /rrbot_controller/state/desired/velocities[0]:velocities[1],/rrbot_controller/state/actual/velocities[0]:velocities[1]" />
+        args="-b 10 -t RRbot-monitor /rrbot_controller/state/desired/positions[0]:positions[1],/rrbot_controller/state/actual/positions[0]:positions[1] /rrbot_controller/state/desired/velocities[0]:velocities[1],/rrbot_controller/state/actual/velocities[0]:velocities[1]" />-->
 
   <!-- Controller test -->
   <test test-name="joint_trajectory_controller_test"

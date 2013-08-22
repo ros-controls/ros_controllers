@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(joint_trajectory_controller)
 
+# rosbuild -----------------------------------------------------------------------------
 if(USE_ROSBUILD)
   include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
@@ -43,21 +44,26 @@ if(USE_ROSBUILD)
   target_link_libraries(init_joint_trajectory_test      pthread)
   target_link_libraries(tolerances_test                 pthread)
   target_link_libraries(joint_trajectory_controller     pthread)
+
+# catkin -----------------------------------------------------------------------------
 else()
   # Load catkin and all dependencies required for this package
-  find_package(catkin REQUIRED COMPONENTS actionlib
-                                          angles
-                                          roscpp
-                                          urdf
-                                          control_toolbox
-                                          controller_interface
-                                          hardware_interface
-                                          realtime_tools
-                                          control_msgs
-                                          trajectory_msgs
-                                          rostest
-                                          controller_manager
-                                          xacro)
+  find_package(catkin 
+    REQUIRED COMPONENTS 
+      actionlib
+      angles
+      roscpp
+      urdf
+      control_toolbox
+      controller_interface
+      hardware_interface
+      realtime_tools
+      control_msgs
+      trajectory_msgs
+      rostest
+      controller_manager
+      xacro
+  )
 
   include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
@@ -74,23 +80,23 @@ else()
 
   # Declare catkin package
   catkin_package(
-    CATKIN_DEPENDS actionlib
-                   angles
-                   roscpp
-                   urdf
-                   control_toolbox
-                   controller_interface
-                   hardware_interface
-                   realtime_tools
-                   control_msgs
-                   trajectory_msgs
-                   rostest
-                   controller_manager
-                   xacro
-
+    CATKIN_DEPENDS 
+    actionlib
+    angles
+    roscpp
+    urdf
+    control_toolbox
+    controller_interface
+    hardware_interface
+    realtime_tools
+    control_msgs
+    trajectory_msgs
+    rostest
+    controller_manager
+    xacro
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
-    )
+  )
 
   catkin_add_gtest(quintic_spline_segment_test test/quintic_spline_segment_test.cpp)
   target_link_libraries(quintic_spline_segment_test ${catkin_LIBRARIES})
@@ -112,7 +118,10 @@ else()
   add_rostest(test/tolerances.test)
 
   add_executable(rrbot test/rrbot.cpp)
+  target_link_libraries(rrbot ${catkin_LIBRARIES})
+
   add_dependencies(tests rrbot)
+
   catkin_add_gtest(joint_trajectory_controller_test test/joint_trajectory_controller_test.cpp)
   target_link_libraries(joint_trajectory_controller_test ${catkin_LIBRARIES})
   add_rostest(test/joint_trajectory_controller.test)

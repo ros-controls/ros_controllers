@@ -41,6 +41,7 @@ using namespace trajectory_msgs;
 const double EPS = 1e-9;
 
 typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
+typedef std::vector<std::vector<std::string>::size_type> PermutationType;
 
 TEST(WraparoundOffsetTest, WrappingPositions)
 {
@@ -240,7 +241,7 @@ TEST_F(JointTrajectorySegmentTest, InvalidSegmentConstruction)
 
   // Invalid permutation vector size
   {
-    std::vector<unsigned int> permutation(2, 1);
+    PermutationType permutation(2, 1);
     EXPECT_THROW(Segment(traj_start_time, p_start, p_end, permutation), std::invalid_argument);
     try {Segment(traj_start_time, p_start, p_end, permutation);}
     catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
@@ -248,7 +249,7 @@ TEST_F(JointTrajectorySegmentTest, InvalidSegmentConstruction)
 
   // Invalid permutation vector indices
   {
-    std::vector<unsigned int> permutation(1, 1);
+    PermutationType permutation(1, 1);
     EXPECT_THROW(Segment(traj_start_time, p_start, p_end, permutation), std::invalid_argument);
     try {Segment(traj_start_time, p_start, p_end, permutation);}
     catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
@@ -256,7 +257,7 @@ TEST_F(JointTrajectorySegmentTest, InvalidSegmentConstruction)
 
   // Invalid joint wraparound specification
   {
-    std::vector<unsigned int> permutation;
+    PermutationType permutation;
     std::vector<double> pos_offset(2);
     EXPECT_THROW(Segment(traj_start_time, p_start, p_end, permutation, pos_offset), std::invalid_argument);
     try {Segment(traj_start_time, p_start, p_end, permutation, pos_offset);}
@@ -351,7 +352,7 @@ TEST_F(JointTrajectorySegmentTest, PermutationTest)
 
   // Permutation vector preserving trajectory message joint order
   {
-    std::vector<unsigned int> permutation(2);
+    PermutationType permutation(2);
     permutation[0] = 0;
     permutation[1] = 1;
 
@@ -368,7 +369,7 @@ TEST_F(JointTrajectorySegmentTest, PermutationTest)
 
   // Permutation vector reversing trajectory message joint order
   {
-    std::vector<unsigned int> permutation(2);
+    PermutationType permutation(2);
     permutation[0] = 1;
     permutation[1] = 0;
 

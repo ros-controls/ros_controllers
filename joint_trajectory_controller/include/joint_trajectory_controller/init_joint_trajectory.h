@@ -62,9 +62,9 @@ namespace internal
  * <tt>"{2, 0, 3, 1}"</tt>.
  */
 template <class T>
-inline std::vector<typename T::size_type> permutation(const T& t1, const T& t2)
+inline std::vector<unsigned int> permutation(const T& t1, const T& t2)
 {
-  typedef typename T::size_type SizeType;
+  typedef unsigned int SizeType;
 
   // Arguments must have the same size
   if (t1.size() != t2.size()) {return std::vector<SizeType>();}
@@ -76,8 +76,8 @@ inline std::vector<typename T::size_type> permutation(const T& t1, const T& t2)
     if (t2.end() == t2_it) {return std::vector<SizeType>();}
     else
     {
-      const typename T::size_type t1_dist = std::distance(t1.begin(), t1_it);
-      const typename T::size_type t2_dist = std::distance(t2.begin(), t2_it);
+      const SizeType t1_dist = std::distance(t1.begin(), t1_it);
+      const SizeType t2_dist = std::distance(t2.begin(), t2_it);
       permutation_vector[t1_dist] = t2_dist;
     }
   }
@@ -236,8 +236,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   // If unspecified, a trivial map (no permutation) is computed
   const std::vector<std::string> joint_names = has_joint_names ? *(options.joint_names) : msg.joint_names;
 
-  typedef std::vector<std::string>::size_type SizeType;
-  std::vector<SizeType> permutation_vector = internal::permutation(joint_names, msg.joint_names);
+  std::vector<unsigned int> permutation_vector = internal::permutation(joint_names, msg.joint_names);
 
   if (permutation_vector.empty())
   {

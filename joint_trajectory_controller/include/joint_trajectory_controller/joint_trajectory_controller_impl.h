@@ -524,8 +524,7 @@ goalCB(GoalHandle gh)
   {
     // Reject goal. Determine if the reason was invalid joints or something else
     using internal::permutation;
-    typedef std::vector<std::string>::size_type SizeType;
-    std::vector<SizeType> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
+    std::vector<unsigned int> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
 
     control_msgs::FollowJointTrajectoryResult result;
     if (permutation_vector.empty()) {result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;}

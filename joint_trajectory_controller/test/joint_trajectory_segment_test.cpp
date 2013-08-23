@@ -41,7 +41,7 @@ using namespace trajectory_msgs;
 const double EPS = 1e-9;
 
 typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
-typedef std::vector<std::vector<std::string>::size_type> PermutationType;
+typedef std::vector<unsigned int> PermutationType;
 
 TEST(WraparoundOffsetTest, WrappingPositions)
 {

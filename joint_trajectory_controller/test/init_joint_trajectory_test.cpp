@@ -61,7 +61,7 @@ TEST(PermutationTest, Permutation)
   t2[2] = "A";
   t2[3] = "C";
 
-  typedef vector<vector<string>::size_type> PermutationType;
+  typedef vector<unsigned int> PermutationType;
   PermutationType ground_truth(4);
   ground_truth[0] = 2;
   ground_truth[1] = 0;

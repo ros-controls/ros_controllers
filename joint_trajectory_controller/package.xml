@@ -48,6 +48,7 @@
   <run_depend>rostest</run_depend>            <!--Tests-only!-->
   <run_depend>controller_manager</run_depend> <!--Tests-only!-->
   <run_depend>xacro</run_depend>              <!--Tests-only!-->
+  <run_depend>rqt_plot</run_depend>           <!--Tests-only!-->
 
   <export>
     <controller_interface plugin="${prefix}/ros_control_plugins.xml"/>

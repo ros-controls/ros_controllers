@@ -62,7 +62,7 @@ else()
       trajectory_msgs
       rostest
       controller_manager
-#       xacro
+      xacro
   )
 
   include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
@@ -113,18 +113,20 @@ else()
   catkin_add_gtest(init_joint_trajectory_test test/init_joint_trajectory_test.cpp)
   target_link_libraries(init_joint_trajectory_test ${catkin_LIBRARIES})
 
-  catkin_add_gtest(tolerances_test test/tolerances_test.cpp)
+  add_rostest_gtest(tolerances_test
+                    test/tolerances.test
+                    test/tolerances_test.cpp)
   target_link_libraries(tolerances_test ${catkin_LIBRARIES})
-  add_rostest(test/tolerances.test)
 
   add_executable(rrbot test/rrbot.cpp)
   target_link_libraries(rrbot ${catkin_LIBRARIES})
 
   add_dependencies(tests rrbot)
 
-  catkin_add_gtest(joint_trajectory_controller_test test/joint_trajectory_controller_test.cpp)
+  add_rostest_gtest(joint_trajectory_controller_test
+                    test/joint_trajectory_controller.test
+                    test/joint_trajectory_controller_test.cpp)
   target_link_libraries(joint_trajectory_controller_test ${catkin_LIBRARIES})
-  add_rostest(test/joint_trajectory_controller.test)
 
   # Install
   install(DIRECTORY include/${PROJECT_NAME}/

@@ -1,0 +1,35 @@
+<launch>
+  <!-- Load RRbot model -->
+  <param name="robot_description"
+      command="$(find xacro)/xacro.py '$(find joint_trajectory_controller)/test/rrbot.xacro'" />
+
+  <!-- Start RRbot -->
+  <node name="rrbot"
+      pkg="joint_trajectory_controller"
+      type="rrbot"/>
+
+  <!-- Load controller config -->
+  <rosparam command="load" file="$(find joint_trajectory_controller)/test/rrbot_controllers.yaml" />
+
+  <!-- Spawn controller -->
+  <node name="controller_spawner"
+        pkg="controller_manager" type="spawner" output="screen"
+        args="rrbot_controller" />
+
+  <!-- Rxplot monitoring -->
+  <node name="rrbot_pos_monitor"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/rrbot_controller/state/desired/positions[0]:positions[1],/rrbot_controller/state/actual/positions[0]:positions[1]" />
+
+  <node name="rrbot_vel_monitor"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/rrbot_controller/state/desired/velocities[0]:velocities[1],/rrbot_controller/state/actual/velocities[0]:velocities[1]" />
+
+  <!-- Controller test -->
+  <test test-name="joint_trajectory_controller_test"
+        pkg="joint_trajectory_controller"
+        type="joint_trajectory_controller_test"
+        time-limit="80.0"/>
+</launch>

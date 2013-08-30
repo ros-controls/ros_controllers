@@ -1,0 +1,4 @@
+<launch>
+  <rosparam command="load" ns="test" file="$(find joint_trajectory_controller)/test/tolerances.yaml" />
+  <test test-name="tolerances_test" pkg="joint_trajectory_controller" type="tolerances_test"/>
+</launch>

@@ -6,3 +6,4 @@ cp imu_sensor_controller/manifest.xml.ignore imu_sensor_controller/manifest.xml
 cp joint_state_controller/manifest.xml.ignore joint_state_controller/manifest.xml
 cp position_controllers/manifest.xml.ignore position_controllers/manifest.xml
 cp velocity_controllers/manifest.xml.ignore velocity_controllers/manifest.xml
+cp joint_trajectory_controller/manifest.xml.ignore joint_trajectory_controller/manifest.xml

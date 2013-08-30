@@ -1,0 +1,14 @@
+constraints:
+  goal_time: 1.0                   # Defaults to zero
+  stopped_velocity_tolerance: 0.02 # Defaults to 0.01
+  foo_joint:
+    trajectory: 0.05 # Not enforced if unspecified
+    goal:       0.03 # Not enforced if unspecified
+  bar_joint:
+    goal: 0.01
+
+  baz_joint: # Not part of joints we're looking for
+    trajectory: 1.0
+    goal:       2.0
+
+

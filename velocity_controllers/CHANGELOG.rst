@@ -2,6 +2,11 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.3 (2013-09-04)
+------------------
+* Removed manifest.xml from all packages to prevent rosdep heirarchy issues in Groovy and Hydro
+* Added ignored manifest.xml files, added rule to .gitignore
+
 0.5.2 (2013-08-06)
 ------------------
 

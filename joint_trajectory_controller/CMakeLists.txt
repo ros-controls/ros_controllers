@@ -52,6 +52,7 @@ else()
     REQUIRED COMPONENTS 
       actionlib
       angles
+      cmake_modules
       roscpp
       urdf
       control_toolbox

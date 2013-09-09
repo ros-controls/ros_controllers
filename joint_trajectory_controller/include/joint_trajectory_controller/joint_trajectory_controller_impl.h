@@ -296,10 +296,10 @@ init(hardware_interface::PositionJointInterface* hw,
   }
 
   assert(joints_.size() == angle_wraparound_.size());
-  ROS_INFO_STREAM_NAMED(name_, "Initialized controller '" << name_ << "' with:" <<
-                        "\n- Number of joints: " << joints_.size() <<
-                        "\n- Hardware interface type: '" << this->getHardwareInterfaceType() << "'" <<
-                        "\n- Trajectory segment type: '" << hardware_interface::internal::demangledTypeName<SegmentImpl>() << "'");
+  ROS_DEBUG_STREAM_NAMED(name_, "Initialized controller '" << name_ << "' with:" <<
+                         "\n- Number of joints: " << joints_.size() <<
+                         "\n- Hardware interface type: '" << this->getHardwareInterfaceType() << "'" <<
+                         "\n- Trajectory segment type: '" << hardware_interface::internal::demangledTypeName<SegmentImpl>() << "'");
 
   // Default tolerances
   ros::NodeHandle tol_nh(controller_nh_, "constraints");

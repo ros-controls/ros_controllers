@@ -166,6 +166,13 @@ public:
   Commands command_struct_; // pre-allocated memory that is re-used to set the realtime buffer
 
 private:
+  // Joint effort limits
+  bool has_effort_limits_;
+  double min_effort_, max_effort_;
+  // Joint velocity limits
+  bool has_velocity_limits_;
+  double min_velocity_, max_velocity_;
+
   int loop_count_;
   control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
 
@@ -187,6 +194,15 @@ private:
    */
   void enforceJointLimits(double &command);
 
+  /**
+   * \brief Enforce the effort limit of this controller's joint.
+   */
+  double clampEffort(const double effort) const;
+
+  /**
+   * \brief Enforce the velocity limit of this controller's joint.
+   */
+  double clampVelocity(const double velocity) const;
 };
 
 } // namespace

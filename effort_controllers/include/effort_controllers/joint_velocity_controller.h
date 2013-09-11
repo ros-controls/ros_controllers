@@ -144,6 +144,13 @@ public:
   double command_;                                /**< Last commanded velocity. */
 
 private:
+  // Joint effort limits
+  bool has_effort_limits_;
+  double min_effort_, max_effort_;
+  // Joint velocity limits
+  bool has_velocity_limits_;
+  double min_velocity_, max_velocity_;
+
   int loop_count_;
   control_toolbox::Pid pid_controller_;           /**< Internal PID controller. */
 
@@ -159,6 +166,16 @@ private:
    * \brief Callback from /command subscriber for setpoint
    */
   void setCommandCB(const std_msgs::Float64ConstPtr& msg);
+
+  /**
+   * \brief Enforce the effort limit of this controller's joint.
+   */
+  double clampEffort(const double effort) const;
+
+  /**
+   * \brief Enforce the velocity limit of this controller's joint.
+   */
+  double clampVelocity(const double velocity) const;
 };
 
 } // namespace

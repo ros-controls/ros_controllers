@@ -2,6 +2,11 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.3 (2013-09-04)
+------------------
+* Removed last manifest.xml
+* Added ignored manifest.xml files, added rule to .gitignore
+
 0.5.2 (2013-08-06)
 ------------------
 * Added joint limit enforcement for controller set point command

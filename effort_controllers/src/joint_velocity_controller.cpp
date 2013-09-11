@@ -35,13 +35,17 @@
 
 #include <effort_controllers/joint_velocity_controller.h>
 #include <pluginlib/class_list_macros.h>
+#include <urdf/model.h>
 
 
 namespace effort_controllers {
 
 JointVelocityController::JointVelocityController()
 : command_(0), loop_count_(0)
-{}
+{
+  has_effort_limits_ = false;
+  has_velocity_limits_ = false;
+}
 
 JointVelocityController::~JointVelocityController()
 {
@@ -70,6 +74,38 @@ bool JointVelocityController::init(hardware_interface::EffortJointInterface *rob
 
   // Get joint handle from hardware interface
   joint_ = robot->getHandle(joint_name);
+
+  // Get the joint's effort and velocity limits.
+  urdf::Model urdf;
+  if (!urdf.initParam("robot_description"))
+  {
+    ROS_ERROR("Failed to parse the URDF file.");
+    return false;
+  }
+  const boost::shared_ptr<const urdf::Joint> joint_urdf = urdf.getJoint(joint_name);
+  if (!joint_urdf)
+  {
+    ROS_ERROR("Could not find joint '%s' in the URDF file.", joint_name.c_str());
+    return false;
+  }
+  if (joint_urdf->limits != NULL)
+  {
+    double limit = joint_urdf->limits->effort;
+    if (limit >= 0)
+    {
+      has_effort_limits_ = true;
+      min_effort_ = -limit;
+      max_effort_ = limit;
+    }
+
+    limit = joint_urdf->limits->velocity;
+    if (limit >= 0)
+    {
+      has_velocity_limits_ = true;
+      min_velocity_ = -limit;
+      max_velocity_ = limit;
+    }
+  }
 
   // Load PID Controller using gains set on parameter server
   if (!pid_controller_.init(ros::NodeHandle(n, "pid")))
@@ -111,7 +147,7 @@ std::string JointVelocityController::getJointName()
 // Set the joint velocity command
 void JointVelocityController::setCommand(double cmd)
 {
-  command_ = cmd;
+  command_ = clampVelocity(cmd);
 }
 
 // Return the current velocity command
@@ -128,12 +164,13 @@ void JointVelocityController::starting(const ros::Time& time)
 
 void JointVelocityController::update(const ros::Time& time, const ros::Duration& period)
 {
-  double error = command_ - joint_.getVelocity();
+  const double vel = joint_.getVelocity();
+  const double error = command_ - vel;
 
   // Set the PID error and compute the PID command with nonuniform time
   // step size. The derivative error is computed from the change in the error
   // and the timestep dt.
-  double commanded_effort = pid_controller_.computeCommand(error, period);
+  const double commanded_effort = clampEffort(pid_controller_.computeCommand(error, period));
 
   joint_.setCommand(commanded_effort);
 
@@ -143,7 +180,7 @@ void JointVelocityController::update(const ros::Time& time, const ros::Duration&
     {
       controller_state_publisher_->msg_.header.stamp = time;
       controller_state_publisher_->msg_.set_point = command_;
-      controller_state_publisher_->msg_.process_value = joint_.getVelocity();
+      controller_state_publisher_->msg_.process_value = vel;
       controller_state_publisher_->msg_.error = error;
       controller_state_publisher_->msg_.time_step = period.toSec();
       controller_state_publisher_->msg_.command = commanded_effort;
@@ -162,7 +199,31 @@ void JointVelocityController::update(const ros::Time& time, const ros::Duration&
 
 void JointVelocityController::setCommandCB(const std_msgs::Float64ConstPtr& msg)
 {
-  command_ = msg->data;
+  setCommand(msg->data);
+}
+
+double JointVelocityController::clampEffort(const double effort) const
+{
+  if (has_effort_limits_)
+  {
+    if (effort < min_effort_)
+      return min_effort_;
+    if (effort > max_effort_)
+      return max_effort_;
+  }
+  return effort;
+}
+
+double JointVelocityController::clampVelocity(const double velocity) const
+{
+  if (has_velocity_limits_)
+  {
+    if (velocity < min_velocity_)
+      return min_velocity_;
+    if (velocity > max_velocity_)
+      return max_velocity_;
+  }
+  return velocity;
 }
 
 } // namespace

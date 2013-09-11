@@ -47,7 +47,10 @@ namespace effort_controllers {
 
 JointPositionController::JointPositionController()
   : loop_count_(0)
-{}
+{
+  has_effort_limits_ = false;
+  has_velocity_limits_ = false;
+}
 
 JointPositionController::~JointPositionController()
 {
@@ -90,6 +93,26 @@ bool JointPositionController::init(hardware_interface::EffortJointInterface *rob
   {
     ROS_ERROR("Could not find joint '%s' in urdf", joint_name.c_str());
     return false;
+  }
+
+  // Get the joint's effort and velocity limits.
+  if (joint_urdf_->limits != NULL)
+  {
+    double limit = joint_urdf_->limits->effort;
+    if (limit >= 0)
+    {
+      has_effort_limits_ = true;
+      min_effort_ = -limit;
+      max_effort_ = limit;
+    }
+
+    limit = joint_urdf_->limits->velocity;
+    if (limit >= 0)
+    {
+      has_velocity_limits_ = true;
+      min_velocity_ = -limit;
+      max_velocity_ = limit;
+    }
   }
 
   return true;
@@ -136,7 +159,7 @@ void JointPositionController::setCommand(double pos_command)
 void JointPositionController::setCommand(double pos_command, double vel_command)
 {
   command_struct_.position_ = pos_command;
-  command_struct_.velocity_ = vel_command;
+  command_struct_.velocity_ = clampVelocity(vel_command);
 
   command_.writeFromNonRT(command_struct_);
 }
@@ -189,11 +212,12 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   }
 
   // Compute velocity error. By default we assume desired velocity is 0 (velocity is not required)
-  vel_error = command_velocity - joint_.getVelocity();
+  const double vel = joint_.getVelocity();
+  vel_error = command_velocity - vel;
 
   // Set the PID error and compute the PID command with nonuniform
   // time step size. This also allows the user to pass in a precomputed derivative error.
-  double commanded_effort = pid_controller_.computeCommand(error, vel_error, period);
+  const double commanded_effort = clampEffort(pid_controller_.computeCommand(error, vel_error, period));
   joint_.setCommand(commanded_effort);
 
   // publish state
@@ -204,7 +228,7 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
       controller_state_publisher_->msg_.header.stamp = time;
       controller_state_publisher_->msg_.set_point = command_position;
       controller_state_publisher_->msg_.process_value = current_position;
-      controller_state_publisher_->msg_.process_value_dot = joint_.getVelocity();
+      controller_state_publisher_->msg_.process_value_dot = vel;
       controller_state_publisher_->msg_.error = error;
       controller_state_publisher_->msg_.time_step = period.toSec();
       controller_state_publisher_->msg_.command = commanded_effort;
@@ -241,6 +265,30 @@ void JointPositionController::enforceJointLimits(double &command)
       command = joint_urdf_->limits->lower;
     }
   }
+}
+
+double JointPositionController::clampEffort(const double effort) const
+{
+  if (has_effort_limits_)
+  {
+    if (effort < min_effort_)
+      return min_effort_;
+    if (effort > max_effort_)
+      return max_effort_;
+  }
+  return effort;
+}
+
+double JointPositionController::clampVelocity(const double velocity) const
+{
+  if (has_velocity_limits_)
+  {
+    if (velocity < min_velocity_)
+      return min_velocity_;
+    if (velocity > max_velocity_)
+      return max_velocity_;
+  }
+  return velocity;
 }
 
 } // namespace

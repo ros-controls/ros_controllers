@@ -46,7 +46,7 @@ namespace joint_state_controller
 class JointStateController: public controller_interface::Controller<hardware_interface::JointStateInterface>
 {
 public:
-  JointStateController(){}
+  JointStateController() : publish_rate_(0.0) {}
 
   virtual bool init(hardware_interface::JointStateInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle& controller_nh);
   virtual void starting(const ros::Time& time);

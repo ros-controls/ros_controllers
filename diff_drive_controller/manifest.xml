@@ -1,0 +1,21 @@
+<package>
+  <description brief="diff_drive_controller">
+
+     diff_drive_controller
+
+  </description>
+  <author>Bence Magyar</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>https://github.com/ros-controls/ros_controllers/wiki</url>
+
+  <depend package="controller_interface"/>
+  <depend package="forward_command_controller"/>
+
+  <export>
+    <controller_interface plugin="${prefix}/diff_drive_controller_plugins.xml" />
+  </export>
+
+</package>
+
+

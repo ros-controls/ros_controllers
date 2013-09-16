@@ -1,0 +1,24 @@
+<package>
+  <name>diff_drive_controller</name>
+  <version>0.1.0</version>
+  <description>diff_drive_controller</description>
+  <maintainer email="bence.magyar@pal-robotics.com">Bence Magyar</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">https://github.com/ros-controls/ros_controllers/wiki</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros_controllers</url>
+
+  <author>Bence Magyar</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>controller_interface</build_depend> 
+  <build_depend>forward_command_controller</build_depend> 
+  <run_depend>controller_interface</run_depend> 
+  <run_depend>forward_command_controller</run_depend> 
+
+  <export>
+    <controller_interface plugin="${prefix}/diff_drive_controller_plugins.xml"/>
+  </export>
+</package>

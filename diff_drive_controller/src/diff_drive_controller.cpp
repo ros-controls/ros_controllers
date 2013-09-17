@@ -95,9 +95,10 @@ namespace diff_drive_controller{
         return false;
       }
 
-      double wheel_radius = fabs(wheelJointPtr->parent_to_joint_origin_transform.position.z);
+      wheel_radius_ = fabs(wheelJointPtr->parent_to_joint_origin_transform.position.z);
       wheel_separation_ = 2.0 * fabs(wheelJointPtr->parent_to_joint_origin_transform.position.y);
-      ROS_INFO_STREAM("Odometry params : wheel separation " << wheel_separation_ << ", wheel radius " << wheel_radius);
+      ROS_INFO_STREAM("Odometry params : wheel separation " << wheel_separation_
+                      << ", wheel radius " << wheel_radius_);
 
       //      odometry_info.wheelsRadius[odometry::OdometryInfo::LEFT_WHEEL]  = wheel_radius;
       //      odometry_info.wheelsRadius[odometry::OdometryInfo::RIGHT_WHEEL] = wheel_radius;
@@ -142,8 +143,10 @@ namespace diff_drive_controller{
     {
       // do stuff coming from cmd_vel interface
       const Commands curr_cmd = *(command_.readFromRT());
-      const double vel_right = curr_cmd.lin + curr_cmd.ang * wheel_separation_ / 2.0;
-      const double vel_left = curr_cmd.lin - curr_cmd.ang * wheel_separation_ / 2.0;
+      const double vel_right =
+          (curr_cmd.lin + curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
+      const double vel_left =
+          (curr_cmd.lin - curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
       left_wheel_joint_.setCommand(vel_left);
       right_wheel_joint_.setCommand(vel_right);
 
@@ -165,9 +168,9 @@ namespace diff_drive_controller{
     void starting(const ros::Time& time)
     {
       // set velocity to 0
-      //      const double vel = 0.0;
-      //      left_wheel_joint_.setCommand(vel);
-      //      right_wheel_joint_.setCommand(vel);
+      const double vel = 0.0;
+      left_wheel_joint_.setCommand(vel);
+      right_wheel_joint_.setCommand(vel);
     }
 
     void stopping(const ros::Time& time)
@@ -195,6 +198,7 @@ namespace diff_drive_controller{
 
     boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
     double wheel_separation_;
+    double wheel_radius_;
 
   private:
     void cmdVelCallback(const geometry_msgs::Twist& command)

@@ -32,6 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+/*
+ * Author: Bence Magyar
+ */
+
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
@@ -41,6 +45,9 @@
 #include <urdf_parser/urdf_parser.h>
 
 #include <realtime_tools/realtime_buffer.h>
+#include <realtime_tools/realtime_publisher.h>
+
+#include <boost/assign.hpp>
 
 namespace diff_drive_controller{
 
@@ -52,47 +59,79 @@ namespace diff_drive_controller{
               ros::NodeHandle &controller_nh)
     {
       ROS_INFO("Init DiffDriveController.");
+
       // get joint names from the parameter server
+      std::string left_wheel_name, right_wheel_name;
 
-//      if (!controller_nh.getParam("joints", joints))
-//      {
-//        ROS_ERROR("Could not find joint names");
-//        return false;
-//      }
+      bool res = controller_nh.hasParam("left_wheel");
+      if(!res || !controller_nh.getParam("left_wheel", left_wheel_name))
+      {
+        ROS_ERROR("Couldn't retrieve left wheel name from param server.");
+        return false;
+      }
+      res = controller_nh.hasParam("right_wheel");
+      if(!res || !controller_nh.getParam("right_wheel", right_wheel_name))
+      {
+        ROS_ERROR("Couldn't retrieve right wheel name from param server.");
+        return false;
+      }
 
-//      // parse robot description
-//      std::string model_param_name = "/robot_description";
-//      bool res = nh.hasParam(model_param_name);
-//      std::string robot_model_str="";
-//      if(!res || !nh.getParam(model_param_name,robot_model_str))
-//      {
-//        ROS_ERROR("Robot descripion couldn't be retrieved from param server.");
-//        return false;
-//      }
+      // parse robot description
+      const std::string model_param_name = "/robot_description";
+      res = root_nh.hasParam(model_param_name);
+      std::string robot_model_str="";
+      if(!res || !root_nh.getParam(model_param_name,robot_model_str))
+      {
+        ROS_ERROR("Robot descripion couldn't be retrieved from param server.");
+        return false;
+      }
 
-//      boost::shared_ptr<urdf::ModelInterface> modelPtr = urdf::parseURDF(robot_model_str);
-//      std::string wheel_joint_name = "wheel_left_joint";
-//      boost::shared_ptr<const urdf::Joint> wheelJointPtr    = modelPtr->getJoint(wheel_joint_name);
-//      if(!wheelJointPtr.get())
-//      {
-//        PAL_ORO_ERROR_STREAM_TAG(  PAL_DEV_DEBUG_ON, PAL_FILE <<':'<< __LINE__ << ":failed: "<< wheel_joint_name <<
-//                                   " couldn't be retrieved from model description" << '\n');
-//        return false;
-//      }
+      boost::shared_ptr<urdf::ModelInterface> model_ptr(urdf::parseURDF(robot_model_str));
+      boost::shared_ptr<const urdf::Joint> wheelJointPtr(model_ptr->getJoint(left_wheel_name));
+      if(!wheelJointPtr.get())
+      {
+        ROS_ERROR_STREAM(left_wheel_name << " couldn't be retrieved from model description");
+        return false;
+      }
 
-//      double wheel_radius = fabs(wheelJointPtr->parent_to_joint_origin_transform.position.z);
-//      double wheel_base   = 2.0 * fabs(wheelJointPtr->parent_to_joint_origin_transform.position.y);
-//      PAL_ORO_INFO_STREAM_TAG(  PAL_DEV_DEBUG_ON, "Odometry params : wheel base " << wheel_base << ", wheel radius " << wheel_radius);
+      double wheel_radius = fabs(wheelJointPtr->parent_to_joint_origin_transform.position.z);
+      double wheel_base   = 2.0 * fabs(wheelJointPtr->parent_to_joint_origin_transform.position.y);
+      ROS_INFO_STREAM("Odometry params : wheel base " << wheel_base << ", wheel radius " << wheel_radius);
 
-//      _odometryInfo.wheelsRadius[odometry::OdometryInfo::LEFT_WHEEL]  = wheel_radius;
-//      _odometryInfo.wheelsRadius[odometry::OdometryInfo::RIGHT_WHEEL] = wheel_radius;
-//      _odometryInfo.wheelBase = wheel_base;
+      //      odometry_info.wheelsRadius[odometry::OdometryInfo::LEFT_WHEEL]  = wheel_radius;
+      //      odometry_info.wheelsRadius[odometry::OdometryInfo::RIGHT_WHEEL] = wheel_radius;
+      //      odometry_info.wheelBase = wheel_base;
 
 
       // get the joint object to use in the realtime loop
+      ROS_INFO_STREAM("Adding left wheel with joint name: " << left_wheel_name
+                      << " and right wheel with joint name: " << right_wheel_name);
+      left_wheel_joint_ = hw->getHandle(left_wheel_name);  // throws on failure
+      right_wheel_joint_ = hw->getHandle(right_wheel_name);  // throws on failure
 
-      left_wheel_joint_ = hw->getHandle("wheel_left_joint");  // throws on failure
-      right_wheel_joint_ = hw->getHandle("wheel_right_joint");  // throws on failure
+      // setup odometry realtime publisher + odom message constant fields
+      odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odom", 100));
+      odom_pub_->msg_.header.frame_id = "odom";
+      odom_pub_->msg_.pose.pose.position.z = 0;
+      odom_pub_->msg_.pose.covariance = boost::assign::list_of
+          (1e-3) (0)   (0)  (0)  (0)  (0)
+          (0) (1e-3)  (0)  (0)  (0)  (0)
+          (0)   (0)  (1e6) (0)  (0)  (0)
+          (0)   (0)   (0) (1e6) (0)  (0)
+          (0)   (0)   (0)  (0) (1e6) (0)
+          (0)   (0)   (0)  (0)  (0)  (1e3) ;
+      odom_pub_->msg_.twist.twist.linear.y  = 0;
+      odom_pub_->msg_.twist.twist.linear.z  = 0;
+      odom_pub_->msg_.twist.twist.angular.x = 0;
+      odom_pub_->msg_.twist.twist.angular.y = 0;
+      odom_pub_->msg_.twist.covariance = boost::assign::list_of
+          (1e-3) (0)   (0)  (0)  (0)  (0)
+          (0) (1e-3)  (0)  (0)  (0)  (0)
+          (0)   (0)  (1e6) (0)  (0)  (0)
+          (0)   (0)   (0) (1e6) (0)  (0)
+          (0)   (0)   (0)  (0) (1e6) (0)
+          (0)   (0)   (0)  (0)  (0)  (1e3) ;
+
       return true;
     }
 
@@ -103,7 +142,20 @@ namespace diff_drive_controller{
       right_wheel_joint_.setCommand(vel);
       // do stuff coming from cmd_vel interface
 
-      // publish odom
+
+      // PUBLISH ODOMETRY
+      // try to publish
+      if (odom_pub_->trylock())
+      {
+        // populate message
+        odom_pub_->msg_.header.stamp = time;
+        //      odom_pub_->msg_.pose.pose.position.x = odoPos.x();
+        //      odom_pub_->msg_.pose.pose.position.y = odoPos.y();
+        //      odom_pub_->msg_.pose.pose.orientation = tf::createQuaternionMsgFromYaw(_odometryReading.getHeading());
+        //      odom_pub_->msg_.twist.twist.linear.x  = _linearSpeed;
+        //      odom_pub_->msg_.twist.twist.angular.z = _angularSpeed;
+        odom_pub_->unlockAndPublish();
+      }
     }
 
     void starting(const ros::Time& time)
@@ -118,17 +170,17 @@ namespace diff_drive_controller{
 
   private:
     struct Commands
-      {
-        double position_; // Last commanded position
-        double velocity_; // Last commanded velocity
-      };
+    {
+      double position_; // Last commanded position
+      double velocity_; // Last commanded velocity
+    };
+    realtime_tools::RealtimeBuffer<Commands> command_;
+    Commands command_struct_;
 
     hardware_interface::JointHandle left_wheel_joint_;
     hardware_interface::JointHandle right_wheel_joint_;
-    nav_msgs::Odometry odom;
-    boost::shared_ptr<const urdf::Joint> joint_urdf_;
-    realtime_tools::RealtimeBuffer<Commands> command_;
-    Commands command_struct_;
+
+    boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
   };
 
   PLUGINLIB_DECLARE_CLASS(diff_drive_controller, DiffDriveController, diff_drive_controller::DiffDriveController, controller_interface::ControllerBase);

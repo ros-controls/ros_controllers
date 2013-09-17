@@ -60,6 +60,7 @@ namespace diff_drive_controller{
     {
       ROS_INFO("Init DiffDriveController.");
 
+      name_ = getLeafNamespace(controller_nh);
       // get joint names from the parameter server
       std::string left_wheel_name, right_wheel_name;
 
@@ -95,8 +96,8 @@ namespace diff_drive_controller{
       }
 
       double wheel_radius = fabs(wheelJointPtr->parent_to_joint_origin_transform.position.z);
-      double wheel_base   = 2.0 * fabs(wheelJointPtr->parent_to_joint_origin_transform.position.y);
-      ROS_INFO_STREAM("Odometry params : wheel base " << wheel_base << ", wheel radius " << wheel_radius);
+      wheel_separation_ = 2.0 * fabs(wheelJointPtr->parent_to_joint_origin_transform.position.y);
+      ROS_INFO_STREAM("Odometry params : wheel separation " << wheel_separation_ << ", wheel radius " << wheel_radius);
 
       //      odometry_info.wheelsRadius[odometry::OdometryInfo::LEFT_WHEEL]  = wheel_radius;
       //      odometry_info.wheelsRadius[odometry::OdometryInfo::RIGHT_WHEEL] = wheel_radius;
@@ -132,16 +133,19 @@ namespace diff_drive_controller{
           (0)   (0)   (0)  (0) (1e6) (0)
           (0)   (0)   (0)  (0)  (0)  (1e3) ;
 
+      sub_command_ = controller_nh.subscribe("cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
+
       return true;
     }
 
     void update(const ros::Time& time, const ros::Duration& period)
     {
-      const double vel = 4.0;
-      left_wheel_joint_.setCommand(vel);
-      right_wheel_joint_.setCommand(vel);
       // do stuff coming from cmd_vel interface
-
+      const Commands curr_cmd = *(command_.readFromRT());
+      const double vel_right = curr_cmd.lin + curr_cmd.ang * wheel_separation_ / 2.0;
+      const double vel_left = curr_cmd.lin - curr_cmd.ang * wheel_separation_ / 2.0;
+      left_wheel_joint_.setCommand(vel_left);
+      right_wheel_joint_.setCommand(vel_right);
 
       // PUBLISH ODOMETRY
       // try to publish
@@ -161,26 +165,60 @@ namespace diff_drive_controller{
     void starting(const ros::Time& time)
     {
       // set velocity to 0
+      //      const double vel = 0.0;
+      //      left_wheel_joint_.setCommand(vel);
+      //      right_wheel_joint_.setCommand(vel);
     }
 
     void stopping(const ros::Time& time)
     {
       // set velocity to 0
+      //      const double vel = 0.0;
+      //      left_wheel_joint_.setCommand(vel);
+      //      right_wheel_joint_.setCommand(vel);
     }
 
   private:
+    std::string name_;
+
     struct Commands
     {
-      double position_; // Last commanded position
-      double velocity_; // Last commanded velocity
+      double lin;
+      double ang;
     };
     realtime_tools::RealtimeBuffer<Commands> command_;
     Commands command_struct_;
+    ros::Subscriber sub_command_;
 
     hardware_interface::JointHandle left_wheel_joint_;
     hardware_interface::JointHandle right_wheel_joint_;
 
     boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
+    double wheel_separation_;
+
+  private:
+    void cmdVelCallback(const geometry_msgs::Twist& command)
+    {
+      if(isRunning())
+      {
+        command_struct_.ang = command.angular.z;
+        command_struct_.lin = command.linear.x;
+        command_.writeFromNonRT (command_struct_);
+        ROS_INFO_STREAM("Added values to command. Ang: " << command_struct_.ang
+                        << ", Lin: " << command_struct_.lin);
+      }
+      else
+      {
+        ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
+      }
+    }
+
+    std::string getLeafNamespace(const ros::NodeHandle& nh)
+    {
+      const std::string complete_ns = nh.getNamespace();
+      std::size_t id = complete_ns.find_last_of("/");
+      return complete_ns.substr(id + 1);
+    }
   };
 
   PLUGINLIB_DECLARE_CLASS(diff_drive_controller, DiffDriveController, diff_drive_controller::DiffDriveController, controller_interface::ControllerBase);

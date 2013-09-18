@@ -10,12 +10,9 @@
 #ifndef ODOMETRY_H_
 #define ODOMETRY_H_
 
-#include <cmath>
-#include <vector>
-#include <boost/concept_check.hpp>
-
 #include <ros/time.h>
 #include <geometry_msgs/Point32.h>
+#include <cmath>
 
 /**
  * Class to handle odometry reading (2D oriented position with related timestamp)
@@ -69,30 +66,25 @@ namespace diff_drive_controller{
     }
 
     /**
-      * Function to update the odometry based on the speed and jog of the robot
-      * @param speed : linear velocity m/s * DT (linear desplacement) computed by encoders
-      * @param jog   : angular velocity rad/s * DT (angular desplacement) computed by encoders
-      * @param time  : timestamp of the measured speed and jog
+      * Function to update the odometry based on the velocities of the robot
+      * @param linear : linear velocity m/s * DT (linear desplacement) computed by encoders
+      * @param angular   : angular velocity rad/s * DT (angular desplacement) computed by encoders
+      * @param time  : timestamp of the measured velocities
       */
-    inline bool integrate(const double& speed, const double& jog, const ros::Time &time)
+    inline bool integrate(const double& linear, const double& angular, const ros::Time &time)
     {
       double deltaTime = (time - _timestamp).toSec();
-      if( deltaTime > 0.0001)
+      if(deltaTime > 0.0001)
       {
         _timestamp = time;
-        integrationByRungeKutta(speed, jog);
-        _linear = speed / deltaTime;
-        _angular = jog / deltaTime;
+        integrationByRungeKutta(linear, angular);
+        _linear = linear / deltaTime;
+        _angular = angular / deltaTime;
         return true;
       }
       else
         return false;
     }
-
-    //    inline void setHeading(double angle)
-    //    {
-    //      _value.set( _value.x, _value.y, angle );
-    //    }
 
     inline double getHeading() const
     {
@@ -123,43 +115,43 @@ namespace diff_drive_controller{
       _timestamp = time;
     }
 
-    /** Retrieves the speed value **/
+    /** Retrieves the linear velocity value **/
     inline double getLinear() const
     {
       return _linear;
     }
 
-    /** Retrieves the jog value **/
+    /** Retrieves the angular velocity value **/
     inline double getAngular() const
     {
       return _angular;
     }
 
-    inline void setSpeeds (double speed, double jog)
+    inline void setSpeeds (double linear, double angular)
     {
-      _linear = speed;
-      _angular = jog;
+      _linear = linear;
+      _angular = angular;
     }
 
   private:
 
     /**
      * One possible integration method provided by the class
-     * @param speed
-     * @param jog
+     * @param linear
+     * @param angular
      */
-    inline void integrationByRungeKutta(const double& speed, const double& jog)
+    inline void integrationByRungeKutta(const double& linear, const double& angular)
     {
-      double direction = _value.z + jog/2.0;
+      double direction = _value.z + angular/2.0;
 
       /// Normalization of angle between -Pi and Pi
-      /// @attention the assumption here is that between two integration step the total jog cannot be bigger than Pi
+      /// @attention the assumption here is that between two integration step the total angular cannot be bigger than Pi
       //direction = atan2(sin(direction),cos(direction));
 
       /// RUNGE-KUTTA 2nd ORDER INTEGRATION
-      _value.x += speed * cos(direction);
-      _value.y += speed * sin(direction);
-      _value.z += jog;
+      _value.x += linear * cos(direction);
+      _value.y += linear * sin(direction);
+      _value.z += angular;
 
       /// Normalization of angle between -Pi and Pi
       _value.z = atan2(sin(_value.z),cos(_value.z));
@@ -167,32 +159,32 @@ namespace diff_drive_controller{
 
     /**
      * Other possible integration method provided by the class
-     * @param speed
-     * @param jog
+     * @param linear
+     * @param angular
      */
-    inline void integrationExact(const double& speed, const double& jog)
+    inline void integrationExact(const double& linear, const double& angular)
     {
-      if(fabs(jog) < 10e-3)
-        integrationByRungeKutta(speed, jog);
+      if(fabs(angular) < 10e-3)
+        integrationByRungeKutta(linear, angular);
       else
       {
-        ///EXACT INTEGRATION (should be resolved problems when jogForDelta is zero)
+        ///EXACT INTEGRATION (should be resolved problems when angularForDelta is zero)
         double thetaOld = _value.z;
-        _value.z += jog;
-        _value.x +=   (speed/jog )*( sin(_value.z) - sin(thetaOld) );
-        _value.y +=  -(speed/jog )*( cos(_value.z) - cos(thetaOld) );
+        _value.z += angular;
+        _value.x +=   (linear/angular )*( sin(_value.z) - sin(thetaOld) );
+        _value.y +=  -(linear/angular )*( cos(_value.z) - cos(thetaOld) );
       }
     }
 
     ros::Time _timestamp;
 
     ///(X,Y,Z) : Z is the orientation
-    geometry_msgs::Point32   _value;
+    geometry_msgs::Point32 _value;
 
-    ///last speed used to update odometry
+    ///last linear velocity used to update odometry
     double _linear;
 
-    ///last jog used to update odometry
+    ///last angular velocity used to update odometry
     double _angular;
   };
 }

@@ -120,7 +120,7 @@ namespace diff_drive_controller{
           (0)   (0)  (1e6) (0)  (0)  (0)
           (0)   (0)   (0) (1e6) (0)  (0)
           (0)   (0)   (0)  (0) (1e6) (0)
-          (0)   (0)   (0)  (0)  (0)  (1e3) ;
+          (0)   (0)   (0)  (0)  (0)  (1e3);
       odom_pub_->msg_.twist.twist.linear.y  = 0;
       odom_pub_->msg_.twist.twist.linear.z  = 0;
       odom_pub_->msg_.twist.twist.angular.x = 0;
@@ -131,7 +131,11 @@ namespace diff_drive_controller{
           (0)   (0)  (1e6) (0)  (0)  (0)
           (0)   (0)   (0) (1e6) (0)  (0)
           (0)   (0)   (0)  (0) (1e6) (0)
-          (0)   (0)   (0)  (0)  (0)  (1e3) ;
+          (0)   (0)   (0)  (0)  (0)  (1e3);
+      tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(controller_nh, "/tf", 100));
+      odom_frame.transform.translation.z = 0.0;
+      odom_frame.child_frame_id = "base_footprint";
+      odom_frame.header.frame_id = "odom";
 
       sub_command_ = controller_nh.subscribe("cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
 
@@ -152,9 +156,9 @@ namespace diff_drive_controller{
 
       // PUBLISH ODOMETRY
       // try to publish
-      if (odom_pub_->trylock())
+      if(odom_pub_->trylock())// && tf_odom_pub_->trylock()) // this blocks the publish of tf, wonder why
       {
-        // get wheels speed and jog
+        // estimate linear and angular velocity using joint information
         //----------------------------
         // get current wheel joint positions
         left_wheel_cur_pos_ = left_wheel_joint_.getPosition()*wheel_radius_;
@@ -175,8 +179,8 @@ namespace diff_drive_controller{
 
         if(!odometryReading_.integrate(linear, angular, time))
           return;
-
-        speedEstimation(odometryReading_.getLinear(),odometryReading_.getAngular());
+        // estimate speeds
+        speedEstimation(odometryReading_.getLinear(), odometryReading_.getAngular());
 
         //----------------------------
 
@@ -187,14 +191,18 @@ namespace diff_drive_controller{
         odom_pub_->msg_.pose.pose.orientation = tf::createQuaternionMsgFromYaw(odometryReading_.getHeading());
         odom_pub_->msg_.twist.twist.linear.x  = linear_est_speed_;
         odom_pub_->msg_.twist.twist.angular.z = angular_est_speed_;
-        odom_pub_->unlockAndPublish();
 
         //publish odom tf
-//        geometry_msgs::TransformStamped odom_frame;
-//        odom_frame.header.stamp = time;
-//        odom_frame.header.frame_id = "/base_link";
-//        odom_frame.child_frame_id = "/odom";
-//        tf_odom_pub_->msg_.transforms.push_back(odom_frame);
+        odom_frame.header.stamp = time;
+        odom_frame.transform.translation.x = odometryReading_.getPos().x;
+        odom_frame.transform.translation.y = odometryReading_.getPos().y;
+        odom_frame.transform.rotation = odom_pub_->msg_.pose.pose.orientation;
+        //tf_odom_pub_->msg_.transforms.clear();
+        tf_odom_pub_->msg_.transforms.push_back(odom_frame);
+
+        // release locks and publish
+        odom_pub_->unlockAndPublish();
+        tf_odom_pub_->unlockAndPublish();
       }
     }
 
@@ -239,6 +247,7 @@ namespace diff_drive_controller{
     double left_wheel_cur_pos_, right_wheel_cur_pos_;
     double left_wheel_est_vel_, right_wheel_est_vel_;
     double linear_est_speed_, angular_est_speed_;
+    geometry_msgs::TransformStamped odom_frame;
 
   private:
     void cmdVelCallback(const geometry_msgs::Twist& command)

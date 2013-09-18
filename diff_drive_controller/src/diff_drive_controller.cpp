@@ -248,6 +248,7 @@ namespace diff_drive_controller{
     double left_wheel_est_vel_, right_wheel_est_vel_;
     double linear_est_speed_, angular_est_speed_;
     geometry_msgs::TransformStamped odom_frame;
+    std::list<geometry_msgs::Point> lastSpeeds;
 
   private:
     void cmdVelCallback(const geometry_msgs::Twist& command)
@@ -275,7 +276,6 @@ namespace diff_drive_controller{
 
     void speedEstimation(const double &linear, double const &angular)
     {
-      static std::list<geometry_msgs::Point> lastSpeeds;
       if(lastSpeeds.size()> 10)
         lastSpeeds.pop_front();
 

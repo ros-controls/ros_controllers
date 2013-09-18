@@ -62,8 +62,6 @@ namespace diff_drive_controller{
               ros::NodeHandle& root_nh,
               ros::NodeHandle &controller_nh)
     {
-      ROS_INFO("Init DiffDriveController.");
-
       name_ = getLeafNamespace(controller_nh);
       // get joint names from the parameter server
       std::string left_wheel_name, right_wheel_name;
@@ -101,11 +99,11 @@ namespace diff_drive_controller{
 
       wheel_radius_ = fabs(wheelJointPtr->parent_to_joint_origin_transform.position.z);
       wheel_separation_ = 2.0 * fabs(wheelJointPtr->parent_to_joint_origin_transform.position.y);
-      ROS_INFO_STREAM("Odometry params : wheel separation " << wheel_separation_
+      ROS_DEBUG_STREAM("Odometry params : wheel separation " << wheel_separation_
                       << ", wheel radius " << wheel_radius_);
 
       // get the joint object to use in the realtime loop
-      ROS_INFO_STREAM("Adding left wheel with joint name: " << left_wheel_name
+      ROS_DEBUG_STREAM("Adding left wheel with joint name: " << left_wheel_name
                       << " and right wheel with joint name: " << right_wheel_name);
       left_wheel_joint_ = hw->getHandle(left_wheel_name);  // throws on failure
       right_wheel_joint_ = hw->getHandle(right_wheel_name);  // throws on failure
@@ -249,6 +247,7 @@ namespace diff_drive_controller{
     double linear_est_speed_, angular_est_speed_;
     geometry_msgs::TransformStamped odom_frame;
     std::list<geometry_msgs::Point> lastSpeeds;
+    typedef std::list<geometry_msgs::Point>::const_iterator speeds_it;
 
   private:
     void cmdVelCallback(const geometry_msgs::Twist& command)
@@ -258,7 +257,7 @@ namespace diff_drive_controller{
         command_struct_.ang = command.angular.z;
         command_struct_.lin = command.linear.x;
         command_.writeFromNonRT (command_struct_);
-        ROS_INFO_STREAM("Added values to command. Ang: " << command_struct_.ang
+        ROS_DEBUG_STREAM("Added values to command. Ang: " << command_struct_.ang
                         << ", Lin: " << command_struct_.lin);
       }
       else
@@ -285,9 +284,7 @@ namespace diff_drive_controller{
       lastSpeeds.push_back(speed);
 
       double averageLinearSpeed = 0.0, averageAngularSpeed = 0.0;
-      std::list<geometry_msgs::Point>::const_iterator it;
-
-      for(it=lastSpeeds.begin();it!= lastSpeeds.end(); ++it)
+      for(speeds_it it=lastSpeeds.begin();it!= lastSpeeds.end(); ++it)
       {
         averageLinearSpeed += it->x;
         averageAngularSpeed += it->y;

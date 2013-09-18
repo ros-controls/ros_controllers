@@ -12,6 +12,9 @@
   <depend package="controller_interface"/>
   <depend package="forward_command_controller"/>
   <depend package="realtime_tools"/>
+  <depend package="nav_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="tf"/>
 
   <export>
     <controller_interface plugin="${prefix}/diff_drive_controller_plugins.xml" />

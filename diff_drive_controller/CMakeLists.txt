@@ -8,5 +8,6 @@ project(diff_drive_controller)
   set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
   set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-  rosbuild_add_library(${PROJECT_NAME} src/diff_drive_controller.cpp)
+  rosbuild_add_library(${PROJECT_NAME} src/diff_drive_controller.cpp
+                                       include/diff_drive_controller/odometry.h)
 

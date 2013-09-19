@@ -27,42 +27,42 @@ namespace diff_drive_controller{
       * Value will be set to zero
       */
     Odometry():
-      _timestamp(0),
-      _linear(0.0),
-      _angular(0.0)
+      timestamp_(0),
+      linear_(0.0),
+      angular_(0.0)
     {
-      _value.x = _value .y = _value.z = 0.0;
+      value_.x = value_ .y = value_.z = 0.0;
     }
 
     Odometry(Odometry const &odo) :
-      _timestamp(odo._timestamp),
-      _value(odo._value),
-      _linear(odo._linear),
-      _angular(odo._angular)
+      timestamp_(odo.timestamp_),
+      value_(odo.value_),
+      linear_(odo.linear_),
+      angular_(odo.angular_)
     { }
 
     Odometry(geometry_msgs::Point32 const &p) :
-      _timestamp(ros::Time::now()),
-      _value(p),
-      _linear(0.0),
-      _angular(0.0)
+      timestamp_(ros::Time::now()),
+      value_(p),
+      linear_(0.0),
+      angular_(0.0)
     { }
 
     Odometry& operator=(Odometry const &rho)
     {
-      _timestamp = rho._timestamp;
-      _value     = rho._value;
-      _linear     = rho._linear;
-      _angular     = rho._angular;
+      timestamp_ = rho.timestamp_;
+      value_     = rho.value_;
+      linear_     = rho.linear_;
+      angular_     = rho.angular_;
       return *this;
     }
 
     bool operator==(Odometry const &rht)
     {
-      return (_value.x == rht._value.x) &&
-          (_value.y == rht._value.y) &&
-          (_value.z == rht._value.z) &&
-          fabs((_timestamp - rht._timestamp).toSec()) < 0.0001;
+      return (value_.x == rht.value_.x) &&
+          (value_.y == rht.value_.y) &&
+          (value_.z == rht.value_.z) &&
+          fabs((timestamp_ - rht.timestamp_).toSec()) < 0.0001;
     }
 
     /**
@@ -71,66 +71,66 @@ namespace diff_drive_controller{
       * @param angular   : angular velocity rad/s * DT (angular desplacement) computed by encoders
       * @param time  : timestamp of the measured velocities
       */
-    inline bool integrate(const double& linear, const double& angular, const ros::Time &time)
+    bool integrate(const double& linear, const double& angular, const ros::Time &time)
     {
-      double deltaTime = (time - _timestamp).toSec();
+      double deltaTime = (time - timestamp_).toSec();
       if(deltaTime > 0.0001)
       {
-        _timestamp = time;
+        timestamp_ = time;
         integrationByRungeKutta(linear, angular);
-        _linear = linear / deltaTime;
-        _angular = angular / deltaTime;
+        linear_ = linear / deltaTime;
+        angular_ = angular / deltaTime;
         return true;
       }
       else
         return false;
     }
 
-    inline double getHeading() const
+    double getHeading() const
     {
-      return _value.z;
+      return value_.z;
     }
 
     /** Retrieves the odometry value **/
-    inline geometry_msgs::Point32 getPos() const
+    geometry_msgs::Point32 getPos() const
     {
-      return _value;
+      return value_;
     }
 
     /** Sets the odometry value **/
-    inline void setPos(const geometry_msgs::Point32 &pos )
+    void setPos(const geometry_msgs::Point32 &pos )
     {
-      _value = pos;
+      value_ = pos;
     }
 
     /** Retrieves the timestamp value **/
-    inline ros::Time getTimestamp() const
+    ros::Time getTimestamp() const
     {
-      return _timestamp;
+      return timestamp_;
     }
 
     /** Sets the odometry value **/
-    inline void setTimestamp(const ros::Time &time )
+    void setTimestamp(const ros::Time &time )
     {
-      _timestamp = time;
+      timestamp_ = time;
     }
 
     /** Retrieves the linear velocity value **/
-    inline double getLinear() const
+    double getLinear() const
     {
-      return _linear;
+      return linear_;
     }
 
     /** Retrieves the angular velocity value **/
-    inline double getAngular() const
+    double getAngular() const
     {
-      return _angular;
+      return angular_;
     }
 
-    inline void setSpeeds (double linear, double angular)
+    void setSpeeds (double linear, double angular)
     {
-      _linear = linear;
-      _angular = angular;
+      linear_ = linear;
+      angular_ = angular;
     }
 
   private:
@@ -140,21 +140,21 @@ namespace diff_drive_controller{
      * @param linear
      * @param angular
      */
-    inline void integrationByRungeKutta(const double& linear, const double& angular)
+    void integrationByRungeKutta(const double& linear, const double& angular)
     {
-      double direction = _value.z + angular/2.0;
+      double direction = value_.z + angular/2.0;
 
       /// Normalization of angle between -Pi and Pi
       /// @attention the assumption here is that between two integration step the total angular cannot be bigger than Pi
       //direction = atan2(sin(direction),cos(direction));
 
       /// RUNGE-KUTTA 2nd ORDER INTEGRATION
-      _value.x += linear * cos(direction);
-      _value.y += linear * sin(direction);
-      _value.z += angular;
+      value_.x += linear * cos(direction);
+      value_.y += linear * sin(direction);
+      value_.z += angular;
 
       /// Normalization of angle between -Pi and Pi
-      _value.z = atan2(sin(_value.z),cos(_value.z));
+      value_.z = atan2(sin(value_.z),cos(value_.z));
     }
 
     /**
@@ -162,30 +162,30 @@ namespace diff_drive_controller{
      * @param linear
      * @param angular
      */
-    inline void integrationExact(const double& linear, const double& angular)
+    void integrationExact(const double& linear, const double& angular)
     {
       if(fabs(angular) < 10e-3)
         integrationByRungeKutta(linear, angular);
       else
       {
         ///EXACT INTEGRATION (should be resolved problems when angularForDelta is zero)
-        double thetaOld = _value.z;
-        _value.z += angular;
-        _value.x +=   (linear/angular )*( sin(_value.z) - sin(thetaOld) );
-        _value.y +=  -(linear/angular )*( cos(_value.z) - cos(thetaOld) );
+        double thetaOld = value_.z;
+        value_.z += angular;
+        value_.x +=   (linear/angular )*( sin(value_.z) - sin(thetaOld) );
+        value_.y +=  -(linear/angular )*( cos(value_.z) - cos(thetaOld) );
       }
     }
 
-    ros::Time _timestamp;
+    ros::Time timestamp_;
 
     ///(X,Y,Z) : Z is the orientation
-    geometry_msgs::Point32 _value;
+    geometry_msgs::Point32 value_;
 
     ///last linear velocity used to update odometry
-    double _linear;
+    double linear_;
 
     ///last angular velocity used to update odometry
-    double _angular;
+    double angular_;
   };
 }
 #endif /* ODOMETRY_H_ */

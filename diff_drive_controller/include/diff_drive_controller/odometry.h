@@ -34,37 +34,6 @@ namespace diff_drive_controller{
       value_.x = value_ .y = value_.z = 0.0;
     }
 
-    Odometry(Odometry const &odo) :
-      timestamp_(odo.timestamp_),
-      value_(odo.value_),
-      linear_(odo.linear_),
-      angular_(odo.angular_)
-    { }
-
-    Odometry(geometry_msgs::Point32 const &p) :
-      timestamp_(ros::Time::now()),
-      value_(p),
-      linear_(0.0),
-      angular_(0.0)
-    { }
-
-    Odometry& operator=(Odometry const &rho)
-    {
-      timestamp_ = rho.timestamp_;
-      value_     = rho.value_;
-      linear_     = rho.linear_;
-      angular_     = rho.angular_;
-      return *this;
-    }
-
-    bool operator==(Odometry const &rht)
-    {
-      return (value_.x == rht.value_.x) &&
-          (value_.y == rht.value_.y) &&
-          (value_.z == rht.value_.z) &&
-          fabs((timestamp_ - rht.timestamp_).toSec()) < 0.0001;
-    }
-
     bool update(double left_pos, double right_pos, const ros::Time &time)
     {
       // get current wheel joint positions

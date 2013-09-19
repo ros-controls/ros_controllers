@@ -27,9 +27,7 @@ namespace diff_drive_controller{
       * Value will be set to zero
       */
     Odometry():
-      timestamp_(0),
-      linear_(0.0),
-      angular_(0.0)
+      timestamp_(0)
     {
       value_.x = value_ .y = value_.z = 0.0;
     }
@@ -46,7 +44,7 @@ namespace diff_drive_controller{
       left_wheel_old_pos_ = left_wheel_cur_pos_;
       right_wheel_old_pos_ = right_wheel_cur_pos_;
 
-      // compute linear and angular velocity
+      // compute linear and angular diff
       const double linear = (left_wheel_est_vel_ + right_wheel_est_vel_) * 0.5 ;
       const double angular = (right_wheel_est_vel_ - left_wheel_est_vel_) / wheel_separation_;
 
@@ -57,18 +55,14 @@ namespace diff_drive_controller{
 
       // integrate
       double deltaTime = (time - timestamp_).toSec();
-      if(deltaTime > 0.0001)
-      {
-        timestamp_ = time;
-        integrationByRungeKutta(linear, angular);
-        linear_ = linear / deltaTime;
-        angular_ = angular / deltaTime;
-      }
-      else
-        return false;
+      if(deltaTime < 0.0001)
+        return false; // interval too small to integrate with
+
+      timestamp_ = time;
+      integrationByRungeKutta(linear, angular);
 
       // estimate speeds
-      speedEstimation(linear_, angular_);
+      speedEstimation(linear/deltaTime, angular/deltaTime);
 
       return true;
     }
@@ -100,24 +94,6 @@ namespace diff_drive_controller{
     void setTimestamp(const ros::Time &time )
     {
       timestamp_ = time;
-    }
-
-    /** Retrieves the linear velocity value **/
-    double getLinear() const
-    {
-      return linear_;
-    }
-
-    /** Retrieves the angular velocity value **/
-    double getAngular() const
-    {
-      return angular_;
-    }
-
-    void setSpeeds (double linear, double angular)
-    {
-      linear_ = linear;
-      angular_ = angular;
     }
 
     double getLinearEstimated() const
@@ -206,13 +182,6 @@ namespace diff_drive_controller{
 
     ///(X,Y,Z) : Z is the orientation
     geometry_msgs::Point32 value_;
-
-    ///last linear velocity used to update odometry
-    double linear_;
-
-    ///last angular velocity used to update odometry
-    double angular_;
-
 
     double wheel_separation_;
     double wheel_radius_;

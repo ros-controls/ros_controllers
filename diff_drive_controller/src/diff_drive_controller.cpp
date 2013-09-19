@@ -100,11 +100,11 @@ namespace diff_drive_controller{
       wheel_radius_ = fabs(wheelJointPtr->parent_to_joint_origin_transform.position.z);
       wheel_separation_ = 2.0 * fabs(wheelJointPtr->parent_to_joint_origin_transform.position.y);
       ROS_DEBUG_STREAM("Odometry params : wheel separation " << wheel_separation_
-                      << ", wheel radius " << wheel_radius_);
+                       << ", wheel radius " << wheel_radius_);
 
       // get the joint object to use in the realtime loop
       ROS_DEBUG_STREAM("Adding left wheel with joint name: " << left_wheel_name
-                      << " and right wheel with joint name: " << right_wheel_name);
+                       << " and right wheel with joint name: " << right_wheel_name);
       left_wheel_joint_ = hw->getHandle(left_wheel_name);  // throws on failure
       right_wheel_joint_ = hw->getHandle(right_wheel_name);  // throws on failure
 
@@ -152,54 +152,66 @@ namespace diff_drive_controller{
       left_wheel_joint_.setCommand(vel_left);
       right_wheel_joint_.setCommand(vel_right);
 
-      // PUBLISH ODOMETRY
-      // try to publish
-      if(odom_pub_->trylock())// && tf_odom_pub_->trylock()) // this blocks the publish of tf, wonder why
+
+
+      // estimate linear and angular velocity using joint information
+      //----------------------------
+      // get current wheel joint positions
+      left_wheel_cur_pos_ = left_wheel_joint_.getPosition()*wheel_radius_;
+      right_wheel_cur_pos_ = right_wheel_joint_.getPosition()*wheel_radius_;
+      // estimate velocity of wheels using old and current position
+      left_wheel_est_vel_ = left_wheel_cur_pos_ - left_wheel_old_pos_;
+      right_wheel_est_vel_ = right_wheel_cur_pos_ - right_wheel_old_pos_;
+      // update old position with current
+      left_wheel_old_pos_ = left_wheel_cur_pos_;
+      right_wheel_old_pos_ = right_wheel_cur_pos_;
+
+      // compute linear and angular velocity
+      const double linear = (left_wheel_est_vel_ + right_wheel_est_vel_) * 0.5 ;
+      const double angular = (right_wheel_est_vel_ - left_wheel_est_vel_) / wheel_separation_;
+
+      if((fabs(angular) < 1e-15) && (fabs(linear) < 1e-15)) // when both velocities are ~0
       {
-        // estimate linear and angular velocity using joint information
-        //----------------------------
-        // get current wheel joint positions
-        left_wheel_cur_pos_ = left_wheel_joint_.getPosition()*wheel_radius_;
-        right_wheel_cur_pos_ = right_wheel_joint_.getPosition()*wheel_radius_;
-        // estimate velocity of wheels using old and current position
-        left_wheel_est_vel_ = left_wheel_cur_pos_ - left_wheel_old_pos_;
-        right_wheel_est_vel_ = right_wheel_cur_pos_ - right_wheel_old_pos_;
-        // update old position with current
-        left_wheel_old_pos_ = left_wheel_cur_pos_;
-        right_wheel_old_pos_ = right_wheel_cur_pos_;
+        ROS_WARN("Dropped odom: velocities are 0.");
+        return;
+      }
 
-        // compute linear and angular velocity
-        const double linear = (left_wheel_est_vel_ + right_wheel_est_vel_) * 0.5 ;
-        const double angular = (right_wheel_est_vel_ - left_wheel_est_vel_) / wheel_separation_;
+      if(!odometryReading_.integrate(linear, angular, time))
+      {
+        ROS_WARN("Dropped odom: interval too small to integrate.");
+        return;
+      }
+      // estimate speeds
+      speedEstimation(odometryReading_.getLinear(), odometryReading_.getAngular());
 
-        if(!(fabs(angular) > 1e-15) && !(fabs(linear)< 1e-15))
-          return;
+      //----------------------------
 
-        if(!odometryReading_.integrate(linear, angular, time))
-          return;
-        // estimate speeds
-        speedEstimation(odometryReading_.getLinear(), odometryReading_.getAngular());
-
-        //----------------------------
-
-        // populate message
+      // compute and store orientation info
+      const geometry_msgs::Quaternion orientation(
+            tf::createQuaternionMsgFromYaw(odometryReading_.getHeading()));
+      // COMPUTE AND PUBLISH ODOMETRY
+      if(odom_pub_->trylock())
+      {
+        // populate odom message and publish
         odom_pub_->msg_.header.stamp = time;
         odom_pub_->msg_.pose.pose.position.x = odometryReading_.getPos().x;
         odom_pub_->msg_.pose.pose.position.y = odometryReading_.getPos().y;
-        odom_pub_->msg_.pose.pose.orientation = tf::createQuaternionMsgFromYaw(odometryReading_.getHeading());
+        odom_pub_->msg_.pose.pose.orientation = orientation;
         odom_pub_->msg_.twist.twist.linear.x  = linear_est_speed_;
         odom_pub_->msg_.twist.twist.angular.z = angular_est_speed_;
+        odom_pub_->unlockAndPublish();
+      }
 
+      // publish tf /odom frame
+      if(tf_odom_pub_->trylock())
+      {
         //publish odom tf
         odom_frame.header.stamp = time;
         odom_frame.transform.translation.x = odometryReading_.getPos().x;
         odom_frame.transform.translation.y = odometryReading_.getPos().y;
-        odom_frame.transform.rotation = odom_pub_->msg_.pose.pose.orientation;
-        //tf_odom_pub_->msg_.transforms.clear();
+        odom_frame.transform.rotation = orientation;
+        tf_odom_pub_->msg_.transforms.clear();
         tf_odom_pub_->msg_.transforms.push_back(odom_frame);
-
-        // release locks and publish
-        odom_pub_->unlockAndPublish();
         tf_odom_pub_->unlockAndPublish();
       }
     }
@@ -258,7 +270,7 @@ namespace diff_drive_controller{
         command_struct_.lin = command.linear.x;
         command_.writeFromNonRT (command_struct_);
         ROS_DEBUG_STREAM("Added values to command. Ang: " << command_struct_.ang
-                        << ", Lin: " << command_struct_.lin);
+                         << ", Lin: " << command_struct_.lin);
       }
       else
       {

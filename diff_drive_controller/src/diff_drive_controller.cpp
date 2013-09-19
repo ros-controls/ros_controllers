@@ -62,7 +62,9 @@ namespace diff_drive_controller{
               ros::NodeHandle& root_nh,
               ros::NodeHandle &controller_nh)
     {
-      name_ = getLeafNamespace(controller_nh);
+      const std::string complete_ns = controller_nh.getNamespace();
+      std::size_t id = complete_ns.find_last_of("/");
+      name_ = complete_ns.substr(id + 1);
       // get joint names from the parameter server
       std::string left_wheel_name, right_wheel_name;
 
@@ -270,13 +272,6 @@ namespace diff_drive_controller{
       {
         ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
       }
-    }
-
-    std::string getLeafNamespace(const ros::NodeHandle& nh)
-    {
-      const std::string complete_ns = nh.getNamespace();
-      std::size_t id = complete_ns.find_last_of("/");
-      return complete_ns.substr(id + 1);
     }
 
   };

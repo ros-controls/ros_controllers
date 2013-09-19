@@ -63,7 +63,6 @@ else()
       trajectory_msgs
       rostest
       controller_manager
-      xacro
   )
 
   include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
@@ -94,7 +93,6 @@ else()
     trajectory_msgs
     rostest
     controller_manager
-    xacro
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
   )

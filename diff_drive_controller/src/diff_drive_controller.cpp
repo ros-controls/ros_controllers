@@ -69,15 +69,20 @@ namespace diff_drive_controller{
       bool res = controller_nh.hasParam("left_wheel");
       if(!res || !controller_nh.getParam("left_wheel", left_wheel_name))
       {
-        ROS_ERROR("Couldn't retrieve left wheel name from param server.");
+        ROS_ERROR_NAMED(name_, "Couldn't retrieve left wheel name from param server.");
         return false;
       }
       res = controller_nh.hasParam("right_wheel");
       if(!res || !controller_nh.getParam("right_wheel", right_wheel_name))
       {
-        ROS_ERROR("Couldn't retrieve right wheel name from param server.");
+        ROS_ERROR_NAMED(name_, "Couldn't retrieve right wheel name from param server.");
         return false;
       }
+
+      double publish_rate;
+      controller_nh.param("publish_rate", publish_rate, 50.0);
+      ROS_INFO_STREAM_NAMED(name_, "Controller state will be published at " << publish_rate << "Hz.");
+      publish_period_ = ros::Duration(1.0 / publish_rate);
 
       // parse robot description
       const std::string model_param_name = "/robot_description";
@@ -85,7 +90,7 @@ namespace diff_drive_controller{
       std::string robot_model_str="";
       if(!res || !root_nh.getParam(model_param_name,robot_model_str))
       {
-        ROS_ERROR("Robot descripion couldn't be retrieved from param server.");
+        ROS_ERROR_NAMED(name_, "Robot descripion couldn't be retrieved from param server.");
         return false;
       }
 
@@ -99,12 +104,14 @@ namespace diff_drive_controller{
 
       wheel_radius_ = fabs(wheelJointPtr->parent_to_joint_origin_transform.position.z);
       wheel_separation_ = 2.0 * fabs(wheelJointPtr->parent_to_joint_origin_transform.position.y);
-      ROS_DEBUG_STREAM("Odometry params : wheel separation " << wheel_separation_
-                       << ", wheel radius " << wheel_radius_);
+      ROS_DEBUG_STREAM_NAMED(name_,
+                             "Odometry params : wheel separation " << wheel_separation_
+                             << ", wheel radius " << wheel_radius_);
 
       // get the joint object to use in the realtime loop
-      ROS_DEBUG_STREAM("Adding left wheel with joint name: " << left_wheel_name
-                       << " and right wheel with joint name: " << right_wheel_name);
+      ROS_DEBUG_STREAM_NAMED(name_,
+                             "Adding left wheel with joint name: " << left_wheel_name
+                             << " and right wheel with joint name: " << right_wheel_name);
       left_wheel_joint_ = hw->getHandle(left_wheel_name);  // throws on failure
       right_wheel_joint_ = hw->getHandle(right_wheel_name);  // throws on failure
 
@@ -186,33 +193,37 @@ namespace diff_drive_controller{
 
       //----------------------------
 
-      // compute and store orientation info
-      const geometry_msgs::Quaternion orientation(
-            tf::createQuaternionMsgFromYaw(odometryReading_.getHeading()));
-      // COMPUTE AND PUBLISH ODOMETRY
-      if(odom_pub_->trylock())
+      if(last_state_publish_time_ + publish_period_ < time)
       {
-        // populate odom message and publish
-        odom_pub_->msg_.header.stamp = time;
-        odom_pub_->msg_.pose.pose.position.x = odometryReading_.getPos().x;
-        odom_pub_->msg_.pose.pose.position.y = odometryReading_.getPos().y;
-        odom_pub_->msg_.pose.pose.orientation = orientation;
-        odom_pub_->msg_.twist.twist.linear.x  = linear_est_speed_;
-        odom_pub_->msg_.twist.twist.angular.z = angular_est_speed_;
-        odom_pub_->unlockAndPublish();
-      }
+        last_state_publish_time_ += publish_period_;
+        // compute and store orientation info
+        const geometry_msgs::Quaternion orientation(
+              tf::createQuaternionMsgFromYaw(odometryReading_.getHeading()));
+        // COMPUTE AND PUBLISH ODOMETRY
+        if(odom_pub_->trylock())
+        {
+          // populate odom message and publish
+          odom_pub_->msg_.header.stamp = time;
+          odom_pub_->msg_.pose.pose.position.x = odometryReading_.getPos().x;
+          odom_pub_->msg_.pose.pose.position.y = odometryReading_.getPos().y;
+          odom_pub_->msg_.pose.pose.orientation = orientation;
+          odom_pub_->msg_.twist.twist.linear.x  = linear_est_speed_;
+          odom_pub_->msg_.twist.twist.angular.z = angular_est_speed_;
+          odom_pub_->unlockAndPublish();
+        }
 
-      // publish tf /odom frame
-      if(tf_odom_pub_->trylock())
-      {
-        //publish odom tf
-        odom_frame.header.stamp = time;
-        odom_frame.transform.translation.x = odometryReading_.getPos().x;
-        odom_frame.transform.translation.y = odometryReading_.getPos().y;
-        odom_frame.transform.rotation = orientation;
-        tf_odom_pub_->msg_.transforms.clear();
-        tf_odom_pub_->msg_.transforms.push_back(odom_frame);
-        tf_odom_pub_->unlockAndPublish();
+        // publish tf /odom frame
+        if(tf_odom_pub_->trylock())
+        {
+          //publish odom tf
+          odom_frame.header.stamp = time;
+          odom_frame.transform.translation.x = odometryReading_.getPos().x;
+          odom_frame.transform.translation.y = odometryReading_.getPos().y;
+          odom_frame.transform.rotation = orientation;
+          tf_odom_pub_->msg_.transforms.clear();
+          tf_odom_pub_->msg_.transforms.push_back(odom_frame);
+          tf_odom_pub_->unlockAndPublish();
+        }
       }
     }
 
@@ -222,6 +233,8 @@ namespace diff_drive_controller{
       const double vel = 0.0;
       left_wheel_joint_.setCommand(vel);
       right_wheel_joint_.setCommand(vel);
+
+      last_state_publish_time_ = time;
     }
 
     void stopping(const ros::Time& time)
@@ -235,6 +248,15 @@ namespace diff_drive_controller{
   private:
     std::string name_;
 
+    // publish rate related
+    ros::Duration publish_period_;
+    ros::Time last_state_publish_time_;
+
+    // hardware handles
+    hardware_interface::JointHandle left_wheel_joint_;
+    hardware_interface::JointHandle right_wheel_joint_;
+
+    // cmd_vel related
     struct Commands
     {
       double lin;
@@ -244,12 +266,10 @@ namespace diff_drive_controller{
     Commands command_struct_;
     ros::Subscriber sub_command_;
 
-    hardware_interface::JointHandle left_wheel_joint_;
-    hardware_interface::JointHandle right_wheel_joint_;
 
+    // odometry related
     boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
     boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
-
     Odometry odometryReading_;
     double wheel_separation_;
     double wheel_radius_;

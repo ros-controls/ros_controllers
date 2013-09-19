@@ -35,11 +35,11 @@ namespace diff_drive_controller{
     bool update(double left_pos, double right_pos, const ros::Time &time)
     {
       // get current wheel joint positions
-      left_wheel_cur_pos_ = left_pos*wheel_radius_;
-      right_wheel_cur_pos_ = right_pos*wheel_radius_;
+      const double left_wheel_cur_pos_ = left_pos*wheel_radius_;
+      const double right_wheel_cur_pos_ = right_pos*wheel_radius_;
       // estimate velocity of wheels using old and current position
-      left_wheel_est_vel_ = left_wheel_cur_pos_ - left_wheel_old_pos_;
-      right_wheel_est_vel_ = right_wheel_cur_pos_ - right_wheel_old_pos_;
+      const double left_wheel_est_vel_ = left_wheel_cur_pos_ - left_wheel_old_pos_;
+      const double right_wheel_est_vel_ = right_wheel_cur_pos_ - right_wheel_old_pos_;
       // update old position with current
       left_wheel_old_pos_ = left_wheel_cur_pos_;
       right_wheel_old_pos_ = right_wheel_cur_pos_;
@@ -179,15 +179,12 @@ namespace diff_drive_controller{
     }
 
     ros::Time timestamp_;
-
     ///(X,Y,Z) : Z is the orientation
     geometry_msgs::Point32 value_;
 
     double wheel_separation_;
     double wheel_radius_;
     double left_wheel_old_pos_, right_wheel_old_pos_;
-    double left_wheel_cur_pos_, right_wheel_cur_pos_;
-    double left_wheel_est_vel_, right_wheel_est_vel_;
     double linear_est_speed_, angular_est_speed_;
     std::list<geometry_msgs::Point> lastSpeeds;
     typedef std::list<geometry_msgs::Point>::const_iterator speeds_it;

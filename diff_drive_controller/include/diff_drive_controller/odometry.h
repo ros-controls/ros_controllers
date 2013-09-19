@@ -14,24 +14,37 @@
 #include <geometry_msgs/Point32.h>
 #include <cmath>
 
-/**
- * Class to handle odometry reading (2D oriented position with related timestamp)
- */
 namespace diff_drive_controller{
+  /**
+   * @brief The Odometry class handles odometry readings
+   *  (2D oriented position with related timestamp)
+   */
   class Odometry
   {
   public:
     /**
-      * Default contructor
       * Timestamp will get the current time value
       * Value will be set to zero
       */
     Odometry():
-      timestamp_(0)
+      timestamp_(0),
+      wheel_separation_(0.0),
+      wheel_radius_(0.0),
+      left_wheel_old_pos_(0.0),
+      right_wheel_old_pos_(0.0),
+      linear_est_speed_(0.0),
+      angular_est_speed_(0.0)
     {
       value_.x = value_ .y = value_.z = 0.0;
     }
 
+    /**
+     * @brief update the odometry class with latest wheels position
+     * @param left_pos
+     * @param right_pos
+     * @param time
+     * @return
+     */
     bool update(double left_pos, double right_pos, const ros::Time &time)
     {
       // get current wheel joint positions
@@ -54,7 +67,7 @@ namespace diff_drive_controller{
       }
 
       // integrate
-      double deltaTime = (time - timestamp_).toSec();
+      const double deltaTime = (time - timestamp_).toSec();
       if(deltaTime < 0.0001)
         return false; // interval too small to integrate with
 
@@ -72,25 +85,21 @@ namespace diff_drive_controller{
       return value_.z;
     }
 
-    /** Retrieves the odometry value **/
     geometry_msgs::Point32 getPos() const
     {
       return value_;
     }
 
-    /** Sets the odometry value **/
     void setPos(const geometry_msgs::Point32 &pos )
     {
       value_ = pos;
     }
 
-    /** Retrieves the timestamp value **/
     ros::Time getTimestamp() const
     {
       return timestamp_;
     }
 
-    /** Sets the odometry value **/
     void setTimestamp(const ros::Time &time )
     {
       timestamp_ = time;
@@ -115,7 +124,7 @@ namespace diff_drive_controller{
   private:
 
     /**
-     * Function to update the odometry based on the velocities of the robot
+     * @brief Function to update the odometry based on the velocities of the robot
      * @param linear : linear velocity m/s * DT (linear desplacement) computed by encoders
      * @param angular   : angular velocity rad/s * DT (angular desplacement) computed by encoders
      * @param time  : timestamp of the measured velocities
@@ -139,7 +148,7 @@ namespace diff_drive_controller{
     }
 
     /**
-     * Other possible integration method provided by the class
+     * @brief Other possible integration method provided by the class
      * @param linear
      * @param angular
      */
@@ -157,6 +166,11 @@ namespace diff_drive_controller{
       }
     }
 
+    /**
+     * @brief Estimate speed based on averaging last 10 measurements
+     * @param linear
+     * @param angular
+     */
     void speedEstimation(double linear, double angular)
     {
       if(lastSpeeds.size()> 10)

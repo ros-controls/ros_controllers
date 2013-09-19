@@ -81,7 +81,8 @@ namespace diff_drive_controller{
 
       double publish_rate;
       controller_nh.param("publish_rate", publish_rate, 50.0);
-      ROS_INFO_STREAM_NAMED(name_, "Controller state will be published at " << publish_rate << "Hz.");
+      ROS_INFO_STREAM_NAMED(name_, "Controller state will be published at "
+                            << publish_rate << "Hz.");
       publish_period_ = ros::Duration(1.0 / publish_rate);
 
       // parse robot description
@@ -98,12 +99,14 @@ namespace diff_drive_controller{
       boost::shared_ptr<const urdf::Joint> wheelJointPtr(model_ptr->getJoint(left_wheel_name));
       if(!wheelJointPtr.get())
       {
-        ROS_ERROR_STREAM(left_wheel_name << " couldn't be retrieved from model description");
+        ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
+                               << " couldn't be retrieved from model description");
         return false;
       }
 
       wheel_radius_ = fabs(wheelJointPtr->parent_to_joint_origin_transform.position.z);
       wheel_separation_ = 2.0 * fabs(wheelJointPtr->parent_to_joint_origin_transform.position.y);
+      odometry_.setWheelParams(wheel_separation_, wheel_radius_);
       ROS_DEBUG_STREAM_NAMED(name_,
                              "Odometry params : wheel separation " << wheel_separation_
                              << ", wheel radius " << wheel_radius_);
@@ -159,66 +162,42 @@ namespace diff_drive_controller{
       left_wheel_joint_.setCommand(vel_left);
       right_wheel_joint_.setCommand(vel_right);
 
-
-
+      // COMPUTE AND PUBLISH ODOMETRY
       // estimate linear and angular velocity using joint information
       //----------------------------
-      // get current wheel joint positions
-      left_wheel_cur_pos_ = left_wheel_joint_.getPosition()*wheel_radius_;
-      right_wheel_cur_pos_ = right_wheel_joint_.getPosition()*wheel_radius_;
-      // estimate velocity of wheels using old and current position
-      left_wheel_est_vel_ = left_wheel_cur_pos_ - left_wheel_old_pos_;
-      right_wheel_est_vel_ = right_wheel_cur_pos_ - right_wheel_old_pos_;
-      // update old position with current
-      left_wheel_old_pos_ = left_wheel_cur_pos_;
-      right_wheel_old_pos_ = right_wheel_cur_pos_;
-
-      // compute linear and angular velocity
-      const double linear = (left_wheel_est_vel_ + right_wheel_est_vel_) * 0.5 ;
-      const double angular = (right_wheel_est_vel_ - left_wheel_est_vel_) / wheel_separation_;
-
-      if((fabs(angular) < 1e-15) && (fabs(linear) < 1e-15)) // when both velocities are ~0
+      if(!odometry_.update(left_wheel_joint_.getPosition(), right_wheel_joint_.getPosition(), time))
       {
-        ROS_WARN("Dropped odom: velocities are 0.");
+        ROS_WARN_NAMED(name_,
+                       "Dropped odom: period too small to integrate or no change.");
         return;
       }
 
-      if(!odometryReading_.integrate(linear, angular, time))
-      {
-        ROS_WARN("Dropped odom: interval too small to integrate.");
-        return;
-      }
-      // estimate speeds
-      speedEstimation(odometryReading_.getLinear(), odometryReading_.getAngular());
-
-      //----------------------------
-
+      // publish odometry message
       if(last_state_publish_time_ + publish_period_ < time)
       {
         last_state_publish_time_ += publish_period_;
         // compute and store orientation info
         const geometry_msgs::Quaternion orientation(
-              tf::createQuaternionMsgFromYaw(odometryReading_.getHeading()));
-        // COMPUTE AND PUBLISH ODOMETRY
+              tf::createQuaternionMsgFromYaw(odometry_.getHeading()));
+
+        // populate odom message and publish
         if(odom_pub_->trylock())
         {
-          // populate odom message and publish
           odom_pub_->msg_.header.stamp = time;
-          odom_pub_->msg_.pose.pose.position.x = odometryReading_.getPos().x;
-          odom_pub_->msg_.pose.pose.position.y = odometryReading_.getPos().y;
+          odom_pub_->msg_.pose.pose.position.x = odometry_.getPos().x;
+          odom_pub_->msg_.pose.pose.position.y = odometry_.getPos().y;
           odom_pub_->msg_.pose.pose.orientation = orientation;
-          odom_pub_->msg_.twist.twist.linear.x  = linear_est_speed_;
-          odom_pub_->msg_.twist.twist.angular.z = angular_est_speed_;
+          odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinearEstimated();
+          odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngularEstimated();
           odom_pub_->unlockAndPublish();
         }
 
         // publish tf /odom frame
         if(tf_odom_pub_->trylock())
         {
-          //publish odom tf
           odom_frame.header.stamp = time;
-          odom_frame.transform.translation.x = odometryReading_.getPos().x;
-          odom_frame.transform.translation.y = odometryReading_.getPos().y;
+          odom_frame.transform.translation.x = odometry_.getPos().x;
+          odom_frame.transform.translation.y = odometry_.getPos().y;
           odom_frame.transform.rotation = orientation;
           tf_odom_pub_->msg_.transforms.clear();
           tf_odom_pub_->msg_.transforms.push_back(odom_frame);
@@ -234,6 +213,7 @@ namespace diff_drive_controller{
       left_wheel_joint_.setCommand(vel);
       right_wheel_joint_.setCommand(vel);
 
+      // register starting time used to keep fixed rate
       last_state_publish_time_ = time;
     }
 
@@ -266,20 +246,13 @@ namespace diff_drive_controller{
     Commands command_struct_;
     ros::Subscriber sub_command_;
 
-
     // odometry related
     boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
     boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
-    Odometry odometryReading_;
+    Odometry odometry_;
     double wheel_separation_;
     double wheel_radius_;
-    double left_wheel_old_pos_, right_wheel_old_pos_;
-    double left_wheel_cur_pos_, right_wheel_cur_pos_;
-    double left_wheel_est_vel_, right_wheel_est_vel_;
-    double linear_est_speed_, angular_est_speed_;
     geometry_msgs::TransformStamped odom_frame;
-    std::list<geometry_msgs::Point> lastSpeeds;
-    typedef std::list<geometry_msgs::Point>::const_iterator speeds_it;
 
   private:
     void cmdVelCallback(const geometry_msgs::Twist& command)
@@ -289,8 +262,9 @@ namespace diff_drive_controller{
         command_struct_.ang = command.angular.z;
         command_struct_.lin = command.linear.x;
         command_.writeFromNonRT (command_struct_);
-        ROS_DEBUG_STREAM("Added values to command. Ang: " << command_struct_.ang
-                         << ", Lin: " << command_struct_.lin);
+        ROS_DEBUG_STREAM_NAMED(name_,
+                               "Added values to command. Ang: " << command_struct_.ang
+                               << ", Lin: " << command_struct_.lin);
       }
       else
       {
@@ -305,26 +279,6 @@ namespace diff_drive_controller{
       return complete_ns.substr(id + 1);
     }
 
-    void speedEstimation(const double &linear, double const &angular)
-    {
-      if(lastSpeeds.size()> 10)
-        lastSpeeds.pop_front();
-
-      geometry_msgs::Point speed;
-      speed.x = linear;
-      speed.y = angular;
-      lastSpeeds.push_back(speed);
-
-      double averageLinearSpeed = 0.0, averageAngularSpeed = 0.0;
-      for(speeds_it it=lastSpeeds.begin();it!= lastSpeeds.end(); ++it)
-      {
-        averageLinearSpeed += it->x;
-        averageAngularSpeed += it->y;
-      }
-
-      linear_est_speed_  =  averageLinearSpeed/lastSpeeds.size();
-      angular_est_speed_ =  averageAngularSpeed/lastSpeeds.size();
-    }
   };
 
   PLUGINLIB_DECLARE_CLASS(diff_drive_controller, DiffDriveController, diff_drive_controller::DiffDriveController, controller_interface::ControllerBase);

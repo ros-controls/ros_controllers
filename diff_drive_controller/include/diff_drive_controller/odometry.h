@@ -65,14 +65,28 @@ namespace diff_drive_controller{
           fabs((timestamp_ - rht.timestamp_).toSec()) < 0.0001;
     }
 
-    /**
-      * Function to update the odometry based on the velocities of the robot
-      * @param linear : linear velocity m/s * DT (linear desplacement) computed by encoders
-      * @param angular   : angular velocity rad/s * DT (angular desplacement) computed by encoders
-      * @param time  : timestamp of the measured velocities
-      */
-    bool integrate(const double& linear, const double& angular, const ros::Time &time)
+    bool update(double left_pos, double right_pos, const ros::Time &time)
     {
+      // get current wheel joint positions
+      left_wheel_cur_pos_ = left_pos*wheel_radius_;
+      right_wheel_cur_pos_ = right_pos*wheel_radius_;
+      // estimate velocity of wheels using old and current position
+      left_wheel_est_vel_ = left_wheel_cur_pos_ - left_wheel_old_pos_;
+      right_wheel_est_vel_ = right_wheel_cur_pos_ - right_wheel_old_pos_;
+      // update old position with current
+      left_wheel_old_pos_ = left_wheel_cur_pos_;
+      right_wheel_old_pos_ = right_wheel_cur_pos_;
+
+      // compute linear and angular velocity
+      const double linear = (left_wheel_est_vel_ + right_wheel_est_vel_) * 0.5 ;
+      const double angular = (right_wheel_est_vel_ - left_wheel_est_vel_) / wheel_separation_;
+
+      if((fabs(angular) < 1e-15) && (fabs(linear) < 1e-15)) // when both velocities are ~0
+      {
+        return false;
+      }
+
+      // integrate
       double deltaTime = (time - timestamp_).toSec();
       if(deltaTime > 0.0001)
       {
@@ -80,10 +94,14 @@ namespace diff_drive_controller{
         integrationByRungeKutta(linear, angular);
         linear_ = linear / deltaTime;
         angular_ = angular / deltaTime;
-        return true;
       }
       else
         return false;
+
+      // estimate speeds
+      speedEstimation(linear_, angular_);
+
+      return true;
     }
 
     double getHeading() const
@@ -133,12 +151,30 @@ namespace diff_drive_controller{
       angular_ = angular;
     }
 
+    double getLinearEstimated() const
+    {
+      return linear_est_speed_;
+    }
+
+    double getAngularEstimated() const
+    {
+      return angular_est_speed_;
+    }
+
+    void setWheelParams(double wheel_separation, double wheel_radius)
+    {
+      wheel_separation_ = wheel_separation;
+      wheel_radius_ = wheel_radius;
+    }
+
   private:
 
     /**
-     * One possible integration method provided by the class
-     * @param linear
-     * @param angular
+     * Function to update the odometry based on the velocities of the robot
+     * @param linear : linear velocity m/s * DT (linear desplacement) computed by encoders
+     * @param angular   : angular velocity rad/s * DT (angular desplacement) computed by encoders
+     * @param time  : timestamp of the measured velocities
+     *
      */
     void integrationByRungeKutta(const double& linear, const double& angular)
     {
@@ -162,7 +198,7 @@ namespace diff_drive_controller{
      * @param linear
      * @param angular
      */
-    void integrationExact(const double& linear, const double& angular)
+    void integrationExact(double linear, double angular)
     {
       if(fabs(angular) < 10e-3)
         integrationByRungeKutta(linear, angular);
@@ -176,6 +212,27 @@ namespace diff_drive_controller{
       }
     }
 
+    void speedEstimation(double linear, double angular)
+    {
+      if(lastSpeeds.size()> 10)
+        lastSpeeds.pop_front();
+
+      geometry_msgs::Point speed;
+      speed.x = linear;
+      speed.y = angular;
+      lastSpeeds.push_back(speed);
+
+      double averageLinearSpeed = 0.0, averageAngularSpeed = 0.0;
+      for(speeds_it it=lastSpeeds.begin();it!= lastSpeeds.end(); ++it)
+      {
+        averageLinearSpeed += it->x;
+        averageAngularSpeed += it->y;
+      }
+
+      linear_est_speed_ = averageLinearSpeed/lastSpeeds.size();
+      angular_est_speed_ = averageAngularSpeed/lastSpeeds.size();
+    }
+
     ros::Time timestamp_;
 
     ///(X,Y,Z) : Z is the orientation
@@ -186,6 +243,16 @@ namespace diff_drive_controller{
 
     ///last angular velocity used to update odometry
     double angular_;
+
+
+    double wheel_separation_;
+    double wheel_radius_;
+    double left_wheel_old_pos_, right_wheel_old_pos_;
+    double left_wheel_cur_pos_, right_wheel_cur_pos_;
+    double left_wheel_est_vel_, right_wheel_est_vel_;
+    double linear_est_speed_, angular_est_speed_;
+    std::list<geometry_msgs::Point> lastSpeeds;
+    typedef std::list<geometry_msgs::Point>::const_iterator speeds_it;
   };
 }
 #endif /* ODOMETRY_H_ */

@@ -1,0 +1,35 @@
+<launch>
+  <!-- Load velocibot model -->
+  <param name="robot_description"
+      command="$(find xacro)/xacro.py '$(find diff_drive_controller)/test/velocibot.xacro'" />
+
+  <!-- Start velocibot -->
+  <node name="velocibot"
+      pkg="diff_drive_controller"
+      type="velocibot"/>
+
+  <!-- Load controller config -->
+  <rosparam command="load" file="$(find diff_drive_controller)/test/velocibot_controllers.yaml" />
+
+  <!-- Spawn controller -->
+  <node name="controller_spawner"
+        pkg="controller_manager" type="spawner" output="screen"
+        args="velocibot_controller" />
+
+  <!-- Rxplot monitoring -->
+  <node name="velocibot_pos_monitor"
+        pkg="rx_plot"
+        type="rx_plot"
+        args="/velocibot_controller/state/desired/positions[0]:positions[1],/velocibot_controller/state/actual/positions[0]:positions[1]" />
+
+  <node name="velocibot_vel_monitor"
+        pkg="rx_plot"
+        type="rx_plot"
+        args="/velocibot_controller/state/desired/velocities[0]:velocities[1],/velocibot_controller/state/actual/velocities[0]:velocities[1]" />
+
+  <!-- Controller test -->
+  <test test-name="diff_drive_controller_test"
+        pkg="diff_drive_controller"
+        type="diff_drive_controller_test"
+        time-limit="80.0"/>
+</launch>

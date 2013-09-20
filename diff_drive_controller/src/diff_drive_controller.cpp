@@ -113,39 +113,54 @@ namespace diff_drive_controller{
                              "Odometry params : wheel separation " << wheel_separation_
                              << ", wheel radius " << wheel_radius_);
 
-      // get the joint object to use in the realtime loop
-      ROS_DEBUG_STREAM_NAMED(name_,
-                             "Adding left wheel with joint name: " << left_wheel_name
-                             << " and right wheel with joint name: " << right_wheel_name);
-      left_wheel_joint_ = hw->getHandle(left_wheel_name);  // throws on failure
-      right_wheel_joint_ = hw->getHandle(right_wheel_name);  // throws on failure
+      // get and check params for covariances
+      XmlRpc::XmlRpcValue pose_cov_list;
+      controller_nh.getParam("pose_covariance_diagonal", pose_cov_list);
+      ROS_ASSERT(pose_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+      ROS_ASSERT(pose_cov_list.size() == 6);
+      for (int i = 0; i < pose_cov_list.size(); ++i)
+        ROS_ASSERT(pose_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+
+      XmlRpc::XmlRpcValue twist_cov_list;
+      controller_nh.getParam("twist_covariance_diagonal", twist_cov_list);
+      ROS_ASSERT(twist_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+      ROS_ASSERT(twist_cov_list.size() == 6);
+      for (int i = 0; i < twist_cov_list.size(); ++i)
+        ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
       // setup odometry realtime publisher + odom message constant fields
       odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odom", 100));
       odom_pub_->msg_.header.frame_id = "odom";
       odom_pub_->msg_.pose.pose.position.z = 0;
       odom_pub_->msg_.pose.covariance = boost::assign::list_of
-          (1e-3) (0)   (0)  (0)  (0)  (0)
-          (0) (1e-3)  (0)  (0)  (0)  (0)
-          (0)   (0)  (1e6) (0)  (0)  (0)
-          (0)   (0)   (0) (1e6) (0)  (0)
-          (0)   (0)   (0)  (0) (1e6) (0)
-          (0)   (0)   (0)  (0)  (0)  (1e3);
+          (static_cast<double>(pose_cov_list[0])) (0)   (0)  (0)  (0)  (0)
+          (0) (static_cast<double>(pose_cov_list[1]))  (0)  (0)  (0)  (0)
+          (0)   (0)  (static_cast<double>(pose_cov_list[2])) (0)  (0)  (0)
+          (0)   (0)   (0) (static_cast<double>(pose_cov_list[3])) (0)  (0)
+          (0)   (0)   (0)  (0) (static_cast<double>(pose_cov_list[4])) (0)
+          (0)   (0)   (0)  (0)  (0)  (static_cast<double>(pose_cov_list[5]));
       odom_pub_->msg_.twist.twist.linear.y  = 0;
       odom_pub_->msg_.twist.twist.linear.z  = 0;
       odom_pub_->msg_.twist.twist.angular.x = 0;
       odom_pub_->msg_.twist.twist.angular.y = 0;
       odom_pub_->msg_.twist.covariance = boost::assign::list_of
-          (1e-3) (0)   (0)  (0)  (0)  (0)
-          (0) (1e-3)  (0)  (0)  (0)  (0)
-          (0)   (0)  (1e6) (0)  (0)  (0)
-          (0)   (0)   (0) (1e6) (0)  (0)
-          (0)   (0)   (0)  (0) (1e6) (0)
-          (0)   (0)   (0)  (0)  (0)  (1e3);
+          (static_cast<double>(twist_cov_list[0])) (0)   (0)  (0)  (0)  (0)
+          (0) (static_cast<double>(twist_cov_list[1]))  (0)  (0)  (0)  (0)
+          (0)   (0)  (static_cast<double>(twist_cov_list[2])) (0)  (0)  (0)
+          (0)   (0)   (0) (static_cast<double>(twist_cov_list[3])) (0)  (0)
+          (0)   (0)   (0)  (0) (static_cast<double>(twist_cov_list[4])) (0)
+          (0)   (0)   (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
       tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(controller_nh, "/tf", 100));
       odom_frame.transform.translation.z = 0.0;
       odom_frame.child_frame_id = "base_footprint";
       odom_frame.header.frame_id = "odom";
+
+      // get the joint object to use in the realtime loop
+      ROS_DEBUG_STREAM_NAMED(name_,
+                             "Adding left wheel with joint name: " << left_wheel_name
+                             << " and right wheel with joint name: " << right_wheel_name);
+      left_wheel_joint_ = hw->getHandle(left_wheel_name);  // throws on failure
+      right_wheel_joint_ = hw->getHandle(right_wheel_name);  // throws on failure
 
       sub_command_ = controller_nh.subscribe("cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
 

@@ -38,10 +38,10 @@
 #include <hardware_interface/robot_hw.h>
 #include <realtime_tools/realtime_buffer.h>
 
-class Velocibot : public hardware_interface::RobotHW
+class Diffbot : public hardware_interface::RobotHW
 {
 public:
-  Velocibot()
+  Diffbot()
   {
     // Intialize raw data
     pos_[0] = 0.0; pos_[1] = 0.0;
@@ -50,25 +50,25 @@ public:
     cmd_[0] = 0.0; cmd_[1] = 0.0;
 
     // Connect and register the joint state interface
-    hardware_interface::JointStateHandle state_handle_1("joint1", &pos_[0], &vel_[0], &eff_[0]);
+    hardware_interface::JointStateHandle state_handle_1("joint_w1", &pos_[0], &vel_[0], &eff_[0]);
     jnt_state_interface_.registerHandle(state_handle_1);
 
-    hardware_interface::JointStateHandle state_handle_2("joint2", &pos_[1], &vel_[1], &eff_[1]);
+    hardware_interface::JointStateHandle state_handle_2("joint_w2", &pos_[1], &vel_[1], &eff_[1]);
     jnt_state_interface_.registerHandle(state_handle_2);
 
     registerInterface(&jnt_state_interface_);
 
     // Connect and register the joint position interface
-    hardware_interface::JointHandle pos_handle_1(jnt_state_interface_.getHandle("joint1"), &cmd_[0]);
-    jnt_vel_interface_.registerHandle(pos_handle_1);
+    hardware_interface::JointHandle vel_handle_1(jnt_state_interface_.getHandle("joint_w1"), &cmd_[0]);
+    jnt_vel_interface_.registerHandle(vel_handle_1);
 
-    hardware_interface::JointHandle pos_handle_2(jnt_state_interface_.getHandle("joint2"), &cmd_[1]);
-    jnt_vel_interface_.registerHandle(pos_handle_2);
+    hardware_interface::JointHandle vel_handle_2(jnt_state_interface_.getHandle("joint_w2"), &cmd_[1]);
+    jnt_vel_interface_.registerHandle(vel_handle_2);
 
     registerInterface(&jnt_vel_interface_);
 
     // Smoothing subscriber
-    smoothing_sub_ = ros::NodeHandle().subscribe("smoothing", 1, &Velocibot::smoothingCB, this);
+    smoothing_sub_ = ros::NodeHandle().subscribe("smoothing", 1, &Diffbot::smoothingCB, this);
     smoothing_.initRT(0.0);
   }
 
@@ -79,14 +79,14 @@ public:
 
   void write()
   {
-    const double smoothing = *(smoothing_.readFromRT());
-    for (unsigned int i = 0; i < 2; ++i)
-    {
-      vel_[i] = (cmd_[i] - pos_[i]) / getPeriod().toSec();
+//    const double smoothing = *(smoothing_.readFromRT());
+//    for (unsigned int i = 0; i < 2; ++i)
+//    {
+//      vel_[i] = (cmd_[i] - pos_[i]) / getPeriod().toSec();
 
-      const double next_pos = smoothing * pos_[i] +  (1.0 - smoothing) * cmd_[i];
-      pos_[i] = next_pos;
-    }
+//      const double next_pos = smoothing * pos_[i] +  (1.0 - smoothing) * cmd_[i];
+//      pos_[i] = next_pos;
+//    }
   }
 
 private:
@@ -105,10 +105,11 @@ private:
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "rrbot");
+  ros::init(argc, argv, "diffbot");
   ros::NodeHandle nh;
 
-  Velocibot robot;
+  Diffbot robot;
+  ROS_INFO_STREAM("period: " << robot.getPeriod().toSec());
   controller_manager::ControllerManager cm(&robot, nh);
 
   ros::Rate rate(1.0 / robot.getPeriod().toSec());

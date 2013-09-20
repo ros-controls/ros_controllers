@@ -12,7 +12,7 @@ project(diff_drive_controller)
                                        include/diff_drive_controller/odometry.h)
 
 
-  rosbuild_add_executable(velocibot test/velocibot.cpp)
+  rosbuild_add_executable(diffbot test/diffbot.cpp)
   rosbuild_add_executable(diff_drive_test test/diff_drive_test.cpp)
   rosbuild_add_gtest_build_flags(diff_drive_test)
   rosbuild_add_rostest(test/diff_drive_controller.test)

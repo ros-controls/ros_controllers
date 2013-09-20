@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<robot name="robot"
+
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz"
+       xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model"
+       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:body="http://playerstage.sourceforge.net/gazebo/xmlschema/#body"
+       xmlns:geom="http://playerstage.sourceforge.net/gazebo/xmlschema/#geom"
+       xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#joint"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:rendering="http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering"
+       xmlns:renderable="http://playerstage.sourceforge.net/gazebo/xmlschema/#renderable"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
+<!--
+Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF-Controller%20Example
+-->
+
+
+        <!-- Links: inertial,visual,collision -->
+        <link name="base_link">
+                <inertial>
+                        <!-- origin is relative -->
+                        <origin xyz="0 0 0" rpy="0 0 0"/>
+                        <mass value="5"/>
+                        <inertia ixx="5" ixy="0" ixz="0" iyy="5" iyz="0" izz="5"/>
+                </inertial>
+                <visual>
+                        <geometry>
+                                <box size="0.5 0.1 0.1"/>
+                        </geometry>
+                </visual>
+                <collision>
+                         <!-- origin is relative -->
+                        <origin xyz="0 0 0"/>
+                        <geometry>
+                                <box size="0.5 0.1 0.1"/>
+                        </geometry>
+                </collision>
+        </link>
+
+        <link name="wheel1">
+                <inertial>
+                        <origin xyz="0 0 0" rpy="0 0 0"/>
+                        <mass value="1"/>
+                        <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
+                </inertial>
+                <visual>
+                        <origin xyz="0 0 0" rpy="0 1.57 0"/>
+                        <geometry>
+                                <cylinder radius="0.110" length="0.086"/>
+                        </geometry>
+                </visual>
+                <collision>
+                        <origin xyz="0 0 0" rpy="0 1.57 0"/>
+                        <geometry>
+                                <cylinder radius="0.110" length="0.086"/>
+                        </geometry>
+                </collision>
+        </link>
+
+        <link name="wheel2">
+                <inertial>
+                        <origin xyz="0 0 0" rpy="0 0 0"/>
+                        <mass value="1"/>
+                        <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
+                </inertial>
+                <visual>
+                        <origin xyz="0 0 0" rpy="0 1.57 0"/>
+                        <geometry>
+                                <cylinder radius="0.110" length="0.086"/>
+                        </geometry>
+                </visual>
+                <collision>
+                        <origin xyz="0 0 0" rpy="0 1.57 0"/>
+                        <geometry>
+                                <cylinder radius="0.110" length="0.086"/>
+                        </geometry>
+                </collision>
+        </link>
+
+
+        <!-- Joints: axis,limit,dynamics,orign,parent,child -->
+        <joint name="joint_w1" type="continuous">
+                <parent link="base_link"/>
+                <child link="wheel1"/>
+                <origin xyz="0.35 0 0"/>
+                <axis xyz="0 1 0"/>
+        </joint>
+
+
+        <joint name="joint_w2" type="continuous">
+                <parent link="base_link"/>
+                <child link="wheel2"/>
+                <origin xyz="-0.35 0 0"/>
+                <axis xyz="0 1 0"/>
+        </joint>
+
+        <!-- Transmission is important to link the joints and the controller -->
+        <transmission name="joint_w1_trans" type="SimpleTransmission">
+                <actuator name="joint_w1_motor" />
+                <joint name="joint_w1" />
+                <mechanicalReduction>1</mechanicalReduction>
+                <motorTorqueConstant>1</motorTorqueConstant>
+        </transmission>
+
+        <transmission name="joint_w2_trans" type="SimpleTransmission">
+                <actuator name="joint_w2_motor" />
+                <joint name="joint_w2" />
+                <mechanicalReduction>1</mechanicalReduction>
+                <motorTorqueConstant>1</motorTorqueConstant>
+        </transmission>
+
+        <!-- Colour -->
+        <gazebo reference="base_link">
+          <material>Gazebo/Green</material>
+        </gazebo>
+
+        <gazebo reference="wheel1">
+          <material>Gazebo/Red</material>
+        </gazebo>
+
+        <gazebo reference="wheel2">
+          <material>Gazebo/Blue</material>
+        </gazebo>
+
+</robot>

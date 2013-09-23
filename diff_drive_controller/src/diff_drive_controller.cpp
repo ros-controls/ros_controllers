@@ -164,7 +164,6 @@ namespace diff_drive_controller{
 
       sub_command_ = root_nh.subscribe("/cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
 
-      ROS_WARN("Finished init.");
       return true;
     }
 

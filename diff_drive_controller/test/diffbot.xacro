@@ -1,22 +1,14 @@
 <?xml version="1.0"?>
-<robot name="robot"
-
-       xmlns:xi="http://www.w3.org/2001/XInclude"
-       xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz"
-       xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model"
-       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
-       xmlns:body="http://playerstage.sourceforge.net/gazebo/xmlschema/#body"
-       xmlns:geom="http://playerstage.sourceforge.net/gazebo/xmlschema/#geom"
-       xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#joint"
-       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
-       xmlns:rendering="http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering"
-       xmlns:renderable="http://playerstage.sourceforge.net/gazebo/xmlschema/#renderable"
-       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
-       xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
+<robot name="robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 <!--
 Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF-Controller%20Example
 -->
-
+        <!-- Constants for robot dimensions -->
+        <xacro:property name="PI" value="3.1415926535897931"/>
+        <xacro:property name="width" value="0.5" /> <!-- Square dimensions (widthxwidth) of beams -->
+        <xacro:property name="wheel_radius" value="0.11" /> <!-- Link 1 -->
+        <xacro:property name="thickness" value="0.086" /> <!-- Link 2 -->
+        <xacro:property name="axel_offset" value="0.05" /> <!-- Space btw top of beam and the each joint -->
 
         <!-- Links: inertial,visual,collision -->
         <link name="base_link">
@@ -28,17 +20,38 @@ Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF
                 </inertial>
                 <visual>
                         <geometry>
-                                <box size="0.5 0.1 0.1"/>
+                                <box size="${width} 0.1 0.1"/>
                         </geometry>
                 </visual>
                 <collision>
                          <!-- origin is relative -->
                         <origin xyz="0 0 0"/>
                         <geometry>
-                                <box size="0.5 0.1 0.1"/>
+                                <box size="${width} 0.1 0.1"/>
                         </geometry>
                 </collision>
         </link>
+
+
+        <link name="base_footprint">
+                <visual>
+                        <geometry>
+                                <sphere radius="0.01"/>
+                        </geometry>
+                </visual>
+                <collision>
+                        <origin xyz="0 0 0"/>
+                        <geometry>
+                                <sphere radius="0.00000001"/>
+                        </geometry>
+                </collision>
+        </link>
+        <joint name="base_footprint_joint" type="fixed">
+                <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
+                <child link="base_link"/>
+                <parent link="base_footprint"/>
+        </joint>
+
 
         <link name="wheel1">
                 <inertial>
@@ -47,18 +60,25 @@ Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF
                         <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
                 </inertial>
                 <visual>
-                        <origin xyz="0 0 0" rpy="0 1.57 0"/>
+                        <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
                         <geometry>
-                                <cylinder radius="0.110" length="0.086"/>
+                                <cylinder radius="${wheel_radius}" length="${thickness}"/>
                         </geometry>
                 </visual>
                 <collision>
-                        <origin xyz="0 0 0" rpy="0 1.57 0"/>
+                        <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
                         <geometry>
-                                <cylinder radius="0.110" length="0.086"/>
+                                <cylinder radius="${wheel_radius}" length="${thickness}"/>
                         </geometry>
                 </collision>
         </link>
+        <joint name="joint_w1" type="continuous">
+                <parent link="base_link"/>
+                <child link="wheel1"/>
+                <origin xyz="${width/2+axel_offset} 0 0" rpy="${-PI/2} 0 0"/>
+                <axis xyz="0 1 0"/>
+        </joint>
+
 
         <link name="wheel2">
                 <inertial>
@@ -67,35 +87,25 @@ Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF
                         <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
                 </inertial>
                 <visual>
-                        <origin xyz="0 0 0" rpy="0 1.57 0"/>
+                        <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
                         <geometry>
-                                <cylinder radius="0.110" length="0.086"/>
+                                <cylinder radius="${wheel_radius}" length="${thickness}"/>
                         </geometry>
                 </visual>
                 <collision>
-                        <origin xyz="0 0 0" rpy="0 1.57 0"/>
+                        <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
                         <geometry>
-                                <cylinder radius="0.110" length="0.086"/>
+                                <cylinder radius="${wheel_radius}" length="${thickness}"/>
                         </geometry>
                 </collision>
         </link>
-
-
-        <!-- Joints: axis,limit,dynamics,orign,parent,child -->
-        <joint name="joint_w1" type="continuous">
-                <parent link="base_link"/>
-                <child link="wheel1"/>
-                <origin xyz="0.35 0 0"/>
-                <axis xyz="0 1 0"/>
-        </joint>
-
-
         <joint name="joint_w2" type="continuous">
                 <parent link="base_link"/>
                 <child link="wheel2"/>
-                <origin xyz="-0.35 0 0"/>
+                <origin xyz="${-width/2-axel_offset} 0 0" rpy="${-PI/2} 0 0"/>
                 <axis xyz="0 1 0"/>
         </joint>
+
 
         <!-- Transmission is important to link the joints and the controller -->
         <transmission name="joint_w1_trans" type="SimpleTransmission">
@@ -123,6 +133,10 @@ Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF
 
         <gazebo reference="wheel2">
           <material>Gazebo/Blue</material>
+        </gazebo>
+
+        <gazebo reference="base_footprint">
+          <material>Gazebo/Purple</material>
         </gazebo>
 
 </robot>

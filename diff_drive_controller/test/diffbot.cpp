@@ -75,18 +75,23 @@ public:
   ros::Time getTime() const {return ros::Time::now();}
   ros::Duration getPeriod() const {return ros::Duration(0.01);}
 
-  void read() {}
+  void read()
+  {
+    ROS_INFO_STREAM("Commands for joints: " << cmd_[0] << ", " << cmd_[1]);
+  }
 
   void write()
   {
-//    const double smoothing = *(smoothing_.readFromRT());
-//    for (unsigned int i = 0; i < 2; ++i)
-//    {
+    //const double smoothing = *(smoothing_.readFromRT());
+    for (unsigned int i = 0; i < 2; ++i)
+    {
 //      vel_[i] = (cmd_[i] - pos_[i]) / getPeriod().toSec();
-
 //      const double next_pos = smoothing * pos_[i] +  (1.0 - smoothing) * cmd_[i];
 //      pos_[i] = next_pos;
-//    }
+
+      pos_[i] += vel_[i]*getPeriod().toSec(); // update position
+      vel_[i] = cmd_[i]; // might add smoothing here later
+    }
   }
 
 private:
@@ -115,7 +120,7 @@ int main(int argc, char **argv)
   ros::Rate rate(1.0 / robot.getPeriod().toSec());
   ros::AsyncSpinner spinner(1);
   spinner.start();
-  while (ros::ok())
+  while(ros::ok())
   {
     robot.read();
     cm.update(robot.getTime(), robot.getPeriod());

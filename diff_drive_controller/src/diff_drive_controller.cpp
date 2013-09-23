@@ -98,20 +98,60 @@ namespace diff_drive_controller{
       }
 
       boost::shared_ptr<urdf::ModelInterface> model_ptr(urdf::parseURDF(robot_model_str));
-      boost::shared_ptr<const urdf::Joint> wheelJointPtr(model_ptr->getJoint(left_wheel_name));
-      if(!wheelJointPtr.get())
+      boost::shared_ptr<const urdf::Joint> leftWheelJointPtr(model_ptr->getJoint(left_wheel_name));
+      if(!leftWheelJointPtr.get())
       {
         ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
                                << " couldn't be retrieved from model description");
         return false;
       }
+      boost::shared_ptr<const urdf::Joint> rightWheelJointPtr(model_ptr->getJoint(right_wheel_name));
+      if(!rightWheelJointPtr.get())
+      {
+        ROS_ERROR_STREAM_NAMED(name_, right_wheel_name
+                               << " couldn't be retrieved from model description");
+        return false;
+      }
 
-      wheel_radius_ = fabs(wheelJointPtr->parent_to_joint_origin_transform.position.z);
-      wheel_separation_ = 2.0 * fabs(wheelJointPtr->parent_to_joint_origin_transform.position.y);
+      ROS_INFO_STREAM("left wheel to origin: " << leftWheelJointPtr->parent_to_joint_origin_transform.position.x << ","
+                      << leftWheelJointPtr->parent_to_joint_origin_transform.position.y << ", "
+                      << leftWheelJointPtr->parent_to_joint_origin_transform.position.z);
+      ROS_INFO_STREAM("left wheel to origin: " << rightWheelJointPtr->parent_to_joint_origin_transform.position.x << ","
+                      << rightWheelJointPtr->parent_to_joint_origin_transform.position.y << ", "
+                      << rightWheelJointPtr->parent_to_joint_origin_transform.position.z);
+
+      wheel_separation_ = euclideanOfVectors(leftWheelJointPtr->parent_to_joint_origin_transform.position,
+                                             rightWheelJointPtr->parent_to_joint_origin_transform.position);
+
+      // looking for base_link
+      boost::shared_ptr<const urdf::Link> base_link;
+      boost::shared_ptr<const urdf::Joint> joint_cursor = leftWheelJointPtr;
+      std::string act_name("");
+      while(act_name != "base_link")
+      {
+        act_name = joint_cursor->parent_link_name;
+        base_link = model_ptr->getLink(act_name);
+        joint_cursor = base_link->parent_joint;
+        ROS_DEBUG_STREAM_NAMED(name_, "transform: "
+                               << joint_cursor->parent_to_joint_origin_transform.position.x << ","
+                               << joint_cursor->parent_to_joint_origin_transform.position.y << ", "
+                               << joint_cursor->parent_to_joint_origin_transform.position.z
+                               << " with act name: " << act_name);
+        if(joint_cursor->parent_link_name == "")
+        {
+          ROS_ERROR("Couldn't find base_footprint in tree!");
+          return false;
+        }
+      }
+      ROS_INFO("Happy together");
+
+      wheel_radius_ = joint_cursor->parent_to_joint_origin_transform.position.z + rightWheelJointPtr->parent_to_joint_origin_transform.position.z;
+
+
       odometry_.setWheelParams(wheel_separation_, wheel_radius_);
-      ROS_DEBUG_STREAM_NAMED(name_,
-                             "Odometry params : wheel separation " << wheel_separation_
-                             << ", wheel radius " << wheel_radius_);
+      ROS_INFO_STREAM_NAMED(name_,
+                            "Odometry params : wheel separation " << wheel_separation_
+                            << ", wheel radius " << wheel_radius_);
 
       // get and check params for covariances
       XmlRpc::XmlRpcValue pose_cov_list;
@@ -156,9 +196,9 @@ namespace diff_drive_controller{
       odom_frame.header.frame_id = "odom";
 
       // get the joint object to use in the realtime loop
-      ROS_DEBUG_STREAM_NAMED(name_,
-                             "Adding left wheel with joint name: " << left_wheel_name
-                             << " and right wheel with joint name: " << right_wheel_name);
+      ROS_INFO_STREAM_NAMED(name_,
+                            "Adding left wheel with joint name: " << left_wheel_name
+                            << " and right wheel with joint name: " << right_wheel_name);
       left_wheel_joint_ = hw->getHandle(left_wheel_name);  // throws on failure
       right_wheel_joint_ = hw->getHandle(right_wheel_name);  // throws on failure
 
@@ -287,6 +327,11 @@ namespace diff_drive_controller{
       {
         ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
       }
+    }
+
+    double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3& vec2) const
+    {
+      return sqrt(pow(vec1.x-vec2.x,2)+pow(vec1.y-vec2.y,2)+pow(vec1.z-vec2.z,2));
     }
 
   };

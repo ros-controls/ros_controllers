@@ -129,7 +129,7 @@ namespace diff_drive_controller{
         ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
       // setup odometry realtime publisher + odom message constant fields
-      odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odom", 100));
+      odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(root_nh, "/odom", 100));
       odom_pub_->msg_.header.frame_id = "odom";
       odom_pub_->msg_.pose.pose.position.z = 0;
       odom_pub_->msg_.pose.covariance = boost::assign::list_of
@@ -162,8 +162,9 @@ namespace diff_drive_controller{
       left_wheel_joint_ = hw->getHandle(left_wheel_name);  // throws on failure
       right_wheel_joint_ = hw->getHandle(right_wheel_name);  // throws on failure
 
-      sub_command_ = controller_nh.subscribe("cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
+      sub_command_ = root_nh.subscribe("/cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
 
+      ROS_WARN("Finished init.");
       return true;
     }
 

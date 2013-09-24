@@ -381,8 +381,8 @@ update(const ros::Time& time, const ros::Duration& period)
     current_state_.velocity[i] = joints_[i].getVelocity();
     // There's no acceleration data available in a joint handle
 
-    state_error_.position[i] = current_state_.position[i] - desired_state_.position[i];
-    state_error_.velocity[i] = current_state_.velocity[i] - desired_state_.velocity[i];
+    state_error_.position[i] = desired_state_.position[i] - current_state_.position[i];
+    state_error_.velocity[i] = desired_state_.velocity[i] - current_state_.velocity[i];
     state_error_.acceleration[i] = 0.0;
   }
 

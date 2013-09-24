@@ -79,17 +79,22 @@ std::vector<std::string> getStrings(const ros::NodeHandle& nh, const std::string
 boost::shared_ptr<urdf::Model> getUrdf(const ros::NodeHandle& nh, const std::string& param_name)
 {
   boost::shared_ptr<urdf::Model> urdf(new urdf::Model);
+
   std::string urdf_str;
-  if (!nh.getParam(param_name, urdf_str))
+  // Check for robot_description in proper namespace
+  if (nh.getParam(param_name, urdf_str))
   {
-    ROS_ERROR_STREAM("Could not find '" << param_name << "' parameter (namespace: " <<
-                     nh.getNamespace() << ").");
-    return boost::shared_ptr<urdf::Model>();
+    if (!urdf->initString(urdf_str))
+    {
+      ROS_ERROR_STREAM("Failed to parse URDF contained in '" << param_name << "' parameter (namespace: " <<
+        nh.getNamespace() << ").");
+      return boost::shared_ptr<urdf::Model>();
+    }
   }
-  if (!urdf->initString(urdf_str))
+  // Check for robot_description in root
+  else if (!urdf->initParam("robot_description"))
   {
-    ROS_ERROR_STREAM("Failed to parse URDF contained in '" << param_name << "' parameter (namespace: " <<
-                     nh.getNamespace() << ").");
+    ROS_ERROR_STREAM("Failed to parse URDF contained in '" << param_name << "' parameter");
     return boost::shared_ptr<urdf::Model>();
   }
   return urdf;
@@ -231,7 +236,7 @@ JointTrajectoryController()
 
 template <class SegmentImpl, class HardwareInterface>
 bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
-init(hardware_interface::PositionJointInterface* hw,
+init(HardwareInterface* hw,
      ros::NodeHandle&                            root_nh,
      ros::NodeHandle&                            controller_nh)
 {

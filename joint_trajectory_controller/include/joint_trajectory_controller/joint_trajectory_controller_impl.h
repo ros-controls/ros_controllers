@@ -189,6 +189,7 @@ checkPathTolerances(const typename Segment::State& state_error,
   const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
   if (!checkStateTolerance(state_error, tolerances.state_tolerance))
   {
+    ROS_ERROR_STREAM_NAMED(name_,"Path state tolerances failed.");
     rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
     rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
     rt_active_goal_.reset();
@@ -221,6 +222,7 @@ checkGoalTolerances(const typename Segment::State& state_error,
   }
   else
   {
+    ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed");
     rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
     rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
     rt_active_goal_.reset();
@@ -361,6 +363,7 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 update(const ros::Time& time, const ros::Duration& period)
 {
+
   // Updated time data
   TimeData time_data;
   time_data.time   = time;                                     // Cache current time
@@ -404,6 +407,7 @@ update(const ros::Time& time, const ros::Duration& period)
     }
     else if (segment_it == --curr_traj.end())
     {
+      ROS_DEBUG_STREAM_NAMED(name_,"Finished executing last segement, checking goal tolerances");
       // Finished executing the LAST segment: check goal tolerances
       checkGoalTolerances(state_error_,
                            *segment_it);
@@ -497,6 +501,8 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 goalCB(GoalHandle gh)
 {
+  ROS_DEBUG_STREAM_NAMED(name_,"Recieved new action goal");
+
   // Precondition: Running controller
   if (!this->isRunning())
   {

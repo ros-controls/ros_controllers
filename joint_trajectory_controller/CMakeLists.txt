@@ -28,13 +28,11 @@ if(USE_ROSBUILD)
 
   rosbuild_add_executable(tolerances_test test/tolerances_test.cpp)
   rosbuild_add_gtest_build_flags(tolerances_test)
-  rosbuild_add_rostest(test/tolerances.test)
 
   rosbuild_add_executable(rrbot test/rrbot.cpp)
 
   rosbuild_add_executable(joint_trajectory_controller_test test/joint_trajectory_controller_test.cpp)
   rosbuild_add_gtest_build_flags(joint_trajectory_controller_test)
-  rosbuild_add_rostest(test/joint_trajectory_controller.test)
 
   # TODO: why is it explicitly needed???, without it the linker fails.
   target_link_libraries(quintic_spline_segment_test     pthread)
@@ -112,20 +110,10 @@ else()
   catkin_add_gtest(init_joint_trajectory_test test/init_joint_trajectory_test.cpp)
   target_link_libraries(init_joint_trajectory_test ${catkin_LIBRARIES})
 
-  add_rostest_gtest(tolerances_test
-                    test/tolerances.test
-                    test/tolerances_test.cpp)
-  target_link_libraries(tolerances_test ${catkin_LIBRARIES})
-
   add_executable(rrbot test/rrbot.cpp)
   target_link_libraries(rrbot ${catkin_LIBRARIES})
 
   add_dependencies(tests rrbot)
-
-  add_rostest_gtest(joint_trajectory_controller_test
-                    test/joint_trajectory_controller.test
-                    test/joint_trajectory_controller_test.cpp)
-  target_link_libraries(joint_trajectory_controller_test ${catkin_LIBRARIES})
 
   # Install
   install(DIRECTORY include/${PROJECT_NAME}/

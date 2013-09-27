@@ -38,6 +38,7 @@
 #include <ros/ros.h>
 
 #include <geometry_msgs/Twist.h>
+#include <nav_msgs/Odometry.h>
 
 // Floating-point value comparison threshold
 const double EPS = 0.01;
@@ -46,16 +47,49 @@ class DiffDriveControllerTest : public ::testing::Test
 {
 public:
 
+  DiffDriveControllerTest()
+    : nh("~"),
+      cmd_pub(nh.advertise<geometry_msgs::Twist>("/cmd_vel", 10)),
+      odom_sub(nh.subscribe("/odom", 10, &DiffDriveControllerTest::odomCallback, this))
+  {
+  }
+
+  nav_msgs::Odometry getLastOdom(){ return last_odom; }
+  void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
 
 private:
+  ros::NodeHandle nh;
+  ros::Publisher cmd_pub;
+  ros::Subscriber odom_sub;
+  nav_msgs::Odometry last_odom;
+
+  void odomCallback(const nav_msgs::Odometry& odom)
+  {
+    last_odom = odom;
+  }
 
 };
 
 // Controller state ROS API ////////////////////////////////////////////////////////////////////////////////////////////
 
-TEST_F(DiffDriveControllerTest, test)
+TEST_F(DiffDriveControllerTest, testForward)
 {
-  ASSERT_TRUE(true);
+  DiffDriveControllerTest test;
+  ros::Duration(0.1).sleep();
+
+  // get initial odom
+  nav_msgs::Odometry old_odom = test.getLastOdom();
+  // send a velocity command of 0.1 m/s
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.1;
+  test.publish(cmd_vel);
+  // wait for 10s
+  ros::Duration(10.0).sleep();
+
+  nav_msgs::Odometry new_odom = test.getLastOdom();
+
+  // check if the robot travelled 1 meter
+  ASSERT_TRUE(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x < 1.0 + EPS);
 }
 
 

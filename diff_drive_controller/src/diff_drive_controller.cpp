@@ -226,7 +226,6 @@ namespace diff_drive_controller{
       {
         ROS_WARN_NAMED(name_,
                        "Dropped odom: period too small to integrate or no change.");
-        return;
       }
 
       // publish odometry message

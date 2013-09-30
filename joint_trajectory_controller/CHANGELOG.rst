@@ -2,6 +2,23 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.4 (2013-09-30)
+------------------
+* Added install rules for plugin.xml
+* Remove PID sign flip.
+  This is now done in the state error computation.
+* Merge pull request `#45 <https://github.com/davetcoleman/ros_controllers/issues/45>`_ from ros-controls/effort_fixes
+  Added check for ~/robot_description and fixed hardware interface abstraction bug
+* Flip state error sign.
+* PID sign was wrong
+* Added check for ~/robot_description and fixed hardware interface abstraction bug
+* Update README.md
+* Create README.md
+* Fix license header string for some files.
+* Less verbose init logging.
+  Statement detailing controller joint count, as well as segment and hardware
+  interface types moved from INFO to DEBUG severity.
+
 0.5.3 (2013-09-04)
 ------------------
 * joint_trajectory_controller: New package implementing a controller for executing joint-space trajectories on a

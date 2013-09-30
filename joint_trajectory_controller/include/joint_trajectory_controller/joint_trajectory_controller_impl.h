@@ -407,7 +407,7 @@ update(const ros::Time& time, const ros::Duration& period)
     }
     else if (segment_it == --curr_traj.end())
     {
-      ROS_DEBUG_STREAM_NAMED(name_,"Finished executing last segement, checking goal tolerances");
+      ROS_DEBUG_STREAM_THROTTLE_NAMED(1,name_,"Finished executing last segement, checking goal tolerances");
       // Finished executing the LAST segment: check goal tolerances
       checkGoalTolerances(state_error_,
                            *segment_it);

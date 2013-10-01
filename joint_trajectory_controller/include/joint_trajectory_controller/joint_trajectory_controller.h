@@ -77,9 +77,9 @@ namespace joint_trajectory_controller
 {
 
 /**
- * \brief Controller for executing joint-space trajectories on a set of joints.
+ * \brief Controller for executing joint-space trajectories on a group of joints.
  *
- * TODO: Point to detailed documentation (ros wiki page?)
+ * \note Non-developer documentation and usage instructions can be found in the package's ROS wiki page.
  *
  * \tparam SegmentImpl Trajectory segment representation to use. The type must comply with the following structure:
  * \code
@@ -201,7 +201,7 @@ private:
   ros::Duration state_publisher_period_;
   ros::Duration action_monitor_period_;
 
-  typename Segment::Time hold_trajectory_duration_;
+  typename Segment::Time stop_trajectory_duration_;
 
   // ROS API
   ros::NodeHandle    controller_nh_;

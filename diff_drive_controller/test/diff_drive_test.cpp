@@ -70,28 +70,26 @@ private:
 
 };
 
-// Controller state ROS API ////////////////////////////////////////////////////////////////////////////////////////////
+// TEST CASES
 
 TEST_F(DiffDriveControllerTest, testForward)
 {
-  DiffDriveControllerTest test;
   ros::Duration(0.1).sleep();
 
   // get initial odom
-  nav_msgs::Odometry old_odom = test.getLastOdom();
+  nav_msgs::Odometry old_odom = getLastOdom();
   // send a velocity command of 0.1 m/s
   geometry_msgs::Twist cmd_vel;
   cmd_vel.linear.x = 0.1;
-  test.publish(cmd_vel);
+  publish(cmd_vel);
   // wait for 10s
   ros::Duration(10.0).sleep();
 
-  nav_msgs::Odometry new_odom = test.getLastOdom();
+  nav_msgs::Odometry new_odom = getLastOdom();
 
   // check if the robot travelled 1 meter
   ASSERT_TRUE(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x < 1.0 + EPS);
 }
-
 
 int main(int argc, char** argv)
 {

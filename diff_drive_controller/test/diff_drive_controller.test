@@ -29,8 +29,8 @@
         args="/diffbot_controller/state/desired/velocities[0]:velocities[1],/velocibot_controller/state/actual/velocities[0]:velocities[1]" />
 -->
   <!-- Controller test -->
-  <test test-name="diff_drive_controller_test"
+  <test test-name="diff_drive_test"
         pkg="diff_drive_controller"
-        type="diff_drive_controller_test"
+        type="diff_drive_test"
         time-limit="80.0"/>
 </launch>

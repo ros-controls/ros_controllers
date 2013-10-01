@@ -1,7 +1,7 @@
 <package>
   <name>joint_trajectory_controller</name>
   <version>0.5.3</version>
-  <description>joint_trajectory_controller</description>
+  <description> Controller for executing joint-space trajectories on a group of joints. </description>
   <maintainer email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</maintainer>
 
   <license>BSD</license>

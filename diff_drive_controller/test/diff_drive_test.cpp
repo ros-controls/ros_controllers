@@ -48,10 +48,14 @@ class DiffDriveControllerTest : public ::testing::Test
 public:
 
   DiffDriveControllerTest()
-    : nh("~"),
-      cmd_pub(nh.advertise<geometry_msgs::Twist>("/cmd_vel", 10)),
+    : cmd_pub(nh.advertise<geometry_msgs::Twist>("/cmd_vel", 10)),
       odom_sub(nh.subscribe("/odom", 10, &DiffDriveControllerTest::odomCallback, this))
   {
+  }
+
+  ~DiffDriveControllerTest()
+  {
+    odom_sub.shutdown();
   }
 
   nav_msgs::Odometry getLastOdom(){ return last_odom; }
@@ -65,6 +69,8 @@ private:
 
   void odomCallback(const nav_msgs::Odometry& odom)
   {
+    std::cerr << "Callback reveived: pos.x: " << odom.pose.pose.position.x <<
+              ", orient.z: " << odom.pose.pose.orientation.z << std::endl;
     last_odom = odom;
   }
 
@@ -74,8 +80,7 @@ private:
 
 TEST_F(DiffDriveControllerTest, testForward)
 {
-  ros::Duration(0.1).sleep();
-
+  ros::Duration(0.5).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
   // send a velocity command of 0.1 m/s
@@ -87,14 +92,33 @@ TEST_F(DiffDriveControllerTest, testForward)
 
   nav_msgs::Odometry new_odom = getLastOdom();
 
-  // check if the robot travelled 1 meter
-  ASSERT_TRUE(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x < 1.0 + EPS);
+  // check if the robot travelled 1 meter in x, changes in the other fields should be ~~0
+  ASSERT_TRUE(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x) < 1.0 + EPS);
+  std::cerr << "X: " << fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x) << std::endl;
+  ASSERT_TRUE(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x) > 1.0 - EPS);
+  ASSERT_TRUE(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y) < EPS);
+  ASSERT_TRUE(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z) < EPS);
+
+  // convert to rpy and test that way
+  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.x - old_odom.pose.pose.orientation.x) < EPS);
+  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.y - old_odom.pose.pose.orientation.y) < EPS);
+  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.z - old_odom.pose.pose.orientation.z) < EPS);
+
+  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x) < 0.1 + EPS);
+  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x) > 0.1 - EPS);
+  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.y - old_odom.twist.twist.linear.y) < EPS);
+  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.z - old_odom.twist.twist.linear.z) < EPS);
+
+  // convert to rpy and test that way
+  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.x - old_odom.twist.twist.angular.x) < EPS);
+  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.y - old_odom.twist.twist.angular.y) < EPS);
+  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z) < EPS);
 }
+
 
 TEST_F(DiffDriveControllerTest, testTurn)
 {
-  ros::Duration(0.1).sleep();
-
+  ros::Duration(0.5).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
   // send a velocity command
@@ -106,8 +130,28 @@ TEST_F(DiffDriveControllerTest, testTurn)
 
   nav_msgs::Odometry new_odom = getLastOdom();
 
-  // check if the robot rotated PI meter
-  ASSERT_TRUE(new_odom.pose.pose.orientation.z - old_odom.pose.pose.orientation.z < M_PI + EPS);
+  // check if the robot rotated PI around z, changes in the other fields should be ~~0
+  ASSERT_TRUE(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x) < EPS);
+  ASSERT_TRUE(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y) < EPS);
+  ASSERT_TRUE(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z) < EPS);
+
+  // convert to rpy and test that way
+  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.x - old_odom.pose.pose.orientation.x) < EPS);
+  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.y - old_odom.pose.pose.orientation.y) < EPS);
+  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.z - old_odom.pose.pose.orientation.z) < M_PI + EPS);
+  std::cerr << "Z: " << fabs(new_odom.pose.pose.orientation.z - old_odom.pose.pose.orientation.z) << std::endl;
+  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.z - old_odom.pose.pose.orientation.z) > M_PI - EPS);
+
+  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x) < EPS);
+  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.y - old_odom.twist.twist.linear.y) < EPS);
+  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.z - old_odom.twist.twist.linear.z) < EPS);
+
+  // convert to rpy and test that way
+  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.x - old_odom.twist.twist.angular.x) < EPS);
+  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.y - old_odom.twist.twist.angular.y) < EPS);
+  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z) < M_PI/10.0 + EPS);
+  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z) > M_PI/10.0 - EPS);
+
 }
 
 int main(int argc, char** argv)
@@ -117,6 +161,7 @@ int main(int argc, char** argv)
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
+  //ros::Duration(0.5).sleep();
   int ret = RUN_ALL_TESTS();
   spinner.stop();
   ros::shutdown();

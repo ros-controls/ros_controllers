@@ -58,7 +58,7 @@ public:
 
     registerInterface(&jnt_state_interface_);
 
-    // Connect and register the joint position interface
+    // Connect and register the joint velocity interface
     hardware_interface::JointHandle vel_handle_1(jnt_state_interface_.getHandle("joint_w1"), &cmd_[0]);
     jnt_vel_interface_.registerHandle(vel_handle_1);
 
@@ -103,7 +103,11 @@ private:
   double eff_[2];
 
   realtime_tools::RealtimeBuffer<double> smoothing_;
-  void smoothingCB(const std_msgs::Float64& smoothing) {smoothing_.writeFromNonRT(smoothing.data);}
+
+  void smoothingCB(const std_msgs::Float64& smoothing)
+  {
+    smoothing_.writeFromNonRT(smoothing.data);
+  }
 
   ros::Subscriber smoothing_sub_;
 };
@@ -114,7 +118,7 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
 
   Diffbot robot;
-  ROS_INFO_STREAM("period: " << robot.getPeriod().toSec());
+  ROS_WARN_STREAM("period: " << robot.getPeriod().toSec());
   controller_manager::ControllerManager cm(&robot, nh);
 
   ros::Rate rate(1.0 / robot.getPeriod().toSec());

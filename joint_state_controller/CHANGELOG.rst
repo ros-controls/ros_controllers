@@ -2,6 +2,10 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.4 (2013-09-30)
+------------------
+* Silence cppcheck warning on unit'ed variables.
+
 0.5.3 (2013-09-04)
 ------------------
 * Removed last manifest.xml

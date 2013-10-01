@@ -91,6 +91,25 @@ TEST_F(DiffDriveControllerTest, testForward)
   ASSERT_TRUE(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x < 1.0 + EPS);
 }
 
+TEST_F(DiffDriveControllerTest, testTurn)
+{
+  ros::Duration(0.1).sleep();
+
+  // get initial odom
+  nav_msgs::Odometry old_odom = getLastOdom();
+  // send a velocity command
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.angular.z = M_PI/10.0;
+  publish(cmd_vel);
+  // wait for 10s
+  ros::Duration(10.0).sleep();
+
+  nav_msgs::Odometry new_odom = getLastOdom();
+
+  // check if the robot rotated PI meter
+  ASSERT_TRUE(new_odom.pose.pose.orientation.z - old_odom.pose.pose.orientation.z < M_PI + EPS);
+}
+
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);

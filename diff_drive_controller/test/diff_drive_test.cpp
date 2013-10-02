@@ -27,11 +27,7 @@
 
 /// \author Bence Magyar
 
-#include <algorithm>
 #include <cmath>
-
-#include <boost/shared_ptr.hpp>
-#include <boost/thread/mutex.hpp>
 
 #include <gtest/gtest.h>
 
@@ -42,15 +38,17 @@
 #include <tf/tf.h>
 
 // Floating-point value comparison threshold
-const double EPS = 0.02;
+const double EPS = 0.01;
+const double POSITION_TOLERANCE = 0.01; // 1 cm-s precision
+const double ORIENTATION_TOLERANCE = 0.03; // 0.57 degree precision
 
 class DiffDriveControllerTest : public ::testing::Test
 {
 public:
 
   DiffDriveControllerTest()
-    : cmd_pub(nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1000)),
-      odom_sub(nh.subscribe("/odom", 1000, &DiffDriveControllerTest::odomCallback, this))
+    : cmd_pub(nh.advertise<geometry_msgs::Twist>("/cmd_vel", 100)),
+      odom_sub(nh.subscribe("/odom", 100, &DiffDriveControllerTest::odomCallback, this))
   {
   }
 
@@ -71,10 +69,10 @@ private:
 
   void odomCallback(const nav_msgs::Odometry& odom)
   {
-    std::cerr << "Callback reveived: pos.x: " << odom.pose.pose.position.x
-              << ", orient.z: " << odom.pose.pose.orientation.z
-              << ", lin_est: " << odom.twist.twist.linear.x
-              << ", ang_est: " << odom.twist.twist.angular.z << std::endl;
+    ROS_INFO_STREAM("Callback reveived: pos.x: " << odom.pose.pose.position.x
+                     << ", orient.z: " << odom.pose.pose.orientation.z
+                     << ", lin_est: " << odom.twist.twist.linear.x
+                     << ", ang_est: " << odom.twist.twist.angular.z);
     last_odom = odom;
   }
 };
@@ -90,10 +88,8 @@ TEST_F(DiffDriveControllerTest, testForward)
   // wait for ROS
   while(!isControllerAlive())
   {
-    std::cerr << ".";
     ros::Duration(0.1).sleep();
   }
-  std::cerr << std::endl << "Odom published, diff_drive controller is alive" << std::endl;
   // zero everything before test
   geometry_msgs::Twist cmd_vel;
   cmd_vel.linear.x = 0.0;
@@ -111,7 +107,7 @@ TEST_F(DiffDriveControllerTest, testForward)
   nav_msgs::Odometry new_odom = getLastOdom();
 
   // check if the robot travelled 1 meter in x, changes in the other fields should be ~~0
-  EXPECT_NEAR(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 1.0, EPS);
+  EXPECT_NEAR(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 1.0, POSITION_TOLERANCE);
   EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
   EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
 
@@ -130,8 +126,6 @@ TEST_F(DiffDriveControllerTest, testForward)
   EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.angular.z), EPS);
-
-  std::cerr << "testForward ended" << std::endl;
 }
 
 TEST_F(DiffDriveControllerTest, testTurn)
@@ -139,10 +133,8 @@ TEST_F(DiffDriveControllerTest, testTurn)
   // wait for ROS
   while(!isControllerAlive())
   {
-    std::cerr << ".";
     ros::Duration(0.1).sleep();
   }
-  std::cerr << std::endl << "Odom published, diff_drive controller is alive" << std::endl;
   // zero everything before test
   geometry_msgs::Twist cmd_vel;
   cmd_vel.linear.x = 0.0;
@@ -171,7 +163,7 @@ TEST_F(DiffDriveControllerTest, testTurn)
   tf::Matrix3x3(btQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
   EXPECT_LT(fabs(roll_new - roll_old), EPS);
   EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
-  EXPECT_NEAR(fabs(yaw_new - yaw_old), M_PI, EPS);
+  EXPECT_NEAR(fabs(yaw_new - yaw_old), M_PI, ORIENTATION_TOLERANCE);
 
   EXPECT_LT(fabs(new_odom.twist.twist.linear.x), EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);

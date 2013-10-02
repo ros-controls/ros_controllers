@@ -86,6 +86,7 @@ public:
   {
     double position_; // Last commanded position
     double velocity_; // Last commanded velocity
+    bool has_velocity_; // false if no velocity command has been specified
   };
 
   JointPositionController();

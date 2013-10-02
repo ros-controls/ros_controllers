@@ -39,6 +39,7 @@
 
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+#include <tf/tf.h>
 
 // Floating-point value comparison threshold
 const double EPS = 0.01;
@@ -78,6 +79,11 @@ private:
 
 // TEST CASES
 
+btQuaternion btQuatFromGeomQuat(const geometry_msgs::Quaternion& quat)
+{
+  return btQuaternion(quat.x, quat.y, quat.z, quat.w);
+}
+
 TEST_F(DiffDriveControllerTest, testForward)
 {
   ros::Duration(0.5).sleep();
@@ -93,26 +99,27 @@ TEST_F(DiffDriveControllerTest, testForward)
   nav_msgs::Odometry new_odom = getLastOdom();
 
   // check if the robot travelled 1 meter in x, changes in the other fields should be ~~0
-  ASSERT_TRUE(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x) < 1.0 + EPS);
-  std::cerr << "X: " << fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x) << std::endl;
-  ASSERT_TRUE(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x) > 1.0 - EPS);
-  ASSERT_TRUE(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y) < EPS);
-  ASSERT_TRUE(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z) < EPS);
+  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 1.0 + EPS);
+  EXPECT_GT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 1.0 - EPS);
+  EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
+  EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
 
   // convert to rpy and test that way
-  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.x - old_odom.pose.pose.orientation.x) < EPS);
-  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.y - old_odom.pose.pose.orientation.y) < EPS);
-  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.z - old_odom.pose.pose.orientation.z) < EPS);
+  double roll_old, pitch_old, yaw_old;
+  double roll_new, pitch_new, yaw_new;
+  tf::Matrix3x3(btQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
+  tf::Matrix3x3(btQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
+  EXPECT_LT(fabs(roll_new - roll_old), EPS);
+  EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
+  EXPECT_LT(fabs(yaw_new - yaw_old), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), 0.1 + EPS);
+  EXPECT_GT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), 0.1 - EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.y - old_odom.twist.twist.linear.y), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.z - old_odom.twist.twist.linear.z), EPS);
 
-  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x) < 0.1 + EPS);
-  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x) > 0.1 - EPS);
-  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.y - old_odom.twist.twist.linear.y) < EPS);
-  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.z - old_odom.twist.twist.linear.z) < EPS);
-
-  // convert to rpy and test that way
-  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.x - old_odom.twist.twist.angular.x) < EPS);
-  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.y - old_odom.twist.twist.angular.y) < EPS);
-  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z) < EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.x - old_odom.twist.twist.angular.x), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.y - old_odom.twist.twist.angular.y), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), EPS);
 }
 
 
@@ -131,27 +138,28 @@ TEST_F(DiffDriveControllerTest, testTurn)
   nav_msgs::Odometry new_odom = getLastOdom();
 
   // check if the robot rotated PI around z, changes in the other fields should be ~~0
-  ASSERT_TRUE(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x) < EPS);
-  ASSERT_TRUE(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y) < EPS);
-  ASSERT_TRUE(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z) < EPS);
+  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), EPS);
+  EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
+  EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
 
   // convert to rpy and test that way
-  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.x - old_odom.pose.pose.orientation.x) < EPS);
-  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.y - old_odom.pose.pose.orientation.y) < EPS);
-  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.z - old_odom.pose.pose.orientation.z) < M_PI + EPS);
-  std::cerr << "Z: " << fabs(new_odom.pose.pose.orientation.z - old_odom.pose.pose.orientation.z) << std::endl;
-  ASSERT_TRUE(fabs(new_odom.pose.pose.orientation.z - old_odom.pose.pose.orientation.z) > M_PI - EPS);
+  double roll_old, pitch_old, yaw_old;
+  double roll_new, pitch_new, yaw_new;
+  tf::Matrix3x3(btQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
+  tf::Matrix3x3(btQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
+  EXPECT_LT(fabs(roll_new - roll_old), EPS);
+  EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
+  EXPECT_LT(fabs(yaw_new - yaw_old), M_PI + EPS);
+  EXPECT_GT(fabs(yaw_new - yaw_old), M_PI - EPS);
 
-  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x) < EPS);
-  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.y - old_odom.twist.twist.linear.y) < EPS);
-  ASSERT_TRUE(fabs(new_odom.twist.twist.linear.z - old_odom.twist.twist.linear.z) < EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.y - old_odom.twist.twist.linear.y), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.z - old_odom.twist.twist.linear.z), EPS);
 
-  // convert to rpy and test that way
-  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.x - old_odom.twist.twist.angular.x) < EPS);
-  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.y - old_odom.twist.twist.angular.y) < EPS);
-  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z) < M_PI/10.0 + EPS);
-  ASSERT_TRUE(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z) > M_PI/10.0 - EPS);
-
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.x - old_odom.twist.twist.angular.x), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.y - old_odom.twist.twist.angular.y), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), M_PI/10.0 + EPS);
+  EXPECT_GT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), M_PI/10.0 - EPS);
 }
 
 int main(int argc, char** argv)

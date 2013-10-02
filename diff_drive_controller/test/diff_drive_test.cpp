@@ -42,15 +42,15 @@
 #include <tf/tf.h>
 
 // Floating-point value comparison threshold
-const double EPS = 0.01;
+const double EPS = 0.02;
 
 class DiffDriveControllerTest : public ::testing::Test
 {
 public:
 
   DiffDriveControllerTest()
-    : cmd_pub(nh.advertise<geometry_msgs::Twist>("/cmd_vel", 10)),
-      odom_sub(nh.subscribe("/odom", 10, &DiffDriveControllerTest::odomCallback, this))
+    : cmd_pub(nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1000)),
+      odom_sub(nh.subscribe("/odom", 1000, &DiffDriveControllerTest::odomCallback, this))
   {
   }
 
@@ -61,6 +61,7 @@ public:
 
   nav_msgs::Odometry getLastOdom(){ return last_odom; }
   void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
+  bool isControllerAlive(){ return (odom_sub.getNumPublishers() > 0) && (cmd_pub.getNumSubscribers() > 0); }
 
 private:
   ros::NodeHandle nh;
@@ -70,27 +71,38 @@ private:
 
   void odomCallback(const nav_msgs::Odometry& odom)
   {
-    std::cerr << "Callback reveived: pos.x: " << odom.pose.pose.position.x <<
-              ", orient.z: " << odom.pose.pose.orientation.z << std::endl;
+    std::cerr << "Callback reveived: pos.x: " << odom.pose.pose.position.x
+              << ", orient.z: " << odom.pose.pose.orientation.z
+              << ", lin_est: " << odom.twist.twist.linear.x
+              << ", ang_est: " << odom.twist.twist.angular.z << std::endl;
     last_odom = odom;
   }
-
 };
-
-// TEST CASES
 
 btQuaternion btQuatFromGeomQuat(const geometry_msgs::Quaternion& quat)
 {
   return btQuaternion(quat.x, quat.y, quat.z, quat.w);
 }
 
+// TEST CASES
 TEST_F(DiffDriveControllerTest, testForward)
 {
-  ros::Duration(0.5).sleep();
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    std::cerr << ".";
+    ros::Duration(0.1).sleep();
+  }
+  std::cerr << std::endl << "Odom published, diff_drive controller is alive" << std::endl;
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(0.1).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
   // send a velocity command of 0.1 m/s
-  geometry_msgs::Twist cmd_vel;
   cmd_vel.linear.x = 0.1;
   publish(cmd_vel);
   // wait for 10s
@@ -99,8 +111,7 @@ TEST_F(DiffDriveControllerTest, testForward)
   nav_msgs::Odometry new_odom = getLastOdom();
 
   // check if the robot travelled 1 meter in x, changes in the other fields should be ~~0
-  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 1.0 + EPS);
-  EXPECT_GT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 1.0 - EPS);
+  EXPECT_NEAR(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 1.0, EPS);
   EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
   EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
 
@@ -112,24 +123,35 @@ TEST_F(DiffDriveControllerTest, testForward)
   EXPECT_LT(fabs(roll_new - roll_old), EPS);
   EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
   EXPECT_LT(fabs(yaw_new - yaw_old), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), 0.1 + EPS);
-  EXPECT_GT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), 0.1 - EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.y - old_odom.twist.twist.linear.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.z - old_odom.twist.twist.linear.z), EPS);
+  EXPECT_NEAR(fabs(new_odom.twist.twist.linear.x), 0.1, EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.z), EPS);
 
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.x - old_odom.twist.twist.angular.x), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.y - old_odom.twist.twist.angular.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z), EPS);
+
+  std::cerr << "testForward ended" << std::endl;
 }
-
 
 TEST_F(DiffDriveControllerTest, testTurn)
 {
-  ros::Duration(0.5).sleep();
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    std::cerr << ".";
+    ros::Duration(0.1).sleep();
+  }
+  std::cerr << std::endl << "Odom published, diff_drive controller is alive" << std::endl;
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(0.1).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
   // send a velocity command
-  geometry_msgs::Twist cmd_vel;
   cmd_vel.angular.z = M_PI/10.0;
   publish(cmd_vel);
   // wait for 10s
@@ -149,17 +171,15 @@ TEST_F(DiffDriveControllerTest, testTurn)
   tf::Matrix3x3(btQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
   EXPECT_LT(fabs(roll_new - roll_old), EPS);
   EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
-  EXPECT_LT(fabs(yaw_new - yaw_old), M_PI + EPS);
-  EXPECT_GT(fabs(yaw_new - yaw_old), M_PI - EPS);
+  EXPECT_NEAR(fabs(yaw_new - yaw_old), M_PI, EPS);
 
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.y - old_odom.twist.twist.linear.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.z - old_odom.twist.twist.linear.z), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.x), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.z), EPS);
 
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.x - old_odom.twist.twist.angular.x), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.y - old_odom.twist.twist.angular.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), M_PI/10.0 + EPS);
-  EXPECT_GT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), M_PI/10.0 - EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
+  EXPECT_NEAR(fabs(new_odom.twist.twist.angular.z), M_PI/10.0, EPS);
 }
 
 int main(int argc, char** argv)

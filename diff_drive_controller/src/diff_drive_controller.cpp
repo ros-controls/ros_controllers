@@ -143,10 +143,8 @@ namespace diff_drive_controller{
           return false;
         }
       }
-      ROS_INFO("Happy together");
 
       wheel_radius_ = joint_cursor->parent_to_joint_origin_transform.position.z + rightWheelJointPtr->parent_to_joint_origin_transform.position.z;
-
 
       odometry_.setWheelParams(wheel_separation_, wheel_radius_);
       ROS_INFO_STREAM_NAMED(name_,

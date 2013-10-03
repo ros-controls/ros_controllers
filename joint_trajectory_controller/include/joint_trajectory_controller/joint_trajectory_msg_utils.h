@@ -64,12 +64,13 @@ private:
 /**
  * \param msg Trajectory message.
  * \param time Trajectory start time, if unspecified in message.
- * \return Start time specified in message. If unspecified (set to zero) return \p time.
+ * \return Start time specified in message. If unspecified (set to zero) return \p time plus a
+ * small offset to account for delays that occur in practice
  */
 inline ros::Time startTime(const trajectory_msgs::JointTrajectory& msg,
                            const ros::Time&                        time)
 {
-  return msg.header.stamp.isZero() ? time : msg.header.stamp;
+  return msg.header.stamp.isZero() ? time + ros::Duration(0.1) : msg.header.stamp;
 }
 
 } // namespace

@@ -275,6 +275,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     {
       ROS_WARN_STREAM("Dropping first " << std::distance(msg.points.begin(), it) <<
                       " trajectory points out of " << msg.points.size() << ", as they occur before the specified time.");
+      ROS_WARN_STREAM("First good traj point after current time: " << it->time_from_start << ". Current time: " << std::fixed << time.toSec() );
     }
   }
 

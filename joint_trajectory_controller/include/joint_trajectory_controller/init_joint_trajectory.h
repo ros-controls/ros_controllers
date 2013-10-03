@@ -268,14 +268,15 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     if (it == msg.points.end())
     {
       ROS_WARN_STREAM("Dropping all " << msg.points.size() <<
-                      " trajectory points, as they occur before the specified time.");
+                      " trajectory points, as they occur before the specified time of " << std::fixed << time.toSec());
+      ROS_WARN_STREAM("Last trajectory point: " << (--it)->time_from_start );
       return Trajectory();
     }
     else
     {
       ROS_WARN_STREAM("Dropping first " << std::distance(msg.points.begin(), it) <<
-                      " trajectory points out of " << msg.points.size() << ", as they occur before the specified time.");
-      ROS_WARN_STREAM("First good traj point after current time: " << it->time_from_start << ". Current time: " << std::fixed << time.toSec() );
+        " trajectory points out of " << msg.points.size() << ", as they occur before the specified time of " << std::fixed << time.toSec());
+      ROS_WARN_STREAM("First good trajectory point after current time: " << it->time_from_start );
     }
   }
 

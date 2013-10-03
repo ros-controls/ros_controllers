@@ -222,6 +222,9 @@ checkGoalTolerances(const typename Segment::State& state_error,
   else
   {
     ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed");
+    // Check the tolerances one more time to output the errors that occures
+    checkStateTolerance(state_error, tolerances.goal_state_tolerance, true);
+
     rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
     rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
     rt_active_goal_.reset();

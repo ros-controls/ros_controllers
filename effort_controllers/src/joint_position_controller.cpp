@@ -124,7 +124,7 @@ double JointPositionController::getPosition()
 void JointPositionController::setCommand(double pos_command)
 {
   command_struct_.position_ = pos_command;
-  command_struct_.velocity_ = 0;
+  command_struct_.has_velocity_ = false; // Flag to ignore the velocity command since our setCommand method did not include it
 
   // the writeFromNonRT can be used in RT, if you have the guarantee that
   //  * no non-rt thread is calling the same function (we're not subscribing to ros callbacks)
@@ -137,6 +137,7 @@ void JointPositionController::setCommand(double pos_command, double vel_command)
 {
   command_struct_.position_ = pos_command;
   command_struct_.velocity_ = vel_command;
+  command_struct_.has_velocity_ = true;
 
   command_.writeFromNonRT(command_struct_);
 }
@@ -149,7 +150,7 @@ void JointPositionController::starting(const ros::Time& time)
   enforceJointLimits(pos_command);
 
   command_struct_.position_ = pos_command;
-  command_struct_.velocity_ = 0;
+  command_struct_.has_velocity_ = false;
 
   command_.initRT(command_struct_);
 
@@ -161,8 +162,10 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   command_struct_ = *(command_.readFromRT());
   double command_position = command_struct_.position_;
   double command_velocity = command_struct_.velocity_;
+  bool has_velocity_ =  command_struct_.has_velocity_;
 
   double error, vel_error;
+  double commanded_effort;
 
   double current_position = joint_.getPosition();
 
@@ -188,12 +191,23 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
     error = command_position - current_position;
   }
 
-  // Compute velocity error. By default we assume desired velocity is 0 (velocity is not required)
-  vel_error = command_velocity - joint_.getVelocity();
+  // Decide which of the two PID computeCommand() methods to call
+  if (has_velocity_)
+  {
+    // Compute velocity error if a non-zero velocity command was given
+    vel_error = command_velocity - joint_.getVelocity();
 
-  // Set the PID error and compute the PID command with nonuniform
-  // time step size. This also allows the user to pass in a precomputed derivative error.
-  double commanded_effort = pid_controller_.computeCommand(error, vel_error, period);
+    // Set the PID error and compute the PID command with nonuniform
+    // time step size. This also allows the user to pass in a precomputed derivative error.
+    commanded_effort = pid_controller_.computeCommand(error, vel_error, period);
+  }
+  else
+  {
+    // Set the PID error and compute the PID command with nonuniform
+    // time step size.
+    commanded_effort = pid_controller_.computeCommand(error, period);
+  }
+
   joint_.setCommand(commanded_effort);
 
   // publish state

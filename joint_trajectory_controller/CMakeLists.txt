@@ -139,5 +139,8 @@ else()
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
+  install(FILES ros_control_plugins.xml
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
   # TODO: Install test resource files as well?
 endif()

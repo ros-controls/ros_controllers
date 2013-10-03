@@ -2,6 +2,9 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.4 (2013-09-30)
+------------------
+
 0.5.3 (2013-09-04)
 ------------------
 * Removed manifest.xml from all packages to prevent rosdep heirarchy issues in Groovy and Hydro

@@ -119,12 +119,16 @@ inline bool checkStateTolerance(const State&                                    
       if( show_errors )
       {
         ROS_ERROR_STREAM_NAMED("tolerances","Path state tolerances failed on joint " << i);
-        ROS_ERROR_STREAM_NAMED("tolerances","Position Error: " << state_error.position[i] << 
-          " Position Tolerance: " << tol.position);
-        ROS_ERROR_STREAM_NAMED("tolerances","Velocity Error: " << state_error.velocity[i] << 
-          " Velocity Tolerance: " << tol.velocity);
-        ROS_ERROR_STREAM_NAMED("tolerances","Acceleration Error: " << state_error.acceleration[i] << 
-          " Acceleration Tolerance: " << tol.acceleration);
+
+        if (tol.position     > 0.0 && abs(state_error.position[i])     > tol.position)
+          ROS_ERROR_STREAM_NAMED("tolerances","Position Error: " << state_error.position[i] <<
+            " Position Tolerance: " << tol.position);
+        if (tol.velocity     > 0.0 && abs(state_error.velocity[i])     > tol.velocity)
+          ROS_ERROR_STREAM_NAMED("tolerances","Velocity Error: " << state_error.velocity[i] <<
+            " Velocity Tolerance: " << tol.velocity);
+        if (tol.acceleration > 0.0 && abs(state_error.acceleration[i]) > tol.acceleration)
+          ROS_ERROR_STREAM_NAMED("tolerances","Acceleration Error: " << state_error.acceleration[i] <<
+            " Acceleration Tolerance: " << tol.acceleration);
       }
       return false;
     }

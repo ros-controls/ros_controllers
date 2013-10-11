@@ -351,5 +351,5 @@ namespace diff_drive_controller{
 
   };
 
-  PLUGINLIB_DECLARE_CLASS(diff_drive_controller, DiffDriveController, diff_drive_controller::DiffDriveController, controller_interface::ControllerBase);
+  PLUGINLIB_EXPORT_CLASS( diff_drive_controller::DiffDriveController, controller_interface::ControllerBase);
 }//namespace

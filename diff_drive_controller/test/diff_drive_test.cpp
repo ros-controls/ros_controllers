@@ -47,8 +47,8 @@ class DiffDriveControllerTest : public ::testing::Test
 public:
 
   DiffDriveControllerTest()
-    : cmd_pub(nh.advertise<geometry_msgs::Twist>("/cmd_vel", 100)),
-      odom_sub(nh.subscribe("/odom", 100, &DiffDriveControllerTest::odomCallback, this))
+    : cmd_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100)),
+      odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
   {
   }
 

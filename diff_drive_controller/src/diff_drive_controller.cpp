@@ -53,9 +53,17 @@
 
 #include <diff_drive_controller/odometry.h>
 
+static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3& vec2)
+{
+  return std::sqrt(std::pow(vec1.x-vec2.x,2) +
+                   std::pow(vec1.y-vec2.y,2) +
+                   std::pow(vec1.z-vec2.z,2));
+}
+
 namespace diff_drive_controller{
 
-  class DiffDriveController : public controller_interface::Controller<hardware_interface::VelocityJointInterface>
+  class DiffDriveController
+      : public controller_interface::Controller<hardware_interface::VelocityJointInterface>
   {
   public:
     bool init(hardware_interface::VelocityJointInterface* hw,
@@ -87,9 +95,151 @@ namespace diff_drive_controller{
                             << publish_rate << "Hz.");
       publish_period_ = ros::Duration(1.0 / publish_rate);
 
+      if(!setOdomParamsFromUrdf(root_nh, left_wheel_name, right_wheel_name))
+        return false;
+
+      setOdomPubFields(root_nh, controller_nh);
+
+      // get the joint object to use in the realtime loop
+      ROS_INFO_STREAM_NAMED(name_,
+                            "Adding left wheel with joint name: " << left_wheel_name
+                            << " and right wheel with joint name: " << right_wheel_name);
+      left_wheel_joint_ = hw->getHandle(left_wheel_name);  // throws on failure
+      right_wheel_joint_ = hw->getHandle(right_wheel_name);  // throws on failure
+
+      sub_command_ = root_nh.subscribe("cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
+
+      return true;
+    }
+
+    void update(const ros::Time& time, const ros::Duration& period)
+    {
+      // MOVE ROBOT
+      // command the wheels according to the messages from the cmd_vel topic
+      const Commands curr_cmd = *(command_.readFromRT());
+      const double vel_right =
+          (curr_cmd.lin + curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
+      const double vel_left =
+          (curr_cmd.lin - curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
+      left_wheel_joint_.setCommand(vel_left);
+      right_wheel_joint_.setCommand(vel_right);
+
+      // COMPUTE AND PUBLISH ODOMETRY
+      // estimate linear and angular velocity using joint information
+      //----------------------------
+      if(!odometry_.update(left_wheel_joint_.getPosition(), right_wheel_joint_.getPosition(), time))
+      {
+        ROS_WARN_NAMED(name_,
+                       "Dropped odom: period too small to integrate or no change.");
+      }
+
+      // publish odometry message
+      if(last_state_publish_time_ + publish_period_ < time)
+      {
+        last_state_publish_time_ += publish_period_;
+        // compute and store orientation info
+        const geometry_msgs::Quaternion orientation(
+              tf::createQuaternionMsgFromYaw(odometry_.getHeading()));
+
+        // populate odom message and publish
+        if(odom_pub_->trylock())
+        {
+          odom_pub_->msg_.header.stamp = time;
+          odom_pub_->msg_.pose.pose.position.x = odometry_.getPos().x;
+          odom_pub_->msg_.pose.pose.position.y = odometry_.getPos().y;
+          odom_pub_->msg_.pose.pose.orientation = orientation;
+          odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinearEstimated();
+          odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngularEstimated();
+          odom_pub_->unlockAndPublish();
+        }
+
+        // publish tf /odom frame
+        if(tf_odom_pub_->trylock())
+        {
+          odom_frame_.header.stamp = time;
+          odom_frame_.transform.translation.x = odometry_.getPos().x;
+          odom_frame_.transform.translation.y = odometry_.getPos().y;
+          odom_frame_.transform.rotation = orientation;
+          tf_odom_pub_->msg_.transforms.clear();
+          tf_odom_pub_->msg_.transforms.push_back(odom_frame_);
+          tf_odom_pub_->unlockAndPublish();
+        }
+      }
+    }
+
+    void starting(const ros::Time& time)
+    {
+      // set velocity to 0
+      const double vel = 0.0;
+      left_wheel_joint_.setCommand(vel);
+      right_wheel_joint_.setCommand(vel);
+
+      // register starting time used to keep fixed rate
+      last_state_publish_time_ = time;
+    }
+
+    void stopping(const ros::Time& time)
+    {
+      // set velocity to 0
+      const double vel = 0.0;
+      left_wheel_joint_.setCommand(vel);
+      right_wheel_joint_.setCommand(vel);
+    }
+
+  private:
+    std::string name_;
+
+    // publish rate related
+    ros::Duration publish_period_;
+    ros::Time last_state_publish_time_;
+
+    // hardware handles
+    hardware_interface::JointHandle left_wheel_joint_;
+    hardware_interface::JointHandle right_wheel_joint_;
+
+    // cmd_vel related
+    struct Commands
+    {
+      double lin;
+      double ang;
+    };
+    realtime_tools::RealtimeBuffer<Commands> command_;
+    Commands command_struct_;
+    ros::Subscriber sub_command_;
+
+    // odometry related
+    boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
+    boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
+    Odometry odometry_;
+    double wheel_separation_;
+    double wheel_radius_;
+    geometry_msgs::TransformStamped odom_frame_;
+
+  private:
+    void cmdVelCallback(const geometry_msgs::Twist& command)
+    {
+      if(isRunning())
+      {
+        command_struct_.ang = command.angular.z;
+        command_struct_.lin = command.linear.x;
+        command_.writeFromNonRT (command_struct_);
+        ROS_DEBUG_STREAM_NAMED(name_,
+                               "Added values to command. Ang: " << command_struct_.ang
+                               << ", Lin: " << command_struct_.lin);
+      }
+      else
+      {
+        ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
+      }
+    }
+
+    bool setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
+                               const std::string& left_wheel_name,
+                               const std::string& right_wheel_name)
+    {
       // parse robot description
       const std::string model_param_name = "robot_description";
-      res = root_nh.hasParam(model_param_name);
+      bool res = root_nh.hasParam(model_param_name);
       std::string robot_model_str="";
       if(!res || !root_nh.getParam(model_param_name,robot_model_str))
       {
@@ -144,13 +294,18 @@ namespace diff_drive_controller{
         }
       }
 
-      wheel_radius_ = joint_cursor->parent_to_joint_origin_transform.position.z + rightWheelJointPtr->parent_to_joint_origin_transform.position.z;
+      wheel_radius_ = joint_cursor->parent_to_joint_origin_transform.position.z
+          + rightWheelJointPtr->parent_to_joint_origin_transform.position.z;
 
       odometry_.setWheelParams(wheel_separation_, wheel_radius_);
       ROS_INFO_STREAM_NAMED(name_,
                             "Odometry params : wheel separation " << wheel_separation_
                             << ", wheel radius " << wheel_radius_);
+      return true;
+    }
 
+    void setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
+    {
       // get and check params for covariances
       XmlRpc::XmlRpcValue pose_cov_list;
       controller_nh.getParam("pose_covariance_diagonal", pose_cov_list);
@@ -167,7 +322,7 @@ namespace diff_drive_controller{
         ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
       // setup odometry realtime publisher + odom message constant fields
-      odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(root_nh, "/odom", 100));
+      odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(root_nh, "odom", 100));
       odom_pub_->msg_.header.frame_id = "odom";
       odom_pub_->msg_.pose.pose.position.z = 0;
       odom_pub_->msg_.pose.covariance = boost::assign::list_of
@@ -188,147 +343,10 @@ namespace diff_drive_controller{
           (0)   (0)   (0) (static_cast<double>(twist_cov_list[3])) (0)  (0)
           (0)   (0)   (0)  (0) (static_cast<double>(twist_cov_list[4])) (0)
           (0)   (0)   (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
-      tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(controller_nh, "/tf", 100));
-      odom_frame.transform.translation.z = 0.0;
-      odom_frame.child_frame_id = "base_footprint";
-      odom_frame.header.frame_id = "odom";
-
-      // get the joint object to use in the realtime loop
-      ROS_INFO_STREAM_NAMED(name_,
-                            "Adding left wheel with joint name: " << left_wheel_name
-                            << " and right wheel with joint name: " << right_wheel_name);
-      left_wheel_joint_ = hw->getHandle(left_wheel_name);  // throws on failure
-      right_wheel_joint_ = hw->getHandle(right_wheel_name);  // throws on failure
-
-      sub_command_ = root_nh.subscribe("/cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
-
-      return true;
-    }
-
-    void update(const ros::Time& time, const ros::Duration& period)
-    {
-      // MOVE ROBOT
-      // command the wheels according to the messages from the cmd_vel topic
-      const Commands curr_cmd = *(command_.readFromRT());
-      const double vel_right =
-          (curr_cmd.lin + curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
-      const double vel_left =
-          (curr_cmd.lin - curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
-      left_wheel_joint_.setCommand(vel_left);
-      right_wheel_joint_.setCommand(vel_right);
-
-      // COMPUTE AND PUBLISH ODOMETRY
-      // estimate linear and angular velocity using joint information
-      //----------------------------
-      if(!odometry_.update(left_wheel_joint_.getPosition(), right_wheel_joint_.getPosition(), time))
-      {
-        ROS_WARN_NAMED(name_,
-                       "Dropped odom: period too small to integrate or no change.");
-      }
-
-      // publish odometry message
-      if(last_state_publish_time_ + publish_period_ < time)
-      {
-        last_state_publish_time_ += publish_period_;
-        // compute and store orientation info
-        const geometry_msgs::Quaternion orientation(
-              tf::createQuaternionMsgFromYaw(odometry_.getHeading()));
-
-        // populate odom message and publish
-        if(odom_pub_->trylock())
-        {
-          odom_pub_->msg_.header.stamp = time;
-          odom_pub_->msg_.pose.pose.position.x = odometry_.getPos().x;
-          odom_pub_->msg_.pose.pose.position.y = odometry_.getPos().y;
-          odom_pub_->msg_.pose.pose.orientation = orientation;
-          odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinearEstimated();
-          odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngularEstimated();
-          odom_pub_->unlockAndPublish();
-        }
-
-        // publish tf /odom frame
-        if(tf_odom_pub_->trylock())
-        {
-          odom_frame.header.stamp = time;
-          odom_frame.transform.translation.x = odometry_.getPos().x;
-          odom_frame.transform.translation.y = odometry_.getPos().y;
-          odom_frame.transform.rotation = orientation;
-          tf_odom_pub_->msg_.transforms.clear();
-          tf_odom_pub_->msg_.transforms.push_back(odom_frame);
-          tf_odom_pub_->unlockAndPublish();
-        }
-      }
-    }
-
-    void starting(const ros::Time& time)
-    {
-      // set velocity to 0
-      const double vel = 0.0;
-      left_wheel_joint_.setCommand(vel);
-      right_wheel_joint_.setCommand(vel);
-
-      // register starting time used to keep fixed rate
-      last_state_publish_time_ = time;
-    }
-
-    void stopping(const ros::Time& time)
-    {
-      // set velocity to 0
-      const double vel = 0.0;
-      left_wheel_joint_.setCommand(vel);
-      right_wheel_joint_.setCommand(vel);
-    }
-
-  private:
-    std::string name_;
-
-    // publish rate related
-    ros::Duration publish_period_;
-    ros::Time last_state_publish_time_;
-
-    // hardware handles
-    hardware_interface::JointHandle left_wheel_joint_;
-    hardware_interface::JointHandle right_wheel_joint_;
-
-    // cmd_vel related
-    struct Commands
-    {
-      double lin;
-      double ang;
-    };
-    realtime_tools::RealtimeBuffer<Commands> command_;
-    Commands command_struct_;
-    ros::Subscriber sub_command_;
-
-    // odometry related
-    boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
-    boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
-    Odometry odometry_;
-    double wheel_separation_;
-    double wheel_radius_;
-    geometry_msgs::TransformStamped odom_frame;
-
-  private:
-    void cmdVelCallback(const geometry_msgs::Twist& command)
-    {
-      if(isRunning())
-      {
-        command_struct_.ang = command.angular.z;
-        command_struct_.lin = command.linear.x;
-        command_.writeFromNonRT (command_struct_);
-        ROS_DEBUG_STREAM_NAMED(name_,
-                               "Added values to command. Ang: " << command_struct_.ang
-                               << ", Lin: " << command_struct_.lin);
-      }
-      else
-      {
-        ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
-      }
-    }
-
-    double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3& vec2) const
-    {
-      return sqrt(pow(vec1.x-vec2.x,2)+pow(vec1.y-vec2.y,2)+pow(vec1.z-vec2.z,2));
+      tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
+      odom_frame_.transform.translation.z = 0.0;
+      odom_frame_.child_frame_id = "base_footprint";
+      odom_frame_.header.frame_id = "odom";
     }
 
   };

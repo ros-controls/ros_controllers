@@ -8,9 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES diff_drive_controller
-#  CATKIN_DEPENDS roscpp
-#  DEPENDS system_lib
+  LIBRARIES ${PROJECT_NAME}
 )
 
 include_directories(
@@ -22,5 +20,7 @@ add_library(${PROJECT_NAME} src/diff_drive_controller.cpp)
 add_executable(diffbot test/diffbot.cpp)
 target_link_libraries(diffbot ${catkin_LIBRARIES})
 
-catkin_add_gtest(diff_drive_test test/diff_drive_test.cpp)
-add_rostest(test/diff_drive_controller.test)
+add_dependencies(tests diffbot)
+
+add_rostest_gtest(diff_drive_test test/diff_drive_controller.test test/diff_drive_test.cpp)
+target_link_libraries(diff_drive_test ${catkin_LIBRARIES})

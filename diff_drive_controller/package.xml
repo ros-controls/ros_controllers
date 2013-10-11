@@ -1,0 +1,44 @@
+<package>
+  <name>diff_drive_controller</name>
+  <version>0.1.0</version>
+  <description>Controller for a differential drive mobile base.</description>
+  <maintainer email="bence.magyar@pal-robotics.com">Bence Magyar</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">https://github.com/ros-controls/ros_controllers/wiki</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros_controllers</url>
+
+  <author email="bence.magyar@pal-robotics.com">Bence Magyar</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>controller_interface</build_depend>
+  <build_depend>forward_command_controller</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>realtime_tools</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>urdf</build_depend>
+
+  <run_depend>controller_interface</run_depend>
+  <run_depend>forward_command_controller</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>nav_msgs</run_depend>
+  <run_depend>realtime_tools</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>urdf</run_depend>
+
+  <!--Tests-->
+  <build_depend>rostest</build_depend>
+
+  <test_depend>controller_manager</test_depend>
+  <test_depend>xacro</test_depend>
+
+  <export>
+    <controller_interface plugin="${prefix}/diff_drive_controller_plugins.xml"/>
+  </export>
+</package>

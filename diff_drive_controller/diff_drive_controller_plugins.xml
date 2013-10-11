@@ -1,0 +1,9 @@
+<library path="lib/libdiff_drive_controller">
+
+  <class name="diff_drive_controller/DiffDriveController" type="diff_drive_controller::DiffDriveController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      The DiffDriveController tracks velocity commands. It expects 2 VelocityJointInterface type of hardware interfaces.
+    </description>
+  </class>
+
+</library>

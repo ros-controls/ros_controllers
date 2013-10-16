@@ -77,9 +77,9 @@ private:
   }
 };
 
-btQuaternion btQuatFromGeomQuat(const geometry_msgs::Quaternion& quat)
+tf::Quaternion tfQuatFromGeomQuat(const geometry_msgs::Quaternion& quat)
 {
-  return btQuaternion(quat.x, quat.y, quat.z, quat.w);
+  return tf::Quaternion(quat.x, quat.y, quat.z, quat.w);
 }
 
 // TEST CASES
@@ -114,8 +114,8 @@ TEST_F(DiffDriveControllerTest, testForward)
   // convert to rpy and test that way
   double roll_old, pitch_old, yaw_old;
   double roll_new, pitch_new, yaw_new;
-  tf::Matrix3x3(btQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
-  tf::Matrix3x3(btQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
+  tf::Matrix3x3(tfQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
+  tf::Matrix3x3(tfQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
   EXPECT_LT(fabs(roll_new - roll_old), EPS);
   EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
   EXPECT_LT(fabs(yaw_new - yaw_old), EPS);
@@ -159,8 +159,8 @@ TEST_F(DiffDriveControllerTest, testTurn)
   // convert to rpy and test that way
   double roll_old, pitch_old, yaw_old;
   double roll_new, pitch_new, yaw_new;
-  tf::Matrix3x3(btQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
-  tf::Matrix3x3(btQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
+  tf::Matrix3x3(tfQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
+  tf::Matrix3x3(tfQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
   EXPECT_LT(fabs(roll_new - roll_old), EPS);
   EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
   EXPECT_NEAR(fabs(yaw_new - yaw_old), M_PI, ORIENTATION_TOLERANCE);

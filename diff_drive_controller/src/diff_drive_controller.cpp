@@ -145,8 +145,8 @@ namespace diff_drive_controller{
         if(odom_pub_->trylock())
         {
           odom_pub_->msg_.header.stamp = time;
-          odom_pub_->msg_.pose.pose.position.x = odometry_.getPos().x;
-          odom_pub_->msg_.pose.pose.position.y = odometry_.getPos().y;
+          odom_pub_->msg_.pose.pose.position.x = odometry_.getX();
+          odom_pub_->msg_.pose.pose.position.y = odometry_.getY();
           odom_pub_->msg_.pose.pose.orientation = orientation;
           odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinearEstimated();
           odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngularEstimated();
@@ -157,8 +157,8 @@ namespace diff_drive_controller{
         if(tf_odom_pub_->trylock())
         {
           odom_frame_.header.stamp = time;
-          odom_frame_.transform.translation.x = odometry_.getPos().x;
-          odom_frame_.transform.translation.y = odometry_.getPos().y;
+          odom_frame_.transform.translation.x = odometry_.getX();
+          odom_frame_.transform.translation.y = odometry_.getY();
           odom_frame_.transform.rotation = orientation;
           tf_odom_pub_->msg_.transforms.clear();
           tf_odom_pub_->msg_.transforms.push_back(odom_frame_);

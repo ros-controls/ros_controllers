@@ -41,10 +41,16 @@
 #define ODOMETRY_H_
 
 #include <ros/time.h>
-#include <geometry_msgs/Point32.h>
-#include <cmath>
+#include <angles/angles.h>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/rolling_mean.hpp>
+#include <boost/bind.hpp>
 
-namespace diff_drive_controller{
+namespace diff_drive_controller
+{
+  namespace bacc = boost::accumulators;
+
   /**
    * @brief The Odometry class handles odometry readings
    *  (2D oriented position with related timestamp)
@@ -52,21 +58,25 @@ namespace diff_drive_controller{
   class Odometry
   {
   public:
+    typedef boost::function<void(double, double)> IntegrationFunction;
+
     /**
       * Timestamp will get the current time value
       * Value will be set to zero
       */
-    Odometry():
-      timestamp_(0),
-      wheel_separation_(0.0),
-      wheel_radius_(0.0),
-      left_wheel_old_pos_(0.0),
-      right_wheel_old_pos_(0.0),
-      linear_est_speed_(0.0),
-      angular_est_speed_(0.0)
-    {
-      value_.x = value_ .y = value_.z = 0.0;
-    }
+    Odometry(size_t velocity_rolling_window_size = 10)
+      : timestamp_(0),
+        x_(0),
+        y_(0),
+        heading_(0),
+        wheel_separation_(0.0),
+        wheel_radius_(0.0),
+        left_wheel_old_pos_(0.0),
+        right_wheel_old_pos_(0.0),
+        linear_acc_(RollingWindow::window_size = velocity_rolling_window_size),
+        angular_acc_(RollingWindow::window_size = velocity_rolling_window_size),
+        integrate_fun_(boost::bind(&Odometry::integrationExact, this, _1, _2))
+    { }
 
     /**
      * @brief update the odometry class with latest wheels position
@@ -78,51 +88,50 @@ namespace diff_drive_controller{
     bool update(double left_pos, double right_pos, const ros::Time &time)
     {
       // get current wheel joint positions
-      const double left_wheel_cur_pos_ = left_pos*wheel_radius_;
-      const double right_wheel_cur_pos_ = right_pos*wheel_radius_;
+      const double left_wheel_cur_pos  = left_pos*wheel_radius_;
+      const double right_wheel_cur_pos = right_pos*wheel_radius_;
+
       // estimate velocity of wheels using old and current position
-      const double left_wheel_est_vel_ = left_wheel_cur_pos_ - left_wheel_old_pos_;
-      const double right_wheel_est_vel_ = right_wheel_cur_pos_ - right_wheel_old_pos_;
+      const double left_wheel_est_vel  = left_wheel_cur_pos - left_wheel_old_pos_;
+      const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;
+
       // update old position with current
-      left_wheel_old_pos_ = left_wheel_cur_pos_;
-      right_wheel_old_pos_ = right_wheel_cur_pos_;
+      left_wheel_old_pos_  = left_wheel_cur_pos;
+      right_wheel_old_pos_ = right_wheel_cur_pos;
 
       // compute linear and angular diff
-      const double linear = (left_wheel_est_vel_ + right_wheel_est_vel_) * 0.5 ;
-      const double angular = (right_wheel_est_vel_ - left_wheel_est_vel_) / wheel_separation_;
+      const double linear  = (left_wheel_est_vel + right_wheel_est_vel) * 0.5 ;
+      const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_;
 
-      if((fabs(angular) < 1e-15) && (fabs(linear) < 1e-15)) // when both velocities are ~0
-      {
-        return false;
-      }
-
-      // integrate
       const double deltaTime = (time - timestamp_).toSec();
       if(deltaTime < 0.0001)
         return false; // interval too small to integrate with
 
       timestamp_ = time;
-      integrationByRungeKutta(linear, angular);
 
-      // estimate speeds
-      speedEstimation(linear/deltaTime, angular/deltaTime);
+      // integrate
+      integrate_fun_(linear, angular);
+
+      // estimate speeds: use a rolling mean to filter them out
+      linear_acc_(linear/deltaTime);
+      angular_acc_(angular/deltaTime);
 
       return true;
     }
 
     double getHeading() const
     {
-      return value_.z;
+      return heading_;
     }
 
-    geometry_msgs::Point32 getPos() const
+    double getX() const
     {
-      return value_;
+      return x_;
     }
 
-    void setPos(const geometry_msgs::Point32 &pos )
+    double getY() const
     {
-      value_ = pos;
+      return y_;
     }
 
     ros::Time getTimestamp() const
@@ -130,28 +139,26 @@ namespace diff_drive_controller{
       return timestamp_;
     }
 
-    void setTimestamp(const ros::Time &time )
-    {
-      timestamp_ = time;
-    }
-
     double getLinearEstimated() const
     {
-      return linear_est_speed_;
+      return bacc::rolling_mean(linear_acc_);
     }
 
     double getAngularEstimated() const
     {
-      return angular_est_speed_;
+      return bacc::rolling_mean(angular_acc_);
     }
 
     void setWheelParams(double wheel_separation, double wheel_radius)
     {
       wheel_separation_ = wheel_separation;
-      wheel_radius_ = wheel_radius;
+      wheel_radius_     = wheel_radius;
     }
 
   private:
+
+    typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
+    typedef bacc::tag::rolling_window RollingWindow;
 
     /**
      * @brief Function to update the odometry based on the velocities of the robot
@@ -160,21 +167,17 @@ namespace diff_drive_controller{
      * @param time  : timestamp of the measured velocities
      *
      */
-    void integrationByRungeKutta(const double& linear, const double& angular)
+    void integrationByRungeKutta(double linear, double angular)
     {
-      double direction = value_.z + angular/2.0;
-
-      /// Normalization of angle between -Pi and Pi
-      /// @attention the assumption here is that between two integration step the total angular cannot be bigger than Pi
-      //direction = atan2(sin(direction),cos(direction));
+      double direction = heading_ + angular*0.5;
 
       /// RUNGE-KUTTA 2nd ORDER INTEGRATION
-      value_.x += linear * cos(direction);
-      value_.y += linear * sin(direction);
-      value_.z += angular;
+      x_       += linear * cos(direction);
+      y_       += linear * sin(direction);
+      heading_ += angular;
 
       /// Normalization of angle between -Pi and Pi
-      value_.z = atan2(sin(value_.z),cos(value_.z));
+      heading_ = angles::normalize_angle(heading_);
     }
 
     /**
@@ -188,50 +191,34 @@ namespace diff_drive_controller{
         integrationByRungeKutta(linear, angular);
       else
       {
-        ///EXACT INTEGRATION (should be resolved problems when angularForDelta is zero)
-        double thetaOld = value_.z;
-        value_.z += angular;
-        value_.x +=   (linear/angular )*( sin(value_.z) - sin(thetaOld) );
-        value_.y +=  -(linear/angular )*( cos(value_.z) - cos(thetaOld) );
+        ///EXACT INTEGRATION (should solve problems when angular is zero)
+        double thetaOld = heading_;
+        heading_ += angular;
+        x_ +=   (linear/angular)*(sin(heading_) - sin(thetaOld));
+        y_ +=  -(linear/angular)*(cos(heading_) - cos(thetaOld));
       }
-    }
-
-    /**
-     * @brief Estimate speed based on averaging last 10 measurements
-     * @param linear
-     * @param angular
-     */
-    void speedEstimation(double linear, double angular)
-    {
-      if(lastSpeeds.size()> 10)
-        lastSpeeds.pop_front();
-
-      geometry_msgs::Point speed;
-      speed.x = linear;
-      speed.y = angular;
-      lastSpeeds.push_back(speed);
-
-      double averageLinearSpeed = 0.0, averageAngularSpeed = 0.0;
-      for(speeds_it it=lastSpeeds.begin();it!= lastSpeeds.end(); ++it)
-      {
-        averageLinearSpeed += it->x;
-        averageAngularSpeed += it->y;
-      }
-
-      linear_est_speed_ = averageLinearSpeed/lastSpeeds.size();
-      angular_est_speed_ = averageAngularSpeed/lastSpeeds.size();
     }
 
     ros::Time timestamp_;
-    ///(X,Y,Z) : Z is the orientation
-    geometry_msgs::Point32 value_;
 
+    // current position
+    double x_;
+    double y_;
+    double heading_;
+
+    // kinematic parameters
     double wheel_separation_;
     double wheel_radius_;
-    double left_wheel_old_pos_, right_wheel_old_pos_;
-    double linear_est_speed_, angular_est_speed_;
-    std::list<geometry_msgs::Point> lastSpeeds;
-    typedef std::list<geometry_msgs::Point>::const_iterator speeds_it;
+
+    // state at n-1
+    double left_wheel_old_pos_;
+    double right_wheel_old_pos_;
+
+    // velocity accumulators
+    RollingMeanAcc linear_acc_;
+    RollingMeanAcc angular_acc_;
+
+    IntegrationFunction integrate_fun_;
   };
 }
 #endif /* ODOMETRY_H_ */

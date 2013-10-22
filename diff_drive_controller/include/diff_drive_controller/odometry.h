@@ -41,6 +41,7 @@
 #define ODOMETRY_H_
 
 #include <ros/time.h>
+#include <angles/angles.h>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/rolling_mean.hpp>
@@ -72,9 +73,9 @@ namespace diff_drive_controller
         wheel_radius_(0.0),
         left_wheel_old_pos_(0.0),
         right_wheel_old_pos_(0.0),
-        integrate_fun_(boost::bind(&Odometry::integrationExact, this, _1, _2)),
         linear_acc_(RollingWindow::window_size = velocity_rolling_window_size),
-        angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+        angular_acc_(RollingWindow::window_size = velocity_rolling_window_size),
+        integrate_fun_(boost::bind(&Odometry::integrationExact, this, _1, _2))
     { }
 
     /**
@@ -176,10 +177,7 @@ namespace diff_drive_controller
       heading_ += angular;
 
       /// Normalization of angle between -Pi and Pi
-      while (heading_ <= 180.0)
-        heading_ += 360.0;
-      while (heading_ > 180.0)
-        heading_ -= 360.0;
+      heading_ = angles::normalize_angle(heading_);
     }
 
     /**

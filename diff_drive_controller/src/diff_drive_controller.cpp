@@ -95,6 +95,14 @@ namespace diff_drive_controller{
                             << publish_rate << "Hz.");
       publish_period_ = ros::Duration(1.0 / publish_rate);
 
+      controller_nh.param("wheel_separation_multiplier", wheel_separation_multiplier_, 1.0);
+      ROS_INFO_STREAM_NAMED(name_, "Wheel separation will be multiplied by "
+                            << wheel_separation_multiplier_);
+
+      controller_nh.param("wheel_radius_multiplier", wheel_radius_multiplier_, 1.0);
+      ROS_INFO_STREAM_NAMED(name_, "Wheel radius will be multiplied by "
+                            << wheel_radius_multiplier_);
+
       if(!setOdomParamsFromUrdf(root_nh, left_wheel_name, right_wheel_name))
         return false;
 
@@ -213,6 +221,8 @@ namespace diff_drive_controller{
     Odometry odometry_;
     double wheel_separation_;
     double wheel_radius_;
+    double wheel_separation_multiplier_;
+    double wheel_radius_multiplier_;
     geometry_msgs::TransformStamped odom_frame_;
 
   private:
@@ -296,6 +306,9 @@ namespace diff_drive_controller{
 
       wheel_radius_ = joint_cursor->parent_to_joint_origin_transform.position.z
           + rightWheelJointPtr->parent_to_joint_origin_transform.position.z;
+
+      wheel_separation_ *= wheel_separation_multiplier_;
+      wheel_radius_     *= wheel_radius_multiplier_;
 
       odometry_.setWheelParams(wheel_separation_, wheel_radius_);
       ROS_INFO_STREAM_NAMED(name_,

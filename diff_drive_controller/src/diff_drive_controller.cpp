@@ -60,12 +60,73 @@ static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3&
                    std::pow(vec1.z-vec2.z,2));
 }
 
+/*
+ * @brief Check if the link is modeled as a cylinder
+ * @param link Link
+ * @return true if the link is modeled as a Cylinder; false otherwise
+ */
+static bool isCylinder(const boost::shared_ptr<const urdf::Link>& link)
+{
+  if(!link)
+  {
+    ROS_ERROR("Link == NULL.");
+    return false;
+  }
+
+  if(!link->collision)
+  {
+    ROS_ERROR_STREAM("Link " << link->name << " does not have collision description. Add collision description for link to urdf.");
+    return false;
+  }
+
+  if(!link->collision->geometry)
+  {
+    ROS_ERROR_STREAM("Link " << link->name << " does not have collision geometry description. Add collision geometry description for link to urdf.");
+    return false;
+  }
+
+  if(link->collision->geometry->type != urdf::Geometry::CYLINDER)
+  {
+    ROS_ERROR_STREAM("Link " << link->name << " does not have cylinder geometry");
+    return false;
+  }
+
+  return true;
+}
+
+/*
+ * @brief Get the wheel radius
+ * @param [in]  wheel_link   Wheel link
+ * @param [out] wheel_radius Wheel radius [m]
+ * @return true if the wheel radius was found; false otherwise
+ */
+static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link, double& wheel_radius)
+{
+  if(!isCylinder(wheel_link))
+  {
+    ROS_ERROR_STREAM("Wheel link " << wheel_link->name << " is NOT modeled as a cylinder!");
+    return false;
+  }
+
+  wheel_radius = (dynamic_cast<urdf::Cylinder*>(wheel_link->collision->geometry.get()))->radius;
+  return true;
+}
+
 namespace diff_drive_controller{
 
   class DiffDriveController
       : public controller_interface::Controller<hardware_interface::VelocityJointInterface>
   {
   public:
+    DiffDriveController()
+      : command_struct_(),
+        wheel_radius_(0.0),
+        wheel_separation_(0.0),
+        wheel_radius_multiplier_(1.0),
+        wheel_separation_multiplier_(1.0)
+    {
+    }
+
     bool init(hardware_interface::VelocityJointInterface* hw,
               ros::NodeHandle& root_nh,
               ros::NodeHandle &controller_nh)
@@ -94,6 +155,14 @@ namespace diff_drive_controller{
       ROS_INFO_STREAM_NAMED(name_, "Controller state will be published at "
                             << publish_rate << "Hz.");
       publish_period_ = ros::Duration(1.0 / publish_rate);
+
+      controller_nh.param("wheel_separation_multiplier", wheel_separation_multiplier_, 1.0);
+      ROS_INFO_STREAM_NAMED(name_, "Wheel separation will be multiplied by "
+                            << wheel_separation_multiplier_);
+
+      controller_nh.param("wheel_radius_multiplier", wheel_radius_multiplier_, 1.0);
+      ROS_INFO_STREAM_NAMED(name_, "Wheel radius will be multiplied by "
+                            << wheel_radius_multiplier_);
 
       if(!setOdomParamsFromUrdf(root_nh, left_wheel_name, right_wheel_name))
         return false;
@@ -211,9 +280,17 @@ namespace diff_drive_controller{
     boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
     boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
     Odometry odometry_;
-    double wheel_separation_;
-    double wheel_radius_;
     geometry_msgs::TransformStamped odom_frame_;
+
+    /// Wheel separation, wrt the midpoint of the wheel width
+    double wheel_separation_;
+
+    /// Wheel radius (assuming it's the same for the left and right wheels)
+    double wheel_radius_;
+
+    /// Wheel separation and radius calibration multipliers
+    double wheel_separation_multiplier_;
+    double wheel_radius_multiplier_;
 
   private:
     void cmdVelCallback(const geometry_msgs::Twist& command)
@@ -247,56 +324,42 @@ namespace diff_drive_controller{
         return false;
       }
 
-      boost::shared_ptr<urdf::ModelInterface> model_ptr(urdf::parseURDF(robot_model_str));
-      boost::shared_ptr<const urdf::Joint> leftWheelJointPtr(model_ptr->getJoint(left_wheel_name));
-      if(!leftWheelJointPtr.get())
+      boost::shared_ptr<urdf::ModelInterface> model(urdf::parseURDF(robot_model_str));
+
+      // Get wheel separation
+      boost::shared_ptr<const urdf::Joint> left_wheel_joint(model->getJoint(left_wheel_name));
+      if(!left_wheel_joint)
       {
         ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
                                << " couldn't be retrieved from model description");
         return false;
       }
-      boost::shared_ptr<const urdf::Joint> rightWheelJointPtr(model_ptr->getJoint(right_wheel_name));
-      if(!rightWheelJointPtr.get())
+      boost::shared_ptr<const urdf::Joint> right_wheel_joint(model->getJoint(right_wheel_name));
+      if(!right_wheel_joint)
       {
         ROS_ERROR_STREAM_NAMED(name_, right_wheel_name
                                << " couldn't be retrieved from model description");
         return false;
       }
 
-      ROS_INFO_STREAM("left wheel to origin: " << leftWheelJointPtr->parent_to_joint_origin_transform.position.x << ","
-                      << leftWheelJointPtr->parent_to_joint_origin_transform.position.y << ", "
-                      << leftWheelJointPtr->parent_to_joint_origin_transform.position.z);
-      ROS_INFO_STREAM("left wheel to origin: " << rightWheelJointPtr->parent_to_joint_origin_transform.position.x << ","
-                      << rightWheelJointPtr->parent_to_joint_origin_transform.position.y << ", "
-                      << rightWheelJointPtr->parent_to_joint_origin_transform.position.z);
+      ROS_INFO_STREAM("left wheel to origin: " << left_wheel_joint->parent_to_joint_origin_transform.position.x << ","
+                      << left_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
+                      << left_wheel_joint->parent_to_joint_origin_transform.position.z);
+      ROS_INFO_STREAM("left wheel to origin: " << right_wheel_joint->parent_to_joint_origin_transform.position.x << ","
+                      << right_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
+                      << right_wheel_joint->parent_to_joint_origin_transform.position.z);
 
-      wheel_separation_ = euclideanOfVectors(leftWheelJointPtr->parent_to_joint_origin_transform.position,
-                                             rightWheelJointPtr->parent_to_joint_origin_transform.position);
+      wheel_separation_ = euclideanOfVectors(left_wheel_joint->parent_to_joint_origin_transform.position,
+                                             right_wheel_joint->parent_to_joint_origin_transform.position);
 
-      // looking for base_link
-      boost::shared_ptr<const urdf::Link> base_link;
-      boost::shared_ptr<const urdf::Joint> joint_cursor = leftWheelJointPtr;
-      std::string act_name("");
-      while(act_name != "base_link")
+      /// Get wheel radius
+      if(!getWheelRadius(model->getLink(left_wheel_joint->child_link_name), wheel_radius_))
       {
-        act_name = joint_cursor->parent_link_name;
-        base_link = model_ptr->getLink(act_name);
-        joint_cursor = base_link->parent_joint;
-        ROS_DEBUG_STREAM_NAMED(name_, "transform: "
-                               << joint_cursor->parent_to_joint_origin_transform.position.x << ","
-                               << joint_cursor->parent_to_joint_origin_transform.position.y << ", "
-                               << joint_cursor->parent_to_joint_origin_transform.position.z
-                               << " with act name: " << act_name);
-        if(joint_cursor->parent_link_name == "")
-        {
-          ROS_ERROR("Couldn't find base_footprint in tree!");
-          return false;
-        }
+        ROS_ERROR_STREAM_NAMED(name_, "Couldn't retrieve " << left_wheel_name << " wheel radius");
+        return false;
       }
 
-      wheel_radius_ = joint_cursor->parent_to_joint_origin_transform.position.z
-          + rightWheelJointPtr->parent_to_joint_origin_transform.position.z;
-
+      /// Set wheel params for the odometry computation
       odometry_.setWheelParams(wheel_separation_, wheel_radius_);
       ROS_INFO_STREAM_NAMED(name_,
                             "Odometry params : wheel separation " << wheel_separation_

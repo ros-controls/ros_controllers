@@ -120,10 +120,10 @@ namespace diff_drive_controller{
   public:
     DiffDriveController()
       : command_struct_(),
-        wheel_radius_(0.0),
         wheel_separation_(0.0),
-        wheel_radius_multiplier_(1.0),
-        wheel_separation_multiplier_(1.0)
+        wheel_radius_(0.0),
+        wheel_separation_multiplier_(1.0),
+        wheel_radius_multiplier_(1.0)
     {
     }
 

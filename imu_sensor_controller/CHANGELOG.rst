@@ -2,6 +2,11 @@
 Changelog for package imu_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.4 (2013-09-30)
+------------------
+* Added install rules for plugin.xml
+* Fix license header string for some files.
+
 0.5.3 (2013-09-04)
 ------------------
 * Removed manifest.xml from all packages to prevent rosdep heirarchy issues in Groovy and Hydro

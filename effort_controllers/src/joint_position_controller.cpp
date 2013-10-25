@@ -80,9 +80,20 @@ bool JointPositionController::init(hardware_interface::EffortJointInterface *rob
 
   // Get URDF info about joint
   urdf::Model urdf;
-  if (!urdf.initParam("robot_description"))
+  std::string key;
+  if (n.searchParam("robot_description", key))
   {
-    ROS_ERROR("Failed to parse urdf file");
+    std::string val;
+    n.getParam(key, val);
+    urdf.initString(val);
+    
+  }
+  //SEARCHING FOR THE PARAMETER FROM "/gazebo" downwards does not seem useful 
+  //THIS BLOCK MIGHT BE DELETED (replaced with else return false; or somthing like this)
+  else if (!urdf.initParam("robot_description"))
+  {
+    
+    ROS_ERROR("Failed to parse urdf file");    
     return false;
   }
   joint_urdf_ = urdf.getJoint(joint_name);

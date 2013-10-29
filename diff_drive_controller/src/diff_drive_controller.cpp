@@ -194,9 +194,6 @@ namespace diff_drive_controller{
       if(time - curr_cmd.stamp > ros::Duration(cmd_vel_old_threshold_))
       {
         brake();
-        ROS_DEBUG_STREAM_NAMED(name_,
-                               "No velocity command received for "
-                               << cmd_vel_old_threshold_ << "s; braking!");
       }
       else
       {
@@ -211,11 +208,7 @@ namespace diff_drive_controller{
       // COMPUTE AND PUBLISH ODOMETRY
       // estimate linear and angular velocity using joint information
       //----------------------------
-      if(!odometry_.update(left_wheel_joint_.getPosition(), right_wheel_joint_.getPosition(), time))
-      {
-        ROS_WARN_NAMED(name_,
-                       "Dropped odom: period too small to integrate or no change.");
-      }
+      odometry_.update(left_wheel_joint_.getPosition(), right_wheel_joint_.getPosition(), time);
 
       // publish odometry message
       if(last_state_publish_time_ + publish_period_ < time)

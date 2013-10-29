@@ -193,10 +193,10 @@ namespace diff_drive_controller{
       const Commands curr_cmd = *(command_.readFromRT());
       if(time - curr_cmd.stamp > ros::Duration(cmd_vel_old_threshold_))
       {
-        stopping(time);
+        brake();
         ROS_DEBUG_STREAM_NAMED(name_,
                                "No velocity command received for "
-                               << cmd_vel_old_threshold_ << "s; stopping!");
+                               << cmd_vel_old_threshold_ << "s; braking!");
       }
       else
       {
@@ -253,10 +253,7 @@ namespace diff_drive_controller{
 
     void starting(const ros::Time& time)
     {
-      // set velocity to 0
-      const double vel = 0.0;
-      left_wheel_joint_.setCommand(vel);
-      right_wheel_joint_.setCommand(vel);
+      brake();
 
       // register starting time used to keep fixed rate
       last_state_publish_time_ = time;
@@ -264,10 +261,7 @@ namespace diff_drive_controller{
 
     void stopping(const ros::Time& time)
     {
-      // set velocity to 0
-      const double vel = 0.0;
-      left_wheel_joint_.setCommand(vel);
-      right_wheel_joint_.setCommand(vel);
+      brake();
     }
 
   private:
@@ -312,6 +306,16 @@ namespace diff_drive_controller{
     double cmd_vel_old_threshold_;
 
   private:
+    /*
+     * @brief Brakes the wheels, i.e. sets the velocity to 0.
+     */
+    void brake()
+    {
+      const double vel = 0.0;
+      left_wheel_joint_.setCommand(vel);
+      right_wheel_joint_.setCommand(vel);
+    }
+
     void cmdVelCallback(const geometry_msgs::Twist& command)
     {
       if(isRunning())

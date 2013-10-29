@@ -123,7 +123,8 @@ namespace diff_drive_controller{
         wheel_separation_(0.0),
         wheel_radius_(0.0),
         wheel_separation_multiplier_(1.0),
-        wheel_radius_multiplier_(1.0)
+        wheel_radius_multiplier_(1.0),
+        cmd_vel_old_threshold_(1.0)
     {
     }
 
@@ -156,13 +157,17 @@ namespace diff_drive_controller{
                             << publish_rate << "Hz.");
       publish_period_ = ros::Duration(1.0 / publish_rate);
 
-      controller_nh.param("wheel_separation_multiplier", wheel_separation_multiplier_, 1.0);
+      controller_nh.param("wheel_separation_multiplier", wheel_separation_multiplier_, wheel_separation_multiplier_);
       ROS_INFO_STREAM_NAMED(name_, "Wheel separation will be multiplied by "
-                            << wheel_separation_multiplier_);
+                            << wheel_separation_multiplier_ << ".");
 
-      controller_nh.param("wheel_radius_multiplier", wheel_radius_multiplier_, 1.0);
+      controller_nh.param("wheel_radius_multiplier", wheel_radius_multiplier_, wheel_radius_multiplier_);
       ROS_INFO_STREAM_NAMED(name_, "Wheel radius will be multiplied by "
-                            << wheel_radius_multiplier_);
+                            << wheel_radius_multiplier_ << ".");
+
+      controller_nh.param("cmd_vel_old_threshold", cmd_vel_old_threshold_, cmd_vel_old_threshold_);
+      ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "
+                            << cmd_vel_old_threshold_ << "s.");
 
       if(!setOdomParamsFromUrdf(root_nh, left_wheel_name, right_wheel_name))
         return false;
@@ -186,21 +191,24 @@ namespace diff_drive_controller{
       // MOVE ROBOT
       // command the wheels according to the messages from the cmd_vel topic
       const Commands curr_cmd = *(command_.readFromRT());
-      const double vel_right =
-          (curr_cmd.lin + curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
-      const double vel_left =
-          (curr_cmd.lin - curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
-      left_wheel_joint_.setCommand(vel_left);
-      right_wheel_joint_.setCommand(vel_right);
+      if(time - curr_cmd.stamp > ros::Duration(cmd_vel_old_threshold_))
+      {
+        brake();
+      }
+      else
+      {
+        const double vel_right =
+            (curr_cmd.lin + curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
+        const double vel_left =
+            (curr_cmd.lin - curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
+        left_wheel_joint_.setCommand(vel_left);
+        right_wheel_joint_.setCommand(vel_right);
+      }
 
       // COMPUTE AND PUBLISH ODOMETRY
       // estimate linear and angular velocity using joint information
       //----------------------------
-      if(!odometry_.update(left_wheel_joint_.getPosition(), right_wheel_joint_.getPosition(), time))
-      {
-        ROS_WARN_NAMED(name_,
-                       "Dropped odom: period too small to integrate or no change.");
-      }
+      odometry_.update(left_wheel_joint_.getPosition(), right_wheel_joint_.getPosition(), time);
 
       // publish odometry message
       if(last_state_publish_time_ + publish_period_ < time)
@@ -238,10 +246,7 @@ namespace diff_drive_controller{
 
     void starting(const ros::Time& time)
     {
-      // set velocity to 0
-      const double vel = 0.0;
-      left_wheel_joint_.setCommand(vel);
-      right_wheel_joint_.setCommand(vel);
+      brake();
 
       // register starting time used to keep fixed rate
       last_state_publish_time_ = time;
@@ -249,10 +254,7 @@ namespace diff_drive_controller{
 
     void stopping(const ros::Time& time)
     {
-      // set velocity to 0
-      const double vel = 0.0;
-      left_wheel_joint_.setCommand(vel);
-      right_wheel_joint_.setCommand(vel);
+      brake();
     }
 
   private:
@@ -271,6 +273,7 @@ namespace diff_drive_controller{
     {
       double lin;
       double ang;
+      ros::Time stamp;
     };
     realtime_tools::RealtimeBuffer<Commands> command_;
     Commands command_struct_;
@@ -292,17 +295,33 @@ namespace diff_drive_controller{
     double wheel_separation_multiplier_;
     double wheel_radius_multiplier_;
 
+    /// Threshold to consider cmd_vel commands old
+    double cmd_vel_old_threshold_;
+
   private:
+    /*
+     * @brief Brakes the wheels, i.e. sets the velocity to 0.
+     */
+    void brake()
+    {
+      const double vel = 0.0;
+      left_wheel_joint_.setCommand(vel);
+      right_wheel_joint_.setCommand(vel);
+    }
+
     void cmdVelCallback(const geometry_msgs::Twist& command)
     {
       if(isRunning())
       {
-        command_struct_.ang = command.angular.z;
-        command_struct_.lin = command.linear.x;
+        command_struct_.ang   = command.angular.z;
+        command_struct_.lin   = command.linear.x;
+        command_struct_.stamp = ros::Time::now();
         command_.writeFromNonRT (command_struct_);
         ROS_DEBUG_STREAM_NAMED(name_,
-                               "Added values to command. Ang: " << command_struct_.ang
-                               << ", Lin: " << command_struct_.lin);
+                               "Added values to command. "
+                               << "Ang: "   << command_struct_.ang << ", "
+                               << "Lin: "   << command_struct_.lin << ", "
+                               << "Stamp: " << command_struct_.stamp);
       }
       else
       {

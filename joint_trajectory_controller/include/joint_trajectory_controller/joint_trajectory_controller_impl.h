@@ -221,9 +221,12 @@ checkGoalTolerances(const typename Segment::State& state_error,
   }
   else
   {
-    ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed");
-    // Check the tolerances one more time to output the errors that occures
-    checkStateTolerance(state_error, tolerances.goal_state_tolerance, true);
+    if (verbose_)
+    {
+      ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed");
+      // Check the tolerances one more time to output the errors that occures
+      checkStateTolerance(state_error, tolerances.goal_state_tolerance, true);
+    }
 
     rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
     rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
@@ -235,7 +238,8 @@ template <class SegmentImpl, class HardwareInterface>
 JointTrajectoryController<SegmentImpl, HardwareInterface>::
 JointTrajectoryController()
   : msg_trajectory_ptr_(new Trajectory),
-    hold_trajectory_ptr_(new Trajectory)
+    hold_trajectory_ptr_(new Trajectory),
+    verbose_(false) // Set to true during debugging
 {}
 
 template <class SegmentImpl, class HardwareInterface>
@@ -415,7 +419,9 @@ update(const ros::Time& time, const ros::Duration& period)
     }
     else if (segment_it == --curr_traj.end())
     {
-      ROS_DEBUG_STREAM_THROTTLE_NAMED(1,name_,"Finished executing last segement, checking goal tolerances");
+      if (verbose_)
+        ROS_DEBUG_STREAM_THROTTLE_NAMED(1,name_,"Finished executing last segement, checking goal tolerances");
+
       // Finished executing the LAST segment: check goal tolerances
       checkGoalTolerances(state_error_,
                            *segment_it);

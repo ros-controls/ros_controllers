@@ -17,15 +17,18 @@ else()
   find_package(catkin REQUIRED COMPONENTS controller_interface forward_command_controller)
 
   include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
+  
   add_library(${PROJECT_NAME}
-    src/joint_velocity_controller.cpp include/velocity_controllers/joint_velocity_controller.h)
+    src/joint_velocity_controller.cpp 
+    src/joint_position_controller.cpp 
+  )
 
   # Declare catkin package
   catkin_package(
     CATKIN_DEPENDS controller_interface forward_command_controller
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
-    )
+  )
 
   # Install
   install(DIRECTORY include/${PROJECT_NAME}/
@@ -35,9 +38,10 @@ else()
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-    )
+  )
 
   install(FILES velocity_controllers_plugins.xml
-    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
 
 endif()

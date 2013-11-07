@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(position_controllers)
 
-if(USE_ROSBUILD) 
+if(USE_ROSBUILD)
   include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
   rosbuild_init()
@@ -18,8 +18,11 @@ else()
   find_package(catkin REQUIRED COMPONENTS controller_interface forward_command_controller)
 
   include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
+
   add_library(${PROJECT_NAME}
-    src/joint_position_controller.cpp include/position_controllers/joint_position_controller.h)
+    src/joint_position_controller.cpp
+    include/position_controllers/joint_position_controller.h
+  )
 
   # Declare catkin project
   catkin_package(

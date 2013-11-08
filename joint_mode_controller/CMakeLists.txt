@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Boost REQUIRED COMPONENTS system)
 
 catkin_package(
-  INCLUDE_DIRS include
+  #INCLUDE_DIRS include
   LIBRARIES joint_mode_controller
   CATKIN_DEPENDS controller_interface hardware_interface pluginlib roscpp
 )

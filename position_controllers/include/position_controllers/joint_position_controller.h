@@ -1,8 +1,6 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2008, Willow Garage, Inc.
- *  Copyright (c) 2012, hiDOF, Inc.
  *  Copyright (c) 2013, University of Patras, Greece
  *  All rights reserved.
  *
@@ -35,7 +33,7 @@
  *********************************************************************/
 
 /*
- Author: Aris Synodinos
+ Author: Aris Synodinos, Andrew Paschos
  Contributors: Dave Coleman, Jonathan Bohren, Wim Meeussen, Vijay Pradeep
  Desc: Position-based position controller using basic PID loop
 */

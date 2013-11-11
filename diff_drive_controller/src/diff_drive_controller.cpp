@@ -348,10 +348,12 @@ namespace diff_drive_controller{
     }
 
     /// Set wheel params for the odometry computation
-    odometry_.setWheelParams(wheel_separation_, wheel_radius_);
+    const double ws = wheel_separation_multiplier_ * wheel_separation_;
+    const double wr = wheel_radius_multiplier_     * wheel_radius_;
+    odometry_.setWheelParams(ws, wr);
     ROS_INFO_STREAM_NAMED(name_,
-                          "Odometry params : wheel separation " << wheel_separation_
-                          << ", wheel radius " << wheel_radius_);
+                          "Odometry params : wheel separation " << ws
+                          << ", wheel radius " << wr);
     return true;
   }
 

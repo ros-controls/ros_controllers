@@ -144,6 +144,7 @@ public:
   /*\}*/
 
 private:
+
   struct TimeData
   {
     TimeData() : time(0.0), period(0.0), uptime(0.0) {}
@@ -169,6 +170,7 @@ private:
 
   typedef HardwareInterfaceAdapter<HardwareInterface, typename Segment::State> HwIfaceAdapter;
 
+  bool                                         verbose_;            ///< Hard coded verbose flag to help in debugging
   std::string                                  name_;               ///< Controller name.
   std::vector<hardware_interface::JointHandle> joints_;             ///< Handles to controlled joints.
   std::vector<bool>                            angle_wraparound_;   ///< Whether controlled joints wrap around or not.

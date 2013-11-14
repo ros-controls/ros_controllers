@@ -91,11 +91,13 @@ struct SegmentTolerances
 /**
  * \param state_error State error to check.
  * \param state_tolerance State tolerances to check \p state_error against.
+ * \param show_errors If the joints that violate their tolerances should be output to console. NOT REALTIME if true
  * \return True if \p state_error fulfills \p state_tolerance.
  */
 template <class State>
 inline bool checkStateTolerance(const State&                                                 state_error,
-                                const std::vector<StateTolerances<typename State::Scalar> >& state_tolerance)
+                                const std::vector<StateTolerances<typename State::Scalar> >& state_tolerance,
+                                bool show_errors = false)
 {
   const unsigned int n_joints = state_tolerance.size();
 
@@ -112,7 +114,24 @@ inline bool checkStateTolerance(const State&                                    
                           !(tol.velocity     > 0.0 && abs(state_error.velocity[i])     > tol.velocity) &&
                           !(tol.acceleration > 0.0 && abs(state_error.acceleration[i]) > tol.acceleration);
 
-    if (!is_valid) {return false;}
+    if (!is_valid)
+    {
+      if( show_errors )
+      {
+        ROS_ERROR_STREAM_NAMED("tolerances","Path state tolerances failed on joint " << i);
+
+        if (tol.position     > 0.0 && abs(state_error.position[i])     > tol.position)
+          ROS_ERROR_STREAM_NAMED("tolerances","Position Error: " << state_error.position[i] <<
+            " Position Tolerance: " << tol.position);
+        if (tol.velocity     > 0.0 && abs(state_error.velocity[i])     > tol.velocity)
+          ROS_ERROR_STREAM_NAMED("tolerances","Velocity Error: " << state_error.velocity[i] <<
+            " Velocity Tolerance: " << tol.velocity);
+        if (tol.acceleration > 0.0 && abs(state_error.acceleration[i]) > tol.acceleration)
+          ROS_ERROR_STREAM_NAMED("tolerances","Acceleration Error: " << state_error.acceleration[i] <<
+            " Acceleration Tolerance: " << tol.acceleration);
+      }
+      return false;
+    }
   }
   return true;
 }

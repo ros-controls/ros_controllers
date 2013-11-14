@@ -575,7 +575,7 @@ cancelCB(GoalHandle gh)
 
     // Enter hold current position mode
     setHoldPosition(uptime);
-    ROS_INFO_NAMED(name_, "Canceling active action goal because cancel callback recieved from actionlib.");
+    ROS_DEBUG_NAMED(name_, "Canceling active action goal because cancel callback recieved from actionlib.");
 
     // Mark the current goal as canceled
     current_active_goal->gh_.setCanceled();

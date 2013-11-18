@@ -46,7 +46,9 @@ class JointModeController: public controller_interface::Controller<hardware_inte
 {
 
 private:
+  boost::shared_ptr<hardware_interface::JointModeHandle> mode_handle_;
 
+  int joint_mode_;
 
 public:
   JointModeController()
@@ -56,7 +58,7 @@ public:
   {}
 
   bool init(
-    hardware_interface::JointModeInterface *robot, ros::NodeHandle &nh)
+    hardware_interface::JointModeInterface *hw, ros::NodeHandle &nh)
   {
 
     // Get handle name for this mode mechanism from the parameter server
@@ -69,18 +71,15 @@ public:
     }
 
     // Get the joint mode, which we represent as an int for speed. User chooses what that mode actually represents
-    int joint_mode;
-    if (!nh.getParam("joint_mode", joint_mode)) 
+    if (!nh.getParam("joint_mode", joint_mode_)) 
     {
       ROS_DEBUG_STREAM_NAMED("init","No joint_mode specified in namespace '" << nh.getNamespace() 
         << "', defaulting to position");
-      joint_mode = hardware_interface::MODE_POSITION; // default joint mode
+      joint_mode_ = hardware_interface::MODE_POSITION; // default joint mode
     }
 
-    robot->getHandle(handle_name).setMode(joint_mode);
-
-    ROS_INFO_STREAM_NAMED("init","Set joint mode to " << robot->getHandle(handle_name).getModeName(joint_mode)
-      << " (" << joint_mode << ")");
+    // Save the mode interface handle for usage in the starting() function
+    mode_handle_.reset(new hardware_interface::JointModeHandle(hw->getHandle(handle_name)));
 
     return true;
   }
@@ -88,7 +87,13 @@ public:
   void update(const ros::Time& time, const ros::Duration& period)
   {}
 
+  void starting(const ros::Time& time) 
+  {
+    mode_handle_->setMode(joint_mode_);
 
+    ROS_INFO_STREAM_NAMED("init","Set joint mode to " << mode_handle_->getModeName(joint_mode_)
+      << " (" << joint_mode_ << ")");
+  };
 
 };
 

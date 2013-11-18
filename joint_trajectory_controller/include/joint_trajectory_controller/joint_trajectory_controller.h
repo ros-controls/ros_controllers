@@ -117,8 +117,9 @@ namespace joint_trajectory_controller
  * };
  * \endcode
  *
- * \tparam HardwareInterface Controller hardware interface. Currently \p hardware_interface::PositionJointInterface and
- * \p hardware_interface::EffortJointInterface are supported out-of-the-box.
+ * \tparam HardwareInterface Controller hardware interface. Currently \p hardware_interface::PositionJointInterface,
+ * \p hardware_interface::VelocityJointInterface, and \p hardware_interface::EffortJointInterface are supported 
+ * out-of-the-box.
  */
 template <class SegmentImpl, class HardwareInterface>
 class JointTrajectoryController : public controller_interface::Controller<HardwareInterface>

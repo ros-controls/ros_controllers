@@ -203,7 +203,7 @@ public:
 
   void updateCommand(const ros::Time&     /*time*/,
                      const ros::Duration& period,
-                     const State&         /*desired_state*/,
+                     const State&         desired_state,
                      const State&         state_error)
   {
     const unsigned int n_joints = joint_handles_ptr_->size();
@@ -217,7 +217,7 @@ public:
     // Update PIDs
     for (unsigned int i = 0; i < n_joints; ++i)
     {
-      const double command = pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
+      const double command = pids_[i]->computeCommand(state_error.position[i], desired_state.velocity[i], period);
       (*joint_handles_ptr_)[i].setCommand(command);
     }
   }

@@ -89,16 +89,12 @@ public:
 
   void starting(const ros::Time& time) 
   {
+    // The controller actually changes the mode when the controller is started, not when it is loaded
     mode_handle_->setMode(joint_mode_);
-
-    ROS_INFO_STREAM_NAMED("init","Set joint mode to " << mode_handle_->getModeName(joint_mode_)
-      << " (" << joint_mode_ << ")");
   };
 
 };
 
 } // namespace
 
-PLUGINLIB_EXPORT_CLASS(
-  joint_mode_controller::JointModeController,
-  controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS( joint_mode_controller::JointModeController, controller_interface::ControllerBase)

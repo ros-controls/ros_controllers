@@ -364,7 +364,7 @@ namespace diff_drive_controller{
       ROS_INFO_STREAM("left wheel to origin: " << left_wheel_joint->parent_to_joint_origin_transform.position.x << ","
                       << left_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
                       << left_wheel_joint->parent_to_joint_origin_transform.position.z);
-      ROS_INFO_STREAM("left wheel to origin: " << right_wheel_joint->parent_to_joint_origin_transform.position.x << ","
+      ROS_INFO_STREAM("right wheel to origin: " << right_wheel_joint->parent_to_joint_origin_transform.position.x << ","
                       << right_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
                       << right_wheel_joint->parent_to_joint_origin_transform.position.z);
 

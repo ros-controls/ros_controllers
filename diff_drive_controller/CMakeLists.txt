@@ -23,6 +23,8 @@ install(TARGETS ${PROJECT_NAME}
 
 if (CATKIN_ENABLE_TESTING)
   find_package(catkin COMPONENTS rostest controller_manager)
+  include_directories(include ${catkin_INCLUDE_DIRS})
+
   add_executable(diffbot test/diffbot.cpp)
   target_link_libraries(diffbot ${catkin_LIBRARIES})
 

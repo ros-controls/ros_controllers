@@ -38,7 +38,7 @@ else()
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
-  install(FILES force_torque_sensor_plugin.xml
+  install(FILES force_torque_sensor_plugin.xml force_torque_sensor_controller.yaml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 

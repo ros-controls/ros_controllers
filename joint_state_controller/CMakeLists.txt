@@ -36,7 +36,7 @@ else()
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
-  install(FILES joint_state_plugin.xml
+  install(FILES joint_state_plugin.xml joint_state_controller.yaml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 endif()

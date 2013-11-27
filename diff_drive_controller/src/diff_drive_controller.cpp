@@ -156,6 +156,21 @@ namespace diff_drive_controller{
     ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "
                           << cmd_vel_old_threshold_ << "s.");
 
+    // Velocity and acceleration limits:
+    controller_nh.param("linear/x/has_velocity_limits"    , limiters_.lin.has_velocity_limits    , limiters_.lin.has_velocity_limits    );
+    controller_nh.param("linear/x/has_acceleration_limits", limiters_.lin.has_acceleration_limits, limiters_.lin.has_acceleration_limits);
+    controller_nh.param("linear/x/min_velocity"           , limiters_.lin.min_velocity           , limiters_.lin.min_velocity           );
+    controller_nh.param("linear/x/max_velocity"           , limiters_.lin.max_velocity           , limiters_.lin.max_velocity           );
+    controller_nh.param("linear/x/min_acceleration"       , limiters_.lin.min_acceleration       , limiters_.lin.min_acceleration       );
+    controller_nh.param("linear/x/max_acceleration"       , limiters_.lin.max_acceleration       , limiters_.lin.max_acceleration       );
+
+    controller_nh.param("angular/z/has_velocity_limits"    , limiters_.ang.has_velocity_limits    , limiters_.ang.has_velocity_limits    );
+    controller_nh.param("angular/z/has_acceleration_limits", limiters_.ang.has_acceleration_limits, limiters_.ang.has_acceleration_limits);
+    controller_nh.param("angular/z/min_velocity"           , limiters_.ang.min_velocity           , limiters_.ang.min_velocity           );
+    controller_nh.param("angular/z/max_velocity"           , limiters_.ang.max_velocity           , limiters_.ang.max_velocity           );
+    controller_nh.param("angular/z/min_acceleration"       , limiters_.ang.min_acceleration       , limiters_.ang.min_acceleration       );
+    controller_nh.param("angular/z/max_acceleration"       , limiters_.ang.max_acceleration       , limiters_.ang.max_acceleration       );
+
     if(!setOdomParamsFromUrdf(root_nh, left_wheel_name, right_wheel_name))
       return false;
 
@@ -175,23 +190,6 @@ namespace diff_drive_controller{
 
   void DiffDriveController::update(const ros::Time& time, const ros::Duration& period)
   {
-    // MOVE ROBOT
-    // command the wheels according to the messages from the cmd_vel topic
-    const Commands curr_cmd = *(command_.readFromRT());
-    if(time - curr_cmd.stamp > ros::Duration(cmd_vel_old_threshold_))
-    {
-      brake();
-    }
-    else
-    {
-      const double vel_right =
-          (curr_cmd.lin + curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
-      const double vel_left =
-          (curr_cmd.lin - curr_cmd.ang * wheel_separation_ / 2.0)/wheel_radius_;
-      left_wheel_joint_.setCommand(vel_left);
-      right_wheel_joint_.setCommand(vel_right);
-    }
-
     // COMPUTE AND PUBLISH ODOMETRY
     // estimate linear and angular velocity using joint information
     //----------------------------
@@ -215,18 +213,6 @@ namespace diff_drive_controller{
         odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinearEstimated();
         odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngularEstimated();
         odom_pub_->unlockAndPublish();
-
-        // Apply multipliers:
-        const double ws = wheel_separation_multiplier_ * wheel_separation_;
-        const double wr = wheel_radius_multiplier_     * wheel_radius_;
-
-        // Compute wheels velocities:
-        const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wr;
-        const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wr;
-
-        // Set wheels velocities:
-        left_wheel_joint_.setCommand(vel_left);
-        right_wheel_joint_.setCommand(vel_right);
       }
 
       // publish tf /odom frame
@@ -241,6 +227,34 @@ namespace diff_drive_controller{
         tf_odom_pub_->unlockAndPublish();
       }
     }
+
+    // MOVE ROBOT
+    // Retreive current velocity command and time step:
+    Commands curr_cmd = *(command_.readFromRT());
+    const double dt = (time - curr_cmd.stamp).toSec();
+
+    // Brake if cmd_vel has timeout:
+    if (dt > cmd_vel_old_threshold_)
+    {
+      curr_cmd.lin = 0.0;
+      curr_cmd.ang = 0.0;
+    }
+
+    // Limit velocities and accelerations:
+    limiters_.lin.limit(curr_cmd.lin, odometry_.getLinearEstimated() , dt);
+    limiters_.ang.limit(curr_cmd.ang, odometry_.getAngularEstimated(), dt);
+
+    // Apply multipliers:
+    const double ws = wheel_separation_multiplier_ * wheel_separation_;
+    const double wr = wheel_radius_multiplier_     * wheel_radius_;
+
+    // Compute wheels velocities:
+    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wr;
+    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wr;
+
+    // Set wheels velocities:
+    left_wheel_joint_.setCommand(vel_left);
+    right_wheel_joint_.setCommand(vel_right);
   }
 
   void DiffDriveController::starting(const ros::Time& time)

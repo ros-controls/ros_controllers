@@ -215,6 +215,18 @@ namespace diff_drive_controller{
         odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinearEstimated();
         odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngularEstimated();
         odom_pub_->unlockAndPublish();
+
+        // Apply multipliers:
+        const double ws = wheel_separation_multiplier_ * wheel_separation_;
+        const double wr = wheel_radius_multiplier_     * wheel_radius_;
+
+        // Compute wheels velocities:
+        const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wr;
+        const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wr;
+
+        // Set wheels velocities:
+        left_wheel_joint_.setCommand(vel_left);
+        right_wheel_joint_.setCommand(vel_right);
       }
 
       // publish tf /odom frame

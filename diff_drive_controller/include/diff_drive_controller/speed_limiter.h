@@ -48,8 +48,21 @@ namespace diff_drive_controller
 
     /**
      * @brief Constructor
+     * @param [in] has_velocity_limits     if true, applies velocity limits
+     * @param [in] has_acceleration_limits if true, applies acceleration limits
+     * @param [in] min_velocity Minimum velocity [m/s], usually <= 0
+     * @param [in] max_velocity Maximum velocity [m/s], usually >= 0
+     * @param [in] min_acceleration Minimum acceleration [m/s^2], usually <= 0
+     * @param [in] max_acceleration Maximum acceleration [m/s^2], usually >= 0
      */
-    SpeedLimiter(bool has_velocity_limits = false, bool has_acceleration_limits = false, double min_velocity = 0.0, double max_velocity = 0.0, double min_acceleration = 0.0, double max_acceleration = 0.0);
+    SpeedLimiter(
+      bool has_velocity_limits = false,
+      bool has_acceleration_limits = false,
+      double min_velocity = 0.0,
+      double max_velocity = 0.0,
+      double min_acceleration = 0.0,
+      double max_acceleration = 0.0
+    );
 
     /**
      * @brief Limit the velocity and acceleration

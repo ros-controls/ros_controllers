@@ -237,8 +237,7 @@ checkGoalTolerances(const typename Segment::State& state_error,
 template <class SegmentImpl, class HardwareInterface>
 JointTrajectoryController<SegmentImpl, HardwareInterface>::
 JointTrajectoryController()
-  : msg_trajectory_ptr_(new Trajectory),
-    hold_trajectory_ptr_(new Trajectory),
+  : hold_trajectory_ptr_(new Trajectory),
     verbose_(false) // Set to true during debugging
 {}
 
@@ -375,7 +374,6 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 update(const ros::Time& time, const ros::Duration& period)
 {
-
   // Updated time data
   TimeData time_data;
   time_data.time   = time;                                     // Cache current time
@@ -384,7 +382,10 @@ update(const ros::Time& time, const ros::Duration& period)
   time_data_.writeFromNonRT(time_data); // TODO: Grrr, we need a lock-free data structure here!
 
   // Update desired state: sample trajectory at current time
-  Trajectory& curr_traj = **(curr_trajectory_ptr_.readFromRT());
+  TrajectoryPtr curr_traj_ptr;
+  curr_trajectory_box_.get(curr_traj_ptr);
+  Trajectory& curr_traj = *curr_traj_ptr;
+
   typename Trajectory::const_iterator segment_it = sample(curr_traj, time_data.uptime.toSec(), desired_state_);
   if (curr_traj.end() == segment_it)
   {
@@ -473,9 +474,12 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   }
 
   // Trajectory initialization options
+  TrajectoryPtr curr_traj_ptr;
+  curr_trajectory_box_.get(curr_traj_ptr);
+
   Options options;
   options.other_time_base    = &next_update_uptime;
-  options.current_trajectory = *(curr_trajectory_ptr_.readFromNonRT());
+  options.current_trajectory = curr_traj_ptr.get();
   options.joint_names        = &joint_names_;
   options.angle_wraparound   = &angle_wraparound_;
   options.rt_goal_handle     = gh;
@@ -488,8 +492,7 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
     *traj_ptr = initJointTrajectory<Trajectory>(*msg, next_update_time, options);
     if (!traj_ptr->empty())
     {
-      msg_trajectory_ptr_ = traj_ptr;
-      curr_trajectory_ptr_.writeFromNonRT(msg_trajectory_ptr_.get());
+      curr_trajectory_box_.set(traj_ptr);
     }
     else
     {
@@ -600,7 +603,10 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
   const ros::Time sample_time = time_data->uptime + time_offset;
 
   // Sample trajectory at requested time
-  Trajectory& curr_traj = **(curr_trajectory_ptr_.readFromRT());
+  TrajectoryPtr curr_traj_ptr;
+  curr_trajectory_box_.get(curr_traj_ptr);
+  Trajectory& curr_traj = *curr_traj_ptr;
+
   typename Segment::State state;
   typename Trajectory::const_iterator segment_it = sample(curr_traj, sample_time.toSec(), state);
   if (curr_traj.end() == segment_it)
@@ -681,7 +687,7 @@ setHoldPosition(const ros::Time& time)
   hold_trajectory_ptr_->front().init(start_time, hold_start_state_,
                                      end_time,   hold_end_state_);
 
-  curr_trajectory_ptr_.initRT(hold_trajectory_ptr_.get());
+  curr_trajectory_box_.set(hold_trajectory_ptr_);
 }
 
 } // namespace

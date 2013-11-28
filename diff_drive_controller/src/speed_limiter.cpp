@@ -50,12 +50,13 @@ namespace diff_drive_controller
 {
 
   SpeedLimiter::SpeedLimiter(
-      bool has_velocity_limits,
-      bool has_acceleration_limits,
-      double min_velocity,
-      double max_velocity,
-      double min_acceleration,
-      double max_acceleration)
+    bool has_velocity_limits,
+    bool has_acceleration_limits,
+    double min_velocity,
+    double max_velocity,
+    double min_acceleration,
+    double max_acceleration
+  )
   : has_velocity_limits(has_velocity_limits),
     has_acceleration_limits(has_acceleration_limits),
     min_velocity(min_velocity),

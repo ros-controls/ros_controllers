@@ -157,19 +157,19 @@ namespace diff_drive_controller{
                           << cmd_vel_old_threshold_ << "s.");
 
     // Velocity and acceleration limits:
-    controller_nh.param("linear/x/has_velocity_limits"    , limiters_.lin.has_velocity_limits    , limiters_.lin.has_velocity_limits    );
-    controller_nh.param("linear/x/has_acceleration_limits", limiters_.lin.has_acceleration_limits, limiters_.lin.has_acceleration_limits);
-    controller_nh.param("linear/x/min_velocity"           , limiters_.lin.min_velocity           , limiters_.lin.min_velocity           );
-    controller_nh.param("linear/x/max_velocity"           , limiters_.lin.max_velocity           , limiters_.lin.max_velocity           );
-    controller_nh.param("linear/x/min_acceleration"       , limiters_.lin.min_acceleration       , limiters_.lin.min_acceleration       );
-    controller_nh.param("linear/x/max_acceleration"       , limiters_.lin.max_acceleration       , limiters_.lin.max_acceleration       );
+    controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
+    controller_nh.param("linear/x/has_acceleration_limits", limiter_lin_.has_acceleration_limits, limiter_lin_.has_acceleration_limits);
+    controller_nh.param("linear/x/min_velocity"           , limiter_lin_.min_velocity           , limiter_lin_.min_velocity           );
+    controller_nh.param("linear/x/max_velocity"           , limiter_lin_.max_velocity           , limiter_lin_.max_velocity           );
+    controller_nh.param("linear/x/min_acceleration"       , limiter_lin_.min_acceleration       , limiter_lin_.min_acceleration       );
+    controller_nh.param("linear/x/max_acceleration"       , limiter_lin_.max_acceleration       , limiter_lin_.max_acceleration       );
 
-    controller_nh.param("angular/z/has_velocity_limits"    , limiters_.ang.has_velocity_limits    , limiters_.ang.has_velocity_limits    );
-    controller_nh.param("angular/z/has_acceleration_limits", limiters_.ang.has_acceleration_limits, limiters_.ang.has_acceleration_limits);
-    controller_nh.param("angular/z/min_velocity"           , limiters_.ang.min_velocity           , limiters_.ang.min_velocity           );
-    controller_nh.param("angular/z/max_velocity"           , limiters_.ang.max_velocity           , limiters_.ang.max_velocity           );
-    controller_nh.param("angular/z/min_acceleration"       , limiters_.ang.min_acceleration       , limiters_.ang.min_acceleration       );
-    controller_nh.param("angular/z/max_acceleration"       , limiters_.ang.max_acceleration       , limiters_.ang.max_acceleration       );
+    controller_nh.param("angular/z/has_velocity_limits"    , limiter_ang_.has_velocity_limits    , limiter_ang_.has_velocity_limits    );
+    controller_nh.param("angular/z/has_acceleration_limits", limiter_ang_.has_acceleration_limits, limiter_ang_.has_acceleration_limits);
+    controller_nh.param("angular/z/min_velocity"           , limiter_ang_.min_velocity           , limiter_ang_.min_velocity           );
+    controller_nh.param("angular/z/max_velocity"           , limiter_ang_.max_velocity           , limiter_ang_.max_velocity           );
+    controller_nh.param("angular/z/min_acceleration"       , limiter_ang_.min_acceleration       , limiter_ang_.min_acceleration       );
+    controller_nh.param("angular/z/max_acceleration"       , limiter_ang_.max_acceleration       , limiter_ang_.max_acceleration       );
 
     if(!setOdomParamsFromUrdf(root_nh, left_wheel_name, right_wheel_name))
       return false;
@@ -241,8 +241,8 @@ namespace diff_drive_controller{
     }
 
     // Limit velocities and accelerations:
-    limiters_.lin.limit(curr_cmd.lin, odometry_.getLinearEstimated() , dt);
-    limiters_.ang.limit(curr_cmd.ang, odometry_.getAngularEstimated(), dt);
+    limiter_lin_.limit(curr_cmd.lin, odometry_.getLinearEstimated() , dt);
+    limiter_ang_.limit(curr_cmd.ang, odometry_.getAngularEstimated(), dt);
 
     // Apply multipliers:
     const double ws = wheel_separation_multiplier_ * wheel_separation_;

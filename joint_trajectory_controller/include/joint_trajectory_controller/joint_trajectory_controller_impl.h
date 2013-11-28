@@ -184,13 +184,13 @@ inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 checkPathTolerances(const typename Segment::State& state_error,
                     const Segment&                 segment)
 {
-  assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
-
+  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
   const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
   if (!checkStateTolerance(state_error, tolerances.state_tolerance))
   {
-    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
-    rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
+    rt_segment_goal->preallocated_result_->error_code =
+    control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
+    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
     rt_active_goal_.reset();
   }
 }
@@ -200,19 +200,18 @@ inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 checkGoalTolerances(const typename Segment::State& state_error,
                     const Segment&                 segment)
 {
-  assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
-
   // Controller uptime
   const ros::Time uptime = time_data_.readFromRT()->uptime;
 
   // Checks that we have ended inside the goal tolerances
+  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
   const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
   const bool inside_goal_tolerances = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
 
   if (inside_goal_tolerances)
   {
-    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
-    rt_active_goal_->setSucceeded(rt_active_goal_->preallocated_result_);
+    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
+    rt_segment_goal->setSucceeded(rt_segment_goal->preallocated_result_);
     rt_active_goal_.reset();
   }
   else if (uptime.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
@@ -228,8 +227,8 @@ checkGoalTolerances(const typename Segment::State& state_error,
       checkStateTolerance(state_error, tolerances.goal_state_tolerance, true);
     }
 
-    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
-    rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
+    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
+    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
     rt_active_goal_.reset();
   }
 }

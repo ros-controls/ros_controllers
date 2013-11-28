@@ -87,12 +87,6 @@ namespace diff_drive_controller
      */
     bool update(double left_pos, double right_pos, const ros::Time &time)
     {
-      const double dt = (time - timestamp_).toSec();
-      if(dt < 0.0001)
-        return false; // interval too small to integrate with
-
-      timestamp_ = time;
-
       // get current wheel joint positions
       const double left_wheel_cur_pos  = left_pos  * wheel_radius_;
       const double right_wheel_cur_pos = right_pos * wheel_radius_;
@@ -111,6 +105,13 @@ namespace diff_drive_controller
 
       // integrate
       integrate_fun_(linear, angular);
+
+      // can not estimate speed with very small time intervals
+      const double dt = (time - timestamp_).toSec();
+      if(dt < 0.0001)
+        return false; // interval too small to integrate with
+
+      timestamp_ = time;
 
       // estimate speeds: use a rolling mean to filter them out
       linear_acc_(linear/dt);

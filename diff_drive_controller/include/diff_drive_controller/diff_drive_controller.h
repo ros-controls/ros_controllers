@@ -128,12 +128,8 @@ namespace diff_drive_controller{
     double cmd_vel_old_threshold_;
 
     // speed limiters
-    struct SpeedLimiters
-    {
-      SpeedLimiter lin;
-      SpeedLimiter ang;
-    };
-    SpeedLimiters limiters_;
+    SpeedLimiter limiter_lin_;
+    SpeedLimiter limiter_ang_;
 
   private:
     /**

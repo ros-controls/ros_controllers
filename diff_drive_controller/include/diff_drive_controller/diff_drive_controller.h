@@ -1,0 +1,127 @@
+/*********************************************************************
+ * Software License Agreement (BSD License)
+ *
+ *  Copyright (c) 2013, PAL Robotics, S.L.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of the PAL Robotics nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
+
+/*
+ * Author: Enrique Fernández 
+ */
+
+#include <controller_interface/controller.h>
+#include <hardware_interface/joint_command_interface.h>
+#include <pluginlib/class_list_macros.h>
+
+#include <nav_msgs/Odometry.h>
+#include <tf/tfMessage.h>
+
+#include <realtime_tools/realtime_buffer.h>
+#include <realtime_tools/realtime_publisher.h>
+
+#include <diff_drive_controller/odometry.h>
+
+namespace diff_drive_controller{
+
+  class DiffDriveController
+      : public controller_interface::Controller<hardware_interface::VelocityJointInterface>
+  {
+  public:
+    DiffDriveController();
+
+    bool init(hardware_interface::VelocityJointInterface* hw,
+              ros::NodeHandle& root_nh,
+              ros::NodeHandle &controller_nh);
+
+    void update(const ros::Time& time, const ros::Duration& period);
+
+    void starting(const ros::Time& time);
+
+    void stopping(const ros::Time& time);
+
+  private:
+    std::string name_;
+
+    // publish rate related
+    ros::Duration publish_period_;
+    ros::Time last_state_publish_time_;
+
+    // hardware handles
+    hardware_interface::JointHandle left_wheel_joint_;
+    hardware_interface::JointHandle right_wheel_joint_;
+
+    // cmd_vel related
+    struct Commands
+    {
+      double lin;
+      double ang;
+      ros::Time stamp;
+    };
+    realtime_tools::RealtimeBuffer<Commands> command_;
+    Commands command_struct_;
+    ros::Subscriber sub_command_;
+
+    // odometry related
+    boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
+    boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
+    Odometry odometry_;
+    geometry_msgs::TransformStamped odom_frame_;
+
+    /// Wheel separation, wrt the midpoint of the wheel width
+    double wheel_separation_;
+
+    /// Wheel radius (assuming it's the same for the left and right wheels)
+    double wheel_radius_;
+
+    /// Wheel separation and radius calibration multipliers
+    double wheel_separation_multiplier_;
+    double wheel_radius_multiplier_;
+
+    /// Threshold to consider cmd_vel commands old
+    double cmd_vel_old_threshold_;
+
+  private:
+    /*
+     * @brief Brakes the wheels, i.e. sets the velocity to 0.
+     */
+    void brake();
+
+    void cmdVelCallback(const geometry_msgs::Twist& command);
+
+    bool setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
+                               const std::string& left_wheel_name,
+                               const std::string& right_wheel_name);
+
+    void setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
+
+  };
+
+  PLUGINLIB_EXPORT_CLASS(diff_drive_controller::DiffDriveController, controller_interface::ControllerBase);
+} // namespace diff_drive_controller

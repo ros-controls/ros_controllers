@@ -56,14 +56,33 @@ namespace diff_drive_controller{
   public:
     DiffDriveController();
 
+    /**
+     * @brief Initialize controller
+     * @param hw            Velocity joint interface for the wheels
+     * @param root_nh       Node handle at root namespace
+     * @param controller_nh Node handle inside the controller namespace
+     */
     bool init(hardware_interface::VelocityJointInterface* hw,
               ros::NodeHandle& root_nh,
               ros::NodeHandle &controller_nh);
 
+    /**
+     * @brief Updates controller, i.e. computes the odometry and sets the new velocity commands
+     * @param time   Current time
+     * @param period Time since the last called to update
+     */
     void update(const ros::Time& time, const ros::Duration& period);
 
+    /**
+     * @brief Starts controller
+     * @param time Current time
+     */
     void starting(const ros::Time& time);
 
+    /**
+     * @brief Stops controller
+     * @param time Current time
+     */
     void stopping(const ros::Time& time);
 
   private:

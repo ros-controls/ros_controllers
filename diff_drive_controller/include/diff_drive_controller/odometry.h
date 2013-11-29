@@ -41,11 +41,10 @@
 #define ODOMETRY_H_
 
 #include <ros/time.h>
-#include <angles/angles.h>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/rolling_mean.hpp>
-#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 namespace diff_drive_controller
 {
@@ -53,173 +52,130 @@ namespace diff_drive_controller
 
   /**
    * @brief The Odometry class handles odometry readings
-   *  (2D oriented position with related timestamp)
+   * (2D pose and velocity with related timestamp)
    */
   class Odometry
   {
   public:
+
+    /// Integration function, used to integrate the odometry:
     typedef boost::function<void(double, double)> IntegrationFunction;
 
     /**
-      * Timestamp will get the current time value
-      * Value will be set to zero
-      */
-    Odometry(size_t velocity_rolling_window_size = 10)
-      : timestamp_(0),
-        x_(0),
-        y_(0),
-        heading_(0),
-        wheel_separation_(0.0),
-        wheel_radius_(0.0),
-        left_wheel_old_pos_(0.0),
-        right_wheel_old_pos_(0.0),
-        linear_acc_(RollingWindow::window_size = velocity_rolling_window_size),
-        angular_acc_(RollingWindow::window_size = velocity_rolling_window_size),
-        integrate_fun_(boost::bind(&Odometry::integrationExact, this, _1, _2))
-    { }
+     * @brief Constructor
+     * Timestamp will get the current time value
+     * Value will be set to zero
+     * @param velocity_rolling_window_size Rolling window size used to compute the velocity mean
+     */
+    Odometry(size_t velocity_rolling_window_size = 10);
 
     /**
-     * @brief update the odometry class with latest wheels position
-     * @param left_pos
-     * @param right_pos
-     * @param time
-     * @return
+     * @brief Updates the odometry class with latest wheels position
+     * @param left_pos  Left  wheel position [rad]
+     * @param right_pos Right wheel position [rad]
+     * @param time      Current time
+     * @return true if the odometry is actually updated
      */
-    bool update(double left_pos, double right_pos, const ros::Time &time)
-    {
-      // get current wheel joint positions
-      const double left_wheel_cur_pos  = left_pos  * wheel_radius_;
-      const double right_wheel_cur_pos = right_pos * wheel_radius_;
-
-      // estimate velocity of wheels using old and current position
-      const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
-      const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;
-
-      // update old position with current
-      left_wheel_old_pos_  = left_wheel_cur_pos;
-      right_wheel_old_pos_ = right_wheel_cur_pos;
-
-      // compute linear and angular diff
-      const double linear  = (right_wheel_est_vel + left_wheel_est_vel) * 0.5 ;
-      const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_;
-
-      // integrate
-      integrate_fun_(linear, angular);
-
-      // can not estimate speed with very small time intervals
-      const double dt = (time - timestamp_).toSec();
-      if(dt < 0.0001)
-        return false; // interval too small to integrate with
-
-      timestamp_ = time;
-
-      // estimate speeds: use a rolling mean to filter them out
-      linear_acc_(linear/dt);
-      angular_acc_(angular/dt);
-
-      return true;
-    }
-
+    bool update(double left_pos, double right_pos, const ros::Time &time);
+    
+    /**
+     * @brief heading getter
+     * @return heading [rad]
+     */
     double getHeading() const
     {
       return heading_;
     }
 
+    /**
+     * @brief x position getter
+     * @return x position [m]
+     */
     double getX() const
     {
       return x_;
     }
 
+    /**
+     * @brief y position getter
+     * @return y positioin [m]
+     */
     double getY() const
     {
       return y_;
     }
 
+    /**
+     * @brief timestamp getter
+     * @return timestamp
+     */
     ros::Time getTimestamp() const
     {
       return timestamp_;
     }
 
-    double getLinearEstimated() const
-    {
-      return bacc::rolling_mean(linear_acc_);
-    }
+    /**
+     * @brief Retrieves the linear velocity estimation
+     * @return Rolling mean estimation of the linear velocity [m]
+     */
+    double getLinearEstimated() const;
 
-    double getAngularEstimated() const
-    {
-      return bacc::rolling_mean(angular_acc_);
-    }
+    /**
+     * @brief Retrieves the angular velocity estimation
+     * @return Rolling mean estimation of the angular velocity [rad/s]
+     */
+    double getAngularEstimated() const;
 
-    void setWheelParams(double wheel_separation, double wheel_radius)
-    {
-      wheel_separation_ = wheel_separation;
-      wheel_radius_     = wheel_radius;
-    }
+    /**
+     * @brief Sets the wheel parameters: radius and separation
+     * @param wheel_separation Seperation between left and right wheels [m]
+     * @param wheel_radius     Wheel radius [m]
+     */
+    void setWheelParams(double wheel_separation, double wheel_radius);
 
   private:
 
+    /// Rolling mean accumulator and window:
     typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
     typedef bacc::tag::rolling_window RollingWindow;
 
     /**
-     * @brief Function to update the odometry based on the velocities of the robot
-     * @param linear : linear velocity m/s * DT (linear desplacement) computed by encoders
-     * @param angular   : angular velocity rad/s * DT (angular desplacement) computed by encoders
-     * @param time  : timestamp of the measured velocities
-     *
+     * @brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
+     * @param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
+     * @param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
-    void integrationByRungeKutta(double linear, double angular)
-    {
-      double direction = heading_ + angular*0.5;
-
-      /// RUNGE-KUTTA 2nd ORDER INTEGRATION
-      x_       += linear * cos(direction);
-      y_       += linear * sin(direction);
-      heading_ += angular;
-
-      /// Normalization of angle between -Pi and Pi
-      heading_ = angles::normalize_angle(heading_);
-    }
+    void integrationByRungeKutta(double linear, double angular);
 
     /**
-     * @brief Other possible integration method provided by the class
-     * @param linear
-     * @param angular
+     * @brief Integrates the velocities (linear and angular) using exact method
+     * @param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
+     * @param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
-    void integrationExact(double linear, double angular)
-    {
-      if(fabs(angular) < 10e-3)
-        integrationByRungeKutta(linear, angular);
-      else
-      {
-        ///EXACT INTEGRATION (should solve problems when angular is zero)
-        double thetaOld = heading_;
-        heading_ += angular;
-        x_ +=   (linear/angular)*(sin(heading_) - sin(thetaOld));
-        y_ +=  -(linear/angular)*(cos(heading_) - cos(thetaOld));
-      }
-    }
+    void integrationExact(double linear, double angular);
 
+    /// Current timestamp:
     ros::Time timestamp_;
 
-    // current position
-    double x_;
-    double y_;
-    double heading_;
+    /// Current pose:
+    double x_;        //   [m]
+    double y_;        //   [m]
+    double heading_;  // [rad]
 
-    // kinematic parameters
+    /// Wheel kinematic parameters [m]:
     double wheel_separation_;
     double wheel_radius_;
 
-    // state at n-1
+    /// Previou wheel position/state [rad]:
     double left_wheel_old_pos_;
     double right_wheel_old_pos_;
 
-    // velocity accumulators
+    /// Rolling meand accumulators for the linar and angular velocities:
     RollingMeanAcc linear_acc_;
     RollingMeanAcc angular_acc_;
 
+    /// Integration funcion, used to integrate the odometry:
     IntegrationFunction integrate_fun_;
   };
 }
+
 #endif /* ODOMETRY_H_ */

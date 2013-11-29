@@ -12,7 +12,7 @@ include_directories(
   include ${catkin_INCLUDE_DIRS}
 )
 
-add_library(${PROJECT_NAME} src/diff_drive_controller.cpp)
+add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME}

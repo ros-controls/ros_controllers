@@ -88,11 +88,11 @@ namespace diff_drive_controller
     bool update(double left_pos, double right_pos, const ros::Time &time)
     {
       // get current wheel joint positions
-      const double left_wheel_cur_pos  = left_pos*wheel_radius_;
-      const double right_wheel_cur_pos = right_pos*wheel_radius_;
+      const double left_wheel_cur_pos  = left_pos  * wheel_radius_;
+      const double right_wheel_cur_pos = right_pos * wheel_radius_;
 
       // estimate velocity of wheels using old and current position
-      const double left_wheel_est_vel  = left_wheel_cur_pos - left_wheel_old_pos_;
+      const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
       const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;
 
       // update old position with current
@@ -100,21 +100,22 @@ namespace diff_drive_controller
       right_wheel_old_pos_ = right_wheel_cur_pos;
 
       // compute linear and angular diff
-      const double linear  = (left_wheel_est_vel + right_wheel_est_vel) * 0.5 ;
+      const double linear  = (right_wheel_est_vel + left_wheel_est_vel) * 0.5 ;
       const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_;
-
-      const double deltaTime = (time - timestamp_).toSec();
-      if(deltaTime < 0.0001)
-        return false; // interval too small to integrate with
-
-      timestamp_ = time;
 
       // integrate
       integrate_fun_(linear, angular);
 
+      // can not estimate speed with very small time intervals
+      const double dt = (time - timestamp_).toSec();
+      if(dt < 0.0001)
+        return false; // interval too small to integrate with
+
+      timestamp_ = time;
+
       // estimate speeds: use a rolling mean to filter them out
-      linear_acc_(linear/deltaTime);
-      angular_acc_(angular/deltaTime);
+      linear_acc_(linear/dt);
+      angular_acc_(angular/dt);
 
       return true;
     }

@@ -88,15 +88,15 @@ namespace diff_drive_controller{
   private:
     std::string name_;
 
-    // publish rate related
+    /// Publish rate related:
     ros::Duration publish_period_;
     ros::Time last_state_publish_time_;
 
-    // hardware handles
+    /// Hardware handles:
     hardware_interface::JointHandle left_wheel_joint_;
     hardware_interface::JointHandle right_wheel_joint_;
 
-    // cmd_vel related
+    /// Velocity command related:
     struct Commands
     {
       double lin;
@@ -107,37 +107,52 @@ namespace diff_drive_controller{
     Commands command_struct_;
     ros::Subscriber sub_command_;
 
-    // odometry related
+    /// Odometry related:
     boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
     boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
     Odometry odometry_;
     geometry_msgs::TransformStamped odom_frame_;
 
-    /// Wheel separation, wrt the midpoint of the wheel width
+    /// Wheel separation, wrt the midpoint of the wheel width:
     double wheel_separation_;
 
-    /// Wheel radius (assuming it's the same for the left and right wheels)
+    /// Wheel radius (assuming it's the same for the left and right wheels):
     double wheel_radius_;
 
-    /// Wheel separation and radius calibration multipliers
+    /// Wheel separation and radius calibration multipliers:
     double wheel_separation_multiplier_;
     double wheel_radius_multiplier_;
 
-    /// Threshold to consider cmd_vel commands old
+    /// Threshold to consider cmd_vel commands old:
     double cmd_vel_old_threshold_;
 
   private:
-    /*
-     * @brief Brakes the wheels, i.e. sets the velocity to 0.
+    /**
+     * @brief Brakes the wheels, i.e. sets the velocity to 0
      */
     void brake();
 
+    /**
+     * @brief Velocity command callback
+     * @param command Velocity command message (twist)
+     */
     void cmdVelCallback(const geometry_msgs::Twist& command);
 
+    /**
+     * @brief Sets odometry parameters from the URDF, i.e. the wheel radius and separation
+     * @param root_nh Root node handle
+     * @param left_wheel_name Name of the left wheel joint
+     * @param right_wheel_name Name of the right wheel joint
+     */
     bool setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
                                const std::string& left_wheel_name,
                                const std::string& right_wheel_name);
 
+    /**
+     * @brief Sets the odometry publishing fields
+     * @param root_nh Root node handle
+     * @param controller_nh Node handle inside the controller namespace
+     */
     void setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
 
   };

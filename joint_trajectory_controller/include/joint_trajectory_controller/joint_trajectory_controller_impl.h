@@ -373,18 +373,27 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 update(const ros::Time& time, const ros::Duration& period)
 {
-  // Updated time data
+  // Get currently followed trajectory
+  TrajectoryPtr curr_traj_ptr;
+  curr_trajectory_box_.get(curr_traj_ptr);
+  Trajectory& curr_traj = *curr_traj_ptr;
+
+  // Update time data
   TimeData time_data;
   time_data.time   = time;                                     // Cache current time
   time_data.period = period;                                   // Cache current control period
   time_data.uptime = time_data_.readFromRT()->uptime + period; // Update controller uptime
   time_data_.writeFromNonRT(time_data); // TODO: Grrr, we need a lock-free data structure here!
 
-  // Update desired state: sample trajectory at current time
-  TrajectoryPtr curr_traj_ptr;
-  curr_trajectory_box_.get(curr_traj_ptr);
-  Trajectory& curr_traj = *curr_traj_ptr;
+  // NOTE: It is very important to execute the two above code blocks in the specified sequence: first get current
+  // trajectory, then update time data. Hopefully the following paragraph sheds a bit of light on the rationale.
+  // The non-rt thread responsible for processing new commands enqueues trajectories that can start at the _next_
+  // control cycle (eg. zero start time) or later (eg. when we explicitly request a start time in the future).
+  // If we reverse the order of the two blocks above, and update the time data first; it's possible that by the time we
+  // fetch the currently followed trajectory, it has been updated by the non-rt thread with something that starts in the
+  // next control cycle, leaving the current cycle without a valid trajectory.
 
+  // Update desired state: sample trajectory at current time
   typename Trajectory::const_iterator segment_it = sample(curr_traj, time_data.uptime.toSec(), desired_state_);
   if (curr_traj.end() == segment_it)
   {

@@ -57,6 +57,7 @@
 #include <actionlib/server/action_server.h>
 
 // realtime_tools
+#include <realtime_tools/realtime_box.h>
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
 
@@ -166,6 +167,7 @@ private:
   typedef JointTrajectorySegment<SegmentImpl> Segment;
   typedef std::vector<Segment> Trajectory;
   typedef boost::shared_ptr<Trajectory> TrajectoryPtr;
+  typedef realtime_tools::RealtimeBox<TrajectoryPtr> TrajectoryBox;
   typedef typename Segment::Scalar Scalar;
 
   typedef HardwareInterfaceAdapter<HardwareInterface, typename Segment::State> HwIfaceAdapter;
@@ -181,16 +183,14 @@ private:
   RealtimeGoalHandlePtr                        rt_active_goal_;     ///< Currently active action goal, if any.
 
   /**
-   * Pointer to trajectory currently being followed. Can be either a hold trajectory or a trajectory received from a
-   * ROS message.
+   * Thread-safe container with a smart pointer to trajectory currently being followed.
+   * Can be either a hold trajectory or a trajectory received from a ROS message.
    *
-   * We store separately hold and message trajectories because the \p starting(time) method must be realtime-safe.
-   * Because of this, the (single segment) hold trajectory is be preallocated at initialization time and its size is
-   * kept unchanged.
+   * We store the hold trajectory in a separate class member because the \p starting(time) method must be realtime-safe.
+   * The (single segment) hold trajectory is preallocated at initialization time and its size is kept unchanged.
    */
-  realtime_tools::RealtimeBuffer<Trajectory*>  curr_trajectory_ptr_;
-  TrajectoryPtr                                msg_trajectory_ptr_;  ///< Last trajectory received from a ROS message.
-  TrajectoryPtr                                hold_trajectory_ptr_; ///< Last hold trajectory values.
+  TrajectoryBox curr_trajectory_box_;
+  TrajectoryPtr hold_trajectory_ptr_; ///< Last hold trajectory values.
 
   typename Segment::State current_state_;    ///< Preallocated workspace variable.
   typename Segment::State desired_state_;    ///< Preallocated workspace variable.

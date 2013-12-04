@@ -538,6 +538,19 @@ goalCB(GoalHandle gh)
     return;
   }
 
+  // Goal should specify all controller joints (they can be ordered differently). Reject if this is not the case
+  using internal::permutation;
+  std::vector<unsigned int> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
+
+  if (permutation_vector.empty())
+  {
+    ROS_ERROR_NAMED(name_, "Joints on incoming goal don't match the controller joints.");
+    control_msgs::FollowJointTrajectoryResult result;
+    result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;
+    gh.setRejected(result);
+    return;
+  }
+
   // Try to update new trajectory
   RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
   const bool update_ok = updateTrajectoryCommand(internal::share_member(gh.getGoal(), gh.getGoal()->trajectory),
@@ -558,13 +571,9 @@ goalCB(GoalHandle gh)
   }
   else
   {
-    // Reject goal. Determine if the reason was invalid joints or something else
-    using internal::permutation;
-    std::vector<unsigned int> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
-
+    // Reject invalid goal
     control_msgs::FollowJointTrajectoryResult result;
-    if (permutation_vector.empty()) {result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;}
-    else                            {result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL;}
+    result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL;
     gh.setRejected(result);
   }
 }

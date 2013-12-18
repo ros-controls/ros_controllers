@@ -265,8 +265,8 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   action_monitor_period_ = ros::Duration(1.0 / action_monitor_rate);
   ROS_DEBUG_STREAM_NAMED(name_, "Action status changes will be monitored at " << action_monitor_rate << "Hz.");
 
-  // Hold trajectory duration
-  stop_trajectory_duration_ = 0.5;
+  // Stop trajectory duration
+  stop_trajectory_duration_ = 0.0;
   if (!controller_nh_.getParam("stop_trajectory_duration", stop_trajectory_duration_))
   {
     // TODO: Remove this check/warning in Indigo

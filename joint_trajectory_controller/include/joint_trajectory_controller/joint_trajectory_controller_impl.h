@@ -236,8 +236,8 @@ checkGoalTolerances(const typename Segment::State& state_error,
 template <class SegmentImpl, class HardwareInterface>
 JointTrajectoryController<SegmentImpl, HardwareInterface>::
 JointTrajectoryController()
-  : hold_trajectory_ptr_(new Trajectory),
-    verbose_(false) // Set to true during debugging
+  : verbose_(false), // Set to true during debugging
+    hold_trajectory_ptr_(new Trajectory)
 {}
 
 template <class SegmentImpl, class HardwareInterface>

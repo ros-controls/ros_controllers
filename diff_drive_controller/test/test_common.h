@@ -40,6 +40,7 @@
 // Floating-point value comparison threshold
 const double EPS = 0.01;
 const double POSITION_TOLERANCE = 0.01; // 1 cm-s precision
+const double VELOCITY_TOLERANCE = 0.02; // 2 cm-s-1 precision
 const double ORIENTATION_TOLERANCE = 0.03; // 0.57 degree precision
 
 class DiffDriveControllerTest : public ::testing::Test

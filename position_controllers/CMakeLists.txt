@@ -20,6 +20,7 @@ else()
   include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
   add_library(${PROJECT_NAME}
     src/joint_position_controller.cpp include/position_controllers/joint_position_controller.h)
+  target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
   # Declare catkin project
   catkin_package(

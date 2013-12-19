@@ -298,8 +298,8 @@ TEST_F(JointTrajectorySegmentTest, ValidSegmentConstructionRos)
 
 TEST_F(JointTrajectorySegmentTest, ValidSegmentConstruction)
 {
-  // Construct segment from ROS message
-  EXPECT_NO_THROW(Segment(start_time,start_state, end_time, end_state));
+  // Construct segment from time/state data
+  EXPECT_NO_THROW(Segment(start_time, start_state, end_time, end_state));
   Segment segment(start_time, start_state, end_time, end_state);
 
   // Check start/end times
@@ -324,6 +324,50 @@ TEST_F(JointTrajectorySegmentTest, ValidSegmentConstruction)
     segment.sample(segment.endTime(), state);
     EXPECT_EQ(p_end.positions[0],  state.position[0]);
     EXPECT_EQ(p_end.velocities[0], state.velocity[0]);
+  }
+}
+
+TEST_F(JointTrajectorySegmentTest, CrossValidateSegmentConstruction)
+{
+  // Compare the output of initializing a segment from a ROS message, or from time/state data structures
+  // This test also checks that empty accelerations in a ROS message are honored and not initialized to zero.
+
+  // Construct segment from time/state data
+  EXPECT_NO_THROW(Segment(start_time, start_state, end_time, end_state));
+  Segment segment_no_ros(start_time, start_state, end_time, end_state);
+
+  // Construct segment from ROS message
+  EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end));
+  Segment segment_ros(traj_start_time, p_start, p_end);
+
+  // Check start/end times
+  {
+    EXPECT_EQ(segment_no_ros.startTime(), segment_ros.startTime());
+    EXPECT_EQ(segment_no_ros.endTime(), segment_ros.endTime());
+  }
+
+  // Check start state
+  {
+    typename Segment::State state_no_ros;
+    typename Segment::State state_ros;
+    segment_no_ros.sample(segment_no_ros.startTime(), state_no_ros);
+    segment_ros.sample(segment_ros.startTime(), state_ros);
+
+    EXPECT_EQ(state_ros.position[0],     state_no_ros.position[0]);
+    EXPECT_EQ(state_ros.velocity[0],     state_no_ros.velocity[0]);
+    EXPECT_EQ(state_ros.acceleration[0], state_no_ros.acceleration[0]);
+  }
+
+  // Check end state
+  {
+    typename Segment::State state_no_ros;
+    typename Segment::State state_ros;
+    segment_no_ros.sample(segment_no_ros.endTime(), state_no_ros);
+    segment_ros.sample(segment_ros.endTime(), state_ros);
+
+    EXPECT_EQ(state_ros.position[0],     state_no_ros.position[0]);
+    EXPECT_EQ(state_ros.velocity[0],     state_no_ros.velocity[0]);
+    EXPECT_EQ(state_ros.acceleration[0], state_no_ros.acceleration[0]);
   }
 }
 

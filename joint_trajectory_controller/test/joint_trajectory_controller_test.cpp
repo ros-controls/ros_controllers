@@ -300,6 +300,16 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
     ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
     EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_GOAL);
   }
+
+  // Empty trajectory through action interface
+  // NOTE: Sending an empty trajectory through the topic interface cancels execution of all queued segments, but
+  // an empty trajectory is interpreted by the action interface as not having the correct joint names.
+  {
+    ActionGoal empty_goal;
+    action_client->sendGoal(empty_goal);
+    ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS);
+  }
 }
 
 // Uninterrupted trajectory execution //////////////////////////////////////////////////////////////////////////////////
@@ -822,6 +832,8 @@ TEST_F(JointTrajectoryControllerTest, ignorePartiallyOldActionTraj)
     EXPECT_NEAR(traj.points.back().accelerations[i], state->desired.accelerations[i], EPS);
   }
 }
+
+// Tolerance checking //////////////////////////////////////////////////////////////////////////////////////////////////
 
 TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
 {

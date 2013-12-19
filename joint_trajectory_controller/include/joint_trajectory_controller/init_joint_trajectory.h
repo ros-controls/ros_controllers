@@ -267,14 +267,21 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     ++it;                     // Points to first point after current time OR sequence end
     if (it == msg.points.end())
     {
+      ros::Duration last_point_dur = time - (msg_start_time + (--it)->time_from_start);
       ROS_WARN_STREAM("Dropping all " << msg.points.size() <<
-                      " trajectory points, as they occur before the specified time.");
+                      " trajectory point(s), as they occur before the current time.\n" <<
+                      "Last point is " << std::fixed << std::setprecision(3) << last_point_dur.toSec() <<
+                      "s in the past.");
       return Trajectory();
     }
     else
     {
+      ros::Duration next_point_dur = msg_start_time + it->time_from_start - time;
       ROS_WARN_STREAM("Dropping first " << std::distance(msg.points.begin(), it) <<
-                      " trajectory points out of " << msg.points.size() << ", as they occur before the specified time.");
+                      " trajectory point(s) out of " << msg.points.size() <<
+                      ", as they occur before the current time.\n" <<
+                      "First valid point will be reached in " << std::fixed << std::setprecision(3) <<
+                      next_point_dur.toSec() << "s.");
     }
   }
 
@@ -361,10 +368,10 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   if (has_current_trajectory)
   {
     log_str << ":";
-    log_str << "\n- " << num_old_segments << " segments will still be executed from current trajectory.";
-    log_str << "\n- 1 segment for transitioning between the current trajectory and first point of the input message.";
+    log_str << "\n- " << num_old_segments << " segment(s) will still be executed from previous trajectory.";
+    log_str << "\n- 1 segment added for transitioning between the current trajectory and first point of the input message.";
     if (num_new_segments > 0) {log_str << "\n- " << num_new_segments << " new segments (" << (num_new_segments + 1) <<
-                               " points) taken from the input message.";}
+                               " points) taken from the input trajectory.";}
   }
   else {log_str << ".";}
   ROS_DEBUG_STREAM(log_str.str());

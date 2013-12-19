@@ -66,23 +66,23 @@ namespace diff_drive_controller
 
     /**
      * @brief Limit the velocity and acceleration
-     * @param [out] v  Velocity
-     * @param [in]  v0 Previous velocity
-     * @param [in]  dt Time step
+     * @param [in, out] v  Velocity [m/s]
+     * @param [in]      v0 Previous velocity [m/s]
+     * @param [in]      dt Time step [s]
      */
     void limit(double& v, double v0, double dt);
 
     /**
      * @brief Limit the velocity
-     * @param [out] v Velocity
+     * @param [in, out] v Velocity [m/s]
      */
     void limit_velocity(double& v);
 
     /**
      * @brief Limit the acceleration
-     * @param [out] v  Velocity
-     * @param [in]  v0 Previous velocity
-     * @param [in]  dt Time step
+     * @param [in, out] v  Velocity [m/s]
+     * @param [in]      v0 Previous velocity [m/s]
+     * @param [in]      dt Time step [s]
      */
     void limit_acceleration(double& v, double v0, double dt);
 

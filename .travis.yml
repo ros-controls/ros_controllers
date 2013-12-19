@@ -21,7 +21,7 @@ before_install: # Use this to prepare the system to install prerequisites or dep
   - export REPOSITORY_NAME=${PWD##*/}
   - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
   - export TESTS=$(for f in `ls $CI_SOURCE_PATH` ; do [ -d $f ] && echo -n "run_tests_$f " ; done)
-  - echo "Tests to run: $TESTS"
+  - echo "Tests to run $TESTS"
   - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu precise main" > /etc/apt/sources.list.d/ros-latest.list'
   - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
   - sudo apt-get update -qq

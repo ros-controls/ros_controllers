@@ -16,7 +16,7 @@
         pkg="controller_manager" type="spawner" output="screen"
         args="diffbot_controller" />
 
-  <!-- Rxplot monitoring -->
+  <!-- rqt_plot monitoring -->
   <!--
   <node name="diffbot_pos_monitor"
         pkg="rqt_plot"

@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(diff_drive_controller)
 
-find_package(catkin REQUIRED COMPONENTS controller_interface urdf angles)
+find_package(catkin REQUIRED COMPONENTS
+    controller_interface
+    urdf
+    angles
+    tf
+    nav_msgs)
 
 catkin_package(
   INCLUDE_DIRS include

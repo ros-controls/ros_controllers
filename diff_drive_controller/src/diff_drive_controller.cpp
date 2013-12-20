@@ -242,8 +242,9 @@ namespace diff_drive_controller{
 
     // Limit velocities and accelerations:
     double cmd_dt = period.toSec();
-    limiter_lin_.limit(curr_cmd.lin, odometry_.getLinearEstimated() , cmd_dt);
-    limiter_ang_.limit(curr_cmd.ang, odometry_.getAngularEstimated(), cmd_dt);
+    limiter_lin_.limit(curr_cmd.lin, last_cmd_.lin, cmd_dt);
+    limiter_ang_.limit(curr_cmd.ang, last_cmd_.ang, cmd_dt);
+    last_cmd_ = curr_cmd;
 
     // Apply multipliers:
     const double ws = wheel_separation_multiplier_ * wheel_separation_;

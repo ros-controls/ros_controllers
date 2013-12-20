@@ -36,4 +36,6 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_controller_limits.test
     test/diff_drive_limits_test.cpp)
   target_link_libraries(diff_drive_limits_test ${catkin_LIBRARIES})
+  add_rostest(test/diff_drive_multipliers.test)
+
 endif()

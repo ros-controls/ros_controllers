@@ -99,7 +99,7 @@ static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link
     return false;
   }
 
-  wheel_radius = (dynamic_cast<urdf::Cylinder*>(wheel_link->collision->geometry.get()))->radius;
+  wheel_radius = (static_cast<urdf::Cylinder*>(wheel_link->collision->geometry.get()))->radius;
   return true;
 }
 

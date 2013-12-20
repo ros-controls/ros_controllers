@@ -25,12 +25,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-/// \author Bence Magyar
+/// \author Paul Mathieu
 
 #include "test_common.h"
 
 // TEST CASES
-TEST_F(DiffDriveControllerTest, testForward)
+TEST_F(DiffDriveControllerTest, testAccelerationLimits)
 {
   // wait for ROS
   while(!isControllerAlive())
@@ -42,40 +42,26 @@ TEST_F(DiffDriveControllerTest, testForward)
   cmd_vel.linear.x = 0.0;
   cmd_vel.angular.z = 0.0;
   publish(cmd_vel);
-  ros::Duration(0.1).sleep();
+  ros::Duration(2.0).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
-  // send a velocity command of 0.1 m/s
-  cmd_vel.linear.x = 0.1;
+  // send a big command
+  cmd_vel.linear.x = 10.0;
   publish(cmd_vel);
-  // wait for 10s
-  ros::Duration(10.0).sleep();
+  // wait for a while
+  ros::Duration(0.5).sleep();
 
   nav_msgs::Odometry new_odom = getLastOdom();
 
-  // check if the robot travelled 1 meter in x, changes in the other fields should be ~~0
-  EXPECT_NEAR(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 1.0, POSITION_TOLERANCE);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
+  // check if the robot speed is now 0.5 m.s-1, which is 1.0m.s-2 * 0.5s
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), 0.5 + VELOCITY_TOLERANCE);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), EPS);
 
-  // convert to rpy and test that way
-  double roll_old, pitch_old, yaw_old;
-  double roll_new, pitch_new, yaw_new;
-  tf::Matrix3x3(tfQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
-  tf::Matrix3x3(tfQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
-  EXPECT_LT(fabs(roll_new - roll_old), EPS);
-  EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
-  EXPECT_LT(fabs(yaw_new - yaw_old), EPS);
-  EXPECT_NEAR(fabs(new_odom.twist.twist.linear.x), 0.1, EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.z), EPS);
-
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.z), EPS);
+  cmd_vel.linear.x = 0.0;
+  publish(cmd_vel);
 }
 
-TEST_F(DiffDriveControllerTest, testTurn)
+TEST_F(DiffDriveControllerTest, testVelocityLimits)
 {
   // wait for ROS
   while(!isControllerAlive())
@@ -87,44 +73,29 @@ TEST_F(DiffDriveControllerTest, testTurn)
   cmd_vel.linear.x = 0.0;
   cmd_vel.angular.z = 0.0;
   publish(cmd_vel);
-  ros::Duration(0.1).sleep();
+  ros::Duration(2.0).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
-  // send a velocity command
-  cmd_vel.angular.z = M_PI/10.0;
+  // send a big command
+  cmd_vel.linear.x = 10.0;
   publish(cmd_vel);
-  // wait for 10s
-  ros::Duration(10.0).sleep();
+  // wait for a while
+  ros::Duration(5.0).sleep();
 
   nav_msgs::Odometry new_odom = getLastOdom();
 
-  // check if the robot rotated PI around z, changes in the other fields should be ~~0
-  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), EPS);
+  // check if the robot speed is now 1.0 m.s-1, the limit
+  EXPECT_LT(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x, 5.0 + POSITION_TOLERANCE);
   EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
 
-  // convert to rpy and test that way
-  double roll_old, pitch_old, yaw_old;
-  double roll_new, pitch_new, yaw_new;
-  tf::Matrix3x3(tfQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
-  tf::Matrix3x3(tfQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
-  EXPECT_LT(fabs(roll_new - roll_old), EPS);
-  EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
-  EXPECT_NEAR(fabs(yaw_new - yaw_old), M_PI, ORIENTATION_TOLERANCE);
-
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.x), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.z), EPS);
-
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
-  EXPECT_NEAR(fabs(new_odom.twist.twist.angular.z), M_PI/10.0, EPS);
+  cmd_vel.linear.x = 0.0;
+  publish(cmd_vel);
 }
 
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "diff_drive_test");
+  ros::init(argc, argv, "diff_drive_limits_test");
 
   ros::AsyncSpinner spinner(1);
   spinner.start();

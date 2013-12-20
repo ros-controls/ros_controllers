@@ -33,7 +33,7 @@
  *********************************************************************/
 
 /*
- * Author: Enrique Fernández 
+ * Author: Enrique Fernández
  */
 
 #include <controller_interface/controller.h>
@@ -47,6 +47,7 @@
 #include <realtime_tools/realtime_publisher.h>
 
 #include <diff_drive_controller/odometry.h>
+#include <diff_drive_controller/speed_limiter.h>
 
 namespace diff_drive_controller{
 
@@ -125,6 +126,10 @@ namespace diff_drive_controller{
 
     /// Threshold to consider cmd_vel commands old:
     double cmd_vel_old_threshold_;
+
+    // speed limiters
+    SpeedLimiter limiter_lin_;
+    SpeedLimiter limiter_ang_;
 
   private:
     /**

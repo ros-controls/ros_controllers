@@ -12,7 +12,7 @@ include_directories(
   include ${catkin_INCLUDE_DIRS}
 )
 
-add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp)
+add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME}
@@ -32,4 +32,8 @@ if (CATKIN_ENABLE_TESTING)
 
   add_rostest_gtest(diff_drive_test test/diff_drive_controller.test test/diff_drive_test.cpp)
   target_link_libraries(diff_drive_test ${catkin_LIBRARIES})
+  add_rostest_gtest(diff_drive_limits_test
+    test/diff_drive_controller_limits.test
+    test/diff_drive_limits_test.cpp)
+  target_link_libraries(diff_drive_limits_test ${catkin_LIBRARIES})
 endif()

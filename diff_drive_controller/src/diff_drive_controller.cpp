@@ -106,12 +106,11 @@ static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link
 namespace diff_drive_controller{
 
   DiffDriveController::DiffDriveController()
-    : command_struct_(),
-      wheel_separation_(0.0),
-      wheel_radius_(0.0),
-      wheel_separation_multiplier_(1.0),
-      wheel_radius_multiplier_(1.0),
-      cmd_vel_old_threshold_(1.0)
+    : wheel_separation_(0.0)
+    , wheel_radius_(0.0)
+    , wheel_separation_multiplier_(1.0)
+    , wheel_radius_multiplier_(1.0)
+    , cmd_vel_old_threshold_(1.0)
   {
   }
 
@@ -242,8 +241,9 @@ namespace diff_drive_controller{
 
     // Limit velocities and accelerations:
     double cmd_dt = period.toSec();
-    limiter_lin_.limit(curr_cmd.lin, odometry_.getLinearEstimated() , cmd_dt);
-    limiter_ang_.limit(curr_cmd.ang, odometry_.getAngularEstimated(), cmd_dt);
+    limiter_lin_.limit(curr_cmd.lin, last_cmd_.lin, cmd_dt);
+    limiter_ang_.limit(curr_cmd.ang, last_cmd_.ang, cmd_dt);
+    last_cmd_ = curr_cmd;
 
     // Apply multipliers:
     const double ws = wheel_separation_multiplier_ * wheel_separation_;

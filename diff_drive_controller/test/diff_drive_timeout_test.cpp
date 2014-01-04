@@ -42,13 +42,14 @@ TEST_F(DiffDriveControllerTest, testTimeout)
   cmd_vel.linear.x = 0.0;
   cmd_vel.angular.z = 0.0;
   publish(cmd_vel);
+  // give some time to the controller to react to the command
   ros::Duration(0.1).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
   // send a velocity command of 1 m/s
   cmd_vel.linear.x = 1.0;
   publish(cmd_vel);
-  // wait for 10s
+  // wait a bit
   ros::Duration(3.0).sleep();
 
   nav_msgs::Odometry new_odom = getLastOdom();
@@ -64,7 +65,6 @@ int main(int argc, char** argv)
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
-  //ros::Duration(0.5).sleep();
   int ret = RUN_ALL_TESTS();
   spinner.stop();
   ros::shutdown();

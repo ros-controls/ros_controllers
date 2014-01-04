@@ -2,7 +2,7 @@
   <!-- Load common test stuff -->
   <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
 
-  <!-- Load diff-drive limits -->
+  <!-- Load diff-drive cmd_vel_timeout -->
   <rosparam command="load" file="$(find diff_drive_controller)/test/diffbot_timeout.yaml" />
 
   <!-- Controller test -->

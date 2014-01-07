@@ -99,19 +99,18 @@ static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link
     return false;
   }
 
-  wheel_radius = (dynamic_cast<urdf::Cylinder*>(wheel_link->collision->geometry.get()))->radius;
+  wheel_radius = (static_cast<urdf::Cylinder*>(wheel_link->collision->geometry.get()))->radius;
   return true;
 }
 
 namespace diff_drive_controller{
 
   DiffDriveController::DiffDriveController()
-    : command_struct_(),
-      wheel_separation_(0.0),
-      wheel_radius_(0.0),
-      wheel_separation_multiplier_(1.0),
-      wheel_radius_multiplier_(1.0),
-      cmd_vel_timeout_(0.5)
+    : wheel_separation_(0.0)
+    , wheel_radius_(0.0)
+    , wheel_separation_multiplier_(1.0)
+    , wheel_radius_multiplier_(1.0)
+    , cmd_vel_timeout_(0.5)
   {
   }
 
@@ -242,8 +241,9 @@ namespace diff_drive_controller{
 
     // Limit velocities and accelerations:
     double cmd_dt = period.toSec();
-    limiter_lin_.limit(curr_cmd.lin, odometry_.getLinearEstimated() , cmd_dt);
-    limiter_ang_.limit(curr_cmd.ang, odometry_.getAngularEstimated(), cmd_dt);
+    limiter_lin_.limit(curr_cmd.lin, last_cmd_.lin, cmd_dt);
+    limiter_ang_.limit(curr_cmd.ang, last_cmd_.ang, cmd_dt);
+    last_cmd_ = curr_cmd;
 
     // Apply multipliers:
     const double ws = wheel_separation_multiplier_ * wheel_separation_;
@@ -348,10 +348,12 @@ namespace diff_drive_controller{
     }
 
     /// Set wheel params for the odometry computation
-    odometry_.setWheelParams(wheel_separation_, wheel_radius_);
+    const double ws = wheel_separation_multiplier_ * wheel_separation_;
+    const double wr = wheel_radius_multiplier_     * wheel_radius_;
+    odometry_.setWheelParams(ws, wr);
     ROS_INFO_STREAM_NAMED(name_,
-                          "Odometry params : wheel separation " << wheel_separation_
-                          << ", wheel radius " << wheel_radius_);
+                          "Odometry params : wheel separation " << ws
+                          << ", wheel radius " << wr);
     return true;
   }
 

@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(diff_drive_controller)
 
-find_package(catkin REQUIRED COMPONENTS controller_interface urdf angles)
+find_package(catkin REQUIRED COMPONENTS
+    controller_interface
+    urdf
+    angles
+    tf
+    nav_msgs)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -40,4 +45,6 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_timeout.test
     test/diff_drive_timeout_test.cpp)
   target_link_libraries(diff_drive_timeout_test ${catkin_LIBRARIES})
+  add_rostest(test/diff_drive_multipliers.test)
+
 endif()

@@ -103,6 +103,8 @@ namespace diff_drive_controller{
       double lin;
       double ang;
       ros::Time stamp;
+
+      Commands() : lin(0.0), ang(0.0), stamp(0.0) {}
     };
     realtime_tools::RealtimeBuffer<Commands> command_;
     Commands command_struct_;
@@ -128,6 +130,7 @@ namespace diff_drive_controller{
     double cmd_vel_old_threshold_;
 
     // speed limiters
+    Commands last_cmd_;
     SpeedLimiter limiter_lin_;
     SpeedLimiter limiter_ang_;
 

@@ -110,7 +110,7 @@ namespace diff_drive_controller{
     , wheel_radius_(0.0)
     , wheel_separation_multiplier_(1.0)
     , wheel_radius_multiplier_(1.0)
-    , cmd_vel_old_threshold_(1.0)
+    , cmd_vel_timeout_(0.5)
   {
   }
 
@@ -151,9 +151,9 @@ namespace diff_drive_controller{
     ROS_INFO_STREAM_NAMED(name_, "Wheel radius will be multiplied by "
                           << wheel_radius_multiplier_ << ".");
 
-    controller_nh.param("cmd_vel_old_threshold", cmd_vel_old_threshold_, cmd_vel_old_threshold_);
+    controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
     ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "
-                          << cmd_vel_old_threshold_ << "s.");
+                          << cmd_vel_timeout_ << "s.");
 
     // Velocity and acceleration limits:
     controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
@@ -233,7 +233,7 @@ namespace diff_drive_controller{
     const double dt = (time - curr_cmd.stamp).toSec();
 
     // Brake if cmd_vel has timeout:
-    if (dt > cmd_vel_old_threshold_)
+    if (dt > cmd_vel_timeout_)
     {
       curr_cmd.lin = 0.0;
       curr_cmd.ang = 0.0;

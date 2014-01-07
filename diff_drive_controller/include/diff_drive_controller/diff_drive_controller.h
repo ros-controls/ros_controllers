@@ -126,8 +126,8 @@ namespace diff_drive_controller{
     double wheel_separation_multiplier_;
     double wheel_radius_multiplier_;
 
-    /// Threshold to consider cmd_vel commands old:
-    double cmd_vel_old_threshold_;
+    /// Timeout to consider cmd_vel commands old:
+    double cmd_vel_timeout_;
 
     // speed limiters
     Commands last_cmd_;

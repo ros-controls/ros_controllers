@@ -5,4 +5,4 @@ diffbot_controller:
   publish_rate: 50.0 # defaults to 50
   pose_covariance_diagonal: [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1000.0]
   twist_covariance_diagonal: [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1000.0]
-  cmd_vel_old_threshold: 20.0 # a proper test for this will be made later
+  cmd_vel_timeout: 20.0 # we test this separately, give plenty for the other tests

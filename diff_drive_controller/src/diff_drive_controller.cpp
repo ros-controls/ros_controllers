@@ -158,17 +158,17 @@ namespace diff_drive_controller{
     // Velocity and acceleration limits:
     controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
     controller_nh.param("linear/x/has_acceleration_limits", limiter_lin_.has_acceleration_limits, limiter_lin_.has_acceleration_limits);
-    controller_nh.param("linear/x/min_velocity"           , limiter_lin_.min_velocity           , limiter_lin_.min_velocity           );
-    controller_nh.param("linear/x/max_velocity"           , limiter_lin_.max_velocity           , limiter_lin_.max_velocity           );
-    controller_nh.param("linear/x/min_acceleration"       , limiter_lin_.min_acceleration       , limiter_lin_.min_acceleration       );
-    controller_nh.param("linear/x/max_acceleration"       , limiter_lin_.max_acceleration       , limiter_lin_.max_acceleration       );
+    controller_nh.param("linear/x/max_velocity"           , limiter_lin_.max_velocity           ,  limiter_lin_.max_velocity          );
+    controller_nh.param("linear/x/min_velocity"           , limiter_lin_.min_velocity           , -limiter_lin_.max_velocity          );
+    controller_nh.param("linear/x/max_acceleration"       , limiter_lin_.max_acceleration       ,  limiter_lin_.max_acceleration      );
+    controller_nh.param("linear/x/min_acceleration"       , limiter_lin_.min_acceleration       , -limiter_lin_.max_acceleration      );
 
     controller_nh.param("angular/z/has_velocity_limits"    , limiter_ang_.has_velocity_limits    , limiter_ang_.has_velocity_limits    );
     controller_nh.param("angular/z/has_acceleration_limits", limiter_ang_.has_acceleration_limits, limiter_ang_.has_acceleration_limits);
-    controller_nh.param("angular/z/min_velocity"           , limiter_ang_.min_velocity           , limiter_ang_.min_velocity           );
-    controller_nh.param("angular/z/max_velocity"           , limiter_ang_.max_velocity           , limiter_ang_.max_velocity           );
-    controller_nh.param("angular/z/min_acceleration"       , limiter_ang_.min_acceleration       , limiter_ang_.min_acceleration       );
-    controller_nh.param("angular/z/max_acceleration"       , limiter_ang_.max_acceleration       , limiter_ang_.max_acceleration       );
+    controller_nh.param("angular/z/max_velocity"           , limiter_ang_.max_velocity           ,  limiter_ang_.max_velocity          );
+    controller_nh.param("angular/z/min_velocity"           , limiter_ang_.min_velocity           , -limiter_ang_.max_velocity          );
+    controller_nh.param("angular/z/max_acceleration"       , limiter_ang_.max_acceleration       ,  limiter_ang_.max_acceleration      );
+    controller_nh.param("angular/z/min_acceleration"       , limiter_ang_.min_acceleration       , -limiter_ang_.max_acceleration      );
 
     if(!setOdomParamsFromUrdf(root_nh, left_wheel_name, right_wheel_name))
       return false;

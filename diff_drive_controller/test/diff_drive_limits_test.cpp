@@ -30,7 +30,7 @@
 #include "test_common.h"
 
 // TEST CASES
-TEST_F(DiffDriveControllerTest, testAccelerationLimits)
+TEST_F(DiffDriveControllerTest, testLinearAccelerationLimits)
 {
   // wait for ROS
   while(!isControllerAlive())
@@ -61,7 +61,7 @@ TEST_F(DiffDriveControllerTest, testAccelerationLimits)
   publish(cmd_vel);
 }
 
-TEST_F(DiffDriveControllerTest, testVelocityLimits)
+TEST_F(DiffDriveControllerTest, testLinearVelocityLimits)
 {
   // wait for ROS
   while(!isControllerAlive())
@@ -89,6 +89,68 @@ TEST_F(DiffDriveControllerTest, testVelocityLimits)
   EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
 
   cmd_vel.linear.x = 0.0;
+  publish(cmd_vel);
+}
+
+TEST_F(DiffDriveControllerTest, testAngularAccelerationLimits)
+{
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(2.0).sleep();
+  // get initial odom
+  nav_msgs::Odometry old_odom = getLastOdom();
+  // send a big command
+  cmd_vel.angular.z = 10.0;
+  publish(cmd_vel);
+  // wait for a while
+  ros::Duration(0.5).sleep();
+
+  nav_msgs::Odometry new_odom = getLastOdom();
+
+  // check if the robot speed is now 1.0rad.s-1, which is 2.0rad.s-2 * 0.5s
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), 1.0 + VELOCITY_TOLERANCE);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), EPS);
+
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+}
+
+TEST_F(DiffDriveControllerTest, testAngularVelocityLimits)
+{
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(2.0).sleep();
+  // get initial odom
+  nav_msgs::Odometry old_odom = getLastOdom();
+  // send a big command
+  cmd_vel.angular.z = 10.0;
+  publish(cmd_vel);
+  // wait for a while
+  ros::Duration(5.0).sleep();
+
+  nav_msgs::Odometry new_odom = getLastOdom();
+
+  // check if the robot speed is now 2.0rad.s-1, the limit
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), 2.0 + VELOCITY_TOLERANCE);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), EPS);
+
+  cmd_vel.angular.z = 0.0;
   publish(cmd_vel);
 }
 

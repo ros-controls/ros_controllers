@@ -222,8 +222,7 @@ namespace diff_drive_controller{
         odom_frame_.transform.translation.x = odometry_.getX();
         odom_frame_.transform.translation.y = odometry_.getY();
         odom_frame_.transform.rotation = orientation;
-        tf_odom_pub_->msg_.transforms.clear();
-        tf_odom_pub_->msg_.transforms.push_back(odom_frame_);
+        tf_odom_pub_->msg_.transforms[0] = odom_frame_;
         tf_odom_pub_->unlockAndPublish();
       }
     }
@@ -398,6 +397,7 @@ namespace diff_drive_controller{
         (0)   (0)   (0)  (0) (static_cast<double>(twist_cov_list[4])) (0)
         (0)   (0)   (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
     tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
+    tf_odom_pub_->msg_.transforms.resize(1);
     odom_frame_.transform.translation.z = 0.0;
     odom_frame_.child_frame_id = "base_footprint";
     odom_frame_.header.frame_id = "odom";

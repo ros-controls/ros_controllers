@@ -51,7 +51,7 @@ namespace diff_drive_controller
   namespace bacc = boost::accumulators;
 
   /**
-   * @brief The Odometry class handles odometry readings
+   * \brief The Odometry class handles odometry readings
    * (2D pose and velocity with related timestamp)
    */
   class Odometry
@@ -62,25 +62,25 @@ namespace diff_drive_controller
     typedef boost::function<void(double, double)> IntegrationFunction;
 
     /**
-     * @brief Constructor
+     * \brief Constructor
      * Timestamp will get the current time value
      * Value will be set to zero
-     * @param velocity_rolling_window_size Rolling window size used to compute the velocity mean
+     * \param velocity_rolling_window_size Rolling window size used to compute the velocity mean
      */
     Odometry(size_t velocity_rolling_window_size = 10);
 
     /**
-     * @brief Updates the odometry class with latest wheels position
-     * @param left_pos  Left  wheel position [rad]
-     * @param right_pos Right wheel position [rad]
-     * @param time      Current time
-     * @return true if the odometry is actually updated
+     * \brief Updates the odometry class with latest wheels position
+     * \param left_pos  Left  wheel position [rad]
+     * \param right_pos Right wheel position [rad]
+     * \param time      Current time
+     * \return true if the odometry is actually updated
      */
     bool update(double left_pos, double right_pos, const ros::Time &time);
 
     /**
-     * @brief heading getter
-     * @return heading [rad]
+     * \brief heading getter
+     * \return heading [rad]
      */
     double getHeading() const
     {
@@ -88,8 +88,8 @@ namespace diff_drive_controller
     }
 
     /**
-     * @brief x position getter
-     * @return x position [m]
+     * \brief x position getter
+     * \return x position [m]
      */
     double getX() const
     {
@@ -97,8 +97,8 @@ namespace diff_drive_controller
     }
 
     /**
-     * @brief y position getter
-     * @return y positioin [m]
+     * \brief y position getter
+     * \return y positioin [m]
      */
     double getY() const
     {
@@ -106,8 +106,8 @@ namespace diff_drive_controller
     }
 
     /**
-     * @brief timestamp getter
-     * @return timestamp
+     * \brief timestamp getter
+     * \return timestamp
      */
     ros::Time getTimestamp() const
     {
@@ -115,21 +115,21 @@ namespace diff_drive_controller
     }
 
     /**
-     * @brief Retrieves the linear velocity estimation
-     * @return Rolling mean estimation of the linear velocity [m]
+     * \brief Retrieves the linear velocity estimation
+     * \return Rolling mean estimation of the linear velocity [m]
      */
     double getLinearEstimated() const;
 
     /**
-     * @brief Retrieves the angular velocity estimation
-     * @return Rolling mean estimation of the angular velocity [rad/s]
+     * \brief Retrieves the angular velocity estimation
+     * \return Rolling mean estimation of the angular velocity [rad/s]
      */
     double getAngularEstimated() const;
 
     /**
-     * @brief Sets the wheel parameters: radius and separation
-     * @param wheel_separation Seperation between left and right wheels [m]
-     * @param wheel_radius     Wheel radius [m]
+     * \brief Sets the wheel parameters: radius and separation
+     * \param wheel_separation Seperation between left and right wheels [m]
+     * \param wheel_radius     Wheel radius [m]
      */
     void setWheelParams(double wheel_separation, double wheel_radius);
 
@@ -140,16 +140,16 @@ namespace diff_drive_controller
     typedef bacc::tag::rolling_window RollingWindow;
 
     /**
-     * @brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
-     * @param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
-     * @param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
+     * \brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
+     * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
+     * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
     void integrateRungeKutta2(double linear, double angular);
 
     /**
-     * @brief Integrates the velocities (linear and angular) using exact method
-     * @param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
-     * @param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
+     * \brief Integrates the velocities (linear and angular) using exact method
+     * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
+     * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
     void integrateExact(double linear, double angular);
 

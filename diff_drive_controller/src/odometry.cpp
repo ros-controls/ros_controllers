@@ -125,9 +125,9 @@ namespace diff_drive_controller
   }
 
   /**
-   * @brief Other possible integration method provided by the class
-   * @param linear
-   * @param angular
+   * \brief Other possible integration method provided by the class
+   * \param linear
+   * \param angular
    */
   void Odometry::integrateExact(double linear, double angular)
   {

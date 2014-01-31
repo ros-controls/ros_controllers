@@ -58,31 +58,31 @@ namespace diff_drive_controller{
     DiffDriveController();
 
     /**
-     * @brief Initialize controller
-     * @param hw            Velocity joint interface for the wheels
-     * @param root_nh       Node handle at root namespace
-     * @param controller_nh Node handle inside the controller namespace
+     * \brief Initialize controller
+     * \param hw            Velocity joint interface for the wheels
+     * \param root_nh       Node handle at root namespace
+     * \param controller_nh Node handle inside the controller namespace
      */
     bool init(hardware_interface::VelocityJointInterface* hw,
               ros::NodeHandle& root_nh,
               ros::NodeHandle &controller_nh);
 
     /**
-     * @brief Updates controller, i.e. computes the odometry and sets the new velocity commands
-     * @param time   Current time
-     * @param period Time since the last called to update
+     * \brief Updates controller, i.e. computes the odometry and sets the new velocity commands
+     * \param time   Current time
+     * \param period Time since the last called to update
      */
     void update(const ros::Time& time, const ros::Duration& period);
 
     /**
-     * @brief Starts controller
-     * @param time Current time
+     * \brief Starts controller
+     * \param time Current time
      */
     void starting(const ros::Time& time);
 
     /**
-     * @brief Stops controller
-     * @param time Current time
+     * \brief Stops controller
+     * \param time Current time
      */
     void stopping(const ros::Time& time);
 
@@ -136,30 +136,30 @@ namespace diff_drive_controller{
 
   private:
     /**
-     * @brief Brakes the wheels, i.e. sets the velocity to 0
+     * \brief Brakes the wheels, i.e. sets the velocity to 0
      */
     void brake();
 
     /**
-     * @brief Velocity command callback
-     * @param command Velocity command message (twist)
+     * \brief Velocity command callback
+     * \param command Velocity command message (twist)
      */
     void cmdVelCallback(const geometry_msgs::Twist& command);
 
     /**
-     * @brief Sets odometry parameters from the URDF, i.e. the wheel radius and separation
-     * @param root_nh Root node handle
-     * @param left_wheel_name Name of the left wheel joint
-     * @param right_wheel_name Name of the right wheel joint
+     * \brief Sets odometry parameters from the URDF, i.e. the wheel radius and separation
+     * \param root_nh Root node handle
+     * \param left_wheel_name Name of the left wheel joint
+     * \param right_wheel_name Name of the right wheel joint
      */
     bool setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
                                const std::string& left_wheel_name,
                                const std::string& right_wheel_name);
 
     /**
-     * @brief Sets the odometry publishing fields
-     * @param root_nh Root node handle
-     * @param controller_nh Node handle inside the controller namespace
+     * \brief Sets the odometry publishing fields
+     * \param root_nh Root node handle
+     * \param controller_nh Node handle inside the controller namespace
      */
     void setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
 

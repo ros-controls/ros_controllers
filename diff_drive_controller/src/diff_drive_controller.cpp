@@ -52,9 +52,9 @@ static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3&
 }
 
 /*
- * @brief Check if the link is modeled as a cylinder
- * @param link Link
- * @return true if the link is modeled as a Cylinder; false otherwise
+ * \brief Check if the link is modeled as a cylinder
+ * \param link Link
+ * \return true if the link is modeled as a Cylinder; false otherwise
  */
 static bool isCylinder(const boost::shared_ptr<const urdf::Link>& link)
 {
@@ -86,10 +86,10 @@ static bool isCylinder(const boost::shared_ptr<const urdf::Link>& link)
 }
 
 /*
- * @brief Get the wheel radius
- * @param [in]  wheel_link   Wheel link
- * @param [out] wheel_radius Wheel radius [m]
- * @return true if the wheel radius was found; false otherwise
+ * \brief Get the wheel radius
+ * \param [in]  wheel_link   Wheel link
+ * \param [out] wheel_radius Wheel radius [m]
+ * \return true if the wheel radius was found; false otherwise
  */
 static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link, double& wheel_radius)
 {

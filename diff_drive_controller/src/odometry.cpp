@@ -56,7 +56,7 @@ namespace diff_drive_controller
     right_wheel_old_pos_(0.0),
     linear_acc_(RollingWindow::window_size = velocity_rolling_window_size),
     angular_acc_(RollingWindow::window_size = velocity_rolling_window_size),
-    integrate_fun_(boost::bind(&Odometry::integrationExact, this, _1, _2))
+    integrate_fun_(boost::bind(&Odometry::integrateExact, this, _1, _2))
   {
   }
 
@@ -111,7 +111,7 @@ namespace diff_drive_controller
     wheel_radius_     = wheel_radius;
   }
 
-  void Odometry::integrationByRungeKutta(double linear, double angular)
+  void Odometry::integrateRungeKutta2(double linear, double angular)
   {
     double direction = heading_ + angular*0.5;
 
@@ -129,10 +129,10 @@ namespace diff_drive_controller
    * @param linear
    * @param angular
    */
-  void Odometry::integrationExact(double linear, double angular)
+  void Odometry::integrateExact(double linear, double angular)
   {
     if(fabs(angular) < 10e-3)
-      integrationByRungeKutta(linear, angular);
+      integrateRungeKutta2(linear, angular);
     else
     {
       /// Exact integration (should solve problems when angular is zero):

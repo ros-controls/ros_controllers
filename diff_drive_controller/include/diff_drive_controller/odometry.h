@@ -77,7 +77,7 @@ namespace diff_drive_controller
      * @return true if the odometry is actually updated
      */
     bool update(double left_pos, double right_pos, const ros::Time &time);
-    
+
     /**
      * @brief heading getter
      * @return heading [rad]
@@ -144,14 +144,14 @@ namespace diff_drive_controller
      * @param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
      * @param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
-    void integrationByRungeKutta(double linear, double angular);
+    void integrateRungeKutta2(double linear, double angular);
 
     /**
      * @brief Integrates the velocities (linear and angular) using exact method
      * @param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
      * @param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
-    void integrationExact(double linear, double angular);
+    void integrateExact(double linear, double angular);
 
     /// Current timestamp:
     ros::Time timestamp_;

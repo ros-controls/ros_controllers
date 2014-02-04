@@ -2,6 +2,11 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.0 (2014-02-05)
+------------------
+* Added new has_velocity flag that indiciates if a target velocity has been set
+* Contributors: Dave Coleman
+
 0.5.4 (2013-09-30)
 ------------------
 

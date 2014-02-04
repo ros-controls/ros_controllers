@@ -2,6 +2,16 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.0 (2014-02-05)
+------------------
+* Link shared libraries to catkin libraries
+  GCC is quite lenient with missing symbols on shared libraries and
+  doesn't event output any warning about it.
+  When building with other compilers, missing symbols result in build
+  errors.
+* Install default config files
+* Contributors: Paul Mathieu
+
 0.5.4 (2013-09-30)
 ------------------
 * Silence cppcheck warning on unit'ed variables.

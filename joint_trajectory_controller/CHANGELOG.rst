@@ -2,6 +2,53 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.0 (2014-02-05)
+------------------
+* Merge pull request `#72 <https://github.com/ros-controls/ros_controllers/issues/72>`_ from pal-robotics/minor-maintenance
+  Minor maintenance
+* Default stop_trajectory_duration to zero. Refs `#73 <https://github.com/ros-controls/ros_controllers/issues/73>`_
+* Better logs when dropping traj points. Refs `#68 <https://github.com/ros-controls/ros_controllers/issues/68>`_.
+* Fix class member reorder warning in constructor.
+* Add missing headers to target files.
+* Action interface rejects empty goals. Fixes `#70 <https://github.com/ros-controls/ros_controllers/issues/70>`_.
+* Reorder how time and traj data are updated.
+  In the update method, fetching the currently executed trajectory should be done
+  before updating the time data to prevent a potential scenario in which there
+  is no trajectory defined for the current control cycle.
+* Work tolerance checking methods.
+  Until now we used the currently active goal handle for performing tolerance
+  checks. Using the goal handle stored in segments is more robust to unexpected
+  goal updates by the non-rt thread.
+* Refactor how the currrent trajectory is stored.
+  - Handle concurrency in the current trajectory between rt and non-rt threads
+  using the simpler RealtimeBox instead of the RealtimeBuffer, because our
+  usecase does not fit well the non-rt->writes / rt->reads semantics.
+  - As a consequence we no longer need to store the msg_trajectory member, but
+  only the hold_trajectory, which must still be preallocated.
+* Honor unspecified vel/acc in ROS message. Fix `#65 <https://github.com/ros-controls/ros_controllers/issues/65>`_.
+* Fixes per Adolfo
+* Added verbose flag
+* Fixing realtime issues
+* Merge branch 'hydro-devel' into joint_trajectory_tweaks
+* Tweaked error messages
+* Added more debug info
+* Fix for microsecond delay that caused header time=0 (now) to start too late
+* Reworded debug message
+* Image update.
+* Update README.md
+  Factor out user documentation to the ROS wiki.
+* Merge branch 'hydro-devel' of https://github.com/willowgarage/ros_controllers into hydro-devel
+* Rename hold_trajectory_duration
+  - hold_trajectory_duration -> stop_trajectory_duration for more clarity.
+  - During Hydro, hold_trajectory_duration will still work, giving a deprecation
+  warning.
+* Add basic description in package.xml.
+* Add images used in the ROS wiki doc.
+* Added better debug info
+* Throttled debug output
+* Added more debug and error information
+* Contributors: Adolfo Rodriguez Tsouroukdissian, Dave Coleman
+
 0.5.4 (2013-09-30)
 ------------------
 * Added install rules for plugin.xml

@@ -2,6 +2,11 @@
 Changelog for package force_torque_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.0 (2014-02-05)
+------------------
+* Install default config files
+* Contributors: Paul Mathieu
+
 0.5.4 (2013-09-30)
 ------------------
 * Added install rules for plugin.xml

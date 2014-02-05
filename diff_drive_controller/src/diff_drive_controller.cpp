@@ -122,7 +122,7 @@ namespace diff_drive_controller{
     const std::string complete_ns = controller_nh.getNamespace();
     std::size_t id = complete_ns.find_last_of("/");
     name_ = complete_ns.substr(id + 1);
-    // get joint names from the parameter server
+    // Get joint names from the parameter server
     std::string left_wheel_name, right_wheel_name;
 
     bool res = controller_nh.hasParam("left_wheel");
@@ -176,7 +176,7 @@ namespace diff_drive_controller{
 
     setOdomPubFields(root_nh, controller_nh);
 
-    // get the joint object to use in the realtime loop
+    // Get the joint object to use in the realtime loop
     ROS_INFO_STREAM_NAMED(name_,
                           "Adding left wheel with joint name: " << left_wheel_name
                           << " and right wheel with joint name: " << right_wheel_name);
@@ -191,19 +191,18 @@ namespace diff_drive_controller{
   void DiffDriveController::update(const ros::Time& time, const ros::Duration& period)
   {
     // COMPUTE AND PUBLISH ODOMETRY
-    // estimate linear and angular velocity using joint information
-    //----------------------------
+    // Estimate linear and angular velocity using joint information
     odometry_.update(left_wheel_joint_.getPosition(), right_wheel_joint_.getPosition(), time);
 
-    // publish odometry message
+    // Publish odometry message
     if(last_state_publish_time_ + publish_period_ < time)
     {
       last_state_publish_time_ += publish_period_;
-      // compute and store orientation info
+      // Compute and store orientation info
       const geometry_msgs::Quaternion orientation(
             tf::createQuaternionMsgFromYaw(odometry_.getHeading()));
 
-      // populate odom message and publish
+      // Populate odom message and publish
       if(odom_pub_->trylock())
       {
         odom_pub_->msg_.header.stamp = time;
@@ -215,7 +214,7 @@ namespace diff_drive_controller{
         odom_pub_->unlockAndPublish();
       }
 
-      // publish tf /odom frame
+      // Publish tf /odom frame
       if(tf_odom_pub_->trylock())
       {
         odom_frame_.header.stamp = time;
@@ -262,7 +261,7 @@ namespace diff_drive_controller{
   {
     brake();
 
-    // register starting time used to keep fixed rate
+    // Register starting time used to keep fixed rate
     last_state_publish_time_ = time;
   }
 
@@ -302,7 +301,7 @@ namespace diff_drive_controller{
                              const std::string& left_wheel_name,
                              const std::string& right_wheel_name)
   {
-    // parse robot description
+    // Parse robot description
     const std::string model_param_name = "robot_description";
     bool res = root_nh.hasParam(model_param_name);
     std::string robot_model_str="";
@@ -340,14 +339,14 @@ namespace diff_drive_controller{
     wheel_separation_ = euclideanOfVectors(left_wheel_joint->parent_to_joint_origin_transform.position,
                                            right_wheel_joint->parent_to_joint_origin_transform.position);
 
-    /// Get wheel radius
+    // Get wheel radius
     if(!getWheelRadius(model->getLink(left_wheel_joint->child_link_name), wheel_radius_))
     {
       ROS_ERROR_STREAM_NAMED(name_, "Couldn't retrieve " << left_wheel_name << " wheel radius");
       return false;
     }
 
-    /// Set wheel params for the odometry computation
+    // Set wheel params for the odometry computation
     const double ws = wheel_separation_multiplier_ * wheel_separation_;
     const double wr = wheel_radius_multiplier_     * wheel_radius_;
     odometry_.setWheelParams(ws, wr);
@@ -359,7 +358,7 @@ namespace diff_drive_controller{
 
   void DiffDriveController::setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
   {
-    // get and check params for covariances
+    // Get and check params for covariances
     XmlRpc::XmlRpcValue pose_cov_list;
     controller_nh.getParam("pose_covariance_diagonal", pose_cov_list);
     ROS_ASSERT(pose_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
@@ -374,7 +373,7 @@ namespace diff_drive_controller{
     for (int i = 0; i < twist_cov_list.size(); ++i)
       ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
-    // setup odometry realtime publisher + odom message constant fields
+    // Setup odometry realtime publisher + odom message constant fields
     odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odom", 100));
     odom_pub_->msg_.header.frame_id = "odom";
     odom_pub_->msg_.pose.pose.position.z = 0;

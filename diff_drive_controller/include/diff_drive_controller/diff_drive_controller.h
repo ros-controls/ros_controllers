@@ -51,6 +51,15 @@
 
 namespace diff_drive_controller{
 
+  /**
+   * This class makes some assumptions on the model of the robot:
+   *  - the rotation axes of wheels are collinear
+   *  - the wheels are identical in radius
+   * Additional assumptions to not duplicate information readily available in the URDF:
+   *  - the wheels have the same parent frame
+   *  - a wheel collision geometry is a cylinder in the urdf
+   *  - a wheel joint frame center's vertical projection on the floor must lie within the contact patch
+   */
   class DiffDriveController
       : public controller_interface::Controller<hardware_interface::VelocityJointInterface>
   {

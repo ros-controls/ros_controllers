@@ -25,61 +25,33 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-/// \author Bence Magyar
+/// \author Paul Mathieu
 
-#include <cmath>
+#include "test_common.h"
 
-#include <gtest/gtest.h>
-
-#include <ros/ros.h>
-
-#include <geometry_msgs/Twist.h>
-#include <nav_msgs/Odometry.h>
-#include <tf/tf.h>
-
-// Floating-point value comparison threshold
-const double EPS = 0.01;
-const double POSITION_TOLERANCE = 0.01; // 1 cm-s precision
-const double VELOCITY_TOLERANCE = 0.02; // 2 cm-s-1 precision
-const double ORIENTATION_TOLERANCE = 0.03; // 0.57 degree precision
-
-class DiffDriveControllerTest : public ::testing::Test
+// TEST CASES
+TEST_F(DiffDriveControllerTest, testWrongJointName)
 {
-public:
-
-  DiffDriveControllerTest()
-    : cmd_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100)),
-      odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
+  // the controller should never be alive
+  int secs = 0;
+  while(!isControllerAlive() && secs < 5)
   {
+    ros::Duration(1.0).sleep();
+    secs++;
   }
-
-  ~DiffDriveControllerTest()
-  {
-    odom_sub.shutdown();
-  }
-
-  nav_msgs::Odometry getLastOdom(){ return last_odom; }
-  void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
-  bool isControllerAlive(){ return (odom_sub.getNumPublishers() > 0) && (cmd_pub.getNumSubscribers() > 0); }
-
-private:
-  ros::NodeHandle nh;
-  ros::Publisher cmd_pub;
-  ros::Subscriber odom_sub;
-  nav_msgs::Odometry last_odom;
-
-  void odomCallback(const nav_msgs::Odometry& odom)
-  {
-    ROS_INFO_STREAM("Callback reveived: pos.x: " << odom.pose.pose.position.x
-                     << ", orient.z: " << odom.pose.pose.orientation.z
-                     << ", lin_est: " << odom.twist.twist.linear.x
-                     << ", ang_est: " << odom.twist.twist.angular.z);
-    last_odom = odom;
-  }
-};
-
-inline tf::Quaternion tfQuatFromGeomQuat(const geometry_msgs::Quaternion& quat)
-{
-  return tf::Quaternion(quat.x, quat.y, quat.z, quat.w);
+  // give up and assume controller load failure after 5 secondds
+  EXPECT_GE(secs, 5);
 }
 
+int main(int argc, char** argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  ros::init(argc, argv, "diff_drive_fail_test");
+
+  ros::AsyncSpinner spinner(1);
+  spinner.start();
+  int ret = RUN_ALL_TESTS();
+  spinner.stop();
+  ros::shutdown();
+  return ret;
+}

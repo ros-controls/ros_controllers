@@ -1,0 +1,16 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
+
+  <!-- Load diff-drive cmd_vel_timeout -->
+  <rosparam command="load" file="$(find diff_drive_controller)/test/diffbot_timeout.yaml" />
+
+  <!-- Controller test -->
+  <test test-name="diff_drive_timeout_test"
+        pkg="diff_drive_controller"
+        type="diff_drive_timeout_test"
+        time-limit="20.0">
+    <remap from="cmd_vel" to="diffbot_controller/cmd_vel" />
+    <remap from="odom" to="diffbot_controller/odom" />
+  </test>
+</launch>

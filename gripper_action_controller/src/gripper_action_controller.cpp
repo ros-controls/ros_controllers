@@ -47,7 +47,7 @@ namespace effort_controllers
 {
   /**
    * \brief Gripper action controller that sends
-   * commands to a \b position interface.
+   * commands to a \b effort interface.
    */
   typedef gripper_action_controller::GripperActionController<hardware_interface::EffortJointInterface>
           GripperActionController;

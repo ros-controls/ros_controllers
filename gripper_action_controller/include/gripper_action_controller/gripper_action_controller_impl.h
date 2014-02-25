@@ -235,7 +235,7 @@ update(const ros::Time& time, const ros::Duration& period)
   checkForSuccess(time, error_position, current_position, current_velocity);
 
   // Hardware interface adapter: Generate and send commands
-  commanded_effort_ = hw_iface_adapter_.updateCommand(time, period,
+  computed_command_ = hw_iface_adapter_.updateCommand(time, period,
 						      command_struct_rt_.position_, 0.0, 
 						      error_position, error_velocity, command_struct_rt_.max_effort_);
 }
@@ -323,7 +323,7 @@ checkForSuccess(const ros::Time& time, double error_position, double current_pos
 
   if(fabs(error_position) < goal_tolerance_)
   {
-    pre_alloc_result_->effort = commanded_effort_;
+    pre_alloc_result_->effort = computed_command_;
     pre_alloc_result_->position = current_position;
     pre_alloc_result_->reached_goal = true;
     pre_alloc_result_->stalled = false;
@@ -337,7 +337,7 @@ checkForSuccess(const ros::Time& time, double error_position, double current_pos
     }
     else if( (time - last_movement_time_).toSec() > stall_timeout_)
     {
-      pre_alloc_result_->effort = commanded_effort_;
+      pre_alloc_result_->effort = computed_command_;
       pre_alloc_result_->position = current_position;
       pre_alloc_result_->reached_goal = false;
       pre_alloc_result_->stalled = true;

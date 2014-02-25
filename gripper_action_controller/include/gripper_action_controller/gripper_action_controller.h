@@ -142,7 +142,7 @@ private:
   void setHoldPosition(const ros::Time& time);
 
   ros::Time last_movement_time_;                                    ///< Store stall time
-  double commanded_effort_;                                         ///< Computed command
+  double computed_command_;                                         ///< Computed command
 
   double stall_timeout_, stall_velocity_threshold_;                 ///< Stall related parameters
   double default_max_effort_;                                       ///< Max allowed effort

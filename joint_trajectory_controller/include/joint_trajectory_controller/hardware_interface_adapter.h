@@ -55,7 +55,7 @@ template <class HardwareInterface, class State>
 class HardwareInterfaceAdapter
 {
 public:
-  bool init(std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& controller_nh)
+  bool init(std::vector<typename HardwareInterface::ResourceHandleType>& joint_handles, ros::NodeHandle& controller_nh)
   {
     return false;
   }

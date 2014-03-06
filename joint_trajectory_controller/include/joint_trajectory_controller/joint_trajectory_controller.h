@@ -171,16 +171,17 @@ private:
   typedef typename Segment::Scalar Scalar;
 
   typedef HardwareInterfaceAdapter<HardwareInterface, typename Segment::State> HwIfaceAdapter;
+  typedef typename HardwareInterface::ResourceHandleType JointHandle;
 
-  bool                                         verbose_;            ///< Hard coded verbose flag to help in debugging
-  std::string                                  name_;               ///< Controller name.
-  std::vector<hardware_interface::JointHandle> joints_;             ///< Handles to controlled joints.
-  std::vector<bool>                            angle_wraparound_;   ///< Whether controlled joints wrap around or not.
-  std::vector<std::string>                     joint_names_;        ///< Controlled joint names.
-  SegmentTolerances<Scalar>                    default_tolerances_; ///< Default trajectory segment tolerances.
-  HwIfaceAdapter                               hw_iface_adapter_;   ///< Adapts desired trajectory state to HW interface.
+  bool                      verbose_;            ///< Hard coded verbose flag to help in debugging
+  std::string               name_;               ///< Controller name.
+  std::vector<JointHandle>  joints_;             ///< Handles to controlled joints.
+  std::vector<bool>         angle_wraparound_;   ///< Whether controlled joints wrap around or not.
+  std::vector<std::string>  joint_names_;        ///< Controlled joint names.
+  SegmentTolerances<Scalar> default_tolerances_; ///< Default trajectory segment tolerances.
+  HwIfaceAdapter            hw_iface_adapter_;   ///< Adapts desired trajectory state to HW interface.
 
-  RealtimeGoalHandlePtr                        rt_active_goal_;     ///< Currently active action goal, if any.
+  RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
 
   /**
    * Thread-safe container with a smart pointer to trajectory currently being followed.

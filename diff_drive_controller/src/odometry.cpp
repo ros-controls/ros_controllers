@@ -83,7 +83,7 @@ namespace diff_drive_controller
 
     /// We cannot estimate the speed with very small time intervals:
     const double dt = (time - timestamp_).toSec();
-    if(dt < 0.0001)
+    if (dt < 0.0001)
       return false; // Interval too small to integrate with
 
     timestamp_ = time;
@@ -131,7 +131,7 @@ namespace diff_drive_controller
    */
   void Odometry::integrateExact(double linear, double angular)
   {
-    if(fabs(angular) < 10e-3)
+    if (fabs(angular) < 10e-3)
       integrateRungeKutta2(linear, angular);
     else
     {

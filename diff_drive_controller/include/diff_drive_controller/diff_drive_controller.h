@@ -124,7 +124,6 @@ namespace diff_drive_controller{
     boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
     boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
     Odometry odometry_;
-    geometry_msgs::TransformStamped odom_frame_;
 
     /// Wheel separation, wrt the midpoint of the wheel width:
     double wheel_separation_;

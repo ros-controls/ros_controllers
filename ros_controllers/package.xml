@@ -27,6 +27,7 @@
   <run_depend>joint_state_controller</run_depend>
   <run_depend>joint_trajectory_controller</run_depend>
   <run_depend>diff_drive_controller</run_depend>
+  <run_depend>gripper_action_controller</run_depend>
 
   <export>
     <metapackage/>

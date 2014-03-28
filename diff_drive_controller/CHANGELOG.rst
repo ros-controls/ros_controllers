@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.0 (2014-03-28)
+------------------
 * diff_drive_controller: New controller for differential drive wheel systems.
 * Control is in the form of a velocity command, that is split then sent on the two wheels of a differential drive
 wheel base.

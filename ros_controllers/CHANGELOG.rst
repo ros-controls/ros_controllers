@@ -2,6 +2,11 @@
 Changelog for package ros_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add diff_drive_controller and gripper_action_controller dependencies.
+* Contributors: Adolfo Rodriguez Tsouroukdissian
+
 0.6.0 (2014-02-05)
 ------------------
 * Add self as ros_controllers maintainer.

@@ -2,6 +2,9 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.6.0 (2014-02-05)
 ------------------
 * Link shared libraries to catkin libraries

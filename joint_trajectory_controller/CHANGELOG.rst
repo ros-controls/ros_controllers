@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add support for an joint interfaces are not inherited from JointHandle.
+* Contributors: Igorec
+
 0.6.0 (2014-02-05)
 ------------------
 * Merge pull request `#72 <https://github.com/ros-controls/ros_controllers/issues/72>`_ from pal-robotics/minor-maintenance

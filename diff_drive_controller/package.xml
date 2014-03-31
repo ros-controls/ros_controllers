@@ -30,8 +30,8 @@
   <!--Tests-->
   <build_depend>rostest</build_depend>
 
-  <test_depend>controller_manager</test_depend>
-  <test_depend>xacro</test_depend>
+  <build_depend>controller_manager</build_depend>
+  <build_depend>xacro</build_depend>
 
   <export>
     <controller_interface plugin="${prefix}/diff_drive_controller_plugins.xml"/>

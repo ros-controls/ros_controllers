@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Changed test-depend to build-depend for release jobs.
+* Contributors: Bence Magyar
+
 0.7.0 (2014-03-28)
 ------------------
 * diff_drive_controller: New controller for differential drive wheel systems.

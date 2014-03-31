@@ -2,6 +2,9 @@
 Changelog for package force_torque_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.7.0 (2014-03-28)
 ------------------
 

@@ -41,17 +41,30 @@
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>actionlib</build_depend>
+  <build_depend>angles</build_depend>
   <build_depend>cmake_modules</build_depend>
   <build_depend>control_msgs</build_depend>
+  <build_depend>control_toolbox</build_depend>
   <build_depend>controller_interface</build_depend>
+  <build_depend>controller_manager</build_depend>
   <build_depend>hardware_interface</build_depend>
   <build_depend>realtime_tools</build_depend>
+  <build_depend>rostest</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  <build_depend>urdf</build_depend>
+  <build_depend>xacro</build_depend>
   <run_depend>actionlib</run_depend>
+  <run_depend>angles</run_depend>
   <run_depend>cmake_modules</run_depend>
   <run_depend>control_msgs</run_depend>
+  <run_depend>control_toolbox</run_depend>
   <run_depend>controller_interface</run_depend>
+  <run_depend>controller_manager</run_depend>
   <run_depend>hardware_interface</run_depend>
   <run_depend>realtime_tools</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+  <run_depend>urdf</run_depend>
+  <run_depend>xacro</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

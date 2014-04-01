@@ -2,6 +2,11 @@
 Changelog for package gripper_action_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added missing deps to package.xml
+* Contributors: Scott K Logan
+
 0.7.1 (2014-03-31)
 ------------------
 

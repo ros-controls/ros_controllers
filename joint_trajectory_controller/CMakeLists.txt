@@ -102,35 +102,37 @@ else()
     LIBRARIES ${PROJECT_NAME}
   )
 
-  catkin_add_gtest(quintic_spline_segment_test test/quintic_spline_segment_test.cpp)
-  target_link_libraries(quintic_spline_segment_test ${catkin_LIBRARIES})
+  if(CATKIN_ENABLE_TESTING)
+    catkin_add_gtest(quintic_spline_segment_test test/quintic_spline_segment_test.cpp)
+    target_link_libraries(quintic_spline_segment_test ${catkin_LIBRARIES})
 
-  catkin_add_gtest(trajectory_interface_test test/trajectory_interface_test.cpp)
-  target_link_libraries(trajectory_interface_test ${catkin_LIBRARIES})
+    catkin_add_gtest(trajectory_interface_test test/trajectory_interface_test.cpp)
+    target_link_libraries(trajectory_interface_test ${catkin_LIBRARIES})
 
-  catkin_add_gtest(joint_trajectory_segment_test test/joint_trajectory_segment_test.cpp)
-  target_link_libraries(joint_trajectory_segment_test ${catkin_LIBRARIES})
+    catkin_add_gtest(joint_trajectory_segment_test test/joint_trajectory_segment_test.cpp)
+    target_link_libraries(joint_trajectory_segment_test ${catkin_LIBRARIES})
 
-  catkin_add_gtest(joint_trajectory_msg_utils_test test/joint_trajectory_msg_utils_test.cpp)
-  target_link_libraries(joint_trajectory_msg_utils_test ${catkin_LIBRARIES})
+    catkin_add_gtest(joint_trajectory_msg_utils_test test/joint_trajectory_msg_utils_test.cpp)
+    target_link_libraries(joint_trajectory_msg_utils_test ${catkin_LIBRARIES})
 
-  catkin_add_gtest(init_joint_trajectory_test test/init_joint_trajectory_test.cpp)
-  target_link_libraries(init_joint_trajectory_test ${catkin_LIBRARIES})
+    catkin_add_gtest(init_joint_trajectory_test test/init_joint_trajectory_test.cpp)
+    target_link_libraries(init_joint_trajectory_test ${catkin_LIBRARIES})
 
-  add_rostest_gtest(tolerances_test
-                    test/tolerances.test
-                    test/tolerances_test.cpp)
-  target_link_libraries(tolerances_test ${catkin_LIBRARIES})
+    add_rostest_gtest(tolerances_test
+                      test/tolerances.test
+                      test/tolerances_test.cpp)
+    target_link_libraries(tolerances_test ${catkin_LIBRARIES})
 
-  add_executable(rrbot test/rrbot.cpp)
-  target_link_libraries(rrbot ${catkin_LIBRARIES})
+    add_executable(rrbot test/rrbot.cpp)
+    target_link_libraries(rrbot ${catkin_LIBRARIES})
 
-  add_dependencies(tests rrbot)
+    add_dependencies(tests rrbot)
 
-  add_rostest_gtest(joint_trajectory_controller_test
-                    test/joint_trajectory_controller.test
-                    test/joint_trajectory_controller_test.cpp)
-  target_link_libraries(joint_trajectory_controller_test ${catkin_LIBRARIES})
+    add_rostest_gtest(joint_trajectory_controller_test
+                      test/joint_trajectory_controller.test
+                      test/joint_trajectory_controller_test.cpp)
+    target_link_libraries(joint_trajectory_controller_test ${catkin_LIBRARIES})
+  endif()
 
   # Install
   install(DIRECTORY include/${PROJECT_NAME}/

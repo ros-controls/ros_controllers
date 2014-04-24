@@ -38,7 +38,9 @@ else()
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
-  install(FILES imu_sensor_plugin.xml imu_sensor_controller.yaml
+  install(FILES imu_sensor_plugin.xml
+                imu_sensor_controller.yaml
+                imu_sensor_controller.launch
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 endif()

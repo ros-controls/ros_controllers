@@ -106,12 +106,13 @@ static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link
 namespace diff_drive_controller{
 
   DiffDriveController::DiffDriveController()
-    : command_struct_(),
-      wheel_separation_(0.0),
-      wheel_radius_(0.0),
-      wheel_separation_multiplier_(1.0),
-      wheel_radius_multiplier_(1.0),
-      cmd_vel_timeout_(0.5)
+    : command_struct_()
+    , wheel_separation_(0.0)
+    , wheel_radius_(0.0)
+    , wheel_separation_multiplier_(1.0)
+    , wheel_radius_multiplier_(1.0)
+    , cmd_vel_timeout_(0.5)
+    , base_frame_id_("base_link")
   {
   }
 
@@ -155,6 +156,9 @@ namespace diff_drive_controller{
     controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
     ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "
                           << cmd_vel_timeout_ << "s.");
+
+    controller_nh.param("base_frame_id", base_frame_id_, base_frame_id_);
+    ROS_INFO_STREAM_NAMED(name_, "Base frame_id set to " << base_frame_id_);
 
     // Velocity and acceleration limits:
     controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
@@ -376,6 +380,7 @@ namespace diff_drive_controller{
     // Setup odometry realtime publisher + odom message constant fields
     odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odom", 100));
     odom_pub_->msg_.header.frame_id = "odom";
+    odom_pub_->msg_.child_frame_id = base_frame_id_;
     odom_pub_->msg_.pose.pose.position.z = 0;
     odom_pub_->msg_.pose.covariance = boost::assign::list_of
         (static_cast<double>(pose_cov_list[0])) (0)   (0)  (0)  (0)  (0)
@@ -398,7 +403,7 @@ namespace diff_drive_controller{
     tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
     tf_odom_pub_->msg_.transforms.resize(1);
     odom_frame_.transform.translation.z = 0.0;
-    odom_frame_.child_frame_id = "base_footprint";
+    odom_frame_.child_frame_id = base_frame_id_;
     odom_frame_.header.frame_id = "odom";
   }
 

@@ -37,6 +37,8 @@
 #include <nav_msgs/Odometry.h>
 #include <tf/tf.h>
 
+#include <std_srvs/Empty.h>
+
 // Floating-point value comparison threshold
 const double EPS = 0.01;
 const double POSITION_TOLERANCE = 0.01; // 1 cm-s precision
@@ -48,8 +50,10 @@ class DiffDriveControllerTest : public ::testing::Test
 public:
 
   DiffDriveControllerTest()
-    : cmd_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100)),
-      odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
+  : cmd_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100))
+  , odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
+  , start_srv(nh.serviceClient<std_srvs::Empty>("start"))
+  , stop_srv(nh.serviceClient<std_srvs::Empty>("stop"))
   {
   }
 
@@ -62,11 +66,17 @@ public:
   void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
   bool isControllerAlive(){ return (odom_sub.getNumPublishers() > 0) && (cmd_pub.getNumSubscribers() > 0); }
 
+  void start(){ std_srvs::Empty srv; start_srv.call(srv); }
+  void stop(){ std_srvs::Empty srv; stop_srv.call(srv); }
+
 private:
   ros::NodeHandle nh;
   ros::Publisher cmd_pub;
   ros::Subscriber odom_sub;
   nav_msgs::Odometry last_odom;
+
+  ros::ServiceClient start_srv;
+  ros::ServiceClient stop_srv;
 
   void odomCallback(const nav_msgs::Odometry& odom)
   {

@@ -30,6 +30,7 @@
 // ROS
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>
+#include <std_srvs/Empty.h>
 
 // ros_control
 #include <controller_manager/controller_manager.h>
@@ -38,10 +39,16 @@
 #include <hardware_interface/robot_hw.h>
 #include <realtime_tools/realtime_buffer.h>
 
+// NaN
+#include <limits>
+
 class Diffbot : public hardware_interface::RobotHW
 {
 public:
   Diffbot()
+  : running_(true)
+  , start_srv_(nh_.advertiseService("start", &Diffbot::start_callback, this))
+  , stop_srv_(nh_.advertiseService("stop", &Diffbot::stop_callback, this))
   {
     // Intialize raw data
     pos_[0] = 0.0; pos_[1] = 0.0;
@@ -78,11 +85,31 @@ public:
 
   void write()
   {
-    for (unsigned int i = 0; i < 2; ++i)
+    if (running_)
     {
-      pos_[i] += vel_[i]*getPeriod().toSec(); // update position
-      vel_[i] = cmd_[i]; // might add smoothing here later
+      for (unsigned int i = 0; i < 2; ++i)
+      {
+        pos_[i] += vel_[i]*getPeriod().toSec(); // update position
+        vel_[i] = cmd_[i]; // might add smoothing here later
+      }
     }
+    else
+    {
+      std::fill_n(pos_, 2, std::numeric_limits<double>::quiet_NaN());
+      std::fill_n(vel_, 2, std::numeric_limits<double>::quiet_NaN());
+    }
+  }
+
+  bool start_callback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+  {
+    running_ = true;
+    return true;
+  }
+
+  bool stop_callback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+  {
+    running_ = false;
+    return true;
   }
 
 private:
@@ -92,6 +119,11 @@ private:
   double pos_[2];
   double vel_[2];
   double eff_[2];
+  bool running_;
+
+  ros::NodeHandle nh_;
+  ros::ServiceServer start_srv_;
+  ros::ServiceServer stop_srv_;
 };
 
 int main(int argc, char **argv)

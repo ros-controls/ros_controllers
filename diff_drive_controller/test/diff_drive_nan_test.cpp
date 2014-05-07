@@ -57,16 +57,12 @@ TEST_F(DiffDriveControllerTest, testNaN)
 
   nav_msgs::Odometry odom = getLastOdom();
 
-  EXPECT_NE(odom.twist.twist.linear.x, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.twist.twist.angular.z, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.position.x, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.position.y, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.position.z, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.orientation.x, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.orientation.x, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.orientation.y, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.orientation.z, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.orientation.w, std::numeric_limits<double>::quiet_NaN());
+  EXPECT_NE(std::isnan(odom.twist.twist.linear.x), true);
+  EXPECT_NE(std::isnan(odom.twist.twist.angular.z), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.position.x), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.position.y), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.orientation.z), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.orientation.w), true);
 
   // start robot
   start();
@@ -74,16 +70,12 @@ TEST_F(DiffDriveControllerTest, testNaN)
 
   odom = getLastOdom();
 
-  EXPECT_NE(odom.twist.twist.linear.x, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.twist.twist.angular.z, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.position.x, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.position.y, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.position.z, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.orientation.x, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.orientation.x, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.orientation.y, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.orientation.z, std::numeric_limits<double>::quiet_NaN());
-  EXPECT_NE(odom.pose.pose.orientation.w, std::numeric_limits<double>::quiet_NaN());
+  EXPECT_NE(std::isnan(odom.twist.twist.linear.x), true);
+  EXPECT_NE(std::isnan(odom.twist.twist.angular.z), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.position.x), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.position.y), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.orientation.z), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.orientation.w), true);
 }
 
 int main(int argc, char** argv)

@@ -2,6 +2,16 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add base_frame_id param (defaults to base_link)
+  The nav_msgs/Odometry message specifies the child_frame_id field,
+  which was previously not set.
+  This commit creates a parameter to replace the previously hard-coded
+  value of the child_frame_id of the published tf frame, and uses it
+  in the odom message as well.
+* Contributors: enriquefernandez
+
 0.7.2 (2014-04-01)
 ------------------
 

@@ -2,8 +2,8 @@
 Changelog for package force_torque_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.8.0 (2014-05-12)
+------------------
 * Add missing controller resources to install target
 * Remove rosbuild artifacts. Fix `#90 <https://github.com/ros-controls/ros_controllers/issues/90>`_.
 * Contributors: Adolfo Rodriguez Tsouroukdissian

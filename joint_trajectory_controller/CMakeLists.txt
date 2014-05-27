@@ -20,22 +20,6 @@ find_package(catkin
     xacro
 )
 
-include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
-
-add_library(${PROJECT_NAME} src/joint_trajectory_controller.cpp
-                            include/joint_trajectory_controller/hardware_interface_adapter.h
-                            include/joint_trajectory_controller/init_joint_trajectory.h
-                            include/joint_trajectory_controller/joint_trajectory_controller.h
-                            include/joint_trajectory_controller/joint_trajectory_controller_impl.h
-                            include/joint_trajectory_controller/joint_trajectory_msg_utils.h
-                            include/joint_trajectory_controller/joint_trajectory_segment.h
-                            include/joint_trajectory_controller/tolerances.h
-                            include/trajectory_interface/trajectory_interface.h
-                            include/trajectory_interface/quintic_spline_segment.h
-                            include/trajectory_interface/pos_vel_acc_state.h)
-
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
-
 # Declare catkin package
 catkin_package(
   CATKIN_DEPENDS
@@ -55,6 +39,23 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
 )
+
+include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
+
+add_library(${PROJECT_NAME} src/joint_trajectory_controller.cpp
+                            include/joint_trajectory_controller/hardware_interface_adapter.h
+                            include/joint_trajectory_controller/init_joint_trajectory.h
+                            include/joint_trajectory_controller/joint_trajectory_controller.h
+                            include/joint_trajectory_controller/joint_trajectory_controller_impl.h
+                            include/joint_trajectory_controller/joint_trajectory_msg_utils.h
+                            include/joint_trajectory_controller/joint_trajectory_segment.h
+                            include/joint_trajectory_controller/tolerances.h
+                            include/trajectory_interface/trajectory_interface.h
+                            include/trajectory_interface/quintic_spline_segment.h
+                            include/trajectory_interface/pos_vel_acc_state.h)
+
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+
 
 if(CATKIN_ENABLE_TESTING)
   catkin_add_gtest(quintic_spline_segment_test test/quintic_spline_segment_test.cpp)

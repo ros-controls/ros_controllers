@@ -139,9 +139,9 @@ public:
       }
 
       // Initialize state
-      this->position.resize(joint_dim);
-      this->velocity.resize(joint_dim);
-      this->acceleration.resize(joint_dim);
+      if (!point.positions.empty())     {this->position.resize(joint_dim);}
+      if (!point.velocities.empty())    {this->velocity.resize(joint_dim);}
+      if (!point.accelerations.empty()) {this->acceleration.resize(joint_dim);}
 
       for (unsigned int i = 0; i < joint_dim; ++i)
       {

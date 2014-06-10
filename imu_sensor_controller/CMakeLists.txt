@@ -39,6 +39,8 @@ else()
     )
 
   install(FILES imu_sensor_plugin.xml
+                imu_sensor_controller.yaml
+                imu_sensor_controller.launch
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 endif()

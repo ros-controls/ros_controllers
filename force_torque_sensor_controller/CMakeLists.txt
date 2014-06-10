@@ -39,7 +39,8 @@ else()
     )
 
   install(FILES force_torque_sensor_plugin.xml
+                force_torque_sensor_controller.yaml
+                force_torque_sensor_controller.launch
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
 
 endif()

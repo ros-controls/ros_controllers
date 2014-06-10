@@ -2,6 +2,20 @@
 Changelog for package imu_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.7.2 (2014-04-01)
+------------------
+
+0.7.1 (2014-03-31)
+------------------
+
+0.7.0 (2014-03-28)
+------------------
+
+0.6.0 (2014-02-05)
+------------------
+* Install default config files
+* Contributors: Paul Mathieu
+
 0.5.4 (2013-09-30)
 ------------------
 * Added install rules for plugin.xml

@@ -2,6 +2,24 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.7.2 (2014-04-01)
+------------------
+
+0.7.1 (2014-03-31)
+------------------
+
+0.7.0 (2014-03-28)
+------------------
+
+0.6.0 (2014-02-05)
+------------------
+* Link shared libraries to catkin libraries
+  GCC is quite lenient with missing symbols on shared libraries and
+  doesn't event output any warning about it.
+  When building with other compilers, missing symbols result in build
+  errors.
+* Contributors: Paul Mathieu
+
 0.5.4 (2013-09-30)
 ------------------
 

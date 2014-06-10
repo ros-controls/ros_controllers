@@ -1,6 +1,6 @@
 <package>
   <name>ros_controllers</name>
-  <version>0.5.4</version>
+  <version>0.7.2</version>
   <description>Library of ros controllers</description>
 
   <maintainer email="wim@hidof.com">Wim Meeussen</maintainer>
@@ -26,6 +26,8 @@
   <run_depend>forward_command_controller</run_depend>
   <run_depend>joint_state_controller</run_depend>
   <run_depend>joint_trajectory_controller</run_depend>
+  <run_depend>diff_drive_controller</run_depend>
+  <run_depend>gripper_action_controller</run_depend>
 
   <export>
     <metapackage/>

@@ -184,13 +184,13 @@ inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 checkPathTolerances(const typename Segment::State& state_error,
                     const Segment&                 segment)
 {
-  assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
-
+  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
   const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
   if (!checkStateTolerance(state_error, tolerances.state_tolerance))
   {
-    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
-    rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
+    rt_segment_goal->preallocated_result_->error_code =
+    control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
+    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
     rt_active_goal_.reset();
   }
 }
@@ -200,19 +200,18 @@ inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 checkGoalTolerances(const typename Segment::State& state_error,
                     const Segment&                 segment)
 {
-  assert(segment.getGoalHandle() && segment.getGoalHandle() == rt_active_goal_);
-
   // Controller uptime
   const ros::Time uptime = time_data_.readFromRT()->uptime;
 
   // Checks that we have ended inside the goal tolerances
+  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
   const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
   const bool inside_goal_tolerances = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
 
   if (inside_goal_tolerances)
   {
-    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
-    rt_active_goal_->setSucceeded(rt_active_goal_->preallocated_result_);
+    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
+    rt_segment_goal->setSucceeded(rt_segment_goal->preallocated_result_);
     rt_active_goal_.reset();
   }
   else if (uptime.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
@@ -228,8 +227,8 @@ checkGoalTolerances(const typename Segment::State& state_error,
       checkStateTolerance(state_error, tolerances.goal_state_tolerance, true);
     }
 
-    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
-    rt_active_goal_->setAborted(rt_active_goal_->preallocated_result_);
+    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
+    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
     rt_active_goal_.reset();
   }
 }
@@ -237,9 +236,8 @@ checkGoalTolerances(const typename Segment::State& state_error,
 template <class SegmentImpl, class HardwareInterface>
 JointTrajectoryController<SegmentImpl, HardwareInterface>::
 JointTrajectoryController()
-  : msg_trajectory_ptr_(new Trajectory),
-    hold_trajectory_ptr_(new Trajectory),
-    verbose_(false) // Set to true during debugging
+  : verbose_(false), // Set to true during debugging
+    hold_trajectory_ptr_(new Trajectory)
 {}
 
 template <class SegmentImpl, class HardwareInterface>
@@ -267,8 +265,8 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   action_monitor_period_ = ros::Duration(1.0 / action_monitor_rate);
   ROS_DEBUG_STREAM_NAMED(name_, "Action status changes will be monitored at " << action_monitor_rate << "Hz.");
 
-  // Hold trajectory duration
-  stop_trajectory_duration_ = 0.5;
+  // Stop trajectory duration
+  stop_trajectory_duration_ = 0.0;
   if (!controller_nh_.getParam("stop_trajectory_duration", stop_trajectory_duration_))
   {
     // TODO: Remove this check/warning in Indigo
@@ -375,16 +373,27 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 update(const ros::Time& time, const ros::Duration& period)
 {
+  // Get currently followed trajectory
+  TrajectoryPtr curr_traj_ptr;
+  curr_trajectory_box_.get(curr_traj_ptr);
+  Trajectory& curr_traj = *curr_traj_ptr;
 
-  // Updated time data
+  // Update time data
   TimeData time_data;
   time_data.time   = time;                                     // Cache current time
   time_data.period = period;                                   // Cache current control period
   time_data.uptime = time_data_.readFromRT()->uptime + period; // Update controller uptime
   time_data_.writeFromNonRT(time_data); // TODO: Grrr, we need a lock-free data structure here!
 
+  // NOTE: It is very important to execute the two above code blocks in the specified sequence: first get current
+  // trajectory, then update time data. Hopefully the following paragraph sheds a bit of light on the rationale.
+  // The non-rt thread responsible for processing new commands enqueues trajectories that can start at the _next_
+  // control cycle (eg. zero start time) or later (eg. when we explicitly request a start time in the future).
+  // If we reverse the order of the two blocks above, and update the time data first; it's possible that by the time we
+  // fetch the currently followed trajectory, it has been updated by the non-rt thread with something that starts in the
+  // next control cycle, leaving the current cycle without a valid trajectory.
+
   // Update desired state: sample trajectory at current time
-  Trajectory& curr_traj = **(curr_trajectory_ptr_.readFromRT());
   typename Trajectory::const_iterator segment_it = sample(curr_traj, time_data.uptime.toSec(), desired_state_);
   if (curr_traj.end() == segment_it)
   {
@@ -473,9 +482,12 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   }
 
   // Trajectory initialization options
+  TrajectoryPtr curr_traj_ptr;
+  curr_trajectory_box_.get(curr_traj_ptr);
+
   Options options;
   options.other_time_base    = &next_update_uptime;
-  options.current_trajectory = *(curr_trajectory_ptr_.readFromNonRT());
+  options.current_trajectory = curr_traj_ptr.get();
   options.joint_names        = &joint_names_;
   options.angle_wraparound   = &angle_wraparound_;
   options.rt_goal_handle     = gh;
@@ -488,8 +500,7 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
     *traj_ptr = initJointTrajectory<Trajectory>(*msg, next_update_time, options);
     if (!traj_ptr->empty())
     {
-      msg_trajectory_ptr_ = traj_ptr;
-      curr_trajectory_ptr_.writeFromNonRT(msg_trajectory_ptr_.get());
+      curr_trajectory_box_.set(traj_ptr);
     }
     else
     {
@@ -527,6 +538,19 @@ goalCB(GoalHandle gh)
     return;
   }
 
+  // Goal should specify all controller joints (they can be ordered differently). Reject if this is not the case
+  using internal::permutation;
+  std::vector<unsigned int> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
+
+  if (permutation_vector.empty())
+  {
+    ROS_ERROR_NAMED(name_, "Joints on incoming goal don't match the controller joints.");
+    control_msgs::FollowJointTrajectoryResult result;
+    result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;
+    gh.setRejected(result);
+    return;
+  }
+
   // Try to update new trajectory
   RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
   const bool update_ok = updateTrajectoryCommand(internal::share_member(gh.getGoal(), gh.getGoal()->trajectory),
@@ -547,13 +571,9 @@ goalCB(GoalHandle gh)
   }
   else
   {
-    // Reject goal. Determine if the reason was invalid joints or something else
-    using internal::permutation;
-    std::vector<unsigned int> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
-
+    // Reject invalid goal
     control_msgs::FollowJointTrajectoryResult result;
-    if (permutation_vector.empty()) {result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;}
-    else                            {result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL;}
+    result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL;
     gh.setRejected(result);
   }
 }
@@ -600,7 +620,10 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
   const ros::Time sample_time = time_data->uptime + time_offset;
 
   // Sample trajectory at requested time
-  Trajectory& curr_traj = **(curr_trajectory_ptr_.readFromRT());
+  TrajectoryPtr curr_traj_ptr;
+  curr_trajectory_box_.get(curr_traj_ptr);
+  Trajectory& curr_traj = *curr_traj_ptr;
+
   typename Segment::State state;
   typename Trajectory::const_iterator segment_it = sample(curr_traj, sample_time.toSec(), state);
   if (curr_traj.end() == segment_it)
@@ -681,7 +704,7 @@ setHoldPosition(const ros::Time& time)
   hold_trajectory_ptr_->front().init(start_time, hold_start_state_,
                                      end_time,   hold_end_state_);
 
-  curr_trajectory_ptr_.initRT(hold_trajectory_ptr_.get());
+  curr_trajectory_box_.set(hold_trajectory_ptr_);
 }
 
 } // namespace

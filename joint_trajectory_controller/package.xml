@@ -1,7 +1,7 @@
 <package>
   <name>joint_trajectory_controller</name>
   <description> Controller for executing joint-space trajectories on a group of joints. </description>
-  <version>0.5.4</version>
+  <version>0.7.2</version>
 
   <maintainer email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</maintainer>
 
@@ -13,7 +13,7 @@
 
   <author>Adolfo Rodriguez Tsouroukdissian</author>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend version_gte="0.5.68">catkin</buildtool_depend>
 
   <build_depend>cmake_modules</build_depend>
   <build_depend>actionlib</build_depend>

@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<package>
+  <name>gripper_action_controller</name>
+  <version>0.7.2</version>
+  <description>The gripper_action_controller package</description>
+
+  <!-- One maintainer tag required, multiple allowed, one person per tag --> 
+  <!-- Example:  -->
+  <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
+  <maintainer email="robot.moveit@gmail.com">Sachin Chitta</maintainer>
+
+
+  <!-- One license tag required, multiple allowed, one license per tag -->
+  <!-- Commonly used license strings: -->
+  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
+  <license>BSD</license>
+
+
+  <!-- Url tags are optional, but mutiple are allowed, one per tag -->
+  <!-- Optional attribute type can be: website, bugtracker, or repository -->
+  <!-- Example: -->
+  <!-- <url type="website">http://wiki.ros.org/gripper_action_controller</url> -->
+
+
+  <!-- Author tags are optional, mutiple are allowed, one per tag -->
+  <!-- Authors do not have to be maintianers, but could be -->
+  <!-- Example: -->
+  <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
+  <author email="robot.moveit@gmail.com">Sachin Chitta</author>
+
+  <!-- The *_depend tags are used to specify dependencies -->
+  <!-- Dependencies can be catkin packages or system dependencies -->
+  <!-- Examples: -->
+  <!-- Use build_depend for packages you need at compile time: -->
+  <!--   <build_depend>message_generation</build_depend> -->
+  <!-- Use buildtool_depend for build tool packages: -->
+  <!--   <buildtool_depend>catkin</buildtool_depend> -->
+  <!-- Use run_depend for packages you need at runtime: -->
+  <!--   <run_depend>message_runtime</run_depend> -->
+  <!-- Use test_depend for packages you need only for testing: -->
+  <!--   <test_depend>gtest</test_depend> -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>angles</build_depend>
+  <build_depend>cmake_modules</build_depend>
+  <build_depend>control_msgs</build_depend>
+  <build_depend>control_toolbox</build_depend>
+  <build_depend>controller_interface</build_depend>
+  <build_depend>controller_manager</build_depend>
+  <build_depend>hardware_interface</build_depend>
+  <build_depend>realtime_tools</build_depend>
+  <build_depend>rostest</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  <build_depend>urdf</build_depend>
+  <build_depend>xacro</build_depend>
+  <run_depend>actionlib</run_depend>
+  <run_depend>angles</run_depend>
+  <run_depend>cmake_modules</run_depend>
+  <run_depend>control_msgs</run_depend>
+  <run_depend>control_toolbox</run_depend>
+  <run_depend>controller_interface</run_depend>
+  <run_depend>controller_manager</run_depend>
+  <run_depend>hardware_interface</run_depend>
+  <run_depend>realtime_tools</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+  <run_depend>urdf</run_depend>
+  <run_depend>xacro</run_depend>
+
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <controller_interface plugin="${prefix}/ros_control_plugins.xml"/>
+  </export>
+</package>

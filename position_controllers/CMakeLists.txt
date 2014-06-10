@@ -23,6 +23,7 @@ else()
     src/joint_position_controller.cpp
     include/position_controllers/joint_position_controller.h
   )
+  target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
   # Declare catkin project
   catkin_package(

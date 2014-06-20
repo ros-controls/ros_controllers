@@ -84,7 +84,7 @@ public:
     initial_val_ = 0.0;
     if (!n.getParam("initial", initial_val_))
     {
-      ROS_INFO("No initial value given (namespace: %s); using 0.0", n.getNamespace().c_str())
+      ROS_INFO("No initial value given (namespace: %s); using 0.0", n.getNamespace().c_str());
     }
     
     joint_ = hw->getHandle(joint_name);

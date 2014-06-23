@@ -89,6 +89,9 @@ public:
     {
       for (unsigned int i = 0; i < 2; ++i)
       {
+        // Note that pos_[i] will be NaN for one more cycle after we start(),
+        // but that is consistent with the knowledge we have about the state
+        // of the robot.
         pos_[i] += vel_[i]*getPeriod().toSec(); // update position
         vel_[i] = cmd_[i]; // might add smoothing here later
       }

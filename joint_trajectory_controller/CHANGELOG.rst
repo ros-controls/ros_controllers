@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* joint_trajectory_controller: Critical targets declared before calling catkin_package
+* check for CATKIN_ENABLE_TESTING
+* Contributors: Jonathan Bohren, Lukas Bulwahn
+
 0.8.0 (2014-05-12)
 ------------------
 * Remove rosbuild artifacts. Fix `#90 <https://github.com/ros-controls/ros_controllers/issues/90>`_.

@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.8.1 (2014-07-11)
+------------------
 * joint_trajectory_controller: Critical targets declared before calling catkin_package
 * check for CATKIN_ENABLE_TESTING
 * Contributors: Jonathan Bohren, Lukas Bulwahn

@@ -79,6 +79,15 @@ namespace diff_drive_controller
     bool update(double left_pos, double right_pos, const ros::Time &time);
 
     /**
+     * \brief Updates the odometry class with latest velocity command
+     * \param linear  Linear velocity [m/s]
+     * \param angular Angular velocity [rad/s]
+     * \param time    Current time
+     * \return true if the odometry is actually updated
+     */
+    bool update_open_loop(double linear, double angular, const ros::Time &time);
+
+    /**
      * \brief heading getter
      * \return heading [rad]
      */
@@ -98,11 +107,29 @@ namespace diff_drive_controller
 
     /**
      * \brief y position getter
-     * \return y positioin [m]
+     * \return y position [m]
      */
     double getY() const
     {
       return y_;
+    }
+
+    /**
+     * \brief linear velocity getter
+     * \return linear velocity [m/s]
+     */
+    double getLinear() const
+    {
+      return linear_;
+    }
+
+    /**
+     * \brief angular velocity getter
+     * \return angular velocity [rad/s]
+     */
+    double getAngular() const
+    {
+      return angular_;
     }
 
     /**
@@ -160,6 +187,10 @@ namespace diff_drive_controller
     double x_;        //   [m]
     double y_;        //   [m]
     double heading_;  // [rad]
+
+    /// Current velocity (for open loop mode):
+    double linear_;  //   [m/s]
+    double angular_; // [rad/s]
 
     /// Wheel kinematic parameters [m]:
     double wheel_separation_;

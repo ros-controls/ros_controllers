@@ -35,6 +35,8 @@
 /*
  * Author: Luca Marchionni
  * Author: Bence Magyar
+ * Author: Enrique Fernández
+ * Author: Paul Mathieu
  */
 
 #ifndef ODOMETRY_H_
@@ -83,9 +85,8 @@ namespace diff_drive_controller
      * \param linear  Linear velocity [m/s]
      * \param angular Angular velocity [rad/s]
      * \param time    Current time
-     * \return true if the odometry is actually updated
      */
-    bool update_open_loop(double linear, double angular, const ros::Time &time);
+    void updateOpenLoop(double linear, double angular, const ros::Time &time);
 
     /**
      * \brief heading getter
@@ -133,27 +134,6 @@ namespace diff_drive_controller
     }
 
     /**
-     * \brief timestamp getter
-     * \return timestamp
-     */
-    ros::Time getTimestamp() const
-    {
-      return timestamp_;
-    }
-
-    /**
-     * \brief Retrieves the linear velocity estimation
-     * \return Rolling mean estimation of the linear velocity [m]
-     */
-    double getLinearEstimated() const;
-
-    /**
-     * \brief Retrieves the angular velocity estimation
-     * \return Rolling mean estimation of the angular velocity [rad/s]
-     */
-    double getAngularEstimated() const;
-
-    /**
      * \brief Sets the wheel parameters: radius and separation
      * \param wheel_separation Seperation between left and right wheels [m]
      * \param wheel_radius     Wheel radius [m]
@@ -188,7 +168,7 @@ namespace diff_drive_controller
     double y_;        //   [m]
     double heading_;  // [rad]
 
-    /// Current velocity (for open loop mode):
+    /// Current velocity:
     double linear_;  //   [m/s]
     double angular_; // [rad/s]
 

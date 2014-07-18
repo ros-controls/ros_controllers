@@ -33,7 +33,10 @@
  *********************************************************************/
 
 /*
+ * Author: Luca Marchionni
+ * Author: Bence Magyar
  * Author: Enrique Fernández
+ * Author: Paul Mathieu
  */
 
 #include <diff_drive_controller/odometry.h>
@@ -46,21 +49,23 @@ namespace diff_drive_controller
   namespace bacc = boost::accumulators;
 
   Odometry::Odometry(size_t velocity_rolling_window_size)
-  : timestamp_(0.0),
-    x_(0.0),
-    y_(0.0),
-    heading_(0.0),
-    wheel_separation_(0.0),
-    wheel_radius_(0.0),
-    left_wheel_old_pos_(0.0),
-    right_wheel_old_pos_(0.0),
-    linear_acc_(RollingWindow::window_size = velocity_rolling_window_size),
-    angular_acc_(RollingWindow::window_size = velocity_rolling_window_size),
-    integrate_fun_(boost::bind(&Odometry::integrateExact, this, _1, _2))
+  : timestamp_(0.0)
+  , x_(0.0)
+  , y_(0.0)
+  , heading_(0.0)
+  , linear_(0.0)
+  , angular_(0.0)
+  , wheel_separation_(0.0)
+  , wheel_radius_(0.0)
+  , left_wheel_old_pos_(0.0)
+  , right_wheel_old_pos_(0.0)
+  , linear_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , integrate_fun_(boost::bind(&Odometry::integrateExact, this, _1, _2))
   {
   }
 
-  bool Odometry::update(double left_pos, double right_pos, const ros::Time& time)
+  bool Odometry::update(double left_pos, double right_pos, const ros::Time &time)
   {
     /// Get current wheel joint positions:
     const double left_wheel_cur_pos  = left_pos  * wheel_radius_;
@@ -92,32 +97,22 @@ namespace diff_drive_controller
     linear_acc_(linear/dt);
     angular_acc_(angular/dt);
 
+    linear_ = bacc::rolling_mean(linear_acc_);
+    angular_ = bacc::rolling_mean(angular_acc_);
+
     return true;
   }
 
-  bool Odometry::update_open_loop(double linear, double angular, const ros::Time& time)
+  void Odometry::updateOpenLoop(double linear, double angular, const ros::Time &time)
   {
     /// Save last linear and angular velocity:
     linear_ = linear;
     angular_ = angular;
 
+    /// Integrate odometry:
     const double dt = (time - timestamp_).toSec();
     timestamp_ = time;
-
-    /// Integrate odometry:
     integrate_fun_(linear * dt, angular * dt);
-
-    return true;
-  }
-
-  double Odometry::getLinearEstimated() const
-  {
-    return bacc::rolling_mean(linear_acc_);
-  }
-
-  double Odometry::getAngularEstimated() const
-  {
-    return bacc::rolling_mean(angular_acc_);
   }
 
   void Odometry::setWheelParams(double wheel_separation, double wheel_radius)

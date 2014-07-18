@@ -204,16 +204,14 @@ namespace diff_drive_controller{
   void DiffDriveController::update(const ros::Time& time, const ros::Duration& period)
   {
     // COMPUTE AND PUBLISH ODOMETRY
-    double left_pos;
-    double right_pos;
     if (open_loop_)
     {
-      odometry_.update_open_loop(last_cmd_.lin, last_cmd_.ang, time);
+      odometry_.updateOpenLoop(last_cmd_.lin, last_cmd_.ang, time);
     }
     else
     {
-      left_pos  = left_wheel_joint_.getPosition();
-      right_pos = right_wheel_joint_.getPosition();
+      const double left_pos  = left_wheel_joint_.getPosition();
+      double right_pos = right_wheel_joint_.getPosition();
       if (std::isnan(left_pos) || std::isnan(right_pos))
         return;
 
@@ -236,27 +234,19 @@ namespace diff_drive_controller{
         odom_pub_->msg_.pose.pose.position.x = odometry_.getX();
         odom_pub_->msg_.pose.pose.position.y = odometry_.getY();
         odom_pub_->msg_.pose.pose.orientation = orientation;
-        if (open_loop_)
-        {
-          odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinear();
-          odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngular();
-        }
-        else
-        {
-          odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinearEstimated();
-          odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngularEstimated();
-        }
+        odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinear();
+        odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngular();
         odom_pub_->unlockAndPublish();
       }
 
       // Publish tf /odom frame
       if (enable_odom_tf_ && tf_odom_pub_->trylock())
       {
-        odom_frame_.header.stamp = time;
-        odom_frame_.transform.translation.x = odometry_.getX();
-        odom_frame_.transform.translation.y = odometry_.getY();
-        odom_frame_.transform.rotation = orientation;
-        tf_odom_pub_->msg_.transforms[0] = odom_frame_;
+        geometry_msgs::TransformStamped& odom_frame = tf_odom_pub_->msg_.transforms[0];
+        odom_frame.header.stamp = time;
+        odom_frame.transform.translation.x = odometry_.getX();
+        odom_frame.transform.translation.y = odometry_.getY();
+        odom_frame.transform.rotation = orientation;
         tf_odom_pub_->unlockAndPublish();
       }
     }
@@ -274,7 +264,7 @@ namespace diff_drive_controller{
     }
 
     // Limit velocities and accelerations:
-    double cmd_dt = period.toSec();
+    const double cmd_dt(period.toSec());
     limiter_lin_.limit(curr_cmd.lin, last_cmd_.lin, cmd_dt);
     limiter_ang_.limit(curr_cmd.ang, last_cmd_.ang, cmd_dt);
     last_cmd_ = curr_cmd;
@@ -414,28 +404,28 @@ namespace diff_drive_controller{
     odom_pub_->msg_.child_frame_id = base_frame_id_;
     odom_pub_->msg_.pose.pose.position.z = 0;
     odom_pub_->msg_.pose.covariance = boost::assign::list_of
-        (static_cast<double>(pose_cov_list[0])) (0)   (0)  (0)  (0)  (0)
-        (0) (static_cast<double>(pose_cov_list[1]))  (0)  (0)  (0)  (0)
-        (0)   (0)  (static_cast<double>(pose_cov_list[2])) (0)  (0)  (0)
-        (0)   (0)   (0) (static_cast<double>(pose_cov_list[3])) (0)  (0)
-        (0)   (0)   (0)  (0) (static_cast<double>(pose_cov_list[4])) (0)
-        (0)   (0)   (0)  (0)  (0)  (static_cast<double>(pose_cov_list[5]));
+        (static_cast<double>(pose_cov_list[0])) (0)  (0)  (0)  (0)  (0)
+        (0)  (static_cast<double>(pose_cov_list[1])) (0)  (0)  (0)  (0)
+        (0)  (0)  (static_cast<double>(pose_cov_list[2])) (0)  (0)  (0)
+        (0)  (0)  (0)  (static_cast<double>(pose_cov_list[3])) (0)  (0)
+        (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[4])) (0)
+        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[5]));
     odom_pub_->msg_.twist.twist.linear.y  = 0;
     odom_pub_->msg_.twist.twist.linear.z  = 0;
     odom_pub_->msg_.twist.twist.angular.x = 0;
     odom_pub_->msg_.twist.twist.angular.y = 0;
     odom_pub_->msg_.twist.covariance = boost::assign::list_of
-        (static_cast<double>(twist_cov_list[0])) (0)   (0)  (0)  (0)  (0)
-        (0) (static_cast<double>(twist_cov_list[1]))  (0)  (0)  (0)  (0)
-        (0)   (0)  (static_cast<double>(twist_cov_list[2])) (0)  (0)  (0)
-        (0)   (0)   (0) (static_cast<double>(twist_cov_list[3])) (0)  (0)
-        (0)   (0)   (0)  (0) (static_cast<double>(twist_cov_list[4])) (0)
-        (0)   (0)   (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
+        (static_cast<double>(twist_cov_list[0])) (0)  (0)  (0)  (0)  (0)
+        (0)  (static_cast<double>(twist_cov_list[1])) (0)  (0)  (0)  (0)
+        (0)  (0)  (static_cast<double>(twist_cov_list[2])) (0)  (0)  (0)
+        (0)  (0)  (0)  (static_cast<double>(twist_cov_list[3])) (0)  (0)
+        (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[4])) (0)
+        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
     tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
     tf_odom_pub_->msg_.transforms.resize(1);
-    odom_frame_.transform.translation.z = 0.0;
-    odom_frame_.child_frame_id = base_frame_id_;
-    odom_frame_.header.frame_id = "odom";
+    tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;
+    tf_odom_pub_->msg_.transforms[0].child_frame_id = base_frame_id_;
+    tf_odom_pub_->msg_.transforms[0].header.frame_id = "odom";
   }
 
 } // namespace diff_drive_controller

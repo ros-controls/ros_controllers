@@ -145,7 +145,7 @@ namespace diff_drive_controller{
     /// Whether to publish odometry to tf or not:
     bool enable_odom_tf_;
 
-    // speed limiters
+    // Speed limiters:
     Commands last_cmd_;
     SpeedLimiter limiter_lin_;
     SpeedLimiter limiter_ang_;

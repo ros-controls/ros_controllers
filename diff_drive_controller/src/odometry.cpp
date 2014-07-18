@@ -60,7 +60,7 @@ namespace diff_drive_controller
   {
   }
 
-  bool Odometry::update(double left_pos, double right_pos, const ros::Time &time)
+  bool Odometry::update(double left_pos, double right_pos, const ros::Time& time)
   {
     /// Get current wheel joint positions:
     const double left_wheel_cur_pos  = left_pos  * wheel_radius_;
@@ -91,6 +91,21 @@ namespace diff_drive_controller
     /// Estimate speeds using a rolling mean to filter them out:
     linear_acc_(linear/dt);
     angular_acc_(angular/dt);
+
+    return true;
+  }
+
+  bool Odometry::update_open_loop(double linear, double angular, const ros::Time& time)
+  {
+    /// Save last linear and angular velocity:
+    linear_ = linear;
+    angular_ = angular;
+
+    const double dt = (time - timestamp_).toSec();
+    timestamp_ = time;
+
+    /// Integrate odometry:
+    integrate_fun_(linear * dt, angular * dt);
 
     return true;
   }

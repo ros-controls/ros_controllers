@@ -106,7 +106,8 @@ static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link
 namespace diff_drive_controller{
 
   DiffDriveController::DiffDriveController()
-    : command_struct_()
+    : open_loop_(false)
+    , command_struct_()
     , wheel_separation_(0.0)
     , wheel_radius_(0.0)
     , wheel_separation_multiplier_(1.0)
@@ -140,11 +141,14 @@ namespace diff_drive_controller{
       return false;
     }
 
+    // Odometry related:
     double publish_rate;
     controller_nh.param("publish_rate", publish_rate, 50.0);
     ROS_INFO_STREAM_NAMED(name_, "Controller state will be published at "
                           << publish_rate << "Hz.");
     publish_period_ = ros::Duration(1.0 / publish_rate);
+
+    controller_nh.param("open_loop", open_loop_, open_loop_);
 
     controller_nh.param("wheel_separation_multiplier", wheel_separation_multiplier_, wheel_separation_multiplier_);
     ROS_INFO_STREAM_NAMED(name_, "Wheel separation will be multiplied by "
@@ -154,6 +158,7 @@ namespace diff_drive_controller{
     ROS_INFO_STREAM_NAMED(name_, "Wheel radius will be multiplied by "
                           << wheel_radius_multiplier_ << ".");
 
+    // Twist command related:
     controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
     ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "
                           << cmd_vel_timeout_ << "s.");
@@ -199,8 +204,22 @@ namespace diff_drive_controller{
   void DiffDriveController::update(const ros::Time& time, const ros::Duration& period)
   {
     // COMPUTE AND PUBLISH ODOMETRY
-    // Estimate linear and angular velocity using joint information
-    odometry_.update(left_wheel_joint_.getPosition(), right_wheel_joint_.getPosition(), time);
+    double left_pos;
+    double right_pos;
+    if (open_loop_)
+    {
+      odometry_.update_open_loop(last_cmd_.lin, last_cmd_.ang, time);
+    }
+    else
+    {
+      left_pos  = left_wheel_joint_.getPosition();
+      right_pos = right_wheel_joint_.getPosition();
+      if (std::isnan(left_pos) || std::isnan(right_pos))
+        return;
+
+      // Estimate linear and angular velocity using joint information
+      odometry_.update(left_pos, right_pos, time);
+    }
 
     // Publish odometry message
     if(last_state_publish_time_ + publish_period_ < time)
@@ -217,8 +236,16 @@ namespace diff_drive_controller{
         odom_pub_->msg_.pose.pose.position.x = odometry_.getX();
         odom_pub_->msg_.pose.pose.position.y = odometry_.getY();
         odom_pub_->msg_.pose.pose.orientation = orientation;
-        odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinearEstimated();
-        odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngularEstimated();
+        if (open_loop_)
+        {
+          odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinear();
+          odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngular();
+        }
+        else
+        {
+          odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinearEstimated();
+          odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngularEstimated();
+        }
         odom_pub_->unlockAndPublish();
       }
 

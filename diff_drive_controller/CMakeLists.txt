@@ -38,7 +38,9 @@ if (CATKIN_ENABLE_TESTING)
 
   add_dependencies(tests diffbot)
 
-  add_rostest_gtest(diff_drive_test test/diff_drive_controller.test test/diff_drive_test.cpp)
+  add_rostest_gtest(diff_drive_test
+    test/diff_drive_controller.test
+    test/diff_drive_test.cpp)
   target_link_libraries(diff_drive_test ${catkin_LIBRARIES})
   add_rostest_gtest(diff_drive_nan_test
     test/diff_drive_controller_nan.test
@@ -58,5 +60,6 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_fail_test.cpp)
   target_link_libraries(diff_drive_fail_test ${catkin_LIBRARIES})
   add_rostest(test/diff_drive_bad_urdf.test)
+  add_rostest(test/diff_drive_open_loop.test)
 
 endif()

@@ -72,6 +72,12 @@ namespace diff_drive_controller
     Odometry(size_t velocity_rolling_window_size = 10);
 
     /**
+     * \brief Initialize the odometry
+     * \param time Current time
+     */
+    void init(const ros::Time &time);
+
+    /**
      * \brief Updates the odometry class with latest wheels position
      * \param left_pos  Left  wheel position [rad]
      * \param right_pos Right wheel position [rad]
@@ -180,7 +186,8 @@ namespace diff_drive_controller
     double left_wheel_old_pos_;
     double right_wheel_old_pos_;
 
-    /// Rolling meand accumulators for the linar and angular velocities:
+    /// Rolling mean accumulators for the linar and angular velocities:
+    size_t velocity_rolling_window_size_;
     RollingMeanAcc linear_acc_;
     RollingMeanAcc angular_acc_;
 

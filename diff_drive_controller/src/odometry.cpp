@@ -59,10 +59,21 @@ namespace diff_drive_controller
   , wheel_radius_(0.0)
   , left_wheel_old_pos_(0.0)
   , right_wheel_old_pos_(0.0)
+  , velocity_rolling_window_size_(velocity_rolling_window_size)
   , linear_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , integrate_fun_(boost::bind(&Odometry::integrateExact, this, _1, _2))
   {
+  }
+
+  void Odometry::init(const ros::Time& time)
+  {
+    // Reset accumulators:
+    linear_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+
+    // Reset timestamp:
+    timestamp_ = time;
   }
 
   bool Odometry::update(double left_pos, double right_pos, const ros::Time &time)

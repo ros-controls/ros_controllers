@@ -286,6 +286,8 @@ namespace diff_drive_controller{
 
     // Register starting time used to keep fixed rate
     last_state_publish_time_ = time;
+
+    odometry_.init(time);
   }
 
   void DiffDriveController::stopping(const ros::Time& time)

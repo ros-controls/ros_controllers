@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package>
+  <name>joint_mode_controller</name>
+  <version>0.5.4</version>
+  <description>Controller to allow joint controllers to easily switch modes between position, velocity, and effort-based control</description>
+
+  <maintainer email="davetcoleman@gmail.com">Dave Coleman</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">https://github.com/ros-controls/ros_controllers/wiki</url>
+  <url type="butracker">https://github.com/ros-controls/ros_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros_controllers</url>
+
+  <author email="davetcoleman@gmail.com">Dave Coleman</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>controller_interface</build_depend>
+  <build_depend>hardware_interface</build_depend>
+  <build_depend>pluginlib</build_depend>
+  <build_depend>roscpp</build_depend>
+
+  <run_depend>controller_interface</run_depend>
+  <run_depend>hardware_interface</run_depend>
+  <run_depend>pluginlib</run_depend>
+  <run_depend>roscpp</run_depend>
+
+  <export>
+    <controller_interface plugin="${prefix}/joint_mode_controller_plugins.xml"/>
+  </export>
+</package>

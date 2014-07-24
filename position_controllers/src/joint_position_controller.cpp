@@ -41,7 +41,7 @@
 template <class T>
 void forward_command_controller::ForwardCommandController<T>::get_process_value(double &process_value)
 {
-        process_value = joint_.getVelocity();
+        process_value = joint_.getPosition();
 }
 
 PLUGINLIB_EXPORT_CLASS(position_controllers::JointPositionController,controller_interface::ControllerBase)

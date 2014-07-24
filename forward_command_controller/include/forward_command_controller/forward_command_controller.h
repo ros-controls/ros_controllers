@@ -43,6 +43,10 @@
 #include <controller_interface/controller.h>
 #include <std_msgs/Float64.h>
 
+#include <boost/scoped_ptr.hpp>
+#include <control_msgs/JointControllerState.h>
+#include <realtime_tools/realtime_publisher.h>
+
 
 namespace forward_command_controller
 {
@@ -68,7 +72,7 @@ template <class T>
 class ForwardCommandController: public controller_interface::Controller<T>
 {
 public:
-  ForwardCommandController() : command_(0) {}
+  ForwardCommandController() : command_(0), loop_count_(0) {}
   ~ForwardCommandController() {sub_command_.shutdown();}
 
   bool init(T* hw, ros::NodeHandle &n)
@@ -80,17 +84,49 @@ public:
       return false;
     }
     joint_ = hw->getHandle(joint_name);
+    
+    // Start realtime state publisher
+    controller_state_publisher_.reset(
+      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>
+      (n, "state", 1));
+    
     sub_command_ = n.subscribe<std_msgs::Float64>("command", 1, &ForwardCommandController::commandCB, this);
     return true;
   }
 
   void starting(const ros::Time& time) {command_ = 0.0;}
-  void update(const ros::Time& time, const ros::Duration& period) {joint_.setCommand(command_);}
+  void update(const ros::Time& time, const ros::Duration& period) 
+  {
+    joint_.setCommand(command_);
+    
+    if(loop_count_ % 10 == 0)
+    {
+      if(controller_state_publisher_ && controller_state_publisher_->trylock())
+      {
+        controller_state_publisher_->msg_.header.stamp = time;
+        controller_state_publisher_->msg_.set_point = command_;
+        get_process_value(controller_state_publisher_->msg_.process_value); 
+        controller_state_publisher_->msg_.error = controller_state_publisher_->msg_.set_point - controller_state_publisher_->msg_.process_value;
+        controller_state_publisher_->msg_.time_step = period.toSec();
+        controller_state_publisher_->msg_.command = command_;
+        
+        controller_state_publisher_->unlockAndPublish();
+      }
+    }
+    loop_count_++;
+  }
 
   hardware_interface::JointHandle joint_;
   double command_;
 
 private:
+  int loop_count_;
+  boost::scoped_ptr<
+    realtime_tools::RealtimePublisher<
+      control_msgs::JointControllerState> > controller_state_publisher_ ;
+  
+  void get_process_value(double &process_value);
+   
   ros::Subscriber sub_command_;
   void commandCB(const std_msgs::Float64ConstPtr& msg) {command_ = msg->data;}
 };

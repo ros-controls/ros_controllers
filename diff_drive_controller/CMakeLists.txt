@@ -5,6 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
     controller_interface
     urdf
     angles
+    realtime_tools
     tf
     nav_msgs)
 

@@ -41,7 +41,6 @@
 
 #include <diff_drive_controller/odometry.h>
 
-#include <angles/angles.h>
 #include <boost/bind.hpp>
 
 namespace diff_drive_controller
@@ -140,9 +139,6 @@ namespace diff_drive_controller
     x_       += linear * cos(direction);
     y_       += linear * sin(direction);
     heading_ += angular;
-
-    /// Normalization of angle to [-Pi, Pi]:
-    heading_ = angles::normalize_angle(heading_);
   }
 
   /**
@@ -160,8 +156,8 @@ namespace diff_drive_controller
       const double heading_old = heading_;
       const double r = linear/angular;
       heading_ += angular;
-      x_ +=  r * (sin(heading_) - sin(thetaOld));
-      y_ += -r * (cos(heading_) - cos(thetaOld));
+      x_       +=  r * (sin(heading_) - sin(heading_old));
+      y_       += -r * (cos(heading_) - cos(heading_old));
     }
   }
 

@@ -4,7 +4,6 @@ project(diff_drive_controller)
 find_package(catkin REQUIRED COMPONENTS
     controller_interface
     urdf
-    angles
     tf
     nav_msgs)
 

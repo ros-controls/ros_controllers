@@ -134,7 +134,7 @@ namespace diff_drive_controller
 
   void Odometry::integrateRungeKutta2(double linear, double angular)
   {
-    double direction = heading_ + angular*0.5;
+    const double direction = heading_ + angular * 0.5;
 
     /// Runge-Kutta 2nd order integration:
     x_       += linear * cos(direction);
@@ -157,7 +157,7 @@ namespace diff_drive_controller
     else
     {
       /// Exact integration (should solve problems when angular is zero):
-      const double thetaOld = heading_;
+      const double heading_old = heading_;
       const double r = linear/angular;
       heading_ += angular;
       x_ +=  r * (sin(heading_) - sin(thetaOld));

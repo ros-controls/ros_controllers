@@ -104,6 +104,7 @@ public:
       if(controller_state_publisher_ && controller_state_publisher_->trylock())
       {
         controller_state_publisher_->msg_.header.stamp = time;
+        controller_state_publisher_->msg_.header.frame_id = joint_.getName();
         controller_state_publisher_->msg_.set_point = command_;
         get_process_value(controller_state_publisher_->msg_.process_value); 
         controller_state_publisher_->msg_.error = controller_state_publisher_->msg_.set_point - controller_state_publisher_->msg_.process_value;

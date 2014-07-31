@@ -49,7 +49,6 @@
   <build_depend>controller_manager</build_depend>
   <build_depend>hardware_interface</build_depend>
   <build_depend>realtime_tools</build_depend>
-  <build_depend>rostest</build_depend>
   <build_depend>trajectory_msgs</build_depend>
   <build_depend>urdf</build_depend>
   <build_depend>xacro</build_depend>

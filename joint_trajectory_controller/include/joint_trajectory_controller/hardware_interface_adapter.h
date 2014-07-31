@@ -45,8 +45,8 @@
 /**
  * \brief Helper class to simplify integrating the JointTrajectoryController with different hardware interfaces.
  *
- * The JointTrajectoryController outputs position and velocity command triplets, while the more common hardware interfaces
- * it is supposed to work with accept position, velocity, or effort commands.
+ * The JointTrajectoryController outputs position, velocity and acceleration command triplets, while the more common hardware
+ * interfaces accept position, velocity or effort commands.
  *
  * Use one of the available template specializations of this class (or create your own) to adapt the
  * JointTrajectoryController to a specidfic hardware interface.
@@ -72,31 +72,21 @@ public:
 /**
  * \brief Adapter for a position-controlled hardware interface. Forwards desired positions as commands.
  *
- * The following is an example configuration of a controller that uses this adapter. Notice the \p gains entry:
+ * The following is an example configuration of a controller that uses this adapter.
  * \code
- * left_joint_trajectory_controller:
+ * head_controller:
  *   type: "position_controllers/JointTrajectoryController"
- *    - left_s0
- *    - left_s1
- *    - left_e0
- *
- *  constraints:
- *    goal_time: 2.0                  # Defaults to zero
- *    stopped_velocity_tolerance: 0.1 # Defaults to 0.01
- *    left_s0:
- *      trajectory: 0
- *      goal: 0.2
- *    left_s1:
- *      trajectory: 0
- *      goal: 0.2
- *    left_e0:
- *      trajectory: 0
- *      goal: 0.2
- *
- *  state_publish_rate:  50 # Defaults to 50
- *  action_monitor_rate: 20 # Defaults to 20
- *  hold_trajectory_duration: 0 # Defaults to 0.5
- *
+ *   joints:
+ *     - head_1_joint
+ *     - head_2_joint
+ *   
+ *   constraints:
+ *     goal_time: 0.6
+ *     stopped_velocity_tolerance: 0.02
+ *     head_1_joint: {trajectory: 0.05, goal: 0.02}
+ *     head_2_joint: {trajectory: 0.05, goal: 0.02}
+ *   stop_trajectory_duration: 0.5
+ *   state_publish_rate:  25
  * \endcode
  */
 template <class State>
@@ -141,20 +131,16 @@ private:
  *   joints:
  *     - head_1_joint
  *     - head_2_joint
- *
- *   constraints:
- *     goal_time: 0.6
- *     stopped_velocity_tolerance: 0.02
- *     head_1_joint:
- *       trajectory: 0.05
- *       goal: 0.02
- *     head_2_joint:
- *       trajectory: 0.05
- *       goal: 0.01
- *
  *   gains:
  *     head_1_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
  *     head_2_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
+ *   constraints:
+ *     goal_time: 0.6
+ *     stopped_velocity_tolerance: 0.02
+ *     head_1_joint: {trajectory: 0.05, goal: 0.02}
+ *     head_2_joint: {trajectory: 0.05, goal: 0.02}
+ *   stop_trajectory_duration: 0.5
+ *   state_publish_rate:  25
  * \endcode
  */
 template <class State>
@@ -240,19 +226,16 @@ private:
  *   joints:
  *     - head_1_joint
  *     - head_2_joint
- *
- *   constraints:
- *     goal_time: 0.6
- *     stopped_velocity_tolerance: 0.02
- *     head_1_joint:
- *       trajectory: 0.05
- *       goal: 0.02
- *     head_2_joint:
- *       goal: 0.01
- *
  *   gains:
  *     head_1_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
  *     head_2_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
+ *   constraints:
+ *     goal_time: 0.6
+ *     stopped_velocity_tolerance: 0.02
+ *     head_1_joint: {trajectory: 0.05, goal: 0.02}
+ *     head_2_joint: {trajectory: 0.05, goal: 0.02}
+ *   stop_trajectory_duration: 0.5
+ *   state_publish_rate:  25
  * \endcode
  */
 template <class State>

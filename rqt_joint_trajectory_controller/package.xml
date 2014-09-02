@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>rqt_joint_trajectory_controller</name>
+  <version>0.1.0</version>
+  <description>Graphical frontend for interacting with joint_trajectory_controller instances.</description>
+
+  <maintainer email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</maintainer>
+  <author email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</author>
+  <license>Modified BSD</license>
+  <url type="website">http://wiki.ros.org/rqt_joint_trajectory_controller</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>control_msgs</run_depend>
+  <run_depend>trajectory_msgs</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>rqt_gui</run_depend>
+  <run_depend>rqt_gui_py</run_depend>
+
+  <export>
+    <rqt_gui plugin="${prefix}/plugin.xml"/>
+  </export>
+</package>

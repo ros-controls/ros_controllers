@@ -141,6 +141,9 @@ namespace diff_drive_controller{
     /// Frame to use for the robot base:
     std::string base_frame_id_;
 
+    /// Whether to publish odometry to tf or not:
+    bool enable_odom_tf_;
+
     // speed limiters
     Commands last_cmd_;
     SpeedLimiter limiter_lin_;

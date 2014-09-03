@@ -113,6 +113,7 @@ namespace diff_drive_controller{
     , wheel_radius_multiplier_(1.0)
     , cmd_vel_timeout_(0.5)
     , base_frame_id_("base_link")
+    , enable_odom_tf_(true)
   {
   }
 
@@ -159,6 +160,9 @@ namespace diff_drive_controller{
 
     controller_nh.param("base_frame_id", base_frame_id_, base_frame_id_);
     ROS_INFO_STREAM_NAMED(name_, "Base frame_id set to " << base_frame_id_);
+
+    controller_nh.param("enable_odom_tf", enable_odom_tf_, enable_odom_tf_);
+    ROS_INFO_STREAM_NAMED(name_, "Publishing to tf is " << (enable_odom_tf_?"enabled":"disabled"));
 
     // Velocity and acceleration limits:
     controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
@@ -219,7 +223,7 @@ namespace diff_drive_controller{
       }
 
       // Publish tf /odom frame
-      if(tf_odom_pub_->trylock())
+      if (enable_odom_tf_ && tf_odom_pub_->trylock())
       {
         odom_frame_.header.stamp = time;
         odom_frame_.transform.translation.x = odometry_.getX();

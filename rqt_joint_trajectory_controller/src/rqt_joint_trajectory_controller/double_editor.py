@@ -86,6 +86,9 @@ class DoubleEditor(QWidget):
         self.slider.valueChanged.connect(self._on_slider_changed)
         self.spin_box.valueChanged.connect(self._on_spinbox_changed)
 
+        # Ensure initial sync of slider and spin box
+        self._on_spinbox_changed()
+
     def _slider_to_val(self, sval):
         return self._min_val + self._scale * (sval - self.slider.minimum())
 
@@ -110,10 +113,8 @@ class DoubleEditor(QWidget):
     def setValue(self, val):
         if val != self.spin_box.value():
             self.spin_box.blockSignals(True)
-            self.spin_box.setValue(val)
-            # Needs to be forced, otherwise widgets may not be properly synced
-            # on initialization (ie. if there is no value change)
-            self._on_spinbox_changed()
+            self.spin_box.setValue(val)  # Update spin box first
+            self._on_spinbox_changed()  # Sync slider with spin box
             self.spin_box.blockSignals(False)
 
     def value(self):

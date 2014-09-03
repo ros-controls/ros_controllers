@@ -238,7 +238,7 @@ namespace diff_drive_controller{
     setOdomPubFields(root_nh, controller_nh);
 
     // Get the joint object to use in the realtime loop
-    for (int i = 0; i < wheel_joints_size_; ++i)
+    for (size_t i = 0; i < wheel_joints_size_; ++i)
     {
       ROS_INFO_STREAM_NAMED(name_,
                             "Adding left wheel with joint name: " << left_wheel_names[i]
@@ -303,11 +303,11 @@ namespace diff_drive_controller{
       // Publish tf /odom frame
       if (enable_odom_tf_ && tf_odom_pub_->trylock())
       {
-        geometry_msgs::TransformStamped& odom_frame = tf_odom_pub_->msg_.transforms[0];
-        odom_frame.header.stamp = time;
-        odom_frame.transform.translation.x = odometry_.getX();
-        odom_frame.transform.translation.y = odometry_.getY();
-        odom_frame.transform.rotation = orientation;
+        odom_frame_.header.stamp = time;
+        odom_frame_.transform.translation.x = odometry_.getX();
+        odom_frame_.transform.translation.y = odometry_.getY();
+        odom_frame_.transform.rotation = orientation;
+        tf_odom_pub_->msg_.transforms[0] = odom_frame_;
         tf_odom_pub_->unlockAndPublish();
       }
     }
@@ -468,7 +468,7 @@ namespace diff_drive_controller{
     const std::string model_param_name = "robot_description";
     bool res = root_nh.hasParam(model_param_name);
     std::string robot_model_str="";
-    if (!res || !root_nh.getParam(model_param_name,robot_model_str))
+    if (!res || !root_nh.getParam(model_param_name, robot_model_str))
     {
       ROS_ERROR_NAMED(name_, "Robot descripion couldn't be retrieved from param server.");
       return false;

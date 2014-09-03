@@ -31,7 +31,7 @@ install(FILES diff_drive_controller_plugins.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 if (CATKIN_ENABLE_TESTING)
-  find_package(catkin COMPONENTS rostest controller_manager)
+  find_package(catkin COMPONENTS rostest controller_manager tf)
   include_directories(include ${catkin_INCLUDE_DIRS})
 
   add_executable(diffbot test/diffbot.cpp)
@@ -39,7 +39,9 @@ if (CATKIN_ENABLE_TESTING)
 
   add_dependencies(tests diffbot)
 
-  add_rostest_gtest(diff_drive_test test/diff_drive_controller.test test/diff_drive_test.cpp)
+  add_rostest_gtest(diff_drive_test
+    test/diff_drive_controller.test
+    test/diff_drive_test.cpp)
   target_link_libraries(diff_drive_test ${catkin_LIBRARIES})
   add_rostest_gtest(diff_drive_limits_test
     test/diff_drive_controller_limits.test
@@ -55,5 +57,9 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_fail_test.cpp)
   target_link_libraries(diff_drive_fail_test ${catkin_LIBRARIES})
   add_rostest(test/diff_drive_bad_urdf.test)
+  add_rostest_gtest(diff_drive_odom_tf_test
+    test/diff_drive_odom_tf.test
+    test/diff_drive_odom_tf_test.cpp)
+  target_link_libraries(diff_drive_odom_tf_test ${catkin_LIBRARIES})
 
 endif()

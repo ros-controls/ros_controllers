@@ -6,4 +6,10 @@
     </description>
   </class>
 
+  <class name="velocity_controllers/JointPositionController" type="velocity_controllers::JointPositionController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      The JointPositionController converts position commands to velocity commands. It expects a VelocityJointInterface type of hardware interface.
+    </description>
+  </class>
+
 </library>

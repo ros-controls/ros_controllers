@@ -104,8 +104,8 @@ namespace diff_drive_controller{
     bool open_loop_;
 
     /// Hardware handles:
-    hardware_interface::JointHandle left_wheel_joint_;
-    hardware_interface::JointHandle right_wheel_joint_;
+    std::vector<hardware_interface::JointHandle> left_wheel_joints_;
+    std::vector<hardware_interface::JointHandle> right_wheel_joints_;
 
     /// Velocity command related:
     struct Commands
@@ -145,6 +145,9 @@ namespace diff_drive_controller{
     /// Whether to publish odometry to tf or not:
     bool enable_odom_tf_;
 
+    /// Number of wheel joints:
+    size_t wheel_joints_size_;
+
     // Speed limiters:
     Commands last_cmd_;
     SpeedLimiter limiter_lin_;
@@ -161,6 +164,18 @@ namespace diff_drive_controller{
      * \param command Velocity command message (twist)
      */
     void cmdVelCallback(const geometry_msgs::Twist& command);
+
+    /**
+     * \brief Get the wheel names from a wheel param
+     * \param [in]  controller_nh Controller node handler
+     * \param [in]  wheel_param   Param name
+     * \param [out] wheel_names   Vector with the whel names
+     * \return true if the wheel_param is available and the wheel_names are
+     *        retrieved successfully from the param server; false otherwise
+     */
+    bool getWheelNames(ros::NodeHandle& controller_nh,
+                       const std::string& wheel_param,
+                       std::vector<std::string>& wheel_names);
 
     /**
      * \brief Sets odometry parameters from the URDF, i.e. the wheel radius and separation

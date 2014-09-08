@@ -164,6 +164,9 @@ namespace diff_drive_controller{
     else
     {
       wheel_joints_size_ = left_wheel_names.size();
+
+      left_wheel_joints_.resize(wheel_joints_size_);
+      right_wheel_joints_.resize(wheel_joints_size_);
     }
 
     // Odometry related:
@@ -215,7 +218,7 @@ namespace diff_drive_controller{
     setOdomPubFields(root_nh, controller_nh);
 
     // Get the joint object to use in the realtime loop
-    for (int i = 0; i < left_wheel_names.size(); ++i)
+    for (int i = 0; i < wheel_joints_size_; ++i)
     {
       ROS_INFO_STREAM_NAMED(name_,
                             "Adding left wheel with joint name: " << left_wheel_names[i]

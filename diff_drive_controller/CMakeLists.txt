@@ -25,7 +25,7 @@ install(TARGETS ${PROJECT_NAME}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   )
- 
+
 install(FILES diff_drive_controller_plugins.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
@@ -36,7 +36,10 @@ if (CATKIN_ENABLE_TESTING)
   add_executable(diffbot test/diffbot.cpp)
   target_link_libraries(diffbot ${catkin_LIBRARIES})
 
-  add_dependencies(tests diffbot)
+  add_executable(skidsteerbot test/skidsteerbot.cpp)
+  target_link_libraries(skidsteerbot ${catkin_LIBRARIES})
+
+  add_dependencies(tests diffbot skidsteerbot)
 
   add_rostest_gtest(diff_drive_test
     test/diff_drive_controller.test
@@ -61,5 +64,6 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_odom_tf_test.cpp)
   target_link_libraries(diff_drive_odom_tf_test ${catkin_LIBRARIES})
   add_rostest(test/diff_drive_open_loop.test)
+  add_rostest(test/skid_steer_controller.test)
 
 endif()

@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-
-<robot xmlns:xacro="http://ros.org/wiki/xacro">
-  <property name="deg_to_rad" value="0.01745329251994329577"/>
-</robot>

@@ -64,5 +64,6 @@ if (CATKIN_ENABLE_TESTING)
   add_rostest(test/diff_drive_bad_urdf.test)
   add_rostest(test/diff_drive_open_loop.test)
   add_rostest(test/skid_steer_controller.test)
+  add_rostest(test/skid_steer_no_wheels.test)
 
 endif()

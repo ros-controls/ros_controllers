@@ -129,26 +129,9 @@ namespace diff_drive_controller{
 
     // Get joint names from the parameter server
     std::vector<std::string> left_wheel_names, right_wheel_names;
-    if (!getWheelNames(controller_nh, "left_wheel", left_wheel_names))
+    if (!getWheelNames(controller_nh, "left_wheel", left_wheel_names) or
+        !getWheelNames(controller_nh, "right_wheel", right_wheel_names))
     {
-      ROS_ERROR_NAMED(name_, "Couldn't retrieve left wheel names from the param server.");
-      return false;
-    }
-    if (!getWheelNames(controller_nh, "right_wheel", right_wheel_names))
-    {
-      ROS_ERROR_NAMED(name_, "Couldn't retrieve right wheel names from the param server.");
-      return false;
-    }
-
-    if (left_wheel_names.empty())
-    {
-      ROS_ERROR_NAMED(name_, "No left wheels.");
-      return false;
-    }
-
-    if (right_wheel_names.empty())
-    {
-      ROS_ERROR_NAMED(name_, "No right wheels.");
       return false;
     }
 
@@ -376,17 +359,27 @@ namespace diff_drive_controller{
       XmlRpc::XmlRpcValue wheel_list;
       if (!controller_nh.getParam(wheel_param, wheel_list))
       {
+        ROS_ERROR_STREAM_NAMED(name_,
+            "Couldn't retrieve wheel param '" << wheel_param << "'.");
         return false;
       }
 
       if (wheel_list.getType() == XmlRpc::XmlRpcValue::TypeArray)
       {
+        if (wheel_list.size() == 0)
+        {
+          ROS_ERROR_STREAM_NAMED(name_,
+              "Wheel param '" << wheel_param << "' is an empty list");
+          return false;
+        }
+
         for (int i = 0; i < wheel_list.size(); ++i)
         {
           if (wheel_list[i].getType() != XmlRpc::XmlRpcValue::TypeString)
           {
             ROS_ERROR_STREAM_NAMED(name_,
-                "Wheel name #" << i << " isn't a string.");
+                "Wheel param '" << wheel_param << "' #" << i <<
+                " isn't a string.");
             return false;
           }
         }

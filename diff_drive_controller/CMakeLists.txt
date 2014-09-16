@@ -65,5 +65,6 @@ if (CATKIN_ENABLE_TESTING)
   target_link_libraries(diff_drive_odom_tf_test ${catkin_LIBRARIES})
   add_rostest(test/diff_drive_open_loop.test)
   add_rostest(test/skid_steer_controller.test)
+  add_rostest(test/skid_steer_no_wheels.test)
 
 endif()

@@ -6,4 +6,10 @@
     </description>
   </class>
 
+  <class name="position_controllers/JointGroupPositionController" type="position_controllers::JointGroupPositionController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      The JointGroupPositionController tracks position commands for a set of joints. It expects a PositionJointInterface type of hardware interface.
+    </description>
+  </class>
+
 </library>

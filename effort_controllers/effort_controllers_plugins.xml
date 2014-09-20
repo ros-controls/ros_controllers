@@ -18,4 +18,10 @@
     </description>
   </class>
 
+  <class name="effort_controllers/JointGroupEffortController" type="effort_controllers::JointGroupEffortController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      The JointGroupEffortController tracks effort commands for a set of joints. It expects a EffortJointInterface type of hardware interface.
+    </description>
+  </class>
+
 </library>

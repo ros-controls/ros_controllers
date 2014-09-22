@@ -39,24 +39,51 @@ namespace joint_state_controller
 
   bool JointStateController::init(hardware_interface::JointStateInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle& controller_nh)
   {
-    // get all joint names from the hardware interface
-    const std::vector<std::string>& joint_names = hw->getNames();
-    for (unsigned i=0; i<joint_names.size(); i++)
-      ROS_DEBUG("Got joint %s", joint_names[i].c_str());
-
     // get publishing period
     if (!controller_nh.getParam("publish_rate", publish_rate_)){
       ROS_ERROR("Parameter 'publish_rate' not set");
       return false;
     }
 
+    // try to get joint names from parameter server
+    std::vector<std::string> joint_names_param;
+    bool filter_joints = controller_nh.getParam("joints", joint_names_param);
+
+    if(filter_joints && joint_names_param.empty()){
+      ROS_WARN_STREAM("List of joints is set, but empty and will be ignored.");
+      filter_joints = false;
+    }
+
+    // get all joint names from the hardware interface otherwise
+    const std::vector<std::string>& joint_names = filter_joints ? joint_names_param : hw->getNames();
+
     // realtime publisher
     realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(root_nh, "joint_states", 4));
 
+    std::set<std::string> duplicates_check;
+
     // get joints and allocate message
     for (unsigned i=0; i<joint_names.size(); i++){
-      joint_state_.push_back(hw->getHandle(joint_names[i]));
-      realtime_pub_->msg_.name.push_back(joint_names[i]);
+      const std::string &name = joint_names[i];
+
+      ROS_DEBUG("Got joint %s", name.c_str());
+
+      if(filter_joints){
+        std::pair<std::set<std::string>::iterator, bool> insert_res = duplicates_check.insert(name);
+        if(!insert_res.second){
+          ROS_WARN_STREAM("Ignoring joint duplicate '" << name << "'");
+          continue;
+        }
+      }
+
+      try{
+        joint_state_.push_back(hw->getHandle(name));
+      }
+      catch(const hardware_interface::HardwareInterfaceException& e){
+        ROS_ERROR_STREAM(e.what());
+        return false;
+      }
+      realtime_pub_->msg_.name.push_back(name);
       realtime_pub_->msg_.position.push_back(0.0);
       realtime_pub_->msg_.velocity.push_back(0.0);
       realtime_pub_->msg_.effort.push_back(0.0);

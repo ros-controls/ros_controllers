@@ -39,8 +39,12 @@ namespace joint_state_controller
 
   bool JointStateController::init(hardware_interface::JointStateInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle& controller_nh)
   {
-    // get all joint names from the hardware interface
-    const std::vector<std::string>& joint_names = hw->getNames();
+    // try to get joint names from parameter server
+    std::vector<std::string> joint_names_param;
+    bool restricted = controller_nh.getParam("joints", joint_names_param) && !joint_names_param.empty();
+
+    // get all joint names from the hardware interface otherwise
+    const std::vector<std::string>& joint_names = restricted ? joint_names_param : hw->getNames();
     for (unsigned i=0; i<joint_names.size(); i++)
       ROS_DEBUG("Got joint %s", joint_names[i].c_str());
 

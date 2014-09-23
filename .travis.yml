@@ -33,7 +33,7 @@ install: # Use this to install any prerequisites or dependencies necessary to ru
   - cd ~/ros/ws_ros_controls/src
   - wstool init .
   # Download non-debian stuff
-  - wstool merge https://raw.github.com/ros-controls/ros_control/hydro-devel/ros_control.rosinstall
+  - wstool merge https://raw.github.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall
   - wstool update
   # Delete the ros_control.rosinstall version of this repo and use the one of the branch we are testing
   - rm -rf $REPOSITORY_NAME

@@ -1,6 +1,6 @@
 <package>
   <name>effort_controllers</name>
-  <version>0.7.2</version>
+  <version>0.8.1</version>
   <description>effort_controllers</description>
   <maintainer email="vijay@hidof.com">Vijay Pradeep</maintainer>
 
@@ -14,6 +14,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <build_depend>angles</build_depend>
   <build_depend>controller_interface</build_depend> 
   <build_depend>control_msgs</build_depend> 
   <build_depend>control_toolbox</build_depend> 
@@ -22,6 +23,7 @@
   <build_depend>forward_command_controller</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
 
+  <run_depend>angles</run_depend>
   <run_depend>controller_interface</run_depend> 
   <run_depend>control_msgs</run_depend> 
   <run_depend>control_toolbox</run_depend> 

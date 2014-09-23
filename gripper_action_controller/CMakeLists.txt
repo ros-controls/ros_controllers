@@ -17,7 +17,6 @@ find_package(catkin
       realtime_tools
       control_msgs
       trajectory_msgs
-      rostest
       controller_manager
       xacro
 )

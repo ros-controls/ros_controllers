@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>gripper_action_controller</name>
-  <version>0.7.2</version>
+  <version>0.8.1</version>
   <description>The gripper_action_controller package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
@@ -49,7 +49,6 @@
   <build_depend>controller_manager</build_depend>
   <build_depend>hardware_interface</build_depend>
   <build_depend>realtime_tools</build_depend>
-  <build_depend>rostest</build_depend>
   <build_depend>trajectory_msgs</build_depend>
   <build_depend>urdf</build_depend>
   <build_depend>xacro</build_depend>

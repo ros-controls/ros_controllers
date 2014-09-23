@@ -1,6 +1,6 @@
 <package>
   <name>ros_controllers</name>
-  <version>0.7.2</version>
+  <version>0.8.1</version>
   <description>Library of ros controllers</description>
 
   <maintainer email="wim@hidof.com">Wim Meeussen</maintainer>

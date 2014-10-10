@@ -4,6 +4,13 @@ project(position_controllers)
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS controller_interface forward_command_controller)
 
+# Declare catkin project
+catkin_package(
+    CATKIN_DEPENDS controller_interface forward_command_controller
+    INCLUDE_DIRS include
+    LIBRARIES ${PROJECT_NAME}
+)
+
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 add_library(${PROJECT_NAME}
   src/joint_position_controller.cpp
@@ -11,12 +18,6 @@ add_library(${PROJECT_NAME}
 )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Declare catkin project
-catkin_package(
-    CATKIN_DEPENDS controller_interface forward_command_controller
-    INCLUDE_DIRS include
-    LIBRARIES ${PROJECT_NAME}
-)
 
 # Install
 install(DIRECTORY include/${PROJECT_NAME}/

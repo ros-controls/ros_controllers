@@ -37,4 +37,12 @@
 #include <velocity_controllers/joint_velocity_controller.h>
 #include <pluginlib/class_list_macros.h>
 
+template <class T>
+void forward_command_controller::ForwardCommandController<T>::starting(const ros::Time& time)
+{
+  // Start controller with 0.0 velocity
+  command_ = 0.0;
+}
+
+
 PLUGINLIB_EXPORT_CLASS(velocity_controllers::JointVelocityController,controller_interface::ControllerBase)

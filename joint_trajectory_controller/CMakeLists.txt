@@ -56,7 +56,7 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 
 if(CATKIN_ENABLE_TESTING)
-  find_package(rostest)
+  find_package(rostest REQUIRED)
 
   catkin_add_gtest(quintic_spline_segment_test test/quintic_spline_segment_test.cpp)
   target_link_libraries(quintic_spline_segment_test ${catkin_LIBRARIES})

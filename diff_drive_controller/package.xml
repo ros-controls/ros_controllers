@@ -29,6 +29,7 @@
   <!--Tests-->
   <build_depend>rostest</build_depend>
 
+  <test_depend>std_srvs</test_depend>
   <test_depend>controller_manager</test_depend>
   <test_depend>xacro</test_depend>
 

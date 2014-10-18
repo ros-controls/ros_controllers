@@ -3,8 +3,8 @@
 <!--
 Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF-Controller%20Example
 -->
-  <xacro:include filename="$(find diff_drive_controller)/test/deg_to_rad.xacro"/>
-  <xacro:property name="PI" value="3.1415926535897931"/>
+  <xacro:include filename="$(find diff_drive_controller)/test/wheel.xacro"/>
+  <xacro:property name="deg_to_rad" value="0.01745329251994329577"/>
 
   <!-- Constants for robot dimensions -->
   <xacro:property name="width" value="0.5" /> <!-- Square dimensions (widthxwidth) of beams -->

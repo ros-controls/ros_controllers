@@ -37,10 +37,10 @@
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "diffbot");
+  ros::init(argc, argv, "skidsteerbot");
   ros::NodeHandle nh;
 
-  Diffbot<> robot;
+  Diffbot<6> robot;
   ROS_WARN_STREAM("period: " << robot.getPeriod().toSec());
   controller_manager::ControllerManager cm(&robot, nh);
 

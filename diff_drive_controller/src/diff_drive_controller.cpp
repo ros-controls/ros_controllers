@@ -211,7 +211,7 @@ namespace diff_drive_controller{
     else
     {
       const double left_pos  = left_wheel_joint_.getPosition();
-      double right_pos = right_wheel_joint_.getPosition();
+      const double right_pos = right_wheel_joint_.getPosition();
       if (std::isnan(left_pos) || std::isnan(right_pos))
         return;
 

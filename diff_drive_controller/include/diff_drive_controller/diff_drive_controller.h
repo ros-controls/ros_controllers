@@ -98,9 +98,10 @@ namespace diff_drive_controller{
   private:
     std::string name_;
 
-    /// Publish rate related:
+    /// Odometry related:
     ros::Duration publish_period_;
     ros::Time last_state_publish_time_;
+    bool open_loop_;
 
     /// Hardware handles:
     hardware_interface::JointHandle left_wheel_joint_;
@@ -144,7 +145,7 @@ namespace diff_drive_controller{
     /// Whether to publish odometry to tf or not:
     bool enable_odom_tf_;
 
-    // speed limiters
+    // Speed limiters:
     Commands last_cmd_;
     SpeedLimiter limiter_lin_;
     SpeedLimiter limiter_ang_;

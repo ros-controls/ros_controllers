@@ -61,5 +61,6 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_odom_tf.test
     test/diff_drive_odom_tf_test.cpp)
   target_link_libraries(diff_drive_odom_tf_test ${catkin_LIBRARIES})
+  add_rostest(test/diff_drive_open_loop.test)
 
 endif()

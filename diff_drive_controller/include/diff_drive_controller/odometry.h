@@ -35,6 +35,8 @@
 /*
  * Author: Luca Marchionni
  * Author: Bence Magyar
+ * Author: Enrique Fernández
+ * Author: Paul Mathieu
  */
 
 #ifndef ODOMETRY_H_
@@ -70,6 +72,12 @@ namespace diff_drive_controller
     Odometry(size_t velocity_rolling_window_size = 10);
 
     /**
+     * \brief Initialize the odometry
+     * \param time Current time
+     */
+    void init(const ros::Time &time);
+
+    /**
      * \brief Updates the odometry class with latest wheels position
      * \param left_pos  Left  wheel position [rad]
      * \param right_pos Right wheel position [rad]
@@ -77,6 +85,14 @@ namespace diff_drive_controller
      * \return true if the odometry is actually updated
      */
     bool update(double left_pos, double right_pos, const ros::Time &time);
+
+    /**
+     * \brief Updates the odometry class with latest velocity command
+     * \param linear  Linear velocity [m/s]
+     * \param angular Angular velocity [rad/s]
+     * \param time    Current time
+     */
+    void updateOpenLoop(double linear, double angular, const ros::Time &time);
 
     /**
      * \brief heading getter
@@ -98,7 +114,7 @@ namespace diff_drive_controller
 
     /**
      * \brief y position getter
-     * \return y positioin [m]
+     * \return y position [m]
      */
     double getY() const
     {
@@ -106,25 +122,22 @@ namespace diff_drive_controller
     }
 
     /**
-     * \brief timestamp getter
-     * \return timestamp
+     * \brief linear velocity getter
+     * \return linear velocity [m/s]
      */
-    ros::Time getTimestamp() const
+    double getLinear() const
     {
-      return timestamp_;
+      return linear_;
     }
 
     /**
-     * \brief Retrieves the linear velocity estimation
-     * \return Rolling mean estimation of the linear velocity [m]
+     * \brief angular velocity getter
+     * \return angular velocity [rad/s]
      */
-    double getLinearEstimated() const;
-
-    /**
-     * \brief Retrieves the angular velocity estimation
-     * \return Rolling mean estimation of the angular velocity [rad/s]
-     */
-    double getAngularEstimated() const;
+    double getAngular() const
+    {
+      return angular_;
+    }
 
     /**
      * \brief Sets the wheel parameters: radius and separation
@@ -161,6 +174,10 @@ namespace diff_drive_controller
     double y_;        //   [m]
     double heading_;  // [rad]
 
+    /// Current velocity:
+    double linear_;  //   [m/s]
+    double angular_; // [rad/s]
+
     /// Wheel kinematic parameters [m]:
     double wheel_separation_;
     double wheel_radius_;
@@ -169,7 +186,8 @@ namespace diff_drive_controller
     double left_wheel_old_pos_;
     double right_wheel_old_pos_;
 
-    /// Rolling meand accumulators for the linar and angular velocities:
+    /// Rolling mean accumulators for the linar and angular velocities:
+    size_t velocity_rolling_window_size_;
     RollingMeanAcc linear_acc_;
     RollingMeanAcc angular_acc_;
 

@@ -194,10 +194,17 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   ROS_DEBUG_STREAM("Figuring out new trajectory starting at time "
                    << std::fixed << std::setprecision(3) << msg_start_time.toSec());
 
-  //Empty trajectory
+  // Empty trajectory
   if (msg.points.empty())
   {
     ROS_DEBUG("Trajectory message contains empty trajectory. Nothing to convert.");
+    return Trajectory();
+  }
+
+  // Non strictly-monotonic waypoints
+  if (!isTimeStrictlyIncreasing(msg))
+  {
+    ROS_ERROR("Trajectory message contains waypoints that are not strictly increasing in time.");
     return Trajectory();
   }
 

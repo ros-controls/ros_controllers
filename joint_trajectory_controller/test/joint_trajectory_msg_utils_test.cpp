@@ -144,6 +144,43 @@ TEST_F(TrajectoryInterfaceRosTest, IsValid)
   }
 }
 
+TEST_F(TrajectoryInterfaceRosTest, IsTimeStrictlyIncreasing)
+{
+  // Empty trajectory
+  {
+    JointTrajectory msg;
+    EXPECT_TRUE(isTimeStrictlyIncreasing(msg));
+  }
+
+  // Single-waypoint trajectory
+  {
+    JointTrajectory msg;
+    msg.points.push_back(points[0]);
+    EXPECT_TRUE(isTimeStrictlyIncreasing(msg));
+  }
+
+  // Multi-waypoint tajectory with strictly increasing times
+  {
+    EXPECT_TRUE(isTimeStrictlyIncreasing(trajectory_msg));
+  }
+
+  // Multi-waypoint tajectory with monotonically increasing (non-decreasing) times
+  {
+    JointTrajectory msg;
+    msg = trajectory_msg;
+    msg.points[2].time_from_start = msg.points[1].time_from_start;
+    EXPECT_FALSE(isTimeStrictlyIncreasing(msg));
+  }
+
+  // Multi-waypoint tajectory with non-monotonic times
+  {
+    JointTrajectory msg;
+    msg = trajectory_msg;
+    msg.points[2].time_from_start = msg.points[0].time_from_start;
+    EXPECT_FALSE(isTimeStrictlyIncreasing(msg));
+  }
+}
+
 TEST_F(TrajectoryInterfaceRosTest, FindPoint)
 {
   const ros::Time msg_start_time = trajectory_msg.header.stamp;

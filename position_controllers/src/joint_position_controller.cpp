@@ -37,4 +37,11 @@
 #include <position_controllers/joint_position_controller.h>
 #include <pluginlib/class_list_macros.h>
 
+template <class T>
+void forward_command_controller::ForwardCommandController<T>::starting(const ros::Time& time)
+{
+  // Start controller with current joint position
+  command_ = joint_.getPosition();
+}
+
 PLUGINLIB_EXPORT_CLASS(position_controllers::JointPositionController,controller_interface::ControllerBase)

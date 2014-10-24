@@ -38,4 +38,12 @@
 #include <velocity_controllers/joint_group_velocity_controller.h>
 #include <pluginlib/class_list_macros.h>
 
+template <class T>
+void forward_command_controller::ForwardJointGroupCommandController<T>::starting(const ros::Time& time)
+{
+  // Start controller with 0.0 velocities
+  commands_.resize(n_joints_, 0.0);
+}
+
+
 PLUGINLIB_EXPORT_CLASS(velocity_controllers::JointGroupVelocityController,controller_interface::ControllerBase)

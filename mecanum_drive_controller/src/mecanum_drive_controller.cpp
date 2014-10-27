@@ -103,9 +103,9 @@ static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link
   return true;
 }
 
-namespace diff_drive_controller{
+namespace mecanum_drive_controller{
 
-  DiffDriveController::DiffDriveController()
+  MecanumDriveController::MecanumDriveController()
     : open_loop_(false)
     , command_struct_()
     , wheel_separation_(0.0)
@@ -119,7 +119,7 @@ namespace diff_drive_controller{
   {
   }
 
-  bool DiffDriveController::init(hardware_interface::VelocityJointInterface* hw,
+  bool MecanumDriveController::init(hardware_interface::VelocityJointInterface* hw,
             ros::NodeHandle& root_nh,
             ros::NodeHandle &controller_nh)
   {
@@ -208,12 +208,12 @@ namespace diff_drive_controller{
       right_wheel_joints_[i] = hw->getHandle(right_wheel_names[i]);  // throws on failure
     }
 
-    sub_command_ = controller_nh.subscribe("cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
+    sub_command_ = controller_nh.subscribe("cmd_vel", 1, &MecanumDriveController::cmdVelCallback, this);
 
     return true;
   }
 
-  void DiffDriveController::update(const ros::Time& time, const ros::Duration& period)
+  void MecanumDriveController::update(const ros::Time& time, const ros::Duration& period)
   {
     // COMPUTE AND PUBLISH ODOMETRY
     if (open_loop_)
@@ -307,7 +307,7 @@ namespace diff_drive_controller{
     }
   }
 
-  void DiffDriveController::starting(const ros::Time& time)
+  void MecanumDriveController::starting(const ros::Time& time)
   {
     brake();
 
@@ -317,12 +317,12 @@ namespace diff_drive_controller{
     odometry_.init(time);
   }
 
-  void DiffDriveController::stopping(const ros::Time& time)
+  void MecanumDriveController::stopping(const ros::Time& time)
   {
     brake();
   }
 
-  void DiffDriveController::brake()
+  void MecanumDriveController::brake()
   {
     const double vel = 0.0;
     for (size_t i = 0; i < wheel_joints_size_; ++i)
@@ -332,7 +332,7 @@ namespace diff_drive_controller{
     }
   }
 
-  void DiffDriveController::cmdVelCallback(const geometry_msgs::Twist& command)
+  void MecanumDriveController::cmdVelCallback(const geometry_msgs::Twist& command)
   {
     if(isRunning())
     {
@@ -352,7 +352,7 @@ namespace diff_drive_controller{
     }
   }
 
-  bool DiffDriveController::getWheelNames(ros::NodeHandle& controller_nh,
+  bool MecanumDriveController::getWheelNames(ros::NodeHandle& controller_nh,
                               const std::string& wheel_param,
                               std::vector<std::string>& wheel_names)
   {
@@ -405,7 +405,7 @@ namespace diff_drive_controller{
       return true;
   }
 
-  bool DiffDriveController::setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
+  bool MecanumDriveController::setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
                              const std::string& left_wheel_name,
                              const std::string& right_wheel_name)
   {
@@ -464,7 +464,7 @@ namespace diff_drive_controller{
     return true;
   }
 
-  void DiffDriveController::setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
+  void MecanumDriveController::setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
   {
     // Get and check params for covariances
     XmlRpc::XmlRpcValue pose_cov_list;
@@ -511,4 +511,4 @@ namespace diff_drive_controller{
     tf_odom_pub_->msg_.transforms[0].header.frame_id = "odom";
   }
 
-} // namespace diff_drive_controller
+} // namespace mecanum_drive_controller

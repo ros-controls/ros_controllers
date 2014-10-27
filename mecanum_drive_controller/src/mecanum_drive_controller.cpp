@@ -42,7 +42,7 @@
 
 #include <boost/assign.hpp>
 
-#include <diff_drive_controller/diff_drive_controller.h>
+#include <mecanum_drive_controller/mecanum_drive_controller.h>
 
 static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3& vec2)
 {

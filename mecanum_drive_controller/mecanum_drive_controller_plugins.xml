@@ -1,0 +1,9 @@
+<library path="lib/libmecanum_drive_controller">
+
+  <class name="mecanum_drive_controller/MecanumDriveController" type="mecanum_drive_controller::MecanumDriveController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      The MecanumDriveController tracks velocity commands. It 4 joints should have a VelocityJointInterface hardware interface.
+    </description>
+  </class>
+
+</library>

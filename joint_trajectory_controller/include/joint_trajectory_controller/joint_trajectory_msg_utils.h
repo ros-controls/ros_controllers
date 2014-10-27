@@ -113,6 +113,27 @@ inline bool isValid(const trajectory_msgs::JointTrajectory& msg)
 }
 
 /**
+ * \param msg Trajectory message.
+ * \return True if each trajectory waypoint is reached at a later time than its predecessor.
+ */
+inline bool isTimeStrictlyIncreasing(const trajectory_msgs::JointTrajectory& msg)
+{
+  if (msg.points.size() < 2) {return true;}
+
+  typedef std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator PointConstIterator;
+
+  PointConstIterator it = msg.points.begin();
+  PointConstIterator end_it = --msg.points.end();
+  while (it != end_it)
+  {
+    const ros::Duration& t1 = it->time_from_start;
+    const ros::Duration& t2 = (++it)->time_from_start;
+    if (t1 >= t2) {return false;}
+  }
+  return true;
+}
+
+/**
  * \brief Find an iterator to the trajectory point with the greatest start time < \p time.
  *
  * \param msg Trajectory message.

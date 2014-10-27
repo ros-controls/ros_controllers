@@ -301,6 +301,16 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
     EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_GOAL);
   }
 
+  // Non-strictly increasing waypoint times
+  {
+    ActionGoal bad_goal = traj_goal;
+    bad_goal.trajectory.points[2].time_from_start = bad_goal.trajectory.points[1].time_from_start;
+
+    action_client->sendGoal(bad_goal);
+    ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_GOAL);
+  }
+
   // Empty trajectory through action interface
   // NOTE: Sending an empty trajectory through the topic interface cancels execution of all queued segments, but
   // an empty trajectory is interpreted by the action interface as not having the correct joint names.

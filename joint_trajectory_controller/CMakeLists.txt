@@ -82,6 +82,7 @@ if(CATKIN_ENABLE_TESTING)
   target_link_libraries(rrbot ${catkin_LIBRARIES})
 
   add_dependencies(tests rrbot)
+  add_dependencies(tests ${PROJECT_NAME})
 
   add_rostest_gtest(joint_trajectory_controller_test
                     test/joint_trajectory_controller.test

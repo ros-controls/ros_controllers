@@ -48,7 +48,7 @@
 #include <boost/accumulators/statistics/rolling_mean.hpp>
 #include <boost/function.hpp>
 
-namespace diff_drive_controller
+namespace mecanum_drive_controller
 {
   namespace bacc = boost::accumulators;
 
@@ -194,6 +194,6 @@ namespace diff_drive_controller
     /// Integration funcion, used to integrate the odometry:
     IntegrationFunction integrate_fun_;
   };
-}
+} // namespace mecanum_drive_controller
 
 #endif /* ODOMETRY_H_ */

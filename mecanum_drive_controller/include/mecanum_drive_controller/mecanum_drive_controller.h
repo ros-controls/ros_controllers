@@ -49,7 +49,7 @@
 #include <mecanum_drive_controller/odometry.h>
 #include <mecanum_drive_controller/speed_limiter.h>
 
-namespace diff_drive_controller{
+namespace mecanum_drive_controller{
 
   /**
    * This class makes some assumptions on the model of the robot:
@@ -60,11 +60,11 @@ namespace diff_drive_controller{
    *  - a wheel collision geometry is a cylinder in the urdf
    *  - a wheel joint frame center's vertical projection on the floor must lie within the contact patch
    */
-  class DiffDriveController
+  class MecanumDriveController
       : public controller_interface::Controller<hardware_interface::VelocityJointInterface>
   {
   public:
-    DiffDriveController();
+    MecanumDriveController();
 
     /**
      * \brief Initialize controller
@@ -196,5 +196,5 @@ namespace diff_drive_controller{
 
   };
 
-  PLUGINLIB_EXPORT_CLASS(diff_drive_controller::DiffDriveController, controller_interface::ControllerBase);
-} // namespace diff_drive_controller
+  PLUGINLIB_EXPORT_CLASS(mecanum_drive_controller::MecanumDriveController, controller_interface::ControllerBase)
+} // namespace mecanum_drive_controller

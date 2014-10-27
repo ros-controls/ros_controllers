@@ -46,7 +46,7 @@ T clamp(T x, T min, T max)
   return std::min(std::max(min, x), max);
 }
 
-namespace diff_drive_controller
+namespace mecanum_drive_controller
 {
 
   SpeedLimiter::SpeedLimiter(
@@ -95,4 +95,4 @@ namespace diff_drive_controller
     }
   }
 
-} // namespace diff_drive_controller
+} // namespace mecanum_drive_controller

@@ -43,7 +43,7 @@
 
 #include <boost/bind.hpp>
 
-namespace diff_drive_controller
+namespace mecanum_drive_controller
 {
   namespace bacc = boost::accumulators;
 
@@ -161,4 +161,4 @@ namespace diff_drive_controller
     }
   }
 
-} // namespace diff_drive_controller
+} // namespace mecanum_drive_controller

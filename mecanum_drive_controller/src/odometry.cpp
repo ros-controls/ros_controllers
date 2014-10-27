@@ -39,7 +39,7 @@
  * Author: Paul Mathieu
  */
 
-#include <diff_drive_controller/odometry.h>
+#include <mecanum_drive_controller/odometry.h>
 
 #include <boost/bind.hpp>
 

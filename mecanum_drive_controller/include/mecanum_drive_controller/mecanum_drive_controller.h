@@ -46,8 +46,8 @@
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
 
-#include <diff_drive_controller/odometry.h>
-#include <diff_drive_controller/speed_limiter.h>
+#include <mecanum_drive_controller/odometry.h>
+#include <mecanum_drive_controller/speed_limiter.h>
 
 namespace diff_drive_controller{
 

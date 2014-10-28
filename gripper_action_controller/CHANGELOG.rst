@@ -2,8 +2,8 @@
 Changelog for package gripper_action_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.3 (2014-10-28)
+------------------
 * Drop unneeded rostest dependency
 * Contributors: Lukas Bulwahn
 

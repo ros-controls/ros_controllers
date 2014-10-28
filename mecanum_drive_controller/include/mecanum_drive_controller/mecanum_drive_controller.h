@@ -131,6 +131,7 @@ namespace mecanum_drive_controller{
     double wheel_separation_;
 
     /// Wheel radius (assuming it's the same for the left and right wheels):
+    bool use_realigned_roller_joints_;
     double wheel_radius_;
 
     /// Wheel separation and radius calibration multipliers:

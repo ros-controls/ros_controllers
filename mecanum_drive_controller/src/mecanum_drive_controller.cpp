@@ -115,6 +115,7 @@ namespace mecanum_drive_controller{
     : open_loop_(false)
     , command_struct_()
     , wheel_separation_(0.0)
+    , use_realigned_roller_joints_(false)
     , wheel_radius_(0.0)
     , wheel_separation_multiplier_(1.0)
     , wheel_radius_multiplier_(1.0)
@@ -134,6 +135,9 @@ namespace mecanum_drive_controller{
     name_ = complete_ns.substr(id + 1);
 
     // Get joint names from the parameter server
+    controller_nh.param("use_realigned_roller_joints", use_realigned_roller_joints_, false);
+    ROS_INFO_STREAM_NAMED(name_, "Use the roller's radius rather than the wheel's: " << use_realigned_roller_joints_ << ".");
+
     std::vector<std::string> left_wheel_names, right_wheel_names;
     if (!getWheelNames(controller_nh, "left_wheel", left_wheel_names) or
         !getWheelNames(controller_nh, "right_wheel", right_wheel_names))
@@ -465,14 +469,27 @@ namespace mecanum_drive_controller{
     wheel_separation_ = euclideanOfVectors(left_wheel_joint->parent_to_joint_origin_transform.position,
                                            right_wheel_joint->parent_to_joint_origin_transform.position);
 
-    // DEBUG.
-    // TODO: add param to retrieve wheel_link or roller_link.
-    const boost::shared_ptr<const urdf::Link>& wheel_link = model->getLink(left_wheel_joint->child_link_name);
-    const boost::shared_ptr<const urdf::Joint>& roller_joint = wheel_link->child_joints[0];
-    const boost::shared_ptr<const urdf::Link>& roller_link = model->getLink(roller_joint->child_link_name);
+    boost::shared_ptr<const urdf::Link> radius_link = model->getLink(left_wheel_joint->child_link_name);
+    if (use_realigned_roller_joints_)
+    {
+        // This mode is used when the mecanum wheels are simulated and we use realigned rollers to mimic mecanum wheels.
+        const boost::shared_ptr<const urdf::Joint>& roller_joint = radius_link->child_joints[0];
+        if(!roller_joint)
+        {
+          ROS_ERROR_STREAM_NAMED(name_, "No roller joint could be retrieved for wheel : " << left_wheel_joint->child_link_name << ". Are you sure mecanum wheels are simulated using realigned rollers?");
+          return false;
+        }
+
+        radius_link = model->getLink(roller_joint->child_link_name);
+        if(!radius_link)
+        {
+          ROS_ERROR_STREAM_NAMED(name_, "No roller link could be retrieved for wheel : " << left_wheel_joint->child_link_name << ". Are you sure mecanum wheels are simulated using realigned rollers?");
+          return false;
+        }
+    }
 
     // Get wheel radius
-    if(!getWheelRadius(roller_link, wheel_radius_))
+    if(!getWheelRadius(radius_link, wheel_radius_))
     {
       ROS_ERROR_STREAM_NAMED(name_, "Couldn't retrieve " << left_wheel_name << " wheel radius");
       return false;

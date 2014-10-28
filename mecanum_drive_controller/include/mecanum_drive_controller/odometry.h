@@ -61,7 +61,7 @@ namespace mecanum_drive_controller
   public:
 
     /// Integration function, used to integrate the odometry:
-    typedef boost::function<void(double, double)> IntegrationFunction;
+    typedef boost::function<void(double, double, double)> IntegrationFunction;
 
     /**
      * \brief Constructor
@@ -88,11 +88,11 @@ namespace mecanum_drive_controller
 
     /**
      * \brief Updates the odometry class with latest velocity command
-     * \param linear  Linear velocity [m/s]
+     * \param linearX  Linear velocity [m/s]
      * \param angular Angular velocity [rad/s]
      * \param time    Current time
      */
-    void updateOpenLoop(double linear, double angular, const ros::Time &time);
+    void updateOpenLoop(double linearX, double linearY, double angular, const ros::Time &time);
 
     /**
      * \brief heading getter
@@ -122,12 +122,21 @@ namespace mecanum_drive_controller
     }
 
     /**
-     * \brief linear velocity getter
-     * \return linear velocity [m/s]
+     * \brief linearX velocity getter
+     * \return linearX velocity [m/s]
      */
-    double getLinear() const
+    double getLinearX() const
     {
-      return linear_;
+      return linearX_;
+    }
+
+    /**
+     * \brief linearY velocity getter
+     * \return linearY velocity [m/s]
+     */
+    double getLinearY() const
+    {
+      return linearY_;
     }
 
     /**
@@ -157,14 +166,14 @@ namespace mecanum_drive_controller
      * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
      * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
-    void integrateRungeKutta2(double linear, double angular);
+    void integrateRungeKutta2(double linearX, double angular);
 
     /**
      * \brief Integrates the velocities (linear and angular) using exact method
      * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
      * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
-    void integrateExact(double linear, double angular);
+    void integrateExact(double linearX, double linearY, double angular);
 
     /// Current timestamp:
     ros::Time timestamp_;
@@ -175,7 +184,8 @@ namespace mecanum_drive_controller
     double heading_;  // [rad]
 
     /// Current velocity:
-    double linear_;  //   [m/s]
+    double linearX_;  //   [m/s]
+    double linearY_;  //   [m/s]
     double angular_; // [rad/s]
 
     /// Wheel kinematic parameters [m]:
@@ -188,7 +198,8 @@ namespace mecanum_drive_controller
 
     /// Rolling mean accumulators for the linar and angular velocities:
     size_t velocity_rolling_window_size_;
-    RollingMeanAcc linear_acc_;
+    RollingMeanAcc linearX_acc_;
+    RollingMeanAcc linearY_acc_;
     RollingMeanAcc angular_acc_;
 
     /// Integration funcion, used to integrate the odometry:

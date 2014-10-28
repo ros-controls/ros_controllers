@@ -110,11 +110,12 @@ namespace mecanum_drive_controller{
     /// Velocity command related:
     struct Commands
     {
-      double lin;
+      double linX;
+      double linY;
       double ang;
       ros::Time stamp;
 
-      Commands() : lin(0.0), ang(0.0), stamp(0.0) {}
+      Commands() : linX(0.0), linY(0.0), ang(0.0), stamp(0.0) {}
     };
     realtime_tools::RealtimeBuffer<Commands> command_;
     Commands command_struct_;
@@ -150,7 +151,8 @@ namespace mecanum_drive_controller{
 
     // Speed limiters:
     Commands last_cmd_;
-    SpeedLimiter limiter_lin_;
+    SpeedLimiter limiter_linX_;
+    SpeedLimiter limiter_linY_;
     SpeedLimiter limiter_ang_;
 
   private:

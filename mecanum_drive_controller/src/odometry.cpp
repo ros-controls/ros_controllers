@@ -52,23 +52,26 @@ namespace mecanum_drive_controller
   , x_(0.0)
   , y_(0.0)
   , heading_(0.0)
-  , linear_(0.0)
+  , linearX_(0.0)
+  , linearY_(0.0)
   , angular_(0.0)
   , wheel_separation_(0.0)
   , wheel_radius_(0.0)
   , left_wheel_old_pos_(0.0)
   , right_wheel_old_pos_(0.0)
   , velocity_rolling_window_size_(velocity_rolling_window_size)
-  , linear_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , linearX_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , linearY_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
-  , integrate_fun_(boost::bind(&Odometry::integrateExact, this, _1, _2))
+  , integrate_fun_(boost::bind(&Odometry::integrateExact, this, _1, _2, _3))
   {
   }
 
   void Odometry::init(const ros::Time& time)
   {
     // Reset accumulators:
-    linear_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    linearX_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    linearY_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
     angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
 
     // Reset timestamp:
@@ -90,11 +93,12 @@ namespace mecanum_drive_controller
     right_wheel_old_pos_ = right_wheel_cur_pos;
 
     /// Compute linear and angular diff:
-    const double linear  = (right_wheel_est_vel + left_wheel_est_vel) * 0.5 ;
+    const double linearX  = (right_wheel_est_vel + left_wheel_est_vel) * 0.5 ;
+    const double linearY = 0.0;
     const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_;
 
     /// Integrate odometry:
-    integrate_fun_(linear, angular);
+    integrate_fun_(linearX, linearY, angular);
 
     /// We cannot estimate the speed with very small time intervals:
     const double dt = (time - timestamp_).toSec();
@@ -104,25 +108,28 @@ namespace mecanum_drive_controller
     timestamp_ = time;
 
     /// Estimate speeds using a rolling mean to filter them out:
-    linear_acc_(linear/dt);
+    linearX_acc_(linearX/dt);
+    linearY_acc_(linearY/dt);
     angular_acc_(angular/dt);
 
-    linear_ = bacc::rolling_mean(linear_acc_);
+    linearX_ = bacc::rolling_mean(linearX_acc_);
+    linearY_ = bacc::rolling_mean(linearY_acc_);
     angular_ = bacc::rolling_mean(angular_acc_);
 
     return true;
   }
 
-  void Odometry::updateOpenLoop(double linear, double angular, const ros::Time &time)
+  void Odometry::updateOpenLoop(double linearX, double linearY, double angular, const ros::Time &time)
   {
     /// Save last linear and angular velocity:
-    linear_ = linear;
+    linearX_ = linearX;
+    linearY_ = linearY;
     angular_ = angular;
 
     /// Integrate odometry:
     const double dt = (time - timestamp_).toSec();
     timestamp_ = time;
-    integrate_fun_(linear * dt, angular * dt);
+    integrate_fun_(linearX * dt, linearY * dt, angular * dt);
   }
 
   void Odometry::setWheelParams(double wheel_separation, double wheel_radius)
@@ -131,13 +138,13 @@ namespace mecanum_drive_controller
     wheel_radius_     = wheel_radius;
   }
 
-  void Odometry::integrateRungeKutta2(double linear, double angular)
+  void Odometry::integrateRungeKutta2(double linearX, double angular)
   {
     const double direction = heading_ + angular * 0.5;
 
     /// Runge-Kutta 2nd order integration:
-    x_       += linear * cos(direction);
-    y_       += linear * sin(direction);
+    x_       += linearX * cos(direction);
+    y_       += linearX * sin(direction);
     heading_ += angular;
   }
 
@@ -146,15 +153,15 @@ namespace mecanum_drive_controller
    * \param linear
    * \param angular
    */
-  void Odometry::integrateExact(double linear, double angular)
+  void Odometry::integrateExact(double linearX, double linearY, double angular)
   {
     if(fabs(angular) < 10e-3)
-      integrateRungeKutta2(linear, angular);
+      integrateRungeKutta2(linearX, angular);
     else
     {
       /// Exact integration (should solve problems when angular is zero):
       const double heading_old = heading_;
-      const double r = linear/angular;
+      const double r = linearX/angular;
       heading_ += angular;
       x_       +=  r * (sin(heading_) - sin(heading_old));
       y_       += -r * (cos(heading_) - cos(heading_old));

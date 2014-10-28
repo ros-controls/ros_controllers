@@ -185,12 +185,12 @@ namespace mecanum_drive_controller{
     ROS_INFO_STREAM_NAMED(name_, "Publishing to tf is " << (enable_odom_tf_?"enabled":"disabled"));
 
     // Velocity and acceleration limits:
-    controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
-    controller_nh.param("linear/x/has_acceleration_limits", limiter_lin_.has_acceleration_limits, limiter_lin_.has_acceleration_limits);
-    controller_nh.param("linear/x/max_velocity"           , limiter_lin_.max_velocity           ,  limiter_lin_.max_velocity          );
-    controller_nh.param("linear/x/min_velocity"           , limiter_lin_.min_velocity           , -limiter_lin_.max_velocity          );
-    controller_nh.param("linear/x/max_acceleration"       , limiter_lin_.max_acceleration       ,  limiter_lin_.max_acceleration      );
-    controller_nh.param("linear/x/min_acceleration"       , limiter_lin_.min_acceleration       , -limiter_lin_.max_acceleration      );
+    controller_nh.param("linear/x/has_velocity_limits"    , limiter_linX_.has_velocity_limits    , limiter_linX_.has_velocity_limits    );
+    controller_nh.param("linear/x/has_acceleration_limits", limiter_linX_.has_acceleration_limits, limiter_linX_.has_acceleration_limits);
+    controller_nh.param("linear/x/max_velocity"           , limiter_linX_.max_velocity           ,  limiter_linX_.max_velocity          );
+    controller_nh.param("linear/x/min_velocity"           , limiter_linX_.min_velocity           , -limiter_linX_.max_velocity          );
+    controller_nh.param("linear/x/max_acceleration"       , limiter_linX_.max_acceleration       ,  limiter_linX_.max_acceleration      );
+    controller_nh.param("linear/x/min_acceleration"       , limiter_linX_.min_acceleration       , -limiter_linX_.max_acceleration      );
 
     controller_nh.param("angular/z/has_velocity_limits"    , limiter_ang_.has_velocity_limits    , limiter_ang_.has_velocity_limits    );
     controller_nh.param("angular/z/has_acceleration_limits", limiter_ang_.has_acceleration_limits, limiter_ang_.has_acceleration_limits);
@@ -224,7 +224,7 @@ namespace mecanum_drive_controller{
     // COMPUTE AND PUBLISH ODOMETRY
     if (open_loop_)
     {
-      odometry_.updateOpenLoop(last_cmd_.lin, last_cmd_.ang, time);
+      odometry_.updateOpenLoop(last_cmd_.linX, last_cmd_.linY, last_cmd_.ang, time);
     }
     else
     {
@@ -262,7 +262,8 @@ namespace mecanum_drive_controller{
         odom_pub_->msg_.pose.pose.position.x = odometry_.getX();
         odom_pub_->msg_.pose.pose.position.y = odometry_.getY();
         odom_pub_->msg_.pose.pose.orientation = orientation;
-        odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinear();
+        odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinearX();
+        odom_pub_->msg_.twist.twist.linear.y  = odometry_.getLinearY();
         odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngular();
         odom_pub_->unlockAndPublish();
       }
@@ -287,13 +288,15 @@ namespace mecanum_drive_controller{
     // Brake if cmd_vel has timeout:
     if (dt > cmd_vel_timeout_)
     {
-      curr_cmd.lin = 0.0;
+      curr_cmd.linX = 0.0;
+      curr_cmd.linY = 0.0;
       curr_cmd.ang = 0.0;
     }
 
     // Limit velocities and accelerations:
     const double cmd_dt(period.toSec());
-    limiter_lin_.limit(curr_cmd.lin, last_cmd_.lin, cmd_dt);
+    limiter_linX_.limit(curr_cmd.linX, last_cmd_.linX, cmd_dt);
+    limiter_linY_.limit(curr_cmd.linY, last_cmd_.linY, cmd_dt);
     limiter_ang_.limit(curr_cmd.ang, last_cmd_.ang, cmd_dt);
     last_cmd_ = curr_cmd;
 
@@ -302,8 +305,8 @@ namespace mecanum_drive_controller{
     const double wr = wheel_radius_multiplier_     * wheel_radius_;
 
     // Compute wheels velocities:
-    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wr;
-    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wr;
+    const double vel_left  = (curr_cmd.linX - curr_cmd.ang * ws / 2.0)/wr;
+    const double vel_right = (curr_cmd.linX + curr_cmd.ang * ws / 2.0)/wr;
 
     // Set wheels velocities:
     for (size_t i = 0; i < wheel_joints_size_; ++i)
@@ -343,13 +346,15 @@ namespace mecanum_drive_controller{
     if(isRunning())
     {
       command_struct_.ang   = command.angular.z;
-      command_struct_.lin   = command.linear.x;
+      command_struct_.linX   = command.linear.x;
+      command_struct_.linY   = command.linear.y;
       command_struct_.stamp = ros::Time::now();
       command_.writeFromNonRT (command_struct_);
       ROS_DEBUG_STREAM_NAMED(name_,
                              "Added values to command. "
                              << "Ang: "   << command_struct_.ang << ", "
-                             << "Lin: "   << command_struct_.lin << ", "
+                             << "Lin: "   << command_struct_.linX << ", "
+                             << "Lin: "   << command_struct_.linY << ", "
                              << "Stamp: " << command_struct_.stamp);
     }
     else
@@ -453,6 +458,8 @@ namespace mecanum_drive_controller{
     wheel_separation_ = euclideanOfVectors(left_wheel_joint->parent_to_joint_origin_transform.position,
                                            right_wheel_joint->parent_to_joint_origin_transform.position);
 
+    // DEBUG.
+    // TODO: add param to retrieve wheel_link or roller_link.
     const boost::shared_ptr<const urdf::Link>& wheel_link = model->getLink(left_wheel_joint->child_link_name);
     const boost::shared_ptr<const urdf::Joint>& roller_joint = wheel_link->child_joints[0];
     const boost::shared_ptr<const urdf::Link>& roller_link = model->getLink(roller_joint->child_link_name);

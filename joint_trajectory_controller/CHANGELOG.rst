@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Check that waypoint times are strictly increasing
+* Add trajectory_interface headers to install target
+* CMake logic cleanup
+* Contributors: Adolfo Rodriguez Tsouroukdissian, Lukas Bulwahn
+
 0.7.2 (2014-04-01)
 ------------------
 

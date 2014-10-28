@@ -52,11 +52,11 @@ static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3&
 }
 
 /*
- * \brief Check if the link is modeled as a cylinder
+ * \brief Check if the link is modeled as a cylinder or a sphere
  * \param link Link
- * \return true if the link is modeled as a Cylinder; false otherwise
+ * \return true if the link is modeled as a Cylinder or Sphere; false otherwise
  */
-static bool isCylinder(const boost::shared_ptr<const urdf::Link>& link)
+static bool isCylinderOrSphere(const boost::shared_ptr<const urdf::Link>& link)
 {
   if(!link)
   {
@@ -76,9 +76,9 @@ static bool isCylinder(const boost::shared_ptr<const urdf::Link>& link)
     return false;
   }
 
-  if(link->collision->geometry->type != urdf::Geometry::CYLINDER)
+  if(link->collision->geometry->type != urdf::Geometry::CYLINDER && link->collision->geometry->type != urdf::Geometry::SPHERE)
   {
-    ROS_ERROR_STREAM("Link " << link->name << " does not have cylinder geometry");
+    ROS_ERROR_STREAM("Link " << link->name << " does not have cylinder nor sphere geometry");
     return false;
   }
 
@@ -93,13 +93,19 @@ static bool isCylinder(const boost::shared_ptr<const urdf::Link>& link)
  */
 static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link, double& wheel_radius)
 {
-  if(!isCylinder(wheel_link))
+  if(!isCylinderOrSphere(wheel_link))
   {
     ROS_ERROR_STREAM("Wheel link " << wheel_link->name << " is NOT modeled as a cylinder!");
     return false;
   }
 
-  wheel_radius = (static_cast<urdf::Cylinder*>(wheel_link->collision->geometry.get()))->radius;
+  if (wheel_link->collision->geometry->type == urdf::Geometry::CYLINDER)
+    wheel_radius = (static_cast<urdf::Cylinder*>(wheel_link->collision->geometry.get()))->radius;
+  else
+    wheel_radius = (static_cast<urdf::Sphere*>(wheel_link->collision->geometry.get()))->radius;
+
+  ROS_INFO_STREAM("   radius: "  << wheel_radius);
+
   return true;
 }
 
@@ -447,8 +453,12 @@ namespace mecanum_drive_controller{
     wheel_separation_ = euclideanOfVectors(left_wheel_joint->parent_to_joint_origin_transform.position,
                                            right_wheel_joint->parent_to_joint_origin_transform.position);
 
+    const boost::shared_ptr<const urdf::Link>& wheel_link = model->getLink(left_wheel_joint->child_link_name);
+    const boost::shared_ptr<const urdf::Joint>& roller_joint = wheel_link->child_joints[0];
+    const boost::shared_ptr<const urdf::Link>& roller_link = model->getLink(roller_joint->child_link_name);
+
     // Get wheel radius
-    if(!getWheelRadius(model->getLink(left_wheel_joint->child_link_name), wheel_radius_))
+    if(!getWheelRadius(roller_link, wheel_radius_))
     {
       ROS_ERROR_STREAM_NAMED(name_, "Couldn't retrieve " << left_wheel_name << " wheel radius");
       return false;

@@ -192,6 +192,13 @@ namespace mecanum_drive_controller{
     controller_nh.param("linear/x/max_acceleration"       , limiter_linX_.max_acceleration       ,  limiter_linX_.max_acceleration      );
     controller_nh.param("linear/x/min_acceleration"       , limiter_linX_.min_acceleration       , -limiter_linX_.max_acceleration      );
 
+    controller_nh.param("linear/y/has_velocity_limits"    , limiter_linY_.has_velocity_limits    , limiter_linY_.has_velocity_limits    );
+    controller_nh.param("linear/y/has_acceleration_limits", limiter_linY_.has_acceleration_limits, limiter_linY_.has_acceleration_limits);
+    controller_nh.param("linear/y/max_velocity"           , limiter_linY_.max_velocity           ,  limiter_linY_.max_velocity          );
+    controller_nh.param("linear/y/min_velocity"           , limiter_linY_.min_velocity           , -limiter_linY_.max_velocity          );
+    controller_nh.param("linear/y/max_acceleration"       , limiter_linY_.max_acceleration       ,  limiter_linY_.max_acceleration      );
+    controller_nh.param("linear/y/min_acceleration"       , limiter_linY_.min_acceleration       , -limiter_linY_.max_acceleration      );
+
     controller_nh.param("angular/z/has_velocity_limits"    , limiter_ang_.has_velocity_limits    , limiter_ang_.has_velocity_limits    );
     controller_nh.param("angular/z/has_acceleration_limits", limiter_ang_.has_acceleration_limits, limiter_ang_.has_acceleration_limits);
     controller_nh.param("angular/z/max_velocity"           , limiter_ang_.max_velocity           ,  limiter_ang_.max_velocity          );

@@ -41,6 +41,8 @@
 
 #include <mecanum_drive_controller/odometry.h>
 
+#include <tf/transform_datatypes.h>
+
 #include <boost/bind.hpp>
 
 namespace mecanum_drive_controller
@@ -89,7 +91,7 @@ bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, d
 
   timestamp_ = time;
 
-  /// Compute forward kinematics (i.e. compute mobile robot's twist out of its wheels velocities):
+  /// Compute forward kinematics (i.e. compute mobile robot's body twist out of its wheels velocities):
   /// Note: we use the IK of the mecanum wheels which we invert using a pseudo-inverse.
   double linearX = 0.25 * wheels_radius_              * ( wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
   double linearY = 0.25 * wheels_radius_              * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
@@ -139,9 +141,17 @@ void Odometry::setWheelsParams(double wheels_k, double wheels_radius)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Odometry::integrateExact(double linearX, double linearY, double angular)
 {
+  /// Integrate angular velocity.
   heading_ += angular;
-  x_       += linearX;
-  y_       += linearY;
+
+  /// The odometry pose should be published in the /odom frame (unlike the odometry twist which is a body twist).
+  /// Project the twist in the odometry basis (we cannot integrate linearX, linearY, angular 'as are' because they correspond to a body twist).
+  tf::Matrix3x3 R_m_odom = tf::Matrix3x3(tf::createQuaternionFromYaw(heading_));
+  tf::Vector3 vel_inOdom = R_m_odom * tf::Vector3(linearX, linearY, 0.0);
+
+  /// Integrate linear velocity.
+  x_ += vel_inOdom.x();
+  y_ += vel_inOdom.y();
 }
 
 } // namespace mecanum_drive_controller

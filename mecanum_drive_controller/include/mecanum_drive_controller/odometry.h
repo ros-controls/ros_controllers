@@ -79,12 +79,14 @@ namespace mecanum_drive_controller
 
     /**
      * \brief Updates the odometry class with latest wheels position
-     * \param left_pos  Left  wheel position [rad]
-     * \param right_pos Right wheel position [rad]
+     * \param wheel0_vel  Wheel velocity [rad]
+     * \param wheel1_vel  Wheel velocity [rad]
+     * \param wheel2_vel  Wheel velocity [rad]
+     * \param wheel3_vel  Wheel velocity [rad]
      * \param time      Current time
      * \return true if the odometry is actually updated
      */
-    bool update(double left_pos, double right_pos, const ros::Time &time);
+    bool update(double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const ros::Time &time);
 
     /**
      * \brief Updates the odometry class with latest velocity command
@@ -149,11 +151,11 @@ namespace mecanum_drive_controller
     }
 
     /**
-     * \brief Sets the wheel parameters: radius and separation
-     * \param wheel_separation Seperation between left and right wheels [m]
-     * \param wheel_radius     Wheel radius [m]
+     * \brief Sets the wheels parameters: mecanum geometric param and radius
+     * \param wheels_k       Wheels geometric param (used in mecanum wheels' ik) [m]
+     * \param wheels_radius  Wheels radius [m]
      */
-    void setWheelParams(double wheel_separation, double wheel_radius);
+    void setWheelsParams(double wheels_k, double wheels_radius);
 
   private:
 
@@ -162,15 +164,9 @@ namespace mecanum_drive_controller
     typedef bacc::tag::rolling_window RollingWindow;
 
     /**
-     * \brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
-     * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
-     * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
-     */
-    void integrateRungeKutta2(double linearX, double angular);
-
-    /**
      * \brief Integrates the velocities (linear and angular) using exact method
-     * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
+     * \param linearX  Linear velocity along X [m] (linear  displacement, i.e. m/s * dt) computed by encoders
+     * \param linearY  Linear velocity along Y [m] (linear  displacement, i.e. m/s * dt) computed by encoders
      * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
     void integrateExact(double linearX, double linearY, double angular);
@@ -188,13 +184,9 @@ namespace mecanum_drive_controller
     double linearY_;  //   [m/s]
     double angular_; // [rad/s]
 
-    /// Wheel kinematic parameters [m]:
-    double wheel_separation_;
-    double wheel_radius_;
-
-    /// Previou wheel position/state [rad]:
-    double left_wheel_old_pos_;
-    double right_wheel_old_pos_;
+    /// Wheels kinematic parameters [m]:
+    double wheels_k_;
+    double wheels_radius_;
 
     /// Rolling mean accumulators for the linar and angular velocities:
     size_t velocity_rolling_window_size_;

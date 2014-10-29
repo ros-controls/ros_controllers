@@ -104,8 +104,10 @@ namespace mecanum_drive_controller{
     bool open_loop_;
 
     /// Hardware handles:
-    std::vector<hardware_interface::JointHandle> left_wheel_joints_;
-    std::vector<hardware_interface::JointHandle> right_wheel_joints_;
+    hardware_interface::JointHandle wheel0_jointHandle_;
+    hardware_interface::JointHandle wheel1_jointHandle_;
+    hardware_interface::JointHandle wheel2_jointHandle_;
+    hardware_interface::JointHandle wheel3_jointHandle_;
 
     /// Velocity command related:
     struct Commands
@@ -127,16 +129,10 @@ namespace mecanum_drive_controller{
     Odometry odometry_;
     geometry_msgs::TransformStamped odom_frame_;
 
-    /// Wheel separation, wrt the midpoint of the wheel width:
-    double wheel_separation_;
-
     /// Wheel radius (assuming it's the same for the left and right wheels):
     bool use_realigned_roller_joints_;
-    double wheel_radius_;
-
-    /// Wheel separation and radius calibration multipliers:
-    double wheel_separation_multiplier_;
-    double wheel_radius_multiplier_;
+    double wheels_k_; // wheels geometric param used in mecanum wheels' ik
+    double wheels_radius_;
 
     /// Timeout to consider cmd_vel commands old:
     double cmd_vel_timeout_;
@@ -169,26 +165,26 @@ namespace mecanum_drive_controller{
     void cmdVelCallback(const geometry_msgs::Twist& command);
 
     /**
-     * \brief Get the wheel names from a wheel param
-     * \param [in]  controller_nh Controller node handler
-     * \param [in]  wheel_param   Param name
-     * \param [out] wheel_names   Vector with the whel names
-     * \return true if the wheel_param is available and the wheel_names are
-     *        retrieved successfully from the param server; false otherwise
-     */
-    bool getWheelNames(ros::NodeHandle& controller_nh,
-                       const std::string& wheel_param,
-                       std::vector<std::string>& wheel_names);
-
-    /**
      * \brief Sets odometry parameters from the URDF, i.e. the wheel radius and separation
      * \param root_nh Root node handle
-     * \param left_wheel_name Name of the left wheel joint
-     * \param right_wheel_name Name of the right wheel joint
+     * \param wheel0_name Name of wheel0 joint
+     * \param wheel1_name Name of wheel1 joint
+     * \param wheel2_name Name of wheel2 joint
+     * \param wheel3_name Name of wheel3 joint
      */
-    bool setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
-                               const std::string& left_wheel_name,
-                               const std::string& right_wheel_name);
+    bool setWheelParamsFromUrdf(ros::NodeHandle& root_nh,
+                               const std::string& wheel0_name,
+                               const std::string& wheel1_name,
+                               const std::string& wheel2_name,
+                               const std::string& wheel3_name);
+
+    /**
+     * \brief Get the radius of a given wheel
+     * \param       model         urdf model used
+     * \param       wheel_link    link of the wheel from which to get the radius
+     * \param[out]  wheels_radius radius of the wheel read from the urdf
+     */
+    bool getWheelRadius(const boost::shared_ptr<urdf::ModelInterface> model, const boost::shared_ptr<const urdf::Link>& wheel_link, double& wheel_radius);
 
     /**
      * \brief Sets the odometry publishing fields

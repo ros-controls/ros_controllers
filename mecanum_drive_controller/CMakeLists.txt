@@ -8,6 +8,21 @@ find_package(catkin REQUIRED COMPONENTS
     tf
     nav_msgs)
 
+################################################
+# List sources.
+################################################
+set(${PROJECT_NAME}_headers
+  include/mecanum_drive_controller/mecanum_drive_controller.h
+  include/mecanum_drive_controller/odometry.h
+  include/mecanum_drive_controller/speed_limiter.h
+)
+
+set(${PROJECT_NAME}_sources
+  src/mecanum_drive_controller.cpp
+  src/odometry.cpp
+  src/speed_limiter.cpp
+)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
@@ -17,7 +32,7 @@ include_directories(
   include ${catkin_INCLUDE_DIRS}
 )
 
-add_library(${PROJECT_NAME} src/mecanum_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
+add_library(${PROJECT_NAME} ${${PROJECT_NAME}_headers} ${${PROJECT_NAME}_sources})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME}

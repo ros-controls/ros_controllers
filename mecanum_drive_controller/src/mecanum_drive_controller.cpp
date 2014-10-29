@@ -257,7 +257,8 @@ void MecanumDriveController::update(const ros::Time& time, const ros::Duration& 
   limiter_ang_.limit(curr_cmd.ang, last_cmd_.ang, cmd_dt);
   last_cmd_ = curr_cmd;
 
-  // Compute wheels velocities:
+  // Compute wheels velocities (this is the actual ik):
+  // NOTE: the input desired twist (from topic /cmd_vel) is a body twist.
   const double w0_vel = 1.0 / wheels_radius_ * (curr_cmd.linX - curr_cmd.linY - wheels_k_ * curr_cmd.ang);
   const double w1_vel = 1.0 / wheels_radius_ * (curr_cmd.linX + curr_cmd.linY - wheels_k_ * curr_cmd.ang);
   const double w2_vel = 1.0 / wheels_radius_ * (curr_cmd.linX - curr_cmd.linY + wheels_k_ * curr_cmd.ang);

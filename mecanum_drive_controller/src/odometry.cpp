@@ -45,102 +45,103 @@
 
 namespace mecanum_drive_controller
 {
-  namespace bacc = boost::accumulators;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  Odometry::Odometry(size_t velocity_rolling_window_size)
-  : timestamp_(0.0)
-  , x_(0.0)
-  , y_(0.0)
-  , heading_(0.0)
-  , linearX_(0.0)
-  , linearY_(0.0)
-  , angular_(0.0)
-  , wheels_k_(0.0)
-  , wheels_radius_(0.0)
-  , velocity_rolling_window_size_(velocity_rolling_window_size)
-  , linearX_acc_(RollingWindow::window_size = velocity_rolling_window_size)
-  , linearY_acc_(RollingWindow::window_size = velocity_rolling_window_size)
-  , angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
-  , integrate_fun_(boost::bind(&Odometry::integrateExact, this, _1, _2, _3))
-  {
-  }
+namespace bacc = boost::accumulators;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void Odometry::init(const ros::Time& time)
-  {
-    // Reset accumulators:
-    linearX_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-    linearY_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-    angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Odometry::Odometry(size_t velocity_rolling_window_size)
+: timestamp_(0.0)
+, x_(0.0)
+, y_(0.0)
+, heading_(0.0)
+, linearX_(0.0)
+, linearY_(0.0)
+, angular_(0.0)
+, wheels_k_(0.0)
+, wheels_radius_(0.0)
+, velocity_rolling_window_size_(velocity_rolling_window_size)
+, linearX_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+, linearY_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+, angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+, integrate_fun_(boost::bind(&Odometry::integrateExact, this, _1, _2, _3))
+{
+}
 
-    // Reset timestamp:
-    timestamp_ = time;
-  }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Odometry::init(const ros::Time& time)
+{
+  // Reset accumulators:
+  linearX_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+  linearY_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+  angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const ros::Time &time)
-  {
-    /// We cannot estimate the speed with very small time intervals:
-    const double dt = (time - timestamp_).toSec();
-    if (dt < 0.0001)
-      return false; // Interval too small to integrate with
+  // Reset timestamp:
+  timestamp_ = time;
+}
 
-    timestamp_ = time;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const ros::Time &time)
+{
+  /// We cannot estimate the speed with very small time intervals:
+  const double dt = (time - timestamp_).toSec();
+  if (dt < 0.0001)
+    return false; // Interval too small to integrate with
 
-    /// Compute forward kinematics (i.e. compute mobile robot's twist out of its wheels velocities):
-    /// Note: we use the IK of the mecanum wheels which we invert using a pseudo-inverse.
-    double linearX = 0.25 * wheels_radius_              * ( wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
-    double linearY = 0.25 * wheels_radius_              * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
-    double angular = 0.25 * wheels_radius_  / wheels_k_ * (-wheel0_vel - wheel1_vel + wheel2_vel + wheel3_vel);
+  timestamp_ = time;
 
-    linearX *= dt;
-    linearY *= dt;
-    angular *= dt;
+  /// Compute forward kinematics (i.e. compute mobile robot's twist out of its wheels velocities):
+  /// Note: we use the IK of the mecanum wheels which we invert using a pseudo-inverse.
+  double linearX = 0.25 * wheels_radius_              * ( wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
+  double linearY = 0.25 * wheels_radius_              * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
+  double angular = 0.25 * wheels_radius_  / wheels_k_ * (-wheel0_vel - wheel1_vel + wheel2_vel + wheel3_vel);
 
-    /// Integrate odometry:
-    integrate_fun_(linearX, linearY, angular);
+  linearX *= dt;
+  linearY *= dt;
+  angular *= dt;
 
-    /// Estimate speeds using a rolling mean to filter them out:
-    linearX_acc_(linearX/dt);
-    linearY_acc_(linearY/dt);
-    angular_acc_(angular/dt);
+  /// Integrate odometry:
+  integrate_fun_(linearX, linearY, angular);
 
-    linearX_ = bacc::rolling_mean(linearX_acc_);
-    linearY_ = bacc::rolling_mean(linearY_acc_);
-    angular_ = bacc::rolling_mean(angular_acc_);
+  /// Estimate speeds using a rolling mean to filter them out:
+  linearX_acc_(linearX/dt);
+  linearY_acc_(linearY/dt);
+  angular_acc_(angular/dt);
 
-    return true;
-  }
+  linearX_ = bacc::rolling_mean(linearX_acc_);
+  linearY_ = bacc::rolling_mean(linearY_acc_);
+  angular_ = bacc::rolling_mean(angular_acc_);
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void Odometry::updateOpenLoop(double linearX, double linearY, double angular, const ros::Time &time)
-  {
-    /// Save last linear and angular velocity:
-    linearX_ = linearX;
-    linearY_ = linearY;
-    angular_ = angular;
+  return true;
+}
 
-    /// Integrate odometry:
-    const double dt = (time - timestamp_).toSec();
-    timestamp_ = time;
-    integrate_fun_(linearX * dt, linearY * dt, angular * dt);
-  }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Odometry::updateOpenLoop(double linearX, double linearY, double angular, const ros::Time &time)
+{
+  /// Save last linear and angular velocity:
+  linearX_ = linearX;
+  linearY_ = linearY;
+  angular_ = angular;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void Odometry::setWheelsParams(double wheels_k, double wheels_radius)
-  {
-    wheels_k_ = wheels_k;
+  /// Integrate odometry:
+  const double dt = (time - timestamp_).toSec();
+  timestamp_ = time;
+  integrate_fun_(linearX * dt, linearY * dt, angular * dt);
+}
 
-    wheels_radius_ = wheels_radius;
-  }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Odometry::setWheelsParams(double wheels_k, double wheels_radius)
+{
+  wheels_k_ = wheels_k;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void Odometry::integrateExact(double linearX, double linearY, double angular)
-  {
-    heading_ += angular;
-    x_       += linearX;
-    y_       += linearY;
-  }
+  wheels_radius_ = wheels_radius;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Odometry::integrateExact(double linearX, double linearY, double angular)
+{
+  heading_ += angular;
+  x_       += linearX;
+  y_       += linearY;
+}
 
 } // namespace mecanum_drive_controller

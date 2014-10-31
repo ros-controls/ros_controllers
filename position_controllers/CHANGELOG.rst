@@ -2,8 +2,8 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.0 (2014-10-31)
+------------------
 * New controller: position_controllers/JointGroupPositionController (multi-joint)
 * Hold position when starting JointPositionController and JointGroupPositionController
 * Buildsystem fixes

@@ -2,8 +2,8 @@
 Changelog for package imu_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.0 (2014-10-31)
+------------------
 * Buildsystem fixes
 * Contributors: Adolfo Rodriguez Tsouroukdissian
 

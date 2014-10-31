@@ -2,6 +2,14 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Check that waypoint times are strictly increasing before accepting a command
+* velocity_controllers::JointTrajectoryController: New plugin variant for
+  velocity-controlled joints
+* Buildsystem fixes
+* Contributors: Adolfo Rodriguez Tsouroukdissian, Lukas Bulwahn, ipa-fxm, Dave Coleman
+
 0.8.1 (2014-07-11)
 ------------------
 * joint_trajectory_controller: Critical targets declared before calling catkin_package

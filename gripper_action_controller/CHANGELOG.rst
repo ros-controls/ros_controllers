@@ -2,6 +2,11 @@
 Changelog for package gripper_action_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Buildsystem fixes
+* Contributors: Adolfo Rodriguez Tsouroukdissian, Lukas Bulwahn
+
 0.8.1 (2014-07-11)
 ------------------
 

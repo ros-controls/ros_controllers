@@ -2,6 +2,11 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Buildsystem fixes
+* Contributors: Dave Coleman
+
 0.8.1 (2014-07-11)
 ------------------
 

@@ -2,6 +2,12 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* ForwardJointGroupCommandController: Class for implementing multi-joint
+  command-forwarding controllers
+* Contributors: ipa-fxm
+
 0.8.1 (2014-07-11)
 ------------------
 

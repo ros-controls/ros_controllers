@@ -2,6 +2,12 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* New controller: velocity_controllers/JointGroupVelocityController (multi-joint)
+* New controller: velocity_controllers/JointPositionController
+* Contributors: ipa-fxm, Dave Coleman
+
 0.8.1 (2014-07-11)
 ------------------
 

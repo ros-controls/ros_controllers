@@ -2,6 +2,10 @@
 Changelog for package ros_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add rqt_joint_trajectory_controller to metapackage
+
 0.8.1 (2014-07-11)
 ------------------
 

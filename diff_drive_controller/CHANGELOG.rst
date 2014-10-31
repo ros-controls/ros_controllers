@@ -2,6 +2,16 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add support for multiple wheels per side
+* Odometry computation:
+  - New option to compute in open loop fashion
+  - New option to skip publishing odom frame to tf
+* Remove dependency on angles package
+* Buildsystem fixes
+* Contributors: Bence Magyar, Lukas Bulwahn, efernandez
+
 0.8.1 (2014-07-11)
 ------------------
 

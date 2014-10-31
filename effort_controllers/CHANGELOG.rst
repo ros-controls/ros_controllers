@@ -2,6 +2,11 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Propagate changes made in forward_command_controller
+* Contributors: ipa-fxm
+
 0.8.1 (2014-07-11)
 ------------------
 * Add depend on angles

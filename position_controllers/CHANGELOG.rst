@@ -2,6 +2,13 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* New controller: position_controllers/JointGroupPositionController (multi-joint)
+* Hold position when starting JointPositionController and JointGroupPositionController
+* Buildsystem fixes
+* Contributors: Dave Coleman, ipa-fxm
+
 0.8.1 (2014-07-11)
 ------------------
 

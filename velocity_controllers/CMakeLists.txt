@@ -3,19 +3,25 @@ project(velocity_controllers)
 
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS
+  angles
+  control_msgs
+  control_toolbox
   controller_interface
   forward_command_controller
-  control_toolbox
   realtime_tools
+  urdf
 )
 
 # Declare catkin package
 catkin_package(
-  CATKIN_DEPENDS 
+  CATKIN_DEPENDS
+    angles
+    control_msgs
+    control_toolbox
     controller_interface
     forward_command_controller
-    control_toolbox
     realtime_tools
+    urdf
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
 )

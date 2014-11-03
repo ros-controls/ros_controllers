@@ -2,8 +2,8 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.1 (2014-11-03)
+------------------
 * Update package maintainers
 * Contributors: Adolfo Rodriguez Tsouroukdissian
 

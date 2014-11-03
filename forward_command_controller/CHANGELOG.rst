@@ -2,6 +2,9 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.9.0 (2014-10-31)
 ------------------
 * ForwardJointGroupCommandController: Class for implementing multi-joint

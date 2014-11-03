@@ -2,6 +2,11 @@
 Changelog for package ros_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update package maintainers
+* Contributors: Adolfo Rodriguez Tsouroukdissian
+
 0.9.0 (2014-10-31)
 ------------------
 * Add rqt_joint_trajectory_controller to metapackage

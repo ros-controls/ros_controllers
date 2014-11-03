@@ -2,6 +2,11 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update package maintainers
+* Contributors: Adolfo Rodriguez Tsouroukdissian
+
 0.9.0 (2014-10-31)
 ------------------
 * Buildsystem fixes

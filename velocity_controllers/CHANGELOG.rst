@@ -2,6 +2,12 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update package maintainers
+* Add missing dependencies
+* Contributors: Adolfo Rodriguez Tsouroukdissian
+
 0.9.0 (2014-10-31)
 ------------------
 * New controller: velocity_controllers/JointGroupVelocityController (multi-joint)

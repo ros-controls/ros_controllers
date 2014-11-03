@@ -2,6 +2,11 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update package maintainers
+* Contributors: Adolfo Rodriguez Tsouroukdissian
+
 0.9.0 (2014-10-31)
 ------------------
 * Propagate changes made in forward_command_controller

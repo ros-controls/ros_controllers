@@ -3,7 +3,6 @@
   <version>0.9.0</version>
   <description>Library of ros controllers</description>
 
-  <maintainer email="wim@hidof.com">Wim Meeussen</maintainer>
   <maintainer email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</maintainer>
   <maintainer email="davetcoleman@gmail.com">Dave Coleman</maintainer>
 

@@ -192,7 +192,7 @@ private:
    * \param root_nh Root node handle
    * \param controller_nh Node handle inside the controller namespace
    */
-  void setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
+  void setupRtPublishersMsg(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
 
 };
 

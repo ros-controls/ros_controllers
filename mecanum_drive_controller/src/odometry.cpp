@@ -92,26 +92,16 @@ bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, d
   timestamp_ = time;
 
   /// Compute forward kinematics (i.e. compute mobile robot's body twist out of its wheels velocities):
-  /// Note: we use the IK of the mecanum wheels which we invert using a pseudo-inverse.
-  double linearX = 0.25 * wheels_radius_              * ( wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
-  double linearY = 0.25 * wheels_radius_              * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
-  double angular = 0.25 * wheels_radius_  / wheels_k_ * (-wheel0_vel - wheel1_vel + wheel2_vel + wheel3_vel);
+  /// NOTE: we use the IK of the mecanum wheels which we invert using a pseudo-inverse.
+  /// NOTE: in the diff drive the velocity is filtered out, but we prefer to return it raw and let the user perform
+  ///       post-processing at will. We prefer this way of doing as filtering introduces delay (which makes it
+  ///       difficult to interpret and compare behavior curves).
+  linearX_ = 0.25 * wheels_radius_              * ( wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
+  linearY_ = 0.25 * wheels_radius_              * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
+  angular_ = 0.25 * wheels_radius_  / wheels_k_ * (-wheel0_vel - wheel1_vel + wheel2_vel + wheel3_vel);
 
-  linearX *= dt;
-  linearY *= dt;
-  angular *= dt;
-
-  /// Integrate odometry:
-  integrate_fun_(linearX, linearY, angular);
-
-  /// Estimate speeds using a rolling mean to filter them out:
-  linearX_acc_(linearX/dt);
-  linearY_acc_(linearY/dt);
-  angular_acc_(angular/dt);
-
-  linearX_ = bacc::rolling_mean(linearX_acc_);
-  linearY_ = bacc::rolling_mean(linearY_acc_);
-  angular_ = bacc::rolling_mean(angular_acc_);
+  /// Integrate odometry.
+  integrate_fun_(linearX_ * dt, linearY_ * dt, angular_ * dt);
 
   return true;
 }

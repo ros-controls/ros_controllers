@@ -174,7 +174,7 @@ bool MecanumDriveController::init(hardware_interface::VelocityJointInterface* hw
   if (!setWheelParamsFromUrdf(root_nh, wheel0_name, wheel1_name, wheel2_name, wheel3_name))
     return false;
 
-  setOdomPubFields(root_nh, controller_nh);
+  setupRtPublishersMsg(root_nh, controller_nh);
 
   sub_command_ = controller_nh.subscribe("cmd_vel", 1, &MecanumDriveController::cmdVelCallback, this);
 
@@ -464,9 +464,9 @@ bool MecanumDriveController::getWheelRadius(const boost::shared_ptr<urdf::ModelI
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MecanumDriveController::setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
+void MecanumDriveController::setupRtPublishersMsg(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
 {
-  // Get and check params for covariances
+  // Get covariance parameters for odometry.
   XmlRpc::XmlRpcValue pose_cov_list;
   controller_nh.getParam("pose_covariance_diagonal", pose_cov_list);
   ROS_ASSERT(pose_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
@@ -481,7 +481,7 @@ void MecanumDriveController::setOdomPubFields(ros::NodeHandle& root_nh, ros::Nod
   for (int i = 0; i < twist_cov_list.size(); ++i)
     ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
-  // Setup odometry realtime publisher + odom message constant fields
+  // Setup odometry msg.
   odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odom", 100));
   odom_pub_->msg_.header.frame_id = "odom";
   odom_pub_->msg_.child_frame_id = base_frame_id_;
@@ -504,6 +504,8 @@ void MecanumDriveController::setOdomPubFields(ros::NodeHandle& root_nh, ros::Nod
       (0)  (0)  (0)  (static_cast<double>(twist_cov_list[3])) (0)  (0)
       (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[4])) (0)
       (0)  (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
+
+  // Setup tf msg.
   tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
   tf_odom_pub_->msg_.transforms.resize(1);
   tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;

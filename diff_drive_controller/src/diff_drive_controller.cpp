@@ -169,6 +169,13 @@ namespace diff_drive_controller{
     ROS_INFO_STREAM_NAMED(name_, "Wheel radius will be multiplied by "
                           << wheel_radius_multiplier_ << ".");
 
+    int velocity_rolling_window_size = 10;
+    controller_nh.param("velocity_rolling_window_size", velocity_rolling_window_size, velocity_rolling_window_size);
+    ROS_INFO_STREAM_NAMED(name_, "Velocity rolling window size of "
+                          << velocity_rolling_window_size << ".");
+
+    odometry_.setVelocityRollingWindowSize(velocity_rolling_window_size);
+
     // Twist command related:
     controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
     ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "

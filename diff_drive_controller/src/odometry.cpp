@@ -67,11 +67,8 @@ namespace diff_drive_controller
 
   void Odometry::init(const ros::Time& time)
   {
-    // Reset accumulators:
-    linear_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-    angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-
-    // Reset timestamp:
+    // Reset accumulators and timestamp:
+    resetAccumulators();
     timestamp_ = time;
   }
 
@@ -131,6 +128,13 @@ namespace diff_drive_controller
     wheel_radius_     = wheel_radius;
   }
 
+  void Odometry::setVelocityRollingWindowSize(size_t velocity_rolling_window_size)
+  {
+    velocity_rolling_window_size_ = velocity_rolling_window_size;
+
+    resetAccumulators();
+  }
+
   void Odometry::integrateRungeKutta2(double linear, double angular)
   {
     const double direction = heading_ + angular * 0.5;
@@ -159,6 +163,12 @@ namespace diff_drive_controller
       x_       +=  r * (sin(heading_) - sin(heading_old));
       y_       += -r * (cos(heading_) - cos(heading_old));
     }
+  }
+
+  void Odometry::resetAccumulators()
+  {
+    linear_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
   }
 
 } // namespace diff_drive_controller

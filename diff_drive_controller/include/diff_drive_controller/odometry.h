@@ -146,6 +146,12 @@ namespace diff_drive_controller
      */
     void setWheelParams(double wheel_separation, double wheel_radius);
 
+    /**
+     * \brief Velocity rolling window size setter
+     * \param velocity_rolling_window_size Velocity rolling window size
+     */
+    void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
+
   private:
 
     /// Rolling mean accumulator and window:
@@ -165,6 +171,11 @@ namespace diff_drive_controller
      * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
      */
     void integrateExact(double linear, double angular);
+
+    /**
+     *  \brief Reset linear and angular accumulators
+     */
+    void resetAccumulators();
 
     /// Current timestamp:
     ros::Time timestamp_;

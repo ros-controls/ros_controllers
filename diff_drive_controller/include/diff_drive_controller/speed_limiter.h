@@ -70,13 +70,13 @@ namespace diff_drive_controller
      * \param [in]      v0 Previous velocity [m/s]
      * \param [in]      dt Time step [s]
      */
-    void limit(double& v, double v0, double dt);
+    double limit(double& v, double v0, double dt);
 
     /**
      * \brief Limit the velocity
      * \param [in, out] v Velocity [m/s]
      */
-    void limit_velocity(double& v);
+    double limit_velocity(double& v);
 
     /**
      * \brief Limit the acceleration
@@ -84,7 +84,7 @@ namespace diff_drive_controller
      * \param [in]      v0 Previous velocity [m/s]
      * \param [in]      dt Time step [s]
      */
-    void limit_acceleration(double& v, double v0, double dt);
+    double limit_acceleration(double& v, double v0, double dt);
 
   public:
     // Enable/Disable velocity/acceleration limits:

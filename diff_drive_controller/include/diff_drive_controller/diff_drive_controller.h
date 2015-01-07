@@ -152,6 +152,9 @@ namespace diff_drive_controller{
     SpeedLimiter limiter_lin_;
     SpeedLimiter limiter_ang_;
 
+    /// Preserve turning radius if limiting speed:
+    bool preserve_turning_radius_;
+
   private:
     /**
      * \brief Brakes the wheels, i.e. sets the velocity to 0

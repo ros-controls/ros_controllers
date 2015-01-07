@@ -66,33 +66,43 @@ namespace diff_drive_controller
   {
   }
 
-  void SpeedLimiter::limit(double& v, double v0, double dt)
+  double SpeedLimiter::limit(double& v, double v0, double dt)
   {
+    const double tmp = v;
+
     limit_velocity(v);
     limit_acceleration(v, v0, dt);
+
+    return tmp != 0.0 ? v / tmp : 1.0;
   }
 
-  void SpeedLimiter::limit_velocity(double& v)
+  double SpeedLimiter::limit_velocity(double& v)
   {
+    const double tmp = v;
+
     if (has_velocity_limits)
     {
       v = clamp(v, min_velocity, max_velocity);
     }
+
+    return tmp != 0.0 ? v / tmp : 1.0;
   }
 
-  void SpeedLimiter::limit_acceleration(double& v, double v0, double dt)
+  double SpeedLimiter::limit_acceleration(double& v, double v0, double dt)
   {
+    const double tmp = v;
+
     if (has_acceleration_limits)
     {
-      double dv = v - v0;
-
       const double dv_min = min_acceleration * dt;
       const double dv_max = max_acceleration * dt;
 
-      dv = clamp(dv, dv_min, dv_max);
+      const double dv = clamp(v - v0, dv_min, dv_max);
 
       v = v0 + dv;
     }
+
+    return tmp != 0.0 ? v / tmp : 1.0;
   }
 
 } // namespace diff_drive_controller

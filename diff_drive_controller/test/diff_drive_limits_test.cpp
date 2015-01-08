@@ -30,6 +30,37 @@
 #include "test_common.h"
 
 // TEST CASES
+TEST_F(DiffDriveControllerTest, testLinearJerkLimits)
+{
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(2.0).sleep();
+  // get initial odom
+  nav_msgs::Odometry old_odom = getLastOdom();
+  // send a big command
+  cmd_vel.linear.x = 10.0;
+  publish(cmd_vel);
+  // wait for a while
+  ros::Duration(0.5).sleep();
+
+  nav_msgs::Odometry new_odom = getLastOdom();
+
+  // check if the robot speed is now 0.37m.s-1
+  EXPECT_NEAR(new_odom.twist.twist.linear.x, 0.37, JERK_LINEAR_VELOCITY_TOLERANCE);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), EPS);
+
+  cmd_vel.linear.x = 0.0;
+  publish(cmd_vel);
+}
+
 TEST_F(DiffDriveControllerTest, testLinearAccelerationLimits)
 {
   // wait for ROS
@@ -89,6 +120,37 @@ TEST_F(DiffDriveControllerTest, testLinearVelocityLimits)
   EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), EPS);
 
   cmd_vel.linear.x = 0.0;
+  publish(cmd_vel);
+}
+
+TEST_F(DiffDriveControllerTest, testAngularJerkLimits)
+{
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(2.0).sleep();
+  // get initial odom
+  nav_msgs::Odometry old_odom = getLastOdom();
+  // send a big command
+  cmd_vel.angular.z = 10.0;
+  publish(cmd_vel);
+  // wait for a while
+  ros::Duration(0.5).sleep();
+
+  nav_msgs::Odometry new_odom = getLastOdom();
+
+  // check if the robot speed is now 0.7rad.s-1
+  EXPECT_NEAR(new_odom.twist.twist.angular.z, 0.7, JERK_ANGULAR_VELOCITY_TOLERANCE);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), EPS);
+
+  cmd_vel.angular.z = 0.0;
   publish(cmd_vel);
 }
 

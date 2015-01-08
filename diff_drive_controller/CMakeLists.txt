@@ -61,6 +61,10 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_wrong.test
     test/diff_drive_fail_test.cpp)
   target_link_libraries(diff_drive_fail_test ${catkin_LIBRARIES})
+  add_rostest_gtest(diff_drive_no_preserve_turning_radius_test
+    test/diff_drive_controller_no_preserve_turning_radius.test
+    test/diff_drive_no_preserve_turning_radius_test.cpp)
+  target_link_libraries(diff_drive_no_preserve_turning_radius_test ${catkin_LIBRARIES})
   add_rostest(test/diff_drive_bad_urdf.test)
   add_rostest(test/diff_drive_open_loop.test)
   add_rostest(test/skid_steer_controller.test)

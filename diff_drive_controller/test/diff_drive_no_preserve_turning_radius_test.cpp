@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2014, PAL Robotics S.L.
+// Copyright (C) 2013, PAL Robotics S.L.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,11 +29,8 @@
 
 #include "test_common.h"
 
-// NaN
-#include <limits>
-
 // TEST CASES
-TEST_F(DiffDriveControllerTest, testNaN)
+TEST_F(DiffDriveControllerTest, testNoPreserveTurningRadius)
 {
   // wait for ROS
   while(!isControllerAlive())
@@ -46,45 +43,34 @@ TEST_F(DiffDriveControllerTest, testNaN)
   cmd_vel.angular.z = 0.0;
   publish(cmd_vel);
   ros::Duration(2.0).sleep();
-
-  // send a command
-  cmd_vel.linear.x = 0.1;
-  ros::Duration(2.0).sleep();
-
-  // stop robot (will generate NaN)
-  stop();
-  ros::Duration(2.0).sleep();
+  // send a big command
+  cmd_vel.linear.x = 10.0;
+  cmd_vel.angular.z = 1.0;
+  publish(cmd_vel);
+  // wait for a while
+  ros::Duration(0.5).sleep();
 
   nav_msgs::Odometry odom = getLastOdom();
 
-  EXPECT_NE(std::isnan(odom.twist.twist.linear.x), true);
-  EXPECT_NE(std::isnan(odom.twist.twist.angular.z), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.position.x), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.position.y), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.orientation.z), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.orientation.w), true);
+  // check if the turning radius is not preserved
+  const double r_cmd_vel = cmd_vel.linear.x / cmd_vel.angular.z;
+  const double r_odom    = odom.twist.twist.linear.x / odom.twist.twist.angular.z;
 
-  // start robot
-  start();
-  ros::Duration(2.0).sleep();
+  EXPECT_GT(fabs(r_cmd_vel - r_odom), 1.0);
 
-  odom = getLastOdom();
-
-  EXPECT_NE(std::isnan(odom.twist.twist.linear.x), true);
-  EXPECT_NE(std::isnan(odom.twist.twist.angular.z), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.position.x), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.position.y), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.orientation.z), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.orientation.w), true);
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
 }
 
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "diff_drive_nan_test");
+  ros::init(argc, argv, "diff_drive_no_preserve_turning_radius_test");
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
+  //ros::Duration(0.5).sleep();
   int ret = RUN_ALL_TESTS();
   spinner.stop();
   ros::shutdown();

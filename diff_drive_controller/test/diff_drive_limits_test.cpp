@@ -85,8 +85,8 @@ TEST_F(DiffDriveControllerTest, testLinearVelocityLimits)
   nav_msgs::Odometry new_odom = getLastOdom();
 
   // check if the robot speed is now 1.0 m.s-1, the limit
-  EXPECT_LT(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x, 5.0 + POSITION_TOLERANCE);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), 1.0 + VELOCITY_TOLERANCE);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), EPS);
 
   cmd_vel.linear.x = 0.0;
   publish(cmd_vel);

@@ -147,14 +147,10 @@ namespace diff_drive_controller{
     /// Number of wheel joints:
     size_t wheel_joints_size_;
 
-    /// Speed limiters:
-    Commands last1_cmd_;
-    Commands last0_cmd_;
+    // Speed limiters:
+    Commands last_cmd_;
     SpeedLimiter limiter_lin_;
     SpeedLimiter limiter_ang_;
-
-    /// Preserve turning radius if limiting speed:
-    bool preserve_turning_radius_;
 
   private:
     /**

@@ -123,39 +123,6 @@ TEST_F(DiffDriveControllerTest, testTurn)
   EXPECT_NEAR(fabs(new_odom.twist.twist.angular.z), M_PI/10.0, EPS);
 }
 
-TEST_F(DiffDriveControllerTest, testPreserveTurningRadius)
-{
-  // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
-  // zero everything before test
-  geometry_msgs::Twist cmd_vel;
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.angular.z = 0.0;
-  publish(cmd_vel);
-  ros::Duration(2.0).sleep();
-  // send a big command
-  cmd_vel.linear.x = 10.0;
-  cmd_vel.angular.z = 1.0;
-  publish(cmd_vel);
-  // wait for a while
-  ros::Duration(0.5).sleep();
-
-  nav_msgs::Odometry odom = getLastOdom();
-
-  // check if the turning radius is not preserved
-  const double r_cmd_vel = cmd_vel.linear.x / cmd_vel.angular.z;
-  const double r_odom    = odom.twist.twist.linear.x / odom.twist.twist.angular.z;
-
-  EXPECT_LT(fabs(r_cmd_vel - r_odom), EPS);
-
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.angular.z = 0.0;
-  publish(cmd_vel);
-}
-
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);

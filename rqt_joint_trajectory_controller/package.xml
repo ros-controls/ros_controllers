@@ -12,6 +12,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <run_depend>control_msgs</run_depend>
+  <run_depend>controller_manager_msgs</run_depend>
   <run_depend>trajectory_msgs</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>rqt_gui</run_depend>

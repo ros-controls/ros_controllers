@@ -41,7 +41,8 @@ template <class T>
 void forward_command_controller::ForwardCommandController<T>::starting(const ros::Time& time)
 {
   // Start controller with current joint position
-  command_ = joint_.getPosition();
+  tmp_command_ = joint_.getPosition();
+  command_.initRT(tmp_command_);
 }
 
 PLUGINLIB_EXPORT_CLASS(position_controllers::JointPositionController,controller_interface::ControllerBase)

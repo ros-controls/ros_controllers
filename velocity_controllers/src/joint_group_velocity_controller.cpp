@@ -42,7 +42,8 @@ template <class T>
 void forward_command_controller::ForwardJointGroupCommandController<T>::starting(const ros::Time& time)
 {
   // Start controller with 0.0 velocities
-  commands_.resize(n_joints_, 0.0);
+  tmp_commands_.resize(n_joints_, 0.0);
+  commands_.initRT(tmp_commands_);
 }
 
 

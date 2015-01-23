@@ -46,6 +46,7 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <controller_interface/controller.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <realtime_tools/realtime_buffer.h>
 
 
 namespace forward_command_controller
@@ -72,7 +73,7 @@ template <class T>
 class ForwardJointGroupCommandController: public controller_interface::Controller<T>
 {
 public:
-  ForwardJointGroupCommandController() { commands_.clear(); }
+  ForwardJointGroupCommandController() { tmp_commands_.clear(); }
   ~ForwardJointGroupCommandController() {sub_command_.shutdown();}
 
   bool init(T* hw, ros::NodeHandle &n)
@@ -106,13 +107,15 @@ public:
   void starting(const ros::Time& time);
   void update(const ros::Time& time, const ros::Duration& period) 
   {
+    tmp_commands_ = *(commands_.readFromRT());
     for(unsigned int i=0; i<n_joints_; i++)
-    {  joints_[i].setCommand(commands_[i]);  }
+    {  joints_[i].setCommand(tmp_commands_[i]);  }
   }
 
   std::vector< std::string > joint_names_;
   std::vector< hardware_interface::JointHandle > joints_;
-  std::vector< double > commands_;
+  realtime_tools::RealtimeBuffer< std::vector< double > > commands_;
+  std::vector< double > tmp_commands_;  // pre-allocated memory that is re-used to set the realtime buffer
   unsigned int n_joints_;
 
 private:
@@ -125,7 +128,9 @@ private:
       return; 
     }
     for(unsigned int i=0; i<n_joints_; i++)
-    {  commands_[i] = msg->data[i];  }
+    {  tmp_commands_[i] = msg->data[i];  }
+    
+    commands_.writeFromNonRT(tmp_commands_);
   }
 };
 

@@ -41,7 +41,8 @@ template <class T>
 void forward_command_controller::ForwardCommandController<T>::starting(const ros::Time& time)
 {
   // Start controller with 0.0 effort
-  command_ = 0.0;
+  tmp_command_ = 0.0;
+  command_.initRT(tmp_command_);
 }
 
 

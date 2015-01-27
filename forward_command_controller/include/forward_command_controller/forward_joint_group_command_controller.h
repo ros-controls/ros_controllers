@@ -46,6 +46,7 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <controller_interface/controller.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <realtime_tools/realtime_buffer.h>
 
 
 namespace forward_command_controller
@@ -72,7 +73,7 @@ template <class T>
 class ForwardJointGroupCommandController: public controller_interface::Controller<T>
 {
 public:
-  ForwardJointGroupCommandController() { commands_.clear(); }
+  ForwardJointGroupCommandController() {}
   ~ForwardJointGroupCommandController() {sub_command_.shutdown();}
 
   bool init(T* hw, ros::NodeHandle &n)
@@ -102,7 +103,9 @@ public:
         return false;
       }
     }
-    
+
+    commands_buffer_.writeFromNonRT(std::vector<double>(n_joints_, 0.0));
+
     sub_command_ = n.subscribe<std_msgs::Float64MultiArray>("command", 1, &ForwardJointGroupCommandController::commandCB, this);
     return true;
   }
@@ -110,13 +113,14 @@ public:
   void starting(const ros::Time& time);
   void update(const ros::Time& time, const ros::Duration& period) 
   {
+    std::vector<double> & commands = *commands_buffer_.readFromRT();
     for(unsigned int i=0; i<n_joints_; i++)
-    {  joints_[i].setCommand(commands_[i]);  }
+    {  joints_[i].setCommand(commands[i]);  }
   }
 
   std::vector< std::string > joint_names_;
   std::vector< hardware_interface::JointHandle > joints_;
-  std::vector< double > commands_;
+  realtime_tools::RealtimeBuffer<std::vector<double> > commands_buffer_;
   unsigned int n_joints_;
 
 private:
@@ -128,8 +132,7 @@ private:
       ROS_ERROR_STREAM("Dimension of command (" << msg->data.size() << ") does not match number of joints (" << n_joints_ << ")! Not executing!");
       return; 
     }
-    for(unsigned int i=0; i<n_joints_; i++)
-    {  commands_[i] = msg->data[i];  }
+    commands_buffer_.writeFromNonRT(msg->data);
   }
 };
 

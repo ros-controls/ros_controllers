@@ -42,10 +42,10 @@ template <class T>
 void forward_command_controller::ForwardJointGroupCommandController<T>::starting(const ros::Time& time)
 {
   // Start controller with current joint positions
-  commands_.resize(n_joints_, 0.0);
+  std::vector<double> & commands = *commands_buffer_.readFromRT();
   for(unsigned int i=0; i<joints_.size(); i++)
   {
-    commands_[i]=joints_[i].getPosition();
+    commands[i]=joints_[i].getPosition();
   }
 }
 

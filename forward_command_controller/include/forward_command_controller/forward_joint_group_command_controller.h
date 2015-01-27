@@ -85,7 +85,11 @@ public:
       return false;
     }
     n_joints_ = joint_names_.size();
-    
+
+    if(n_joints_ == 0){
+      ROS_ERROR_STREAM("List of joint names is empty.");
+      return false;
+    }
     for(unsigned int i=0; i<n_joints_; i++)
     {
       try

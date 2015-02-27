@@ -155,7 +155,8 @@ namespace diff_drive_controller{
     , wheel_separation_(0.0)
     , wheel_radius_(0.0)
     , wheel_separation_multiplier_(1.0)
-    , wheel_radius_multiplier_(1.0)
+    , left_wheel_radius_multiplier_(1.0)
+    , right_wheel_radius_multiplier_(1.0)
     , cmd_vel_timeout_(0.5)
     , allow_multiple_cmd_vel_publishers_(true)
     , base_frame_id_("base_link")
@@ -210,9 +211,24 @@ namespace diff_drive_controller{
     ROS_INFO_STREAM_NAMED(name_, "Wheel separation will be multiplied by "
                           << wheel_separation_multiplier_ << ".");
 
-    controller_nh.param("wheel_radius_multiplier", wheel_radius_multiplier_, wheel_radius_multiplier_);
-    ROS_INFO_STREAM_NAMED(name_, "Wheel radius will be multiplied by "
-                          << wheel_radius_multiplier_ << ".");
+    if (controller_nh.hasParam("wheel_radius_multiplier"))
+    {
+      double wheel_radius_multiplier;
+      controller_nh.getParam("wheel_radius_multiplier", wheel_radius_multiplier);
+
+      left_wheel_radius_multiplier_  = wheel_radius_multiplier;
+      right_wheel_radius_multiplier_ = wheel_radius_multiplier;
+    }
+    else
+    {
+      controller_nh.param("left_wheel_radius_multiplier", left_wheel_radius_multiplier_, left_wheel_radius_multiplier_);
+      controller_nh.param("right_wheel_radius_multiplier", right_wheel_radius_multiplier_, right_wheel_radius_multiplier_);
+    }
+
+    ROS_INFO_STREAM_NAMED(name_, "Left wheel radius will be multiplied by "
+                          << left_wheel_radius_multiplier_ << ".");
+    ROS_INFO_STREAM_NAMED(name_, "Right wheel radius will be multiplied by "
+                          << right_wheel_radius_multiplier_ << ".");
 
     int velocity_rolling_window_size = 10;
     controller_nh.param("velocity_rolling_window_size", velocity_rolling_window_size, velocity_rolling_window_size);
@@ -278,12 +294,14 @@ namespace diff_drive_controller{
 
     // Regardless of how we got the separation and radius, use them
     // to set the odometry parameters
-    const double ws = wheel_separation_multiplier_ * wheel_separation_;
-    const double wr = wheel_radius_multiplier_     * wheel_radius_;
-    odometry_.setWheelParams(ws, wr);
+    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
+    const double lwr = left_wheel_radius_multiplier_  * wheel_radius_;
+    const double rwr = right_wheel_radius_multiplier_ * wheel_radius_;
+    odometry_.setWheelParams(ws, lwr, rwr);
     ROS_INFO_STREAM_NAMED(name_,
                           "Odometry params : wheel separation " << ws
-                          << ", wheel radius " << wr);
+                          << ", left wheel radius "  << lwr
+                          << ", right wheel radius " << rwr);
 
     setOdomPubFields(root_nh, controller_nh);
 
@@ -398,12 +416,13 @@ namespace diff_drive_controller{
     }
 
     // Apply multipliers:
-    const double ws = wheel_separation_multiplier_ * wheel_separation_;
-    const double wr = wheel_radius_multiplier_     * wheel_radius_;
+    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
+    const double lwr = left_wheel_radius_multiplier_  * wheel_radius_;
+    const double rwr = right_wheel_radius_multiplier_ * wheel_radius_;
 
     // Compute wheels velocities:
-    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wr;
-    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wr;
+    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/lwr;
+    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/rwr;
 
     // Set wheels velocities:
     for (size_t i = 0; i < wheel_joints_size_; ++i)

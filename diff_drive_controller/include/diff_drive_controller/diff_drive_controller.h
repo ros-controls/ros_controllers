@@ -137,7 +137,8 @@ namespace diff_drive_controller{
 
     /// Wheel separation and radius calibration multipliers:
     double wheel_separation_multiplier_;
-    double wheel_radius_multiplier_;
+    double left_wheel_radius_multiplier_;
+    double right_wheel_radius_multiplier_;
 
     /// Timeout to consider cmd_vel commands old:
     double cmd_vel_timeout_;

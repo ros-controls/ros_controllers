@@ -212,8 +212,23 @@ namespace diff_drive_controller{
     // Preserve turning radius if limiting velocity/acceleration/jerk:
     controller_nh.param("preserve_turning_radius", preserve_turning_radius_, preserve_turning_radius_);
 
-    if (!setOdomParamsFromUrdf(root_nh, left_wheel_names[0], right_wheel_names[0]))
-      return false;
+    // if manually specified the wheel separation and wheel radius parameters are not taken from URDF
+    if(controller_nh.hasParam("wheel_separation") and controller_nh.hasParam("wheel_radius"))
+    {
+      controller_nh.getParam("wheel_separation", wheel_separation_);
+      controller_nh.getParam("wheel_radius", wheel_radius_);
+      const double ws = wheel_separation_multiplier_ * wheel_separation_;
+      const double wr = wheel_radius_multiplier_     * wheel_radius_;
+      odometry_.setWheelParams(ws, wr);
+      ROS_INFO_STREAM_NAMED(name_,
+                            "Odometry params : wheel separation " << ws
+                            << ", wheel radius " << wr);
+    }
+    else
+    {
+      if (!setOdomParamsFromUrdf(root_nh, left_wheel_names[0], right_wheel_names[0]))
+        return false;
+    }
 
     setOdomPubFields(root_nh, controller_nh);
 

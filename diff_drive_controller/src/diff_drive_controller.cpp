@@ -193,23 +193,31 @@ namespace diff_drive_controller{
     controller_nh.param("angular/z/max_acceleration"       , limiter_ang_.max_acceleration       ,  limiter_ang_.max_acceleration      );
     controller_nh.param("angular/z/min_acceleration"       , limiter_ang_.min_acceleration       , -limiter_ang_.max_acceleration      );
 
-    // if manually specified the wheel separation and wheel radius parameters are not taken from URDF
-    if(controller_nh.hasParam("wheel_separation") and controller_nh.hasParam("wheel_radius"))
+    // If either parameter is not available, we need to look up the value in the URDF
+    bool lookup_wheel_separation = !controller_nh.getParam("wheel_separation", wheel_separation_);
+    bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius_);
+
+    // Short-circuit in case we don't need to look up anything, so we don't have to parse the URDF
+    if(lookup_wheel_separation or lookup_wheel_radius)
     {
-      controller_nh.getParam("wheel_separation", wheel_separation_);
-      controller_nh.getParam("wheel_radius", wheel_radius_);
-      const double ws = wheel_separation_multiplier_ * wheel_separation_;
-      const double wr = wheel_radius_multiplier_     * wheel_radius_;
-      odometry_.setWheelParams(ws, wr);
-      ROS_INFO_STREAM_NAMED(name_,
-                            "Odometry params : wheel separation " << ws
-                            << ", wheel radius " << wr);
-    }
-    else
-    {
-      if (!setOdomParamsFromUrdf(root_nh, left_wheel_names[0], right_wheel_names[0]))
+      if(!setOdomParamsFromUrdf(root_nh, 
+                                left_wheel_names[0],
+                                right_wheel_names[0],
+                                lookup_wheel_separation,
+                                lookup_wheel_radius))
+      {
         return false;
+      }
     }
+
+    // Regardless of how we got the separation and radius, use them
+    // to set the odometry parameters
+    const double ws = wheel_separation_multiplier_ * wheel_separation_;
+    const double wr = wheel_radius_multiplier_     * wheel_radius_;
+    odometry_.setWheelParams(ws, wr);
+    ROS_INFO_STREAM_NAMED(name_,
+                          "Odometry params : wheel separation " << ws
+                          << ", wheel radius " << wr);
 
     setOdomPubFields(root_nh, controller_nh);
 
@@ -422,7 +430,9 @@ namespace diff_drive_controller{
 
   bool DiffDriveController::setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
                              const std::string& left_wheel_name,
-                             const std::string& right_wheel_name)
+                             const std::string& right_wheel_name,
+                             bool lookup_wheel_separation,
+                             bool lookup_wheel_radius)
   {
     // Parse robot description
     const std::string model_param_name = "robot_description";
@@ -436,46 +446,48 @@ namespace diff_drive_controller{
 
     boost::shared_ptr<urdf::ModelInterface> model(urdf::parseURDF(robot_model_str));
 
-    // Get wheel separation
     boost::shared_ptr<const urdf::Joint> left_wheel_joint(model->getJoint(left_wheel_name));
-    if(!left_wheel_joint)
-    {
-      ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
-                             << " couldn't be retrieved from model description");
-      return false;
-    }
     boost::shared_ptr<const urdf::Joint> right_wheel_joint(model->getJoint(right_wheel_name));
-    if(!right_wheel_joint)
+
+    if(lookup_wheel_separation)
     {
-      ROS_ERROR_STREAM_NAMED(name_, right_wheel_name
-                             << " couldn't be retrieved from model description");
-      return false;
+      // Get wheel separation
+      if(!left_wheel_joint)
+        {
+          ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
+                                 << " couldn't be retrieved from model description");
+          return false;
+        }
+
+      if(!right_wheel_joint)
+      {
+        ROS_ERROR_STREAM_NAMED(name_, right_wheel_name
+                               << " couldn't be retrieved from model description");
+        return false;
+      }
+
+      ROS_INFO_STREAM("left wheel to origin: " << left_wheel_joint->parent_to_joint_origin_transform.position.x << ","
+                      << left_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
+                      << left_wheel_joint->parent_to_joint_origin_transform.position.z);
+      ROS_INFO_STREAM("right wheel to origin: " << right_wheel_joint->parent_to_joint_origin_transform.position.x << ","
+                      << right_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
+                      << right_wheel_joint->parent_to_joint_origin_transform.position.z);
+
+      wheel_separation_ = euclideanOfVectors(left_wheel_joint->parent_to_joint_origin_transform.position,
+                                             right_wheel_joint->parent_to_joint_origin_transform.position);
+
     }
 
-    ROS_INFO_STREAM("left wheel to origin: " << left_wheel_joint->parent_to_joint_origin_transform.position.x << ","
-                    << left_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
-                    << left_wheel_joint->parent_to_joint_origin_transform.position.z);
-    ROS_INFO_STREAM("right wheel to origin: " << right_wheel_joint->parent_to_joint_origin_transform.position.x << ","
-                    << right_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
-                    << right_wheel_joint->parent_to_joint_origin_transform.position.z);
-
-    wheel_separation_ = euclideanOfVectors(left_wheel_joint->parent_to_joint_origin_transform.position,
-                                           right_wheel_joint->parent_to_joint_origin_transform.position);
-
-    // Get wheel radius
-    if(!getWheelRadius(model->getLink(left_wheel_joint->child_link_name), wheel_radius_))
+    if(lookup_wheel_radius)
     {
-      ROS_ERROR_STREAM_NAMED(name_, "Couldn't retrieve " << left_wheel_name << " wheel radius");
-      return false;
+      // Get wheel radius
+      if(!getWheelRadius(model->getLink(left_wheel_joint->child_link_name), wheel_radius_))
+      {
+        ROS_ERROR_STREAM_NAMED(name_, "Couldn't retrieve " << left_wheel_name << " wheel radius");
+        return false;
+      }
     }
 
-    // Set wheel params for the odometry computation
-    const double ws = wheel_separation_multiplier_ * wheel_separation_;
-    const double wr = wheel_radius_multiplier_     * wheel_radius_;
-    odometry_.setWheelParams(ws, wr);
-    ROS_INFO_STREAM_NAMED(name_,
-                          "Odometry params : wheel separation " << ws
-                          << ", wheel radius " << wr);
     return true;
   }
 

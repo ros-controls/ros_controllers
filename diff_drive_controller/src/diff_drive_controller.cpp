@@ -197,17 +197,14 @@ namespace diff_drive_controller{
     bool lookup_wheel_separation = !controller_nh.getParam("wheel_separation", wheel_separation_);
     bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius_);
 
-    // Short-circuit in case we don't need to look up anything, so we don't have to parse the URDF
-    if(lookup_wheel_separation or lookup_wheel_radius)
+
+    if(!setOdomParamsFromUrdf(root_nh,
+                              left_wheel_names[0],
+                              right_wheel_names[0],
+                              lookup_wheel_separation,
+                              lookup_wheel_radius))
     {
-      if(!setOdomParamsFromUrdf(root_nh, 
-                                left_wheel_names[0],
-                                right_wheel_names[0],
-                                lookup_wheel_separation,
-                                lookup_wheel_radius))
-      {
-        return false;
-      }
+      return false;
     }
 
     // Regardless of how we got the separation and radius, use them
@@ -434,6 +431,12 @@ namespace diff_drive_controller{
                              bool lookup_wheel_separation,
                              bool lookup_wheel_radius)
   {
+    if(not(lookup_wheel_separation or lookup_wheel_radius))
+    {
+      // Short-circuit in case we don't need to look up anything, so we don't have to parse the URDF
+      return true;
+    }
+
     // Parse robot description
     const std::string model_param_name = "robot_description";
     bool res = root_nh.hasParam(model_param_name);

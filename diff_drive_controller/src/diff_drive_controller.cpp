@@ -458,7 +458,7 @@ namespace diff_drive_controller{
                              bool lookup_wheel_separation,
                              bool lookup_wheel_radius)
   {
-    if (not(lookup_wheel_separation or lookup_wheel_radius))
+    if (!(lookup_wheel_separation || lookup_wheel_radius))
     {
       // Short-circuit in case we don't need to look up anything, so we don't have to parse the URDF
       return true;
@@ -483,11 +483,11 @@ namespace diff_drive_controller{
     {
       // Get wheel separation
       if (!left_wheel_joint)
-        {
-          ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
-                                 << " couldn't be retrieved from model description");
-          return false;
-        }
+      {
+        ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
+                               << " couldn't be retrieved from model description");
+        return false;
+      }
 
       if (!right_wheel_joint)
       {

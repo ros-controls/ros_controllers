@@ -58,7 +58,6 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_wrong.test
     test/diff_drive_fail_test.cpp)
   target_link_libraries(diff_drive_fail_test ${catkin_LIBRARIES})
-  add_rostest(test/diff_drive_bad_urdf.test)
   add_rostest_gtest(diff_drive_odom_tf_test
     test/diff_drive_odom_tf.test
     test/diff_drive_odom_tf_test.cpp)

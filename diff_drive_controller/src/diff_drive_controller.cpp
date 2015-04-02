@@ -86,6 +86,38 @@ static bool isCylinder(const boost::shared_ptr<const urdf::Link>& link)
 }
 
 /*
+ * \brief Get vector between initial and root link, searching updwards through URDF link tree
+ * \param [in] initial_link Origin link for vector
+ * \param [in] root_link Root link of model [m]
+ * \param [out] vector Vector from origin to root link [m]
+ * \return true if the vector was calculated, false otherwise
+ */
+static bool getLinkToRootVector(const boost::shared_ptr<const urdf::Link>& initial_link,
+                                const boost::shared_ptr<const urdf::Link>& root_link,
+                                urdf::Vector3& vector)
+{
+  boost::shared_ptr<const urdf::Link> link = initial_link;
+
+  while(link->name != root_link->name)
+  {
+    if(!link->getParent())
+    {
+      ROS_ERROR_STREAM("Link " << initial_link->name << " does not have link " << root_link->name << " as an ancestor");
+      return false;
+    }
+    if(!link->parent_joint)
+    {
+      ROS_ERROR_STREAM("Link " << link->name << " does not have a valid joint to its parent");
+      return false;
+    }
+
+    vector = vector + link->parent_joint->parent_to_joint_origin_transform.position;
+    link = link->getParent();
+  };
+  return true;
+}
+
+/*
  * \brief Get the wheel radius
  * \param [in]  wheel_link   Wheel link
  * \param [out] wheel_radius Wheel radius [m]
@@ -437,15 +469,26 @@ namespace diff_drive_controller{
       return false;
     }
 
-    ROS_INFO_STREAM("left wheel to origin: " << left_wheel_joint->parent_to_joint_origin_transform.position.x << ","
-                    << left_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
-                    << left_wheel_joint->parent_to_joint_origin_transform.position.z);
-    ROS_INFO_STREAM("right wheel to origin: " << right_wheel_joint->parent_to_joint_origin_transform.position.x << ","
-                    << right_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
-                    << right_wheel_joint->parent_to_joint_origin_transform.position.z);
+    urdf::Vector3 left_wheel_to_base, right_wheel_to_base;
+    if(!getLinkToRootVector(model->getLink(left_wheel_joint->child_link_name), model->getLink(base_frame_id_), left_wheel_to_base))
+    {
+      ROS_INFO_STREAM_NAMED(name_, "Couldn't retrieve wheel separation from " << left_wheel_joint->child_link_name
+                                   << " to " << base_frame_id_);
+      return false;
+    }
+    if(!getLinkToRootVector(model->getLink(right_wheel_joint->child_link_name), model->getLink(base_frame_id_), right_wheel_to_base))
+    {
+      ROS_INFO_STREAM_NAMED(name_, "Couldn't retrieve wheel separation from " << right_wheel_joint->child_link_name
+                                   << " to " << base_frame_id_);
+      return false;
+    }
 
-    wheel_separation_ = euclideanOfVectors(left_wheel_joint->parent_to_joint_origin_transform.position,
-                                           right_wheel_joint->parent_to_joint_origin_transform.position);
+    ROS_INFO_STREAM("left wheel to " << base_frame_id_ << " : "  << left_wheel_to_base.x << ","
+                    << left_wheel_to_base.y << ", " << left_wheel_to_base.z);
+    ROS_INFO_STREAM("right wheel to " << base_frame_id_ << " : "  << right_wheel_to_base.x << ","
+                    << right_wheel_to_base.y << ", " << right_wheel_to_base.z);
+
+    wheel_separation_ = euclideanOfVectors(left_wheel_to_base, right_wheel_to_base);
 
     // Get wheel radius
     if(!getWheelRadius(model->getLink(left_wheel_joint->child_link_name), wheel_radius_))

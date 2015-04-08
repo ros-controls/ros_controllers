@@ -71,6 +71,7 @@ public:
   ForwardCommandController() : command_(0) {}
   ~ForwardCommandController() {sub_command_.shutdown();}
 
+  using controller_interface::Controller<T>::init;
   bool init(T* hw, ros::NodeHandle &n)
   {
     std::string joint_name;

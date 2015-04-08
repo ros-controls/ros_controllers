@@ -98,13 +98,14 @@ namespace diff_drive_controller{
   private:
     std::string name_;
 
-    /// Publish rate related:
+    /// Odometry related:
     ros::Duration publish_period_;
     ros::Time last_state_publish_time_;
+    bool open_loop_;
 
     /// Hardware handles:
-    hardware_interface::JointHandle left_wheel_joint_;
-    hardware_interface::JointHandle right_wheel_joint_;
+    std::vector<hardware_interface::JointHandle> left_wheel_joints_;
+    std::vector<hardware_interface::JointHandle> right_wheel_joints_;
 
     /// Velocity command related:
     struct Commands
@@ -123,7 +124,6 @@ namespace diff_drive_controller{
     boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
     boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
     Odometry odometry_;
-    geometry_msgs::TransformStamped odom_frame_;
 
     /// Wheel separation, wrt the midpoint of the wheel width:
     double wheel_separation_;
@@ -141,10 +141,20 @@ namespace diff_drive_controller{
     /// Frame to use for the robot base:
     std::string base_frame_id_;
 
-    // speed limiters
-    Commands last_cmd_;
+    /// Whether to publish odometry to tf or not:
+    bool enable_odom_tf_;
+
+    /// Number of wheel joints:
+    size_t wheel_joints_size_;
+
+    /// Speed limiters:
+    Commands last1_cmd_;
+    Commands last0_cmd_;
     SpeedLimiter limiter_lin_;
     SpeedLimiter limiter_ang_;
+
+    /// Preserve turning radius if limiting speed:
+    bool preserve_turning_radius_;
 
   private:
     /**
@@ -157,6 +167,18 @@ namespace diff_drive_controller{
      * \param command Velocity command message (twist)
      */
     void cmdVelCallback(const geometry_msgs::Twist& command);
+
+    /**
+     * \brief Get the wheel names from a wheel param
+     * \param [in]  controller_nh Controller node handler
+     * \param [in]  wheel_param   Param name
+     * \param [out] wheel_names   Vector with the whel names
+     * \return true if the wheel_param is available and the wheel_names are
+     *        retrieved successfully from the param server; false otherwise
+     */
+    bool getWheelNames(ros::NodeHandle& controller_nh,
+                       const std::string& wheel_param,
+                       std::vector<std::string>& wheel_names);
 
     /**
      * \brief Sets odometry parameters from the URDF, i.e. the wheel radius and separation

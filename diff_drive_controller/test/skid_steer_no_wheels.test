@@ -1,0 +1,16 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find diff_drive_controller)/test/skid_steer_common.launch" />
+
+  <!-- Override with wrong controller configuration -->
+  <rosparam command="load" file="$(find diff_drive_controller)/test/skidsteerbot_no_wheels.yaml" />
+
+  <!-- Controller test -->
+  <test test-name="skid_steer_fail_test"
+        pkg="diff_drive_controller"
+        type="diff_drive_fail_test"
+        time-limit="10.0">
+    <remap from="cmd_vel" to="skidsteerbot_controller/cmd_vel" />
+    <remap from="odom" to="skidsteerbot_controller/odom" />
+  </test>
+</launch>

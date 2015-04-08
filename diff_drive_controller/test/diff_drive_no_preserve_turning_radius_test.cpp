@@ -25,36 +25,54 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-// NOTE: The contents of this file have been taken largely from the ros_control wiki tutorials
+/// \author Enrique Fernández
 
-// ROS
-#include <ros/ros.h>
+#include "test_common.h"
 
-// ros_control
-#include <controller_manager/controller_manager.h>
-
-#include "diffbot.h"
-
-int main(int argc, char **argv)
+// TEST CASES
+TEST_F(DiffDriveControllerTest, testNoPreserveTurningRadius)
 {
-  ros::init(argc, argv, "diffbot");
-  ros::NodeHandle nh;
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(2.0).sleep();
+  // send a big command
+  cmd_vel.linear.x = 10.0;
+  cmd_vel.angular.z = 1.0;
+  publish(cmd_vel);
+  // wait for a while
+  ros::Duration(0.5).sleep();
 
-  Diffbot<> robot;
-  ROS_WARN_STREAM("period: " << robot.getPeriod().toSec());
-  controller_manager::ControllerManager cm(&robot, nh);
+  nav_msgs::Odometry odom = getLastOdom();
 
-  ros::Rate rate(1.0 / robot.getPeriod().toSec());
+  // check if the turning radius is not preserved
+  const double r_cmd_vel = cmd_vel.linear.x / cmd_vel.angular.z;
+  const double r_odom    = odom.twist.twist.linear.x / odom.twist.twist.angular.z;
+
+  EXPECT_GT(fabs(r_cmd_vel - r_odom), 1.0);
+
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+}
+
+int main(int argc, char** argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  ros::init(argc, argv, "diff_drive_no_preserve_turning_radius_test");
+
   ros::AsyncSpinner spinner(1);
   spinner.start();
-  while(ros::ok())
-  {
-    robot.read();
-    cm.update(robot.getTime(), robot.getPeriod());
-    robot.write();
-    rate.sleep();
-  }
+  //ros::Duration(0.5).sleep();
+  int ret = RUN_ALL_TESTS();
   spinner.stop();
-
-  return 0;
+  ros::shutdown();
+  return ret;
 }

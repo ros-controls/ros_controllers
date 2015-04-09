@@ -28,6 +28,7 @@
 /// \author Bence Magyar
 
 #include "test_common.h"
+#include <tf/transform_listener.h>
 
 // TEST CASES
 TEST_F(DiffDriveControllerTest, testForward)
@@ -68,7 +69,7 @@ TEST_F(DiffDriveControllerTest, testForward)
   EXPECT_LT(fabs(roll_new - roll_old), EPS);
   EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
   EXPECT_LT(fabs(yaw_new - yaw_old), EPS);
-  EXPECT_NEAR(fabs(new_odom.twist.twist.linear.x), cmd_vel.linear.x, EPS);
+  EXPECT_NEAR(fabs(new_odom.twist.twist.linear.x), 0.1, EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.linear.z), EPS);
 
@@ -154,6 +155,20 @@ TEST_F(DiffDriveControllerTest, testPreserveTurningRadius)
   cmd_vel.linear.x = 0.0;
   cmd_vel.angular.z = 0.0;
   publish(cmd_vel);
+}
+
+TEST_F(DiffDriveControllerTest, testOdomFrame)
+{
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // set up tf listener
+  tf::TransformListener listener;
+  ros::Duration(2.0).sleep();
+  // check the odom frame exist
+  EXPECT_TRUE(listener.frameExists("odom"));
 }
 
 int main(int argc, char** argv)

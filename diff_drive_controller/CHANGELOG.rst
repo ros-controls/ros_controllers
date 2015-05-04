@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.2 (2015-05-04)
+------------------
 * Allow the wheel separation and radius to be set from different sources
   i.e. one can be set from the URDF, the other from the parameter server.
   If wheel separation and wheel diameter is specified in the parameter server, don't look them up from urdf

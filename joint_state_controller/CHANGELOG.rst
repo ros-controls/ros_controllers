@@ -2,6 +2,9 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.9.1 (2014-11-03)
 ------------------
 * Update package maintainers

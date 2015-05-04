@@ -2,6 +2,11 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Thread-safe and realtime-safe forward controllers.
+* Contributors: Mathias Lüdtke
+
 0.9.1 (2014-11-03)
 ------------------
 * Update package maintainers

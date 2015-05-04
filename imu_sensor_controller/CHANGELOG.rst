@@ -2,6 +2,9 @@
 Changelog for package imu_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.9.1 (2014-11-03)
 ------------------
 

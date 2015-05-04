@@ -2,6 +2,12 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Thread-safe and realtime-safe forward controllers.
+* Complain if list of joints is empty.
+* Contributors: Mathias Lüdtke
+
 0.9.1 (2014-11-03)
 ------------------
 

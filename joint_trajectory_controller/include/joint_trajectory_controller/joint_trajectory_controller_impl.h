@@ -696,18 +696,12 @@ setHoldPosition(const ros::Time& time)
   const unsigned int n_joints = joints_.size();
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-    //    hold_start_state_.position[i]     =  joints_[i].getPosition();
-    //    hold_start_state_.velocity[i]     =  joints_[i].getVelocity();
     hold_start_state_.position[i] = desired_state_.position[i];
     hold_start_state_.velocity[i] = desired_state_.velocity[i];
-
     hold_start_state_.acceleration[i] =  0.0;
 
-    //    hold_end_state_.position[i]       =  joints_[i].getPosition();
-    //    hold_end_state_.velocity[i]       = -joints_[i].getVelocity();
     hold_end_state_.position[i] = desired_state_.position[i];
     hold_end_state_.velocity[i] = -desired_state_.velocity[i];
-
     hold_end_state_.acceleration[i]   =  0.0;
   }
   hold_trajectory_ptr_->front().init(start_time,  hold_start_state_,
@@ -719,19 +713,6 @@ setHoldPosition(const ros::Time& time)
   // Now create segment that goes from current state to one with zero end velocity
   hold_trajectory_ptr_->front().init(start_time, hold_start_state_,
                                      end_time,   hold_end_state_);
-
-  for (unsigned int i = 0; i < n_joints; ++i)
-  {
-    ROS_INFO("Hold start state: %d ( %f, %f, %f ) :: ( %f, %f, %f ) :: %f", 
-	     i,
-	     hold_start_state_.position[i], 
-	     hold_start_state_.velocity[i],
-	     hold_start_state_.acceleration[i],
-	     hold_end_state_.position[i], 
-	     hold_end_state_.velocity[i],
-	     hold_end_state_.acceleration[i],
-	     time.toSec());
-  }
 
   curr_trajectory_box_.set(hold_trajectory_ptr_);
 }

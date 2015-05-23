@@ -39,7 +39,7 @@ TEST_F(DiffDriveControllerTest, testWrongJointName)
     ros::Duration(1.0).sleep();
     secs++;
   }
-  // give up and assume controller load failure after 5 secondds
+  // give up and assume controller load failure after 5 seconds
   EXPECT_GE(secs, 5);
 }
 

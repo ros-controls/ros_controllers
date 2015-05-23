@@ -2,14 +2,17 @@
   <!-- Load common test stuff -->
   <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
 
-  <!-- Load diff-drive limits -->
-  <rosparam command="load" file="$(find diff_drive_controller)/test/diffbot_limits.yaml" />
+  <!-- Make sure to disable odom tf -->
+  <rosparam>
+    diffbot_controller:
+      enable_odom_tf: False
+  </rosparam>
 
   <!-- Controller test -->
-  <test test-name="diff_drive_limits_test"
+  <test test-name="diff_drive_odom_tf_test"
         pkg="diff_drive_controller"
-        type="diff_drive_limits_test"
-        time-limit="120.0">
+        type="diff_drive_odom_tf_test"
+        time-limit="80.0">
     <remap from="cmd_vel" to="diffbot_controller/cmd_vel" />
     <remap from="odom" to="diffbot_controller/odom" />
   </test>

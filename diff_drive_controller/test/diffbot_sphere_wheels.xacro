@@ -3,14 +3,12 @@
 <!--
 Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF-Controller%20Example
 -->
-  <xacro:include filename="$(find diff_drive_controller)/test/wheel.xacro"/>
-
+  <xacro:include filename="$(find diff_drive_controller)/test/sphere_wheel.xacro"/>
   <xacro:property name="deg_to_rad" value="0.01745329251994329577"/>
 
   <!-- Constants for robot dimensions -->
   <xacro:property name="width" value="0.5" /> <!-- Square dimensions (widthxwidth) of beams -->
   <xacro:property name="wheel_radius" value="0.11" /> <!-- Link 1 -->
-  <xacro:property name="thickness" value="0.086" /> <!-- Link 2 -->
   <xacro:property name="axel_offset" value="0.05" /> <!-- Space btw top of beam and the each joint -->
 
   <!-- Links: inertial,visual,collision -->
@@ -57,12 +55,12 @@ Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF
 
 
   <!-- Wheels -->
-  <wheel name="wheel_0" parent="base" radius="${wheel_radius}" thickness="${thickness}">
+  <sphere_wheel name="wheel_0" parent="base" radius="${wheel_radius}">
     <origin xyz="${width/2+axel_offset} 0 0" rpy="${-90 * deg_to_rad} 0 0"/>
-  </wheel>
-  <wheel name="wheel_1" parent="base" radius="${wheel_radius}" thickness="${thickness}">
+  </sphere_wheel>
+  <sphere_wheel name="wheel_1" parent="base" radius="${wheel_radius}">
     <origin xyz="${-width/2+axel_offset} 0 0" rpy="${-90 * deg_to_rad} 0 0"/>
-  </wheel>
+  </sphere_wheel>
 
 
   <!-- Colour -->

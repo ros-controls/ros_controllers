@@ -28,6 +28,7 @@
 /// \author Bence Magyar
 
 #include "test_common.h"
+#include <tf/transform_listener.h>
 
 // TEST CASES
 TEST_F(DiffDriveControllerTest, testForward)
@@ -53,10 +54,12 @@ TEST_F(DiffDriveControllerTest, testForward)
 
   nav_msgs::Odometry new_odom = getLastOdom();
 
-  // check if the robot travelled 1 meter in x, changes in the other fields should be ~~0
-  EXPECT_NEAR(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 1.0, POSITION_TOLERANCE);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
+  // check if the robot traveled 1 meter in XY plane, changes in z should be ~~0
+  const double dx = new_odom.pose.pose.position.x - old_odom.pose.pose.position.x;
+  const double dy = new_odom.pose.pose.position.y - old_odom.pose.pose.position.y;
+  const double dz = new_odom.pose.pose.position.z - old_odom.pose.pose.position.z;
+  EXPECT_NEAR(sqrt(dx*dx + dy*dy), 1.0, POSITION_TOLERANCE);
+  EXPECT_LT(fabs(dz), EPS);
 
   // convert to rpy and test that way
   double roll_old, pitch_old, yaw_old;
@@ -119,6 +122,53 @@ TEST_F(DiffDriveControllerTest, testTurn)
   EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
   EXPECT_NEAR(fabs(new_odom.twist.twist.angular.z), M_PI/10.0, EPS);
+}
+
+TEST_F(DiffDriveControllerTest, testPreserveTurningRadius)
+{
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(2.0).sleep();
+  // send a big command
+  cmd_vel.linear.x = 10.0;
+  cmd_vel.angular.z = 1.0;
+  publish(cmd_vel);
+  // wait for a while
+  ros::Duration(0.5).sleep();
+
+  nav_msgs::Odometry odom = getLastOdom();
+
+  // check if the turning radius is not preserved
+  const double r_cmd_vel = cmd_vel.linear.x / cmd_vel.angular.z;
+  const double r_odom    = odom.twist.twist.linear.x / odom.twist.twist.angular.z;
+
+  EXPECT_LT(fabs(r_cmd_vel - r_odom), EPS);
+
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+}
+
+TEST_F(DiffDriveControllerTest, testOdomFrame)
+{
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // set up tf listener
+  tf::TransformListener listener;
+  ros::Duration(2.0).sleep();
+  // check the odom frame exist
+  EXPECT_TRUE(listener.frameExists("odom"));
 }
 
 int main(int argc, char** argv)

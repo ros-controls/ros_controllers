@@ -30,6 +30,7 @@
   <!--Tests-->
   <build_depend>rostest</build_depend>
 
+  <build_depend>std_srvs</build_depend>
   <build_depend>controller_manager</build_depend>
   <build_depend>xacro</build_depend>
 

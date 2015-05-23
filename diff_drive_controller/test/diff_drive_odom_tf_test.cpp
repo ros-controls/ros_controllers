@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2013, PAL Robotics S.L.
+// Copyright (C) 2014, PAL Robotics S.L.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -25,36 +25,35 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-// NOTE: The contents of this file have been taken largely from the ros_control wiki tutorials
+/// \author Bence Magyar
 
-// ROS
-#include <ros/ros.h>
+#include "test_common.h"
+#include <tf/transform_listener.h>
 
-// ros_control
-#include <controller_manager/controller_manager.h>
-
-#include "diffbot.h"
-
-int main(int argc, char **argv)
+// TEST CASES
+TEST_F(DiffDriveControllerTest, testNoOdomFrame)
 {
-  ros::init(argc, argv, "diffbot");
-  ros::NodeHandle nh;
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // set up tf listener
+  tf::TransformListener listener;
+  ros::Duration(2.0).sleep();
+  // check the odom frame doesn't exist
+  EXPECT_FALSE(listener.frameExists("odom"));
+}
 
-  Diffbot<> robot;
-  ROS_WARN_STREAM("period: " << robot.getPeriod().toSec());
-  controller_manager::ControllerManager cm(&robot, nh);
+int main(int argc, char** argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  ros::init(argc, argv, "diff_drive_odom_tf_test");
 
-  ros::Rate rate(1.0 / robot.getPeriod().toSec());
   ros::AsyncSpinner spinner(1);
   spinner.start();
-  while(ros::ok())
-  {
-    robot.read();
-    cm.update(robot.getTime(), robot.getPeriod());
-    robot.write();
-    rate.sleep();
-  }
+  int ret = RUN_ALL_TESTS();
   spinner.stop();
-
-  return 0;
+  ros::shutdown();
+  return ret;
 }

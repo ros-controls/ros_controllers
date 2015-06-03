@@ -15,6 +15,8 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <build_depend>sophus</build_depend>
+
   <depend>controller_interface</depend>
   <depend>nav_msgs</depend>
   <depend>realtime_tools</depend>

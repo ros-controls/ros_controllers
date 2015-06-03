@@ -350,8 +350,9 @@ namespace diff_drive_controller{
         odom_pub_->msg_.pose.pose.position.x = odometry_.getX();
         odom_pub_->msg_.pose.pose.position.y = odometry_.getY();
         odom_pub_->msg_.pose.pose.orientation = orientation;
-        odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinear();
-        odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngular();
+        odom_pub_->msg_.twist.twist.linear.x  = odometry_.getVx();
+        odom_pub_->msg_.twist.twist.linear.y  = odometry_.getVy();
+        odom_pub_->msg_.twist.twist.angular.z = odometry_.getVyaw();
         odom_pub_->unlockAndPublish();
       }
 
@@ -618,7 +619,6 @@ namespace diff_drive_controller{
         (0)  (0)  (0)  (static_cast<double>(pose_cov_list[3])) (0)  (0)
         (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[4])) (0)
         (0)  (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[5]));
-    odom_pub_->msg_.twist.twist.linear.y  = 0;
     odom_pub_->msg_.twist.twist.linear.z  = 0;
     odom_pub_->msg_.twist.twist.angular.x = 0;
     odom_pub_->msg_.twist.twist.angular.y = 0;

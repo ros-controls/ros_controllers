@@ -9,6 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
     urdf
 )
 
+find_package(sophus REQUIRED)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
@@ -16,6 +18,7 @@ catkin_package(
 
 include_directories(
   include ${catkin_INCLUDE_DIRS}
+  include ${sophus_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)

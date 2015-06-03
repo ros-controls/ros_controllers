@@ -185,7 +185,9 @@ namespace diff_drive_controller{
      */
     bool setOdomParamsFromUrdf(ros::NodeHandle& root_nh,
                                const std::string& left_wheel_name,
-                               const std::string& right_wheel_name);
+                               const std::string& right_wheel_name,
+                               bool lookup_wheel_separation,
+                               bool lookup_wheel_radius);
 
     /**
      * \brief Sets the odometry publishing fields

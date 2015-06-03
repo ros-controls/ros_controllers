@@ -2,6 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.9.2 (2015-05-04)
+------------------
+* rqt_joint_traj_controller: Add missing runtime dep
+* Contributors: Adolfo Rodriguez Tsouroukdissian
+
 0.9.1 (2014-11-03)
 ------------------
 

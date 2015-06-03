@@ -43,6 +43,7 @@
 #define ODOMETRY_H_
 
 #include <ros/time.h>
+#include <sophus/se2.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/rolling_mean.hpp>
@@ -62,6 +63,9 @@ namespace diff_drive_controller
 
     /// Integration function, used to integrate the odometry:
     typedef boost::function<void(double, double)> IntegrationFunction;
+
+    /// SO(2) and SE(2) Lie Groups:
+    typedef Sophus::SE2d SE2;
 
     /**
      * \brief Constructor
@@ -91,8 +95,19 @@ namespace diff_drive_controller
      * \param linear  Linear velocity [m/s]
      * \param angular Angular velocity [rad/s]
      * \param time    Current time
+     * \return true if the odometry is actually updated
      */
-    void updateOpenLoop(double linear, double angular, const ros::Time &time);
+    bool updateOpenLoop(double linear, double angular, const ros::Time &time);
+
+    /**
+     * \brief Update the odometry twist with the previous and current odometry
+     * pose
+     * \param p0   Previous odometry pose
+     * \param p1   Current  odometry pose
+     * \param time Current time
+     * \return true if the odometry twist is actually updated
+     */
+    bool updateTwist(const SE2& p0, const SE2& p1, const ros::Time& time);
 
     /**
      * \brief heading getter
@@ -122,21 +137,30 @@ namespace diff_drive_controller
     }
 
     /**
-     * \brief linear velocity getter
-     * \return linear velocity [m/s]
+     * \brief x velocity getter
+     * \return x velocity [m/s]
      */
-    double getLinear() const
+    double getVx() const
     {
-      return linear_;
+      return v_x_;
     }
 
     /**
-     * \brief angular velocity getter
-     * \return angular velocity [rad/s]
+     * \brief y velocity getter
+     * \return y velocity [m/s]
      */
-    double getAngular() const
+    double getVy() const
     {
-      return angular_;
+      return v_y_;
+    }
+
+    /**
+     * \brief yaw velocity getter
+     * \return yaw velocity [rad/s]
+     */
+    double getVyaw() const
+    {
+      return v_yaw_;
     }
 
     /**
@@ -175,8 +199,9 @@ namespace diff_drive_controller
     double heading_;  // [rad]
 
     /// Current velocity:
-    double linear_;  //   [m/s]
-    double angular_; // [rad/s]
+    double v_x_;   //   [m/s]
+    double v_y_;   //   [m/s]
+    double v_yaw_; // [rad/s]
 
     /// Wheel kinematic parameters [m]:
     double wheel_separation_;
@@ -188,8 +213,9 @@ namespace diff_drive_controller
 
     /// Rolling mean accumulators for the linar and angular velocities:
     size_t velocity_rolling_window_size_;
-    RollingMeanAcc linear_acc_;
-    RollingMeanAcc angular_acc_;
+    RollingMeanAcc v_x_acc_;
+    RollingMeanAcc v_y_acc_;
+    RollingMeanAcc v_yaw_acc_;
 
     /// Integration funcion, used to integrate the odometry:
     IntegrationFunction integrate_fun_;

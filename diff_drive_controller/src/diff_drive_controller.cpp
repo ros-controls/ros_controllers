@@ -34,6 +34,7 @@
 
 /*
  * Author: Bence Magyar
+ * Author: Enrique Fernández
  */
 
 #include <tf/transform_datatypes.h>
@@ -105,13 +106,32 @@ static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link
 
 namespace diff_drive_controller{
 
+  /*
+   * \brief Converts odometry covariance into message format
+   * \param [in]  Covariance matrix
+   * \param [out] Covariance message
+   */
+  static void covarianceToMsg(const Odometry::Covariance& covariance,
+      nav_msgs::Odometry::_pose_type::_covariance_type& msg)
+  {
+    Eigen::Map<Eigen::Matrix<double, 6, 6> > C(msg.data(), 6, 6);
+    C.block(0, 0, 2, 2) = covariance.block(0, 0, 2, 2);
+    C(5, 5) = covariance(2, 2);
+    C(0, 1) = C(1, 0) = covariance(0, 1);
+    C(0, 5) = C(5, 0) = covariance(0, 2);
+    C(1, 5) = C(5, 1) = covariance(1, 2);
+  }
+
   DiffDriveController::DiffDriveController()
     : open_loop_(false)
     , command_struct_()
     , wheel_separation_(0.0)
     , wheel_radius_(0.0)
     , wheel_separation_multiplier_(1.0)
-    , wheel_radius_multiplier_(1.0)
+    , left_wheel_radius_multiplier_(1.0)
+    , right_wheel_radius_multiplier_(1.0)
+    , k_l_(1.0)
+    , k_r_(1.0)
     , cmd_vel_timeout_(0.5)
     , base_frame_id_("base_link")
     , enable_odom_tf_(true)
@@ -171,6 +191,21 @@ namespace diff_drive_controller{
     ROS_INFO_STREAM_NAMED(name_, "Right wheel radius will be multiplied by "
                           << right_wheel_radius_multiplier_ << ".");
 
+    controller_nh.param("k_l", k_l_, k_l_);
+    controller_nh.param("k_r", k_r_, k_r_);
+
+    if (k_l_ <= 0.0)
+    {
+      k_l_ = std::abs(k_l_);
+      ROS_ERROR_STREAM_NAMED(name_, "Left Measurement Covariance multiplier must be positive! Taking absolute value: " << k_l_ << ".");
+    }
+
+    if (k_r_ <= 0.0)
+    {
+      k_r_ = std::abs(k_r_);
+      ROS_ERROR_STREAM_NAMED(name_, "Right Measurement Covariance multiplier must be positive! Taking absolute value: " << k_r_ << ".");
+    }
+
     // Twist command related:
     controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
     ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "
@@ -221,6 +256,11 @@ namespace diff_drive_controller{
                           << ", left wheel radius "  << wrl
                           << ", right wheel radius " << wrr);
 
+    odometry_.setMeasCovarianceParams(k_l_, k_r_);
+    ROS_INFO_STREAM_NAMED(name_,
+                          "Measurement Covariance Model params : k_l " << k_l_
+                          << ", k_r " << k_r_);
+
     setOdomPubFields(root_nh, controller_nh);
 
     // Get the joint object to use in the realtime loop
@@ -263,7 +303,7 @@ namespace diff_drive_controller{
       right_pos /= wheel_joints_size_;
 
       // Estimate linear and angular velocity using joint information
-      odometry_.update(left_pos, right_pos, time);
+      odometry_.updateCloseLoop(left_pos, right_pos, time);
     }
 
     // Publish odometry message
@@ -281,9 +321,14 @@ namespace diff_drive_controller{
         odom_pub_->msg_.pose.pose.position.x = odometry_.getX();
         odom_pub_->msg_.pose.pose.position.y = odometry_.getY();
         odom_pub_->msg_.pose.pose.orientation = orientation;
+
         odom_pub_->msg_.twist.twist.linear.x  = odometry_.getVx();
         odom_pub_->msg_.twist.twist.linear.y  = odometry_.getVy();
         odom_pub_->msg_.twist.twist.angular.z = odometry_.getVyaw();
+
+        covarianceToMsg(odometry_.getPoseCovariance() , odom_pub_->msg_.pose.covariance);
+        covarianceToMsg(odometry_.getTwistCovariance(), odom_pub_->msg_.twist.covariance);
+
         odom_pub_->unlockAndPublish();
       }
 
@@ -503,43 +548,39 @@ namespace diff_drive_controller{
 
   void DiffDriveController::setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
   {
-    // Get and check params for covariances
+    /// Set odometry initial pose covariance
     XmlRpc::XmlRpcValue pose_cov_list;
-    controller_nh.getParam("pose_covariance_diagonal", pose_cov_list);
-    ROS_ASSERT(pose_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
-    ROS_ASSERT(pose_cov_list.size() == 6);
-    for (int i = 0; i < pose_cov_list.size(); ++i)
-      ROS_ASSERT(pose_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+    if (controller_nh.getParam("initial_pose_covariance_diagonal", pose_cov_list))
+    {
+      ROS_ASSERT(pose_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+      ROS_ASSERT(pose_cov_list.size() == 3);
+      for (int i = 0; i < pose_cov_list.size(); ++i)
+        ROS_ASSERT(pose_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
-    XmlRpc::XmlRpcValue twist_cov_list;
-    controller_nh.getParam("twist_covariance_diagonal", twist_cov_list);
-    ROS_ASSERT(twist_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
-    ROS_ASSERT(twist_cov_list.size() == 6);
-    for (int i = 0; i < twist_cov_list.size(); ++i)
-      ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+      Eigen::Vector3d pose_covariance;
+      pose_covariance << static_cast<double>(pose_cov_list[0]),
+                         static_cast<double>(pose_cov_list[1]),
+                         static_cast<double>(pose_cov_list[2]);
+      odometry_.setPoseCovariance(pose_covariance.asDiagonal());
 
-    // Setup odometry realtime publisher + odom message constant fields
+      ROS_INFO_STREAM("Pose covariance initialized to: " << pose_covariance);
+    }
+
+    /// Setup odometry message constant fields
     odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odom", 100));
     odom_pub_->msg_.header.frame_id = "odom";
     odom_pub_->msg_.child_frame_id = base_frame_id_;
+
     odom_pub_->msg_.pose.pose.position.z = 0;
-    odom_pub_->msg_.pose.covariance = boost::assign::list_of
-        (static_cast<double>(pose_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(pose_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(pose_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(pose_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[5]));
+
     odom_pub_->msg_.twist.twist.linear.z  = 0;
     odom_pub_->msg_.twist.twist.angular.x = 0;
     odom_pub_->msg_.twist.twist.angular.y = 0;
-    odom_pub_->msg_.twist.covariance = boost::assign::list_of
-        (static_cast<double>(twist_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(twist_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(twist_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(twist_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
+
+    odom_pub_->msg_.pose.covariance.fill(0);
+    odom_pub_->msg_.twist.covariance.fill(0);
+
+    /// Setup odometry realtime publisher
     tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
     tf_odom_pub_->msg_.transforms.resize(1);
     tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;

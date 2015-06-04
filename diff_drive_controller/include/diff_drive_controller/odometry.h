@@ -43,11 +43,14 @@
 #define ODOMETRY_H_
 
 #include <ros/time.h>
+#include <Eigen/Core>
 #include <sophus/se2.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/rolling_mean.hpp>
 #include <boost/function.hpp>
+
+#include <diff_drive_controller/integrate_function.h>
 
 namespace diff_drive_controller
 {
@@ -61,11 +64,18 @@ namespace diff_drive_controller
   {
   public:
 
-    /// Integration function, used to integrate the odometry:
-    typedef boost::function<void(double, double)> IntegrationFunction;
-
     /// SO(2) and SE(2) Lie Groups:
     typedef Sophus::SE2d SE2;
+
+    /// Covariance matrices:
+    typedef Eigen::Matrix3d Covariance;
+
+    typedef Covariance PoseCovariance;
+    typedef Covariance TwistCovariance;
+
+    typedef Eigen::Matrix2d MeasCovariance;
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     /**
      * \brief Constructor
@@ -82,32 +92,24 @@ namespace diff_drive_controller
     void init(const ros::Time &time);
 
     /**
-     * \brief Updates the odometry class with latest wheels position
+     * \brief Updates the odometry class with latest wheels position, i.e. in
+     * close loop
      * \param left_pos  Left  wheel position [rad]
      * \param right_pos Right wheel position [rad]
      * \param time      Current time
      * \return true if the odometry is actually updated
      */
-    bool update(double left_pos, double right_pos, const ros::Time &time);
+    bool updateCloseLoop(double left_pos, double right_pos, const ros::Time &time);
 
     /**
-     * \brief Updates the odometry class with latest velocity command
-     * \param linear  Linear velocity [m/s]
+     * \brief Updates the odometry class with latest velocity command, i.e. in
+     * open loop
+     * \param linear  Linear  velocity [m/s]
      * \param angular Angular velocity [rad/s]
      * \param time    Current time
      * \return true if the odometry is actually updated
      */
     bool updateOpenLoop(double linear, double angular, const ros::Time &time);
-
-    /**
-     * \brief Update the odometry twist with the previous and current odometry
-     * pose
-     * \param p0   Previous odometry pose
-     * \param p1   Current  odometry pose
-     * \param time Current time
-     * \return true if the odometry twist is actually updated
-     */
-    bool updateTwist(const SE2& p0, const SE2& p1, const ros::Time& time);
 
     /**
      * \brief heading getter
@@ -164,6 +166,33 @@ namespace diff_drive_controller
     }
 
     /**
+     * \brief pose covariance getter
+     * \return pose covariance
+     */
+    const PoseCovariance& getPoseCovariance() const
+    {
+      return pose_covariance_;
+    }
+
+    /**
+     * \brief twist covariance getter
+     * \return twist covariance
+     */
+    const TwistCovariance& getTwistCovariance() const
+    {
+      return twist_covariance_;
+    }
+
+    /**
+     * \brief pose covariance setter
+     * \param pose covariance
+     */
+    void setPoseCovariance(const PoseCovariance& pose_covariance)
+    {
+      pose_covariance_ = pose_covariance;
+    }
+
+    /**
      * \brief Sets the wheel parameters: radius and separation
      * \param wheel_separation   Seperation between left and right wheels [m]
      * \param left_wheel_radius  Left  wheel radius [m]
@@ -172,25 +201,51 @@ namespace diff_drive_controller
     void setWheelParams(double wheel_separation,
         double left_wheel_radius, double right_wheel_radius);
 
+    /**
+     * \brief Sets the Measurement Covariance Model parameters: k_l and k_r
+     * \param k_l Left  wheel velocity multiplier
+     * \param k_r Right wheel velocity multiplier
+     */
+    void setMeasCovarianceParams(double k_l, double k_r);
+
+  private:
+
+    /**
+     * \brief Updates the odometry class with latest velocity command and wheel
+     * velocities
+     * \param v_l  Left  wheel velocity displacement [rad]
+     * \param v_r  Right wheel velocity displacement [rad]
+     * \param time Current time
+     * \return true if the odometry is actually updated
+     */
+    bool update(double v_l, double v_r, const ros::Time& time);
+
+    /**
+     * \brief Update the odometry twist with the previous and current odometry
+     * pose
+     * \param p0   Previous odometry pose
+     * \param p1   Current  odometry pose
+     * \param v_l  Left  wheel velocity displacement [rad]
+     * \param v_r  Right wheel velocity displacement [rad]
+     * \param time Current time
+     * \return true if the odometry twist is actually updated
+     */
+    bool updateTwist(const SE2& p0, const SE2& p1,
+        const double v_l, const double v_r, const ros::Time& time);
+
+    /**
+     * \brief Update the measurement covariance
+     * \param v_l  Left  wheel velocity displacement [rad]
+     * \param v_r  Right wheel velocity displacement [rad]
+     */
+    void updateMeasCovariance(double v_l, double v_r);
+
+
   private:
 
     /// Rolling mean accumulator and window:
     typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
     typedef bacc::tag::rolling_window RollingWindow;
-
-    /**
-     * \brief Integrates the velocities (linear and angular) using 2nd order Runge-Kutta
-     * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
-     * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
-     */
-    void integrateRungeKutta2(double linear, double angular);
-
-    /**
-     * \brief Integrates the velocities (linear and angular) using exact method
-     * \param linear  Linear  velocity   [m] (linear  displacement, i.e. m/s * dt) computed by encoders
-     * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
-     */
-    void integrateExact(double linear, double angular);
 
     /// Current timestamp:
     ros::Time timestamp_;
@@ -205,12 +260,25 @@ namespace diff_drive_controller
     double v_y_;   //   [m/s]
     double v_yaw_; // [rad/s]
 
+    /// Pose covariance:
+    PoseCovariance pose_covariance_;
+
+    /// Twist covariance:
+    TwistCovariance twist_covariance_;
+
+    /// Measurement covariance:
+    MeasCovariance meas_covariance_;
+
     /// Wheel kinematic parameters [m]:
     double wheel_separation_;
     double left_wheel_radius_;
     double right_wheel_radius_;
 
-    /// Previou wheel position/state [rad]:
+    /// Measurement Covariance Model parameters:
+    double k_l_;
+    double k_r_;
+
+    /// Previous wheel position/state [rad]:
     double left_wheel_old_pos_;
     double right_wheel_old_pos_;
 
@@ -221,7 +289,7 @@ namespace diff_drive_controller
     RollingMeanAcc v_yaw_acc_;
 
     /// Integration funcion, used to integrate the odometry:
-    IntegrationFunction integrate_fun_;
+    boost::shared_ptr<IntegrateFunction> integrate_fun_;
   };
 }
 

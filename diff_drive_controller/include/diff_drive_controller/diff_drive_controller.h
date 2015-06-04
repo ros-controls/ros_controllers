@@ -137,6 +137,10 @@ namespace diff_drive_controller{
     double left_wheel_radius_multiplier_;
     double right_wheel_radius_multiplier_;
 
+    /// Measurement Covariance Model multipliers:
+    double k_l_;
+    double k_r_;
+
     /// Timeout to consider cmd_vel commands old:
     double cmd_vel_timeout_;
 

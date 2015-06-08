@@ -83,8 +83,8 @@ namespace diff_drive_controller
   bool Odometry::update(double left_pos, double right_pos, const ros::Time &time)
   {
     /// Get current wheel joint positions:
-    const double left_wheel_cur_pos  = left_pos  * wheel_radius_;
-    const double right_wheel_cur_pos = right_pos * wheel_radius_;
+    const double left_wheel_cur_pos  = left_pos  * left_wheel_radius_;
+    const double right_wheel_cur_pos = right_pos * right_wheel_radius_;
 
     /// Estimate velocity of wheels using old and current position:
     const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
@@ -164,10 +164,12 @@ namespace diff_drive_controller
     return true;
   }
 
-  void Odometry::setWheelParams(double wheel_separation, double wheel_radius)
+  void Odometry::setWheelParams(double wheel_separation,
+      double left_wheel_radius, double right_wheel_radius)
   {
-    wheel_separation_ = wheel_separation;
-    wheel_radius_     = wheel_radius;
+    wheel_separation_   = wheel_separation;
+    left_wheel_radius_  = left_wheel_radius;
+    right_wheel_radius_ = right_wheel_radius;
   }
 
   void Odometry::integrateRungeKutta2(double linear, double angular)

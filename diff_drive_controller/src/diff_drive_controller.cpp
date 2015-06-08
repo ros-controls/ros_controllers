@@ -163,9 +163,13 @@ namespace diff_drive_controller{
     ROS_INFO_STREAM_NAMED(name_, "Wheel separation will be multiplied by "
                           << wheel_separation_multiplier_ << ".");
 
-    controller_nh.param("wheel_radius_multiplier", wheel_radius_multiplier_, wheel_radius_multiplier_);
-    ROS_INFO_STREAM_NAMED(name_, "Wheel radius will be multiplied by "
-                          << wheel_radius_multiplier_ << ".");
+    controller_nh.param("left_wheel_radius_multiplier", left_wheel_radius_multiplier_, left_wheel_radius_multiplier_);
+    ROS_INFO_STREAM_NAMED(name_, "Left wheel radius will be multiplied by "
+                          << left_wheel_radius_multiplier_ << ".");
+
+    controller_nh.param("right_wheel_radius_multiplier", right_wheel_radius_multiplier_, right_wheel_radius_multiplier_);
+    ROS_INFO_STREAM_NAMED(name_, "Right wheel radius will be multiplied by "
+                          << right_wheel_radius_multiplier_ << ".");
 
     // Twist command related:
     controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
@@ -208,12 +212,14 @@ namespace diff_drive_controller{
 
     // Regardless of how we got the separation and radius, use them
     // to set the odometry parameters
-    const double ws = wheel_separation_multiplier_ * wheel_separation_;
-    const double wr = wheel_radius_multiplier_     * wheel_radius_;
-    odometry_.setWheelParams(ws, wr);
+    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
+    const double wrl = left_wheel_radius_multiplier_  * wheel_radius_;
+    const double wrr = right_wheel_radius_multiplier_ * wheel_radius_;
+    odometry_.setWheelParams(ws, wrl, wrr);
     ROS_INFO_STREAM_NAMED(name_,
                           "Odometry params : wheel separation " << ws
-                          << ", wheel radius " << wr);
+                          << ", left wheel radius "  << wrl
+                          << ", right wheel radius " << wrr);
 
     setOdomPubFields(root_nh, controller_nh);
 
@@ -312,12 +318,13 @@ namespace diff_drive_controller{
     last_cmd_ = curr_cmd;
 
     // Apply multipliers:
-    const double ws = wheel_separation_multiplier_ * wheel_separation_;
-    const double wr = wheel_radius_multiplier_     * wheel_radius_;
+    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
+    const double wrl = left_wheel_radius_multiplier_  * wheel_radius_;
+    const double wrr = right_wheel_radius_multiplier_ * wheel_radius_;
 
     // Compute wheels velocities:
-    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wr;
-    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wr;
+    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wrl;
+    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wrr;
 
     // Set wheels velocities:
     for (size_t i = 0; i < wheel_joints_size_; ++i)

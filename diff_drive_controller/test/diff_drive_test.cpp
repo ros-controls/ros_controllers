@@ -150,7 +150,6 @@ TEST_F(DiffDriveControllerTest, testTurn)
   EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
   EXPECT_NEAR(fabs(new_odom.twist.twist.angular.z), M_PI/10.0, EPS);
 
-<<<<<<< HEAD
   // propagation
   double x = old_odom.pose.pose.position.x;
   double y = old_odom.pose.pose.position.y;

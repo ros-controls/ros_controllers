@@ -8,7 +8,8 @@ find_package(catkin REQUIRED
     urdf
     realtime_tools
     tf
-    nav_msgs)
+    nav_msgs
+    roslint)
 
 find_package(Eigen REQUIRED)
 
@@ -25,6 +26,8 @@ include_directories(
   include ${EIGEN_INCLUDE_DIRS}
   include ${sophus_INCLUDE_DIRS}
   include ${CERES_INCLUDE_DIRS})
+
+roslint_cpp()
 
 add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${CERES_LIBRARIES})

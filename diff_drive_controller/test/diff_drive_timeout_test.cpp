@@ -33,7 +33,7 @@
 TEST_F(DiffDriveControllerTest, testTimeout)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }

@@ -76,6 +76,6 @@ namespace diff_drive_controller
     }
   };
 
-} // namespace diff_drive_controller
+}  // namespace diff_drive_controller
 
 #endif /* RUNGE_KUTTA_2_INTEGRATE_FUNCTOR_H_ */

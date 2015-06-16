@@ -36,6 +36,9 @@
  * Author: Enrique Fernández
  */
 
+#ifndef DIFF_DRIVE_CONTROLLER_H
+#define DIFF_DRIVE_CONTROLLER_H
+
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
@@ -49,16 +52,22 @@
 #include <diff_drive_controller/odometry.h>
 #include <diff_drive_controller/speed_limiter.h>
 
-namespace diff_drive_controller{
+#include <vector>
+#include <string>
+
+namespace diff_drive_controller
+{
 
   /**
    * This class makes some assumptions on the model of the robot:
    *  - the rotation axes of wheels are collinear
    *  - the wheels are identical in radius
-   * Additional assumptions to not duplicate information readily available in the URDF:
+   * Additional assumptions to not duplicate information readily available in
+   * the URDF:
    *  - the wheels have the same parent frame
    *  - a wheel collision geometry is a cylinder in the urdf
-   *  - a wheel joint frame center's vertical projection on the floor must lie within the contact patch
+   *  - a wheel joint frame center's vertical projection on the floor must lie
+   *  within the contact patch
    */
   class DiffDriveController
       : public controller_interface::Controller<hardware_interface::VelocityJointInterface>
@@ -77,7 +86,8 @@ namespace diff_drive_controller{
               ros::NodeHandle &controller_nh);
 
     /**
-     * \brief Updates controller, i.e. computes the odometry and sets the new velocity commands
+     * \brief Updates controller, i.e. computes the odometry and sets the new
+     * velocity commands
      * \param time   Current time
      * \param period Time since the last called to update
      */
@@ -183,7 +193,8 @@ namespace diff_drive_controller{
                        std::vector<std::string>& wheel_names);
 
     /**
-     * \brief Sets odometry parameters from the URDF, i.e. the wheel radius and separation
+     * \brief Sets odometry parameters from the URDF, i.e. the wheel radius and
+     * separation
      * \param root_nh Root node handle
      * \param left_wheel_name Name of the left wheel joint
      * \param right_wheel_name Name of the right wheel joint
@@ -199,9 +210,13 @@ namespace diff_drive_controller{
      * \param root_nh Root node handle
      * \param controller_nh Node handle inside the controller namespace
      */
-    void setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
+    void setOdomPubFields(
+        ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
 
   };
 
-  PLUGINLIB_EXPORT_CLASS(diff_drive_controller::DiffDriveController, controller_interface::ControllerBase);
-} // namespace diff_drive_controller
+  PLUGINLIB_EXPORT_CLASS(diff_drive_controller::DiffDriveController,
+      controller_interface::ControllerBase);
+}  // namespace diff_drive_controller
+
+#endif // DIFF_DRIVE_CONTROLLER_H

@@ -158,8 +158,8 @@ namespace diff_drive_controller
   {
     /// We cannot estimate the speed with very small time intervals:
     const double dt = (time - timestamp_).toSec();
-    if(dt < 0.0001)
-      return false; // Interval too small to integrate with
+    if (dt < 0.0001)
+      return false;
 
     timestamp_ = time;
 
@@ -240,4 +240,4 @@ namespace diff_drive_controller
     k_r_ = k_r;
   }
 
-} // namespace diff_drive_controller
+}  // namespace diff_drive_controller

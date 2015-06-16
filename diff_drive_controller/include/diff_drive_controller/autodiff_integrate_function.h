@@ -140,6 +140,6 @@ namespace diff_drive_controller
       boost::shared_ptr< IntegrateFunctor<Functor> > functor_;
   };
 
-} // namespace diff_drive_controller
+}  // namespace diff_drive_controller
 
 #endif /* AUTODIFF_INTEGRATE_FUNCTION_H_ */

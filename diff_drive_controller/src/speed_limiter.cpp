@@ -95,4 +95,4 @@ namespace diff_drive_controller
     }
   }
 
-} // namespace diff_drive_controller
+}  // namespace diff_drive_controller

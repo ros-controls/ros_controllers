@@ -63,7 +63,6 @@ namespace diff_drive_controller
   class Odometry
   {
   public:
-
     /// SO(2) and SE(2) Lie Groups:
     typedef Sophus::SE2d SE2;
 
@@ -83,7 +82,7 @@ namespace diff_drive_controller
      * Value will be set to zero
      * \param velocity_rolling_window_size Rolling window size used to compute the velocity mean
      */
-    Odometry(size_t velocity_rolling_window_size = 10);
+    explicit Odometry(size_t velocity_rolling_window_size = 10);
 
     /**
      * \brief Initialize the odometry
@@ -209,7 +208,6 @@ namespace diff_drive_controller
     void setMeasCovarianceParams(double k_l, double k_r);
 
   private:
-
     /**
      * \brief Updates the odometry class with latest velocity command and wheel
      * velocities
@@ -242,7 +240,6 @@ namespace diff_drive_controller
 
 
   private:
-
     /// Rolling mean accumulator and window:
     typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
     typedef bacc::tag::rolling_window RollingWindow;

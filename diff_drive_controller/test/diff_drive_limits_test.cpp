@@ -33,7 +33,7 @@
 TEST_F(DiffDriveControllerTest, testLinearAccelerationLimits)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }
@@ -95,7 +95,7 @@ TEST_F(DiffDriveControllerTest, testLinearVelocityLimits)
 TEST_F(DiffDriveControllerTest, testAngularAccelerationLimits)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }
@@ -126,7 +126,7 @@ TEST_F(DiffDriveControllerTest, testAngularAccelerationLimits)
 TEST_F(DiffDriveControllerTest, testAngularVelocityLimits)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }
@@ -161,7 +161,6 @@ int main(int argc, char** argv)
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
-  //ros::Duration(0.5).sleep();
   int ret = RUN_ALL_TESTS();
   spinner.stop();
   ros::shutdown();

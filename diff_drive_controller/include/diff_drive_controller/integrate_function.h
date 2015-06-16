@@ -99,6 +99,6 @@ namespace diff_drive_controller
             double left_wheel_radius, double right_wheel_radius) = 0;
   };
 
-} // namespace diff_drive_controller
+}  // namespace diff_drive_controller
 
 #endif /* INTEGRATE_FUNCTION_H_ */

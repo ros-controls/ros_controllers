@@ -36,8 +36,8 @@
  * Author: Enrique Fernández
  */
 
-#ifndef SPEED_LIMITER_H
-#define SPEED_LIMITER_H
+#ifndef DIFF_DRIVE_CONTROLLER_SPEED_LIMITER_H
+#define DIFF_DRIVE_CONTROLLER_SPEED_LIMITER_H
 
 namespace diff_drive_controller
 {
@@ -45,7 +45,6 @@ namespace diff_drive_controller
   class SpeedLimiter
   {
   public:
-
     /**
      * \brief Constructor
      * \param [in] has_velocity_limits     if true, applies velocity limits
@@ -61,8 +60,7 @@ namespace diff_drive_controller
       double min_velocity = 0.0,
       double max_velocity = 0.0,
       double min_acceleration = 0.0,
-      double max_acceleration = 0.0
-    );
+      double max_acceleration = 0.0);
 
     /**
      * \brief Limit the velocity and acceleration
@@ -100,6 +98,6 @@ namespace diff_drive_controller
     double max_acceleration;
   };
 
-} // namespace diff_drive_controller
+}  // namespace diff_drive_controller
 
-#endif // SPEED_LIMITER_H
+#endif  // DIFF_DRIVE_CONTROLLER_SPEED_LIMITER_H

@@ -80,6 +80,6 @@ namespace diff_drive_controller
   };
 
 
-} // namespace diff_drive_controller
+}  // namespace diff_drive_controller
 
 #endif /* EXACT_INTEGRATE_FUNCTOR_H_ */

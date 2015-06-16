@@ -34,7 +34,7 @@
 TEST_F(DiffDriveControllerTest, testForward)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }
@@ -108,7 +108,7 @@ TEST_F(DiffDriveControllerTest, testForward)
 TEST_F(DiffDriveControllerTest, testTurn)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }
@@ -183,7 +183,7 @@ TEST_F(DiffDriveControllerTest, testTurn)
 TEST_F(DiffDriveControllerTest, testMoveX)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }
@@ -229,7 +229,7 @@ TEST_F(DiffDriveControllerTest, testMoveX)
 TEST_F(DiffDriveControllerTest, testMoveY)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }
@@ -275,7 +275,7 @@ TEST_F(DiffDriveControllerTest, testMoveY)
 TEST_F(DiffDriveControllerTest, testOdomFrame)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }
@@ -293,7 +293,6 @@ int main(int argc, char** argv)
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
-  //ros::Duration(0.5).sleep();
   int ret = RUN_ALL_TESTS();
   spinner.stop();
   ros::shutdown();

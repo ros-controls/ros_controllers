@@ -36,6 +36,12 @@
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/tf.h>
+#include <control_toolbox/pid.h>
+#include <angles/angles.h>
+
+#include <diff_drive_controller/odometry.h>
+
+#include <Eigen/Dense>
 
 // Floating-point value comparison threshold
 const double EPS = 0.01;
@@ -62,6 +68,45 @@ public:
   void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
   bool isControllerAlive(){ return (odom_sub.getNumPublishers() > 0) && (cmd_pub.getNumSubscribers() > 0); }
 
+  void goToYaw(double target,
+      double tolerance = ORIENTATION_TOLERANCE,
+      double control_frequency = 10.0)
+  {
+    // Setup PID controller with gains: K_p, K_i, K_d, i_max, i_min
+    control_toolbox::Pid pid(1.0, 0.1, 0.0, 1.0, -1.0);
+
+    // Control loop:
+    ros::Rate r(control_frequency);
+    const ros::Duration dt = r.expectedCycleTime();
+    while (true)
+    {
+      // Retrieve current state:
+      const nav_msgs::Odometry odom = getLastOdom();
+      const double yaw = tf::getYaw(odom.pose.pose.orientation);
+
+      // Compute error wrt target:
+      const double error = angles::shortest_angular_distance(yaw, target);
+
+      // Exit when target reach up to some tolerance:
+      if (error < tolerance)
+      {
+        break;
+      }
+
+      // Command new velocity control signal using the PID controller:
+      geometry_msgs::Twist cmd_vel;
+      cmd_vel.angular.z = pid.computeCommand(error, dt);
+      publish(cmd_vel);
+
+      r.sleep();
+    }
+
+    // Zero out (stop) velocity control signal:
+    geometry_msgs::Twist cmd_vel;
+    cmd_vel.angular.z = 0.0;
+    publish(cmd_vel);
+  }
+
 private:
   ros::NodeHandle nh;
   ros::Publisher cmd_pub;
@@ -83,3 +128,84 @@ inline tf::Quaternion tfQuatFromGeomQuat(const geometry_msgs::Quaternion& quat)
   return tf::Quaternion(quat.x, quat.y, quat.z, quat.w);
 }
 
+void msgToCovariance(
+    const nav_msgs::Odometry::_pose_type::_covariance_type& msg,
+    diff_drive_controller::Odometry::Covariance& covariance)
+{
+  const Eigen::Map<const Eigen::Matrix<double, 6, 6> > C(msg.data(), 6, 6);
+  covariance.block(0, 0, 2, 2) = C.block(0, 0, 2, 2);
+  covariance(2, 2) = C(5, 5);
+
+  // We don't want to ensure symmetry here, for the sake of testing:
+  covariance(0, 1) = C(0, 1);
+  covariance(1, 0) = C(1, 0);
+
+  covariance(0, 2) = C(0, 5);
+  covariance(2, 0) = C(5, 0);
+
+  covariance(1, 2) = C(1, 5);
+  covariance(2, 1) = C(5, 1);
+}
+
+/**
+ * @brief Check is a matrix M is symmetric, i.e. M' M = Id or low(M) = up(M)
+ * where low and up are the lower and upper triangular matrices of M
+ * @param M Square matrix
+ * @return True if the matrix is symmetric
+ */
+template <typename T, int N>
+bool isSymmetric(const Eigen::Matrix<T, N, N>& M)
+{
+  // Note that triangularView doesn't help to much to simplify the check,
+  // so we iterate on the lower and upper triangular matrixes directly:
+  for (size_t i = 0; i < N - 1; ++i)
+  {
+    for (size_t j = i + 1; j < N; ++j)
+    {
+      if (std::abs(M(i, j) - M(j, i)) > EPS)
+      {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
+ * @brief Check if a matrix M is positive definite, i.e. x* M x >= 0
+ * @param M Square matrix
+ * @return True if the matrix is positive definite
+ */
+template <typename T, int N>
+bool isPositiveDefinite(const Eigen::Matrix<T, N, N>& M)
+{
+  if (isSymmetric(M))
+  {
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix<T, N, N> > eigensolver(M);
+
+    if (eigensolver.info() == Eigen::Success)
+    {
+      return (eigensolver.eigenvalues().array() > T(-EPS)).all();
+    }
+
+    return false;
+  }
+
+  return false;
+}
+
+void propagate(double& x, double& y, double& yaw,
+    double v_x, double v_y, double v_yaw, double dt)
+{
+  const double sin_yaw = std::sin(yaw);
+  const double cos_yaw = std::cos(yaw);
+
+  // (x, y) = (x, y) + R(yaw) * (v_x, v_y) * dt
+  x += (v_x * cos_yaw - v_y * sin_yaw) * dt;
+  y += (v_x * sin_yaw + v_y * cos_yaw) * dt;
+
+  // yaw = yaw + v_yaw * dt (normalized)
+  yaw += v_yaw * dt;
+  yaw = angles::normalize_angle(yaw);
+}

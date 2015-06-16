@@ -38,8 +38,20 @@ install(FILES diff_drive_controller_plugins.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 if (CATKIN_ENABLE_TESTING)
-  find_package(catkin COMPONENTS rostest std_srvs controller_manager tf)
-  include_directories(include ${catkin_INCLUDE_DIRS})
+  find_package(catkin
+    COMPONENTS
+      rostest
+      std_srvs
+      controller_manager
+      control_toolbox
+      tf)
+
+  find_package(Eigen COMPONENTS)
+
+  include_directories(
+    include
+    ${catkin_INCLUDE_DIRS}
+    ${EIGEN_INCLUDE_DIRS})
 
   add_executable(diffbot test/diffbot.cpp)
   target_link_libraries(diffbot ${catkin_LIBRARIES})

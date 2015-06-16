@@ -5,3 +5,5 @@ diffbot_controller:
   publish_rate: 50.0 # defaults to 50
   initial_pose_covariance_diagonal:  [0.001, 0.001, 0.01]
   cmd_vel_timeout: 20.0 # we test this separately, give plenty for the other tests
+  k_l: 0.01
+  k_r: 0.01

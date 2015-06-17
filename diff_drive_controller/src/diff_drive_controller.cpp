@@ -34,6 +34,7 @@
 
 /*
  * Author: Bence Magyar
+ * Author: Enrique Fernández
  */
 
 #include <tf/transform_datatypes.h>
@@ -46,9 +47,9 @@
 
 static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3& vec2)
 {
-  return std::sqrt(std::pow(vec1.x-vec2.x,2) +
-                   std::pow(vec1.y-vec2.y,2) +
-                   std::pow(vec1.z-vec2.z,2));
+  return std::sqrt(std::pow(vec1.x-vec2.x, 2) +
+                   std::pow(vec1.y-vec2.y, 2) +
+                   std::pow(vec1.z-vec2.z, 2));
 }
 
 /*
@@ -58,27 +59,32 @@ static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3&
  */
 static bool isCylinder(const boost::shared_ptr<const urdf::Link>& link)
 {
-  if(!link)
+  if (!link)
   {
     ROS_ERROR("Link == NULL.");
     return false;
   }
 
-  if(!link->collision)
+  if (!link->collision)
   {
-    ROS_ERROR_STREAM("Link " << link->name << " does not have collision description. Add collision description for link to urdf.");
+    ROS_ERROR_STREAM("Link " << link->name <<
+        " does not have collision description. "
+        "Add collision description for link to urdf.");
     return false;
   }
 
-  if(!link->collision->geometry)
+  if (!link->collision->geometry)
   {
-    ROS_ERROR_STREAM("Link " << link->name << " does not have collision geometry description. Add collision geometry description for link to urdf.");
+    ROS_ERROR_STREAM("Link " << link->name <<
+        " does not have collision geometry description. "
+        "Add collision geometry description for link to urdf.");
     return false;
   }
 
-  if(link->collision->geometry->type != urdf::Geometry::CYLINDER)
+  if (link->collision->geometry->type != urdf::Geometry::CYLINDER)
   {
-    ROS_ERROR_STREAM("Link " << link->name << " does not have cylinder geometry");
+    ROS_ERROR_STREAM("Link " << link->name <<
+        " does not have cylinder geometry");
     return false;
   }
 
@@ -91,19 +97,40 @@ static bool isCylinder(const boost::shared_ptr<const urdf::Link>& link)
  * \param [out] wheel_radius Wheel radius [m]
  * \return true if the wheel radius was found; false otherwise
  */
-static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link, double& wheel_radius)
+static bool getWheelRadius(
+    const boost::shared_ptr<const urdf::Link>& wheel_link,
+    double& wheel_radius)
 {
-  if(!isCylinder(wheel_link))
+  if (!isCylinder(wheel_link))
   {
-    ROS_ERROR_STREAM("Wheel link " << wheel_link->name << " is NOT modeled as a cylinder!");
+    ROS_ERROR_STREAM("Wheel link " << wheel_link->name <<
+        " is NOT modeled as a cylinder!");
     return false;
   }
 
-  wheel_radius = (static_cast<urdf::Cylinder*>(wheel_link->collision->geometry.get()))->radius;
+  wheel_radius = (static_cast<urdf::Cylinder*>(
+        wheel_link->collision->geometry.get()))->radius;
   return true;
 }
 
-namespace diff_drive_controller{
+namespace diff_drive_controller
+{
+
+  /*
+   * \brief Converts odometry covariance into message format
+   * \param [in]  Covariance matrix
+   * \param [out] Covariance message
+   */
+  static void covarianceToMsg(const Odometry::Covariance& covariance,
+      nav_msgs::Odometry::_pose_type::_covariance_type& msg)
+  {
+    Eigen::Map<Eigen::Matrix<double, 6, 6> > C(msg.data(), 6, 6);
+    C.block(0, 0, 2, 2) = covariance.block(0, 0, 2, 2);
+    C(5, 5) = covariance(2, 2);
+    C(0, 1) = C(1, 0) = covariance(0, 1);
+    C(0, 5) = C(5, 0) = covariance(0, 2);
+    C(1, 5) = C(5, 1) = covariance(1, 2);
+  }
 
   DiffDriveController::DiffDriveController()
     : open_loop_(false)
@@ -111,7 +138,10 @@ namespace diff_drive_controller{
     , wheel_separation_(0.0)
     , wheel_radius_(0.0)
     , wheel_separation_multiplier_(1.0)
-    , wheel_radius_multiplier_(1.0)
+    , left_wheel_radius_multiplier_(1.0)
+    , right_wheel_radius_multiplier_(1.0)
+    , k_l_(1.0)
+    , k_r_(1.0)
     , cmd_vel_timeout_(0.5)
     , base_frame_id_("base_link")
     , enable_odom_tf_(true)
@@ -129,7 +159,7 @@ namespace diff_drive_controller{
 
     // Get joint names from the parameter server
     std::vector<std::string> left_wheel_names, right_wheel_names;
-    if (!getWheelNames(controller_nh, "left_wheel", left_wheel_names) or
+    if (!getWheelNames(controller_nh, "left_wheel", left_wheel_names) ||
         !getWheelNames(controller_nh, "right_wheel", right_wheel_names))
     {
       return false;
@@ -159,24 +189,52 @@ namespace diff_drive_controller{
 
     controller_nh.param("open_loop", open_loop_, open_loop_);
 
-    controller_nh.param("wheel_separation_multiplier", wheel_separation_multiplier_, wheel_separation_multiplier_);
+    controller_nh.param("wheel_separation_multiplier",
+        wheel_separation_multiplier_, wheel_separation_multiplier_);
     ROS_INFO_STREAM_NAMED(name_, "Wheel separation will be multiplied by "
                           << wheel_separation_multiplier_ << ".");
 
-    controller_nh.param("wheel_radius_multiplier", wheel_radius_multiplier_, wheel_radius_multiplier_);
-    ROS_INFO_STREAM_NAMED(name_, "Wheel radius will be multiplied by "
-                          << wheel_radius_multiplier_ << ".");
+    controller_nh.param("left_wheel_radius_multiplier",
+        left_wheel_radius_multiplier_, left_wheel_radius_multiplier_);
+    ROS_INFO_STREAM_NAMED(name_, "Left wheel radius will be multiplied by "
+                          << left_wheel_radius_multiplier_ << ".");
+
+    controller_nh.param("right_wheel_radius_multiplier",
+        right_wheel_radius_multiplier_, right_wheel_radius_multiplier_);
+    ROS_INFO_STREAM_NAMED(name_, "Right wheel radius will be multiplied by "
+                          << right_wheel_radius_multiplier_ << ".");
+
+    controller_nh.param("k_l", k_l_, k_l_);
+    controller_nh.param("k_r", k_r_, k_r_);
+
+    if (k_l_ <= 0.0)
+    {
+      k_l_ = std::abs(k_l_);
+      ROS_ERROR_STREAM_NAMED(name_,
+          "Left Measurement Covariance multiplier must be positive! "
+          "Taking absolute value: " << k_l_ << ".");
+    }
+
+    if (k_r_ <= 0.0)
+    {
+      k_r_ = std::abs(k_r_);
+      ROS_ERROR_STREAM_NAMED(name_,
+          "Right Measurement Covariance multiplier must be positive! "
+          "Taking absolute value: " << k_r_ << ".");
+    }
 
     // Twist command related:
     controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
-    ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "
-                          << cmd_vel_timeout_ << "s.");
+    ROS_INFO_STREAM_NAMED(name_,
+        "Velocity commands will be considered old if they are older than "
+        << cmd_vel_timeout_ << "s.");
 
     controller_nh.param("base_frame_id", base_frame_id_, base_frame_id_);
     ROS_INFO_STREAM_NAMED(name_, "Base frame_id set to " << base_frame_id_);
 
     controller_nh.param("enable_odom_tf", enable_odom_tf_, enable_odom_tf_);
-    ROS_INFO_STREAM_NAMED(name_, "Publishing to tf is " << (enable_odom_tf_?"enabled":"disabled"));
+    ROS_INFO_STREAM_NAMED(name_,
+        "Publishing to tf is " << (enable_odom_tf_?"enabled":"disabled"));
 
     // Velocity and acceleration limits:
     controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
@@ -197,23 +255,30 @@ namespace diff_drive_controller{
     bool lookup_wheel_separation = !controller_nh.getParam("wheel_separation", wheel_separation_);
     bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius_);
 
-    if(!setOdomParamsFromUrdf(root_nh,
-                              left_wheel_names[0],
-                              right_wheel_names[0],
-                              lookup_wheel_separation,
-                              lookup_wheel_radius))
+    if (!setOdomParamsFromUrdf(root_nh,
+                               left_wheel_names[0],
+                               right_wheel_names[0],
+                               lookup_wheel_separation,
+                               lookup_wheel_radius))
     {
       return false;
     }
 
     // Regardless of how we got the separation and radius, use them
     // to set the odometry parameters
-    const double ws = wheel_separation_multiplier_ * wheel_separation_;
-    const double wr = wheel_radius_multiplier_     * wheel_radius_;
-    odometry_.setWheelParams(ws, wr);
+    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
+    const double wrl = left_wheel_radius_multiplier_  * wheel_radius_;
+    const double wrr = right_wheel_radius_multiplier_ * wheel_radius_;
+    odometry_.setWheelParams(ws, wrl, wrr);
     ROS_INFO_STREAM_NAMED(name_,
                           "Odometry params : wheel separation " << ws
-                          << ", wheel radius " << wr);
+                          << ", left wheel radius "  << wrl
+                          << ", right wheel radius " << wrr);
+
+    odometry_.setMeasCovarianceParams(k_l_, k_r_);
+    ROS_INFO_STREAM_NAMED(name_,
+                          "Measurement Covariance Model params : k_l " << k_l_
+                          << ", k_r " << k_r_);
 
     setOdomPubFields(root_nh, controller_nh);
 
@@ -257,11 +322,11 @@ namespace diff_drive_controller{
       right_pos /= wheel_joints_size_;
 
       // Estimate linear and angular velocity using joint information
-      odometry_.update(left_pos, right_pos, time);
+      odometry_.updateCloseLoop(left_pos, right_pos, time);
     }
 
     // Publish odometry message
-    if(last_state_publish_time_ + publish_period_ < time)
+    if (last_state_publish_time_ + publish_period_ < time)
     {
       last_state_publish_time_ += publish_period_;
       // Compute and store orientation info
@@ -269,15 +334,20 @@ namespace diff_drive_controller{
             tf::createQuaternionMsgFromYaw(odometry_.getHeading()));
 
       // Populate odom message and publish
-      if(odom_pub_->trylock())
+      if (odom_pub_->trylock())
       {
         odom_pub_->msg_.header.stamp = time;
         odom_pub_->msg_.pose.pose.position.x = odometry_.getX();
         odom_pub_->msg_.pose.pose.position.y = odometry_.getY();
         odom_pub_->msg_.pose.pose.orientation = orientation;
+
         odom_pub_->msg_.twist.twist.linear.x  = odometry_.getVx();
         odom_pub_->msg_.twist.twist.linear.y  = odometry_.getVy();
         odom_pub_->msg_.twist.twist.angular.z = odometry_.getVyaw();
+
+        covarianceToMsg(odometry_.getPoseCovariance() , odom_pub_->msg_.pose.covariance);
+        covarianceToMsg(odometry_.getTwistCovariance(), odom_pub_->msg_.twist.covariance);
+
         odom_pub_->unlockAndPublish();
       }
 
@@ -312,12 +382,13 @@ namespace diff_drive_controller{
     last_cmd_ = curr_cmd;
 
     // Apply multipliers:
-    const double ws = wheel_separation_multiplier_ * wheel_separation_;
-    const double wr = wheel_radius_multiplier_     * wheel_radius_;
+    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
+    const double wrl = left_wheel_radius_multiplier_  * wheel_radius_;
+    const double wrr = right_wheel_radius_multiplier_ * wheel_radius_;
 
     // Compute wheels velocities:
-    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wr;
-    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wr;
+    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wrl;
+    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wrr;
 
     // Set wheels velocities:
     for (size_t i = 0; i < wheel_joints_size_; ++i)
@@ -354,7 +425,7 @@ namespace diff_drive_controller{
 
   void DiffDriveController::cmdVelCallback(const geometry_msgs::Twist& command)
   {
-    if(isRunning())
+    if (isRunning())
     {
       command_struct_.ang   = command.angular.z;
       command_struct_.lin   = command.linear.x;
@@ -431,7 +502,7 @@ namespace diff_drive_controller{
                              bool lookup_wheel_separation,
                              bool lookup_wheel_radius)
   {
-    if(!(lookup_wheel_separation || lookup_wheel_radius))
+    if (!(lookup_wheel_separation || lookup_wheel_radius))
     {
       // Short-circuit in case we don't need to look up anything, so we don't have to parse the URDF
       return true;
@@ -441,9 +512,10 @@ namespace diff_drive_controller{
     const std::string model_param_name = "robot_description";
     bool res = root_nh.hasParam(model_param_name);
     std::string robot_model_str="";
-    if(!res || !root_nh.getParam(model_param_name,robot_model_str))
+    if (!res || !root_nh.getParam(model_param_name,robot_model_str))
     {
-      ROS_ERROR_NAMED(name_, "Robot descripion couldn't be retrieved from param server.");
+      ROS_ERROR_NAMED(name_,
+          "Robot descripion couldn't be retrieved from param server.");
       return false;
     }
 
@@ -452,39 +524,42 @@ namespace diff_drive_controller{
     boost::shared_ptr<const urdf::Joint> left_wheel_joint(model->getJoint(left_wheel_name));
     boost::shared_ptr<const urdf::Joint> right_wheel_joint(model->getJoint(right_wheel_name));
 
-    if(lookup_wheel_separation)
+    if (lookup_wheel_separation)
     {
       // Get wheel separation
-      if(!left_wheel_joint)
+      if (!left_wheel_joint)
       {
-	ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
-			       << " couldn't be retrieved from model description");
-	return false;
-      }
-
-      if(!right_wheel_joint)
-      {
-        ROS_ERROR_STREAM_NAMED(name_, right_wheel_name
-                               << " couldn't be retrieved from model description");
+        ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
+            << " couldn't be retrieved from model description");
         return false;
       }
 
-      ROS_INFO_STREAM("left wheel to origin: " << left_wheel_joint->parent_to_joint_origin_transform.position.x << ","
-                      << left_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
-                      << left_wheel_joint->parent_to_joint_origin_transform.position.z);
-      ROS_INFO_STREAM("right wheel to origin: " << right_wheel_joint->parent_to_joint_origin_transform.position.x << ","
-                      << right_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
-                      << right_wheel_joint->parent_to_joint_origin_transform.position.z);
+      if (!right_wheel_joint)
+      {
+        ROS_ERROR_STREAM_NAMED(name_, right_wheel_name
+            << " couldn't be retrieved from model description");
+        return false;
+      }
 
-      wheel_separation_ = euclideanOfVectors(left_wheel_joint->parent_to_joint_origin_transform.position,
-                                             right_wheel_joint->parent_to_joint_origin_transform.position);
+      ROS_INFO_STREAM("left wheel to origin: "
+          << left_wheel_joint->parent_to_joint_origin_transform.position.x << ","
+          << left_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
+          << left_wheel_joint->parent_to_joint_origin_transform.position.z);
 
+      ROS_INFO_STREAM("right wheel to origin: "
+          << right_wheel_joint->parent_to_joint_origin_transform.position.x << ","
+          << right_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
+          << right_wheel_joint->parent_to_joint_origin_transform.position.z);
+
+      wheel_separation_ = euclideanOfVectors(
+          left_wheel_joint->parent_to_joint_origin_transform.position,
+          right_wheel_joint->parent_to_joint_origin_transform.position);
     }
 
-    if(lookup_wheel_radius)
+    if (lookup_wheel_radius)
     {
       // Get wheel radius
-      if(!getWheelRadius(model->getLink(left_wheel_joint->child_link_name), wheel_radius_))
+      if (!getWheelRadius(model->getLink(left_wheel_joint->child_link_name), wheel_radius_))
       {
         ROS_ERROR_STREAM_NAMED(name_, "Couldn't retrieve " << left_wheel_name << " wheel radius");
         return false;
@@ -496,43 +571,39 @@ namespace diff_drive_controller{
 
   void DiffDriveController::setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
   {
-    // Get and check params for covariances
+    /// Set odometry initial pose covariance
     XmlRpc::XmlRpcValue pose_cov_list;
-    controller_nh.getParam("pose_covariance_diagonal", pose_cov_list);
-    ROS_ASSERT(pose_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
-    ROS_ASSERT(pose_cov_list.size() == 6);
-    for (int i = 0; i < pose_cov_list.size(); ++i)
-      ROS_ASSERT(pose_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+    if (controller_nh.getParam("initial_pose_covariance_diagonal", pose_cov_list))
+    {
+      ROS_ASSERT(pose_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+      ROS_ASSERT(pose_cov_list.size() == 3);
+      for (int i = 0; i < pose_cov_list.size(); ++i)
+        ROS_ASSERT(pose_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
-    XmlRpc::XmlRpcValue twist_cov_list;
-    controller_nh.getParam("twist_covariance_diagonal", twist_cov_list);
-    ROS_ASSERT(twist_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
-    ROS_ASSERT(twist_cov_list.size() == 6);
-    for (int i = 0; i < twist_cov_list.size(); ++i)
-      ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+      Eigen::Vector3d pose_covariance;
+      pose_covariance << static_cast<double>(pose_cov_list[0]),
+                         static_cast<double>(pose_cov_list[1]),
+                         static_cast<double>(pose_cov_list[2]);
+      odometry_.setPoseCovariance(pose_covariance.asDiagonal());
 
-    // Setup odometry realtime publisher + odom message constant fields
+      ROS_INFO_STREAM("Pose covariance initialized to: " << pose_covariance);
+    }
+
+    /// Setup odometry message constant fields
     odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odom", 100));
     odom_pub_->msg_.header.frame_id = "odom";
     odom_pub_->msg_.child_frame_id = base_frame_id_;
+
     odom_pub_->msg_.pose.pose.position.z = 0;
-    odom_pub_->msg_.pose.covariance = boost::assign::list_of
-        (static_cast<double>(pose_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(pose_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(pose_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(pose_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[5]));
+
     odom_pub_->msg_.twist.twist.linear.z  = 0;
     odom_pub_->msg_.twist.twist.angular.x = 0;
     odom_pub_->msg_.twist.twist.angular.y = 0;
-    odom_pub_->msg_.twist.covariance = boost::assign::list_of
-        (static_cast<double>(twist_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(twist_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(twist_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(twist_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
+
+    odom_pub_->msg_.pose.covariance.fill(0);
+    odom_pub_->msg_.twist.covariance.fill(0);
+
+    /// Setup odometry realtime publisher
     tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
     tf_odom_pub_->msg_.transforms.resize(1);
     tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;

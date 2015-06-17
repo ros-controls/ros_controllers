@@ -34,7 +34,7 @@
 TEST_F(DiffDriveControllerTest, testForward)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }
@@ -74,12 +74,41 @@ TEST_F(DiffDriveControllerTest, testForward)
   EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.angular.z), EPS);
+
+  // propagation
+  double x = old_odom.pose.pose.position.x;
+  double y = old_odom.pose.pose.position.y;
+  double yaw = tf::getYaw(old_odom.pose.pose.orientation);
+
+  const double v_x = new_odom.twist.twist.linear.x;
+  const double v_y = new_odom.twist.twist.linear.y;
+  const double v_yaw = new_odom.twist.twist.angular.z;
+
+  const double dt = (new_odom.header.stamp - old_odom.header.stamp).toSec();
+  propagate(x, y, yaw, v_x, v_y, v_yaw, dt);
+
+  EXPECT_LT(std::abs(x - new_odom.pose.pose.position.x), EPS);
+  EXPECT_LT(std::abs(y - new_odom.pose.pose.position.y), EPS);
+  EXPECT_LT(angles::shortest_angular_distance(yaw,
+        tf::getYaw(new_odom.pose.pose.orientation)), EPS);
+
+  // covariance
+  diff_drive_controller::Odometry::PoseCovariance pose_covariance;
+  diff_drive_controller::Odometry::TwistCovariance twist_covariance;
+
+  msgToCovariance(new_odom.pose.covariance, pose_covariance);
+  msgToCovariance(new_odom.twist.covariance, twist_covariance);
+
+  // a covariance matrix must be positive semidefinite, but at this point it
+  // must also be positive definite
+  EXPECT_TRUE(isPositiveDefinite(pose_covariance));
+  EXPECT_TRUE(isPositiveDefinite(twist_covariance));
 }
 
 TEST_F(DiffDriveControllerTest, testTurn)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }
@@ -120,12 +149,133 @@ TEST_F(DiffDriveControllerTest, testTurn)
   EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
   EXPECT_NEAR(fabs(new_odom.twist.twist.angular.z), M_PI/10.0, EPS);
+
+  // propagation
+  double x = old_odom.pose.pose.position.x;
+  double y = old_odom.pose.pose.position.y;
+  double yaw = tf::getYaw(old_odom.pose.pose.orientation);
+
+  const double v_x = new_odom.twist.twist.linear.x;
+  const double v_y = new_odom.twist.twist.linear.y;
+  const double v_yaw = new_odom.twist.twist.angular.z;
+
+  const double dt = (new_odom.header.stamp - old_odom.header.stamp).toSec();
+  propagate(x, y, yaw, v_x, v_y, v_yaw, dt);
+
+  EXPECT_LT(std::abs(x - new_odom.pose.pose.position.x), EPS);
+  EXPECT_LT(std::abs(y - new_odom.pose.pose.position.y), EPS);
+  EXPECT_LT(angles::shortest_angular_distance(yaw,
+        tf::getYaw(new_odom.pose.pose.orientation)), EPS);
+
+  // covariance
+  diff_drive_controller::Odometry::PoseCovariance pose_covariance;
+  diff_drive_controller::Odometry::TwistCovariance twist_covariance;
+
+  msgToCovariance(new_odom.pose.covariance, pose_covariance);
+  msgToCovariance(new_odom.twist.covariance, twist_covariance);
+
+  // a covariance matrix must be positive semidefinite, but at this point it
+  // must also be positive definite
+  EXPECT_TRUE(isPositiveDefinite(pose_covariance));
+  EXPECT_TRUE(isPositiveDefinite(twist_covariance));
+}
+
+TEST_F(DiffDriveControllerTest, testMoveX)
+{
+  // wait for ROS
+  while (!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(0.1).sleep();
+
+  // make yaw 0, so then we can move forward along x-axis
+  goToYaw(0.0);
+
+  // get initial odom
+  nav_msgs::Odometry old_odom = getLastOdom();
+  // send a velocity command
+  cmd_vel.linear.x = 1.0;
+  publish(cmd_vel);
+  // wait for 10s
+  ros::Duration(10.0).sleep();
+
+  nav_msgs::Odometry new_odom = getLastOdom();
+
+  // covariance
+  diff_drive_controller::Odometry::PoseCovariance old_pose_covariance;
+  diff_drive_controller::Odometry::PoseCovariance new_pose_covariance;
+
+  msgToCovariance(old_odom.pose.covariance, old_pose_covariance);
+  msgToCovariance(new_odom.pose.covariance, new_pose_covariance);
+
+  const double old_cov_xx = old_pose_covariance(0, 0);
+  const double old_cov_yy = old_pose_covariance(1, 1);
+
+  const double new_cov_xx = new_pose_covariance(0, 0);
+  const double new_cov_yy = new_pose_covariance(1, 1);
+
+  const double diff_cov_xx = std::abs(new_cov_xx - old_cov_xx);
+  const double diff_cov_yy = std::abs(new_cov_yy - old_cov_yy);
+
+  EXPECT_GT(diff_cov_yy, diff_cov_xx);
+}
+
+TEST_F(DiffDriveControllerTest, testMoveY)
+{
+  // wait for ROS
+  while (!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(0.1).sleep();
+
+  // make yaw 90 degrees, so then we can move forward along y-axis
+  goToYaw(angles::from_degrees(90.0));
+
+  // get initial odom
+  nav_msgs::Odometry old_odom = getLastOdom();
+  // send a velocity command
+  cmd_vel.linear.x = 1.0;
+  publish(cmd_vel);
+  // wait for 10s
+  ros::Duration(10.0).sleep();
+
+  nav_msgs::Odometry new_odom = getLastOdom();
+
+  // covariance
+  diff_drive_controller::Odometry::PoseCovariance old_pose_covariance;
+  diff_drive_controller::Odometry::PoseCovariance new_pose_covariance;
+
+  msgToCovariance(old_odom.pose.covariance, old_pose_covariance);
+  msgToCovariance(new_odom.pose.covariance, new_pose_covariance);
+
+  const double old_cov_xx = old_pose_covariance(0, 0);
+  const double old_cov_yy = old_pose_covariance(1, 1);
+
+  const double new_cov_xx = new_pose_covariance(0, 0);
+  const double new_cov_yy = new_pose_covariance(1, 1);
+
+  const double diff_cov_xx = std::abs(new_cov_xx - old_cov_xx);
+  const double diff_cov_yy = std::abs(new_cov_yy - old_cov_yy);
+
+  EXPECT_GT(diff_cov_xx, diff_cov_yy);
 }
 
 TEST_F(DiffDriveControllerTest, testOdomFrame)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while (!isControllerAlive())
   {
     ros::Duration(0.1).sleep();
   }
@@ -143,7 +293,6 @@ int main(int argc, char** argv)
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
-  //ros::Duration(0.5).sleep();
   int ret = RUN_ALL_TESTS();
   spinner.stop();
   ros::shutdown();

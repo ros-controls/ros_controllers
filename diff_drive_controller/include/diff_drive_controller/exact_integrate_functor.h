@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2013, PAL Robotics, S.L.
+ *  Copyright (c) 2015, Clearpath Robotics, Inc.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -36,68 +36,50 @@
  * Author: Enrique Fernández
  */
 
-#ifndef DIFF_DRIVE_CONTROLLER_SPEED_LIMITER_H
-#define DIFF_DRIVE_CONTROLLER_SPEED_LIMITER_H
+#ifndef EXACT_INTEGRATE_FUNCTOR_H_
+#define EXACT_INTEGRATE_FUNCTOR_H_
+
+#include <diff_drive_controller/runge_kutta_2_integrate_functor.h>
 
 namespace diff_drive_controller
 {
 
-  class SpeedLimiter
+  /// Exact integration:
+  struct ExactIntegrateFunctor
   {
-  public:
     /**
-     * \brief Constructor
-     * \param [in] has_velocity_limits     if true, applies velocity limits
-     * \param [in] has_acceleration_limits if true, applies acceleration limits
-     * \param [in] min_velocity Minimum velocity [m/s], usually <= 0
-     * \param [in] max_velocity Maximum velocity [m/s], usually >= 0
-     * \param [in] min_acceleration Minimum acceleration [m/s^2], usually <= 0
-     * \param [in] max_acceleration Maximum acceleration [m/s^2], usually >= 0
+     * \brief Integrates the pose (x, y, yaw) given the velocities (v, w) using
+     * exact (arc) method
+     * \param [in, out] x   Pose x   component
+     * \param [in, out] y   Pose y   component
+     * \param [in, out] yaw Pose yaw component
+     * \param [in] v Linear  velocity   [m]
+     *               (linear  displacement, i.e.   m/s * dt) computed by encoders
+     * \param [in] w Angular velocity [rad]
+     *               (angular displacement, i.e. rad/s * dt) computed by encoders
      */
-    SpeedLimiter(
-      bool has_velocity_limits = false,
-      bool has_acceleration_limits = false,
-      double min_velocity = 0.0,
-      double max_velocity = 0.0,
-      double min_acceleration = 0.0,
-      double max_acceleration = 0.0);
+    template <typename T>
+    void operator()(T& x, T& y, T& yaw, const T& v, const T& w) const
+    {
+      BOOST_STATIC_ASSERT_MSG(
+          !boost::is_pod<T>::value || boost::is_floating_point<T>::value,
+          "The pose components must be specified as float values.");
 
-    /**
-     * \brief Limit the velocity and acceleration
-     * \param [in, out] v  Velocity [m/s]
-     * \param [in]      v0 Previous velocity [m/s]
-     * \param [in]      dt Time step [s]
-     */
-    void limit(double& v, double v0, double dt);
-
-    /**
-     * \brief Limit the velocity
-     * \param [in, out] v Velocity [m/s]
-     */
-    void limit_velocity(double& v);
-
-    /**
-     * \brief Limit the acceleration
-     * \param [in, out] v  Velocity [m/s]
-     * \param [in]      v0 Previous velocity [m/s]
-     * \param [in]      dt Time step [s]
-     */
-    void limit_acceleration(double& v, double v0, double dt);
-
-  public:
-    // Enable/Disable velocity/acceleration limits:
-    bool has_velocity_limits;
-    bool has_acceleration_limits;
-
-    // Velocity limits:
-    double min_velocity;
-    double max_velocity;
-
-    // Acceleration limits:
-    double min_acceleration;
-    double max_acceleration;
+      if (abs(w) < 1e-9)
+        RungeKutta2IntegrateFunctor()(x, y, yaw, v, w);
+      else
+      {
+        /// Exact integration (should solve problems when angular is zero):
+        const T yaw_old = yaw;
+        const T r = v/w;
+        yaw += w;
+        x   +=  r * (sin(yaw) - sin(yaw_old));
+        y   += -r * (cos(yaw) - cos(yaw_old));
+      }
+    }
   };
+
 
 }  // namespace diff_drive_controller
 
-#endif  // DIFF_DRIVE_CONTROLLER_SPEED_LIMITER_H
+#endif /* EXACT_INTEGRATE_FUNCTOR_H_ */

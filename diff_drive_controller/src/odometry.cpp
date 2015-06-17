@@ -41,9 +41,13 @@
 
 #include <diff_drive_controller/odometry.h>
 
-#include <Eigen/Core>
+#include <diff_drive_controller/autodiff_integrate_function.h>
 
-#include <boost/bind.hpp>
+#include <diff_drive_controller/direct_kinematics_integrate_functor.h>
+#include <diff_drive_controller/runge_kutta_2_integrate_functor.h>
+#include <diff_drive_controller/exact_integrate_functor.h>
+
+#include <Eigen/Core>
 
 namespace diff_drive_controller
 {
@@ -58,15 +62,29 @@ namespace diff_drive_controller
   , v_y_(0.0)
   , v_yaw_(0.0)
   , wheel_separation_(0.0)
-  , wheel_radius_(0.0)
+  , left_wheel_radius_(0.0)
+  , right_wheel_radius_(0.0)
+  , k_l_(1.0)
+  , k_r_(1.0)
   , left_wheel_old_pos_(0.0)
   , right_wheel_old_pos_(0.0)
   , velocity_rolling_window_size_(velocity_rolling_window_size)
   , v_x_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , v_y_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , v_yaw_acc_(RollingWindow::window_size = velocity_rolling_window_size)
-  , integrate_fun_(boost::bind(&Odometry::integrateExact, this, _1, _2))
+  , integrate_fun_(
+      new AutoDiffIntegrateFunction<DirectKinematicsIntegrateFunctor,
+                                    ExactIntegrateFunctor>(
+      new DirectKinematicsIntegrateFunctor<ExactIntegrateFunctor>(
+      new ExactIntegrateFunctor)))
   {
+    meas_covariance_.setZero();
+
+    twist_covariance_.setIdentity();
+    twist_covariance_ *= 1e-9;
+
+    pose_covariance_.setIdentity();
+    pose_covariance_ *= 1e-6;
   }
 
   void Odometry::init(const ros::Time& time)
@@ -80,58 +98,68 @@ namespace diff_drive_controller
     timestamp_ = time;
   }
 
-  bool Odometry::update(double left_pos, double right_pos, const ros::Time &time)
+  bool Odometry::updateCloseLoop(double left_pos, double right_pos, const ros::Time &time)
   {
-    /// Get current wheel joint positions:
-    const double left_wheel_cur_pos  = left_pos  * wheel_radius_;
-    const double right_wheel_cur_pos = right_pos * wheel_radius_;
-
     /// Estimate velocity of wheels using old and current position:
-    const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
-    const double right_wheel_est_vel = right_wheel_cur_pos - right_wheel_old_pos_;
+    const double left_wheel_est_vel  = left_pos  - left_wheel_old_pos_;
+    const double right_wheel_est_vel = right_pos - right_wheel_old_pos_;
 
     /// Update old position with current:
-    left_wheel_old_pos_  = left_wheel_cur_pos;
-    right_wheel_old_pos_ = right_wheel_cur_pos;
+    left_wheel_old_pos_  = left_pos;
+    right_wheel_old_pos_ = right_pos;
 
-    /// Compute linear and angular diff:
-    const double linear  = (right_wheel_est_vel + left_wheel_est_vel) * 0.5 ;
-    const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_;
-
-    /// Safe current state:
-    const SE2 p0(SE2::Scalar(heading_), SE2::Point(x_, y_));
-
-    /// Integrate odometry:
-    integrate_fun_(linear, angular);
-
-    /// Update twist:
-    const SE2 p1(SE2::Scalar(heading_), SE2::Point(x_, y_));
-
-    return updateTwist(p0, p1, time);
+    /// Update pose and twist:
+    return update(left_wheel_est_vel, right_wheel_est_vel, time);
   }
 
-  bool Odometry::updateOpenLoop(double linear, double angular, const ros::Time &time)
+  bool Odometry::updateOpenLoop(double linear, double angular, const ros::Time& time)
+  {
+    /// Compute time step:
+    const double dt = (time - timestamp_).toSec();
+
+    /// Convert velocities into displacements/movements:
+    linear  *= dt;
+    angular *= dt;
+
+    /// Compute wheel velocities, i.e. Inverse Kinematics:
+    const double v_l = (linear - angular * wheel_separation_ / 2.0) / left_wheel_radius_;
+    const double v_r = (linear + angular * wheel_separation_ / 2.0) / right_wheel_radius_;
+
+    /// Update pose and twist:
+    return update(v_l, v_r, time);
+  }
+
+  bool Odometry::update(double v_l, double v_r, const ros::Time& time)
   {
     /// Safe current state:
     const SE2 p0(SE2::Scalar(heading_), SE2::Point(x_, y_));
 
-    /// Integrate odometry:
-    const double dt = (time - timestamp_).toSec();
-    timestamp_ = time;
-    integrate_fun_(linear * dt, angular * dt);
+    /// Integrate odometry pose:
+    IntegrateFunction::PoseJacobian J_pose;
+    IntegrateFunction::MeasJacobian J_meas;
+    (*integrate_fun_)(x_, y_, heading_, v_l, v_r, J_pose, J_meas);
 
-    /// Update twist:
+    /// Update Measurement Covariance:
+    updateMeasCovariance(v_l, v_r);
+
+    /// Update pose covariance:
+    pose_covariance_ = J_pose * pose_covariance_ * J_pose.transpose() +
+                       J_meas * meas_covariance_ * J_meas.transpose();
+
+    /// Safe new state:
     const SE2 p1(SE2::Scalar(heading_), SE2::Point(x_, y_));
 
-    return updateTwist(p0, p1, time);
+    /// Update twist:
+    return updateTwist(p0, p1, v_l, v_r, time);
   }
 
-  bool Odometry::updateTwist(const SE2& p0, const SE2& p1, const ros::Time& time)
+  bool Odometry::updateTwist(const SE2& p0, const SE2& p1,
+      double v_l, double v_r, const ros::Time& time)
   {
     /// We cannot estimate the speed with very small time intervals:
     const double dt = (time - timestamp_).toSec();
-    if(dt < 0.0001)
-      return false; // Interval too small to integrate with
+    if (dt < 0.0001)
+      return false;
 
     timestamp_ = time;
 
@@ -161,43 +189,55 @@ namespace diff_drive_controller
     v_y_   = bacc::rolling_mean(v_y_acc_);
     v_yaw_ = bacc::rolling_mean(v_yaw_acc_);
 
+    /// Integrate odometry twist:
+    /// Note that this is done this way because it isn't trivial to compute the
+    /// Jacobians for the relative transformation between p0 and p1
+    IntegrateFunction::PoseJacobian J_dummy;
+    IntegrateFunction::MeasJacobian J_meas;
+    double zero = 0.0;
+    (*integrate_fun_)(zero, zero, zero, v_l, v_r, J_dummy, J_meas);
+
+    /// Include the Jacobian of dividing by dt, which is equivalent to divide
+    /// all the elements of the other Jacobian by dt:
+    J_meas /= dt;
+
+    /// Update twist covariance:
+    twist_covariance_ = J_meas * meas_covariance_ * J_meas.transpose();
+
+    /// Make sure the matrix is positive definite by setting the values equal
+    /// to 0 on the diagonal to some small value:
+    for (size_t i = 0; i < twist_covariance_.rows(); ++i)
+    {
+      twist_covariance_(i, i) = std::max(twist_covariance_(i, i), 1e-9);
+    }
+
     return true;
   }
 
-  void Odometry::setWheelParams(double wheel_separation, double wheel_radius)
+  void Odometry::updateMeasCovariance(double v_l, double v_r)
   {
-    wheel_separation_ = wheel_separation;
-    wheel_radius_     = wheel_radius;
+    /// Compute Measurement Covariance Model:
+    // @todo This can be extended to support lateral slippage
+    // k_s_ * [see/find Olson notes]
+    meas_covariance_.diagonal() << k_l_ * std::abs(v_l),
+                                   k_r_ * std::abs(v_r);
   }
 
-  void Odometry::integrateRungeKutta2(double linear, double angular)
+  void Odometry::setWheelParams(double wheel_separation,
+      double left_wheel_radius, double right_wheel_radius)
   {
-    const double direction = heading_ + angular * 0.5;
+    wheel_separation_   = wheel_separation;
+    left_wheel_radius_  = left_wheel_radius;
+    right_wheel_radius_ = right_wheel_radius;
 
-    /// Runge-Kutta 2nd order integration:
-    x_       += linear * cos(direction);
-    y_       += linear * sin(direction);
-    heading_ += angular;
+    integrate_fun_->setWheelParams(wheel_separation,
+        left_wheel_radius, right_wheel_radius);
   }
 
-  /**
-   * \brief Other possible integration method provided by the class
-   * \param linear
-   * \param angular
-   */
-  void Odometry::integrateExact(double linear, double angular)
+  void Odometry::setMeasCovarianceParams(double k_l, double k_r)
   {
-    if(fabs(angular) < 10e-3)
-      integrateRungeKutta2(linear, angular);
-    else
-    {
-      /// Exact integration (should solve problems when angular is zero):
-      const double heading_old = heading_;
-      const double r = linear/angular;
-      heading_ += angular;
-      x_       +=  r * (sin(heading_) - sin(heading_old));
-      y_       += -r * (cos(heading_) - cos(heading_old));
-    }
+    k_l_ = k_l;
+    k_r_ = k_r;
   }
 
-} // namespace diff_drive_controller
+}  // namespace diff_drive_controller

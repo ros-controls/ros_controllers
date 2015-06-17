@@ -47,7 +47,7 @@ int main(int argc, char **argv)
   ros::Rate rate(1.0 / robot.getPeriod().toSec());
   ros::AsyncSpinner spinner(1);
   spinner.start();
-  while(ros::ok())
+  while (ros::ok())
   {
     robot.read();
     cm.update(robot.getTime(), robot.getPeriod());

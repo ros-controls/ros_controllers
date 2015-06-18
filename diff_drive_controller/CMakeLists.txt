@@ -30,7 +30,8 @@ include_directories(
 roslint_cpp()
 
 add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${CERES_LIBRARIES})
+# Note that the entry for ${Ceres_LIBRARIES} was removed as we only used headers from that package
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

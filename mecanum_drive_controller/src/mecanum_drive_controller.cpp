@@ -103,7 +103,7 @@ bool MecanumDriveController::init(hardware_interface::VelocityJointInterface* hw
 
   // Option use_realigned_roller_joints
   controller_nh.param("use_realigned_roller_joints", use_realigned_roller_joints_, use_realigned_roller_joints_);
-  ROS_INFO_STREAM_NAMED(name_, "Use the roller's radius rather than the wheel's: " << use_realigned_roller_joints_ << ".");
+  ROS_INFO_STREAM_NAMED(name_, "Use the roller's radius rather than the wheel's: " << (use_realigned_roller_joints_ ? "true" : "false") << ".");
 
   // Get joint names from the parameter server
   std::string wheel0_name;
@@ -125,7 +125,7 @@ bool MecanumDriveController::init(hardware_interface::VelocityJointInterface* hw
   // Odometry related:
   double publish_rate;
   controller_nh.param("publish_rate", publish_rate, 50.0);
-  ROS_INFO_STREAM_NAMED(name_, "Controller state will be published at "
+  ROS_INFO_STREAM_NAMED(name_, "Controller state published frequency : "
                         << publish_rate << "Hz.");
   publish_period_ = ros::Duration(1.0 / publish_rate);
 
@@ -137,10 +137,10 @@ bool MecanumDriveController::init(hardware_interface::VelocityJointInterface* hw
                         << cmd_vel_timeout_ << "s.");
 
   controller_nh.param("base_frame_id", base_frame_id_, base_frame_id_);
-  ROS_INFO_STREAM_NAMED(name_, "Base frame_id set to " << base_frame_id_);
+  ROS_INFO_STREAM_NAMED(name_, "Base frame_id : " << base_frame_id_);
 
   controller_nh.param("enable_odom_tf", enable_odom_tf_, enable_odom_tf_);
-  ROS_INFO_STREAM_NAMED(name_, "Publishing to tf is " << (enable_odom_tf_?"enabled":"disabled"));
+  ROS_INFO_STREAM_NAMED(name_, "Publishing to tf : " << (enable_odom_tf_?"enabled":"disabled"));
 
   // Velocity and acceleration limits:
   controller_nh.param("linear/x/has_velocity_limits"    , limiter_linX_.has_velocity_limits    , limiter_linX_.has_velocity_limits    );

@@ -1,0 +1,19 @@
+joint_state_controller:
+  type: joint_state_controller/JointStateController
+  publish_rate: 10
+  extra_joints:
+    - name:     'joint1' # should be ignored, as already exists
+      position: 10.0
+      velocity: 20.0
+      effort:   30.0
+
+    - name: 'bad_position'
+      position: 'zero'
+
+    - name: 'bad_velocity'
+      velocity: 'zero'
+
+    - name: 'bad_effort'
+      effort: 'zero'
+
+    - nickname: 'no_name'

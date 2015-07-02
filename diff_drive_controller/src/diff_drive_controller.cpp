@@ -124,12 +124,11 @@ namespace diff_drive_controller
   static void covarianceToMsg(const Odometry::Covariance& covariance,
       nav_msgs::Odometry::_pose_type::_covariance_type& msg)
   {
-    Eigen::Map<Eigen::Matrix<double, 6, 6> > C(msg.data(), 6, 6);
-    C.block(0, 0, 2, 2) = covariance.block(0, 0, 2, 2);
-    C(5, 5) = covariance(2, 2);
-    C(0, 1) = C(1, 0) = covariance(0, 1);
+    Eigen::Map< Eigen::Matrix<double, 6, 6> > C(msg.data());
+    C.topLeftCorner<2, 2>() = covariance.topLeftCorner<2, 2>();
     C(0, 5) = C(5, 0) = covariance(0, 2);
     C(1, 5) = C(5, 1) = covariance(1, 2);
+    C(5, 5) = covariance(2, 2);
   }
 
   DiffDriveController::DiffDriveController()

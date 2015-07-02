@@ -132,14 +132,11 @@ void msgToCovariance(
     const nav_msgs::Odometry::_pose_type::_covariance_type& msg,
     diff_drive_controller::Odometry::Covariance& covariance)
 {
-  const Eigen::Map<const Eigen::Matrix<double, 6, 6> > C(msg.data(), 6, 6);
-  covariance.block(0, 0, 2, 2) = C.block(0, 0, 2, 2);
+  const Eigen::Map< const Eigen::Matrix<double, 6, 6> > C(msg.data());
+  covariance.topLeftCorner<2, 2>() = C.topLeftCorner<2, 2>();
   covariance(2, 2) = C(5, 5);
 
   // We don't want to ensure symmetry here, for the sake of testing:
-  covariance(0, 1) = C(0, 1);
-  covariance(1, 0) = C(1, 0);
-
   covariance(0, 2) = C(0, 5);
   covariance(2, 0) = C(5, 0);
 

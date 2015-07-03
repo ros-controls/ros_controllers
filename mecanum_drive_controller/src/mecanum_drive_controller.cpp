@@ -408,9 +408,9 @@ bool MecanumDriveController::setWheelParamsFromUrdf(ros::NodeHandle& root_nh,
     return false;
   }
 
-  if (abs(wheel0_radius - wheel1_radius) > 1e-3 ||
-      abs(wheel0_radius - wheel2_radius) > 1e-3 ||
-      abs(wheel0_radius - wheel3_radius) > 1e-3)
+  if (fabs(wheel0_radius - wheel1_radius) > 1e-3 ||
+      fabs(wheel0_radius - wheel2_radius) > 1e-3 ||
+      fabs(wheel0_radius - wheel3_radius) > 1e-3)
   {
     ROS_ERROR_STREAM_NAMED(name_, "Wheels radius are not egual");
     return false;

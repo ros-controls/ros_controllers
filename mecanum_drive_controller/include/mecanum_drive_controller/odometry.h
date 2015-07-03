@@ -80,10 +80,10 @@ public:
 
   /**
    * \brief Updates the odometry class with latest wheels position
-   * \param wheel0_vel  Wheel velocity [rad]
-   * \param wheel1_vel  Wheel velocity [rad]
-   * \param wheel2_vel  Wheel velocity [rad]
-   * \param wheel3_vel  Wheel velocity [rad]
+   * \param wheel0_vel  Wheel velocity [rad/s]
+   * \param wheel1_vel  Wheel velocity [rad/s]
+   * \param wheel2_vel  Wheel velocity [rad/s]
+   * \param wheel3_vel  Wheel velocity [rad/s]
    * \param time      Current time
    * \return true if the odometry is actually updated
    */
@@ -91,7 +91,8 @@ public:
 
   /**
    * \brief Updates the odometry class with latest velocity command
-   * \param linearX  Linear velocity [m/s]
+   * \param linearX  X component of the linear velocity [m/s]
+   * \param linearY  Y component of the linear velocity [m/s]
    * \param angular Angular velocity [rad/s]
    * \param time    Current time
    */

@@ -43,11 +43,11 @@ public:
   bool update(double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const ros::Time &time);
 
   /// \return position (x component) [m]
-  double getX() const {return px_b_b0;}
+  double getX() const {return px_b_b0_;}
   /// \return position (y component) [m]
-  double getY() const {return py_b_b0;}
+  double getY() const {return py_b_b0_;}
   /// \return orientation (z component) [m]
-  double getRz() const {return rz_b_b0;}
+  double getRz() const {return rz_b_b0_;}
   /// \return body velocity of the base frame (linear x component) [m/s]
   double getVx() const {return vx_Ob_b_b0_b_;}
   /// \return body velocity of the base frame (linear y component) [m/s]
@@ -73,9 +73,9 @@ private:
   double base_frame_offset_[PLANAR_POINT_DIM];
 
   /// Current pose:
-  double px_b_b0;  // [m]
-  double py_b_b0;  // [m]
-  double rz_b_b0;  // [rad]
+  double px_b_b0_;  // [m]
+  double py_b_b0_;  // [m]
+  double rz_b_b0_;  // [rad]
 
   /// Current velocity.
   /// \note The indices meaning is the following:
@@ -85,10 +85,6 @@ private:
   ///    Oc: origin of the center frame
   ///    b0: initial position if the base frame
   ///    c0: initial position of the center frame
-  double vx_Oc_c_c0_c_;  // [m/s]
-  double vy_Oc_c_c0_c_;  // [m/s]
-  double wz_c_c0_c_;     // [rad/s]
-
   double vx_Ob_b_b0_b_;  // [m/s]
   double vy_Ob_b_b0_b_;  // [m/s]
   double wz_b_b0_b_;     // [rad/s]
@@ -96,12 +92,6 @@ private:
   /// Wheels kinematic parameters [m]:
   double wheels_k_;
   double wheels_radius_;
-
-  /// Rolling mean accumulators for the linar and angular velocities:
-  size_t velocity_rolling_window_size_;
-  RollingMeanAcc linearX_acc_;
-  RollingMeanAcc linearY_acc_;
-  RollingMeanAcc angular_acc_;
 };
 
 } // namespace mecanum_drive_controller

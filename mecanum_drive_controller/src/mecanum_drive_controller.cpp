@@ -1,41 +1,3 @@
-/*********************************************************************
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2013, PAL Robotics, S.L.
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of the PAL Robotics nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
-
-/*
- * Author: Bence Magyar
- */
-
 #include <tf/transform_datatypes.h>
 
 #include <urdf_parser/urdf_parser.h>
@@ -79,13 +41,13 @@ namespace mecanum_drive_controller
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 MecanumDriveController::MecanumDriveController()
-  : open_loop_(false)
-  , command_struct_()
+  : command_struct_()
   , use_realigned_roller_joints_(false)
   , wheels_k_(0.0)
   , wheels_radius_(0.0)
   , cmd_vel_timeout_(0.5)
   , base_frame_id_("base_link")
+  , base_frame_offset_{0.0, 0.0, 0.0}
   , enable_odom_tf_(true)
   , wheel_joints_size_(0)
 {
@@ -129,8 +91,6 @@ bool MecanumDriveController::init(hardware_interface::VelocityJointInterface* hw
                         << publish_rate << "Hz.");
   publish_period_ = ros::Duration(1.0 / publish_rate);
 
-  controller_nh.param("open_loop", open_loop_, open_loop_);
-
   // Twist command related:
   controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
   ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "
@@ -138,6 +98,12 @@ bool MecanumDriveController::init(hardware_interface::VelocityJointInterface* hw
 
   controller_nh.param("base_frame_id", base_frame_id_, base_frame_id_);
   ROS_INFO_STREAM_NAMED(name_, "Base frame_id : " << base_frame_id_);
+
+  // TODO: automatically compute the offset of the base frame with respect to the center frame.
+  controller_nh.param("base_frame_offset/x"    , base_frame_offset_[0], base_frame_offset_[0]);
+  controller_nh.param("base_frame_offset/y"    , base_frame_offset_[1], base_frame_offset_[1]);
+  controller_nh.param("base_frame_offset/theta", base_frame_offset_[2], base_frame_offset_[2]);
+  ROS_INFO_STREAM_NAMED(name_, "base_frame_offset : " << base_frame_offset_[0] << " " << base_frame_offset_[1] << " " << base_frame_offset_[2]);
 
   controller_nh.param("enable_odom_tf", enable_odom_tf_, enable_odom_tf_);
   ROS_INFO_STREAM_NAMED(name_, "Publishing to tf : " << (enable_odom_tf_?"enabled":"disabled"));
@@ -186,31 +152,24 @@ bool MecanumDriveController::init(hardware_interface::VelocityJointInterface* hw
 void MecanumDriveController::update(const ros::Time& time, const ros::Duration& period)
 {
   // COMPUTE AND PUBLISH ODOMETRY
-  if (open_loop_)
-  {
-    odometry_.updateOpenLoop(last_cmd_.linX, last_cmd_.linY, last_cmd_.ang, time);
-  }
-  else
-  {
-    double wheel0_vel = wheel0_jointHandle_.getVelocity();
-    double wheel1_vel = wheel1_jointHandle_.getVelocity();
-    double wheel2_vel = wheel2_jointHandle_.getVelocity();
-    double wheel3_vel = wheel3_jointHandle_.getVelocity();
+  double wheel0_vel = wheel0_jointHandle_.getVelocity();
+  double wheel1_vel = wheel1_jointHandle_.getVelocity();
+  double wheel2_vel = wheel2_jointHandle_.getVelocity();
+  double wheel3_vel = wheel3_jointHandle_.getVelocity();
 
-    if (std::isnan(wheel0_vel) || std::isnan(wheel1_vel) || std::isnan(wheel2_vel) || std::isnan(wheel3_vel))
-      return;
+  if (std::isnan(wheel0_vel) || std::isnan(wheel1_vel) || std::isnan(wheel2_vel) || std::isnan(wheel3_vel))
+    return;
 
-    // Estimate twist (using joint information) and integrate
-    odometry_.update(wheel0_vel, wheel1_vel, wheel2_vel, wheel3_vel, time);
-  }
+  // Estimate twist (using joint information) and integrate
+  odometry_.update(wheel0_vel, wheel1_vel, wheel2_vel, wheel3_vel, time);
 
   // Publish odometry message
   if(last_state_publish_time_ + publish_period_ < time)
   {
     last_state_publish_time_ += publish_period_;
+
     // Compute and store orientation info
-    const geometry_msgs::Quaternion orientation(
-          tf::createQuaternionMsgFromYaw(odometry_.getHeading()));
+    const geometry_msgs::Quaternion orientation(tf::createQuaternionMsgFromYaw(odometry_.getRz()));
 
     // Populate odom message and publish
     if(odom_pub_->trylock())
@@ -219,9 +178,9 @@ void MecanumDriveController::update(const ros::Time& time, const ros::Duration& 
       odom_pub_->msg_.pose.pose.position.x = odometry_.getX();
       odom_pub_->msg_.pose.pose.position.y = odometry_.getY();
       odom_pub_->msg_.pose.pose.orientation = orientation;
-      odom_pub_->msg_.twist.twist.linear.x  = odometry_.getLinearX();
-      odom_pub_->msg_.twist.twist.linear.y  = odometry_.getLinearY();
-      odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngular();
+      odom_pub_->msg_.twist.twist.linear.x  = odometry_.getVx();
+      odom_pub_->msg_.twist.twist.linear.y  = odometry_.getVy();
+      odom_pub_->msg_.twist.twist.angular.z = odometry_.getWz();
       odom_pub_->unlockAndPublish();
     }
 
@@ -279,7 +238,7 @@ void MecanumDriveController::starting(const ros::Time& time)
   // Register starting time used to keep fixed rate
   last_state_publish_time_ = time;
 
-  odometry_.init(time);
+  odometry_.init(time, base_frame_offset_);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

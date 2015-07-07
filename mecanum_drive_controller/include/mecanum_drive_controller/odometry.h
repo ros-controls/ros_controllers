@@ -1,44 +1,3 @@
-/*********************************************************************
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2013, PAL Robotics, S.L.
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of the PAL Robotics nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
-
-/*
- * Author: Luca Marchionni
- * Author: Bence Magyar
- * Author: Enrique Fernández
- * Author: Paul Mathieu
- */
-
 #ifndef ODOMETRY_H_
 #define ODOMETRY_H_
 
@@ -48,15 +7,15 @@
 #include <boost/accumulators/statistics/rolling_mean.hpp>
 #include <boost/function.hpp>
 
+#define PLANAR_POINT_DIM 3
+
 namespace mecanum_drive_controller
 {
 
 namespace bacc = boost::accumulators;
 
-/**
- * \brief The Odometry class handles odometry readings
- * (2D pose and velocity with related timestamp)
- */
+/// \brief The Odometry class handles odometry readings
+/// (2D pose and velocity with related timestamp)
 class Odometry
 {
 public:
@@ -64,99 +23,41 @@ public:
   /// Integration function, used to integrate the odometry:
   typedef boost::function<void(double, double, double)> IntegrationFunction;
 
-  /**
-   * \brief Constructor
-   * Timestamp will get the current time value
-   * Value will be set to zero
-   * \param velocity_rolling_window_size Rolling window size used to compute the velocity mean
-   */
+  /// \brief Constructor
+  /// Timestamp will get the current time value
+  /// Value will be set to zero
+  /// \param velocity_rolling_window_size Rolling window size used to compute the velocity mean
   Odometry(size_t velocity_rolling_window_size = 10);
 
-  /**
-   * \brief Initialize the odometry
-   * \param time Current time
-   */
-  void init(const ros::Time &time);
+  /// \brief Initialize the odometry
+  /// \param time Current time
+  void init(const ros::Time &time, double base_frame_offset[PLANAR_POINT_DIM]);
 
-  /**
-   * \brief Updates the odometry class with latest wheels position
-   * \param wheel0_vel  Wheel velocity [rad/s]
-   * \param wheel1_vel  Wheel velocity [rad/s]
-   * \param wheel2_vel  Wheel velocity [rad/s]
-   * \param wheel3_vel  Wheel velocity [rad/s]
-   * \param time      Current time
-   * \return true if the odometry is actually updated
-   */
+  /// \brief Updates the odometry class with latest wheels position
+  /// \param wheel0_vel  Wheel velocity [rad/s]
+  /// \param wheel1_vel  Wheel velocity [rad/s]
+  /// \param wheel2_vel  Wheel velocity [rad/s]
+  /// \param wheel3_vel  Wheel velocity [rad/s]
+  /// \param time      Current time
+  /// \return true if the odometry is actually updated
   bool update(double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const ros::Time &time);
 
-  /**
-   * \brief Updates the odometry class with latest velocity command
-   * \param linearX  X component of the linear velocity [m/s]
-   * \param linearY  Y component of the linear velocity [m/s]
-   * \param angular Angular velocity [rad/s]
-   * \param time    Current time
-   */
-  void updateOpenLoop(double linearX, double linearY, double angular, const ros::Time &time);
+  /// \return position (x component) [m]
+  double getX() const {return px_b_b0;}
+  /// \return position (y component) [m]
+  double getY() const {return py_b_b0;}
+  /// \return orientation (z component) [m]
+  double getRz() const {return rz_b_b0;}
+  /// \return body velocity of the base frame (linear x component) [m/s]
+  double getVx() const {return vx_Ob_b_b0_b_;}
+  /// \return body velocity of the base frame (linear y component) [m/s]
+  double getVy() const {return vy_Ob_b_b0_b_;}
+  /// \return body velocity of the base frame (angular z component) [m/s]
+  double getWz() const {return wz_b_b0_b_;}
 
-  /**
-   * \brief heading getter
-   * \return heading [rad]
-   */
-  double getHeading() const
-  {
-    return heading_;
-  }
-
-  /**
-   * \brief x position getter
-   * \return x position [m]
-   */
-  double getX() const
-  {
-    return x_;
-  }
-
-  /**
-   * \brief y position getter
-   * \return y position [m]
-   */
-  double getY() const
-  {
-    return y_;
-  }
-
-  /**
-   * \brief linearX velocity getter
-   * \return linearX velocity [m/s]
-   */
-  double getLinearX() const
-  {
-    return linearX_;
-  }
-
-  /**
-   * \brief linearY velocity getter
-   * \return linearY velocity [m/s]
-   */
-  double getLinearY() const
-  {
-    return linearY_;
-  }
-
-  /**
-   * \brief angular velocity getter
-   * \return angular velocity [rad/s]
-   */
-  double getAngular() const
-  {
-    return angular_;
-  }
-
-  /**
-   * \brief Sets the wheels parameters: mecanum geometric param and radius
-   * \param wheels_k       Wheels geometric param (used in mecanum wheels' ik) [m]
-   * \param wheels_radius  Wheels radius [m]
-   */
+  /// \brief Sets the wheels parameters: mecanum geometric param and radius
+  /// \param wheels_k       Wheels geometric param (used in mecanum wheels' ik) [m]
+  /// \param wheels_radius  Wheels radius [m]
   void setWheelsParams(double wheels_k, double wheels_radius);
 
 private:
@@ -165,26 +66,32 @@ private:
   typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
   typedef bacc::tag::rolling_window RollingWindow;
 
-  /**
-   * \brief Integrates the velocities (linear and angular) using exact method
-   * \param linearX  Linear velocity along X [m] (linear  displacement, i.e. m/s * dt) computed by encoders
-   * \param linearY  Linear velocity along Y [m] (linear  displacement, i.e. m/s * dt) computed by encoders
-   * \param angular Angular velocity [rad] (angular displacement, i.e. m/s * dt) computed by encoders
-   */
-  void integrateExact(double linearX, double linearY, double angular);
-
   /// Current timestamp:
   ros::Time timestamp_;
 
-  /// Current pose:
-  double x_;        //   [m]
-  double y_;        //   [m]
-  double heading_;  // [rad]
+  /// Reference frame (wrt to center frame).
+  double base_frame_offset_[PLANAR_POINT_DIM];
 
-  /// Current velocity:
-  double linearX_;  //   [m/s]
-  double linearY_;  //   [m/s]
-  double angular_; // [rad/s]
+  /// Current pose:
+  double px_b_b0;  // [m]
+  double py_b_b0;  // [m]
+  double rz_b_b0;  // [rad]
+
+  /// Current velocity.
+  /// \note The indices meaning is the following:
+  ///    b : base frame
+  ///    c : center frame
+  ///    Ob: origin of the base frame
+  ///    Oc: origin of the center frame
+  ///    b0: initial position if the base frame
+  ///    c0: initial position of the center frame
+  double vx_Oc_c_c0_c_;  // [m/s]
+  double vy_Oc_c_c0_c_;  // [m/s]
+  double wz_c_c0_c_;     // [rad/s]
+
+  double vx_Ob_b_b0_b_;  // [m/s]
+  double vy_Ob_b_b0_b_;  // [m/s]
+  double wz_b_b0_b_;     // [rad/s]
 
   /// Wheels kinematic parameters [m]:
   double wheels_k_;
@@ -195,9 +102,6 @@ private:
   RollingMeanAcc linearX_acc_;
   RollingMeanAcc linearY_acc_;
   RollingMeanAcc angular_acc_;
-
-  /// Integration funcion, used to integrate the odometry:
-  IntegrationFunction integrate_fun_;
 };
 
 } // namespace mecanum_drive_controller

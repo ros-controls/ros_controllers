@@ -14,13 +14,11 @@ find_package(catkin REQUIRED COMPONENTS
 set(${PROJECT_NAME}_headers
   include/mecanum_drive_controller/mecanum_drive_controller.h
   include/mecanum_drive_controller/odometry.h
-  include/mecanum_drive_controller/speed_limiter.h
 )
 
 set(${PROJECT_NAME}_sources
   src/mecanum_drive_controller.cpp
   src/odometry.cpp
-  src/speed_limiter.cpp
 )
 
 catkin_package(

@@ -9,7 +9,6 @@
 #include <realtime_tools/realtime_publisher.h>
 
 #include <mecanum_drive_controller/odometry.h>
-#include <mecanum_drive_controller/speed_limiter.h>
 
 namespace mecanum_drive_controller
 {

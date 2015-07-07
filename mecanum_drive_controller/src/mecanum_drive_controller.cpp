@@ -41,7 +41,7 @@ namespace mecanum_drive_controller
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 MecanumDriveController::MecanumDriveController()
-  : command_struct_()
+  : command_()
   , use_realigned_roller_joints_(false)
   , wheels_k_(0.0)
   , wheels_radius_(0.0)
@@ -108,28 +108,6 @@ bool MecanumDriveController::init(hardware_interface::VelocityJointInterface* hw
   controller_nh.param("enable_odom_tf", enable_odom_tf_, enable_odom_tf_);
   ROS_INFO_STREAM_NAMED(name_, "Publishing to tf : " << (enable_odom_tf_?"enabled":"disabled"));
 
-  // Velocity and acceleration limits:
-  controller_nh.param("linear/x/has_velocity_limits"    , limiter_linX_.has_velocity_limits    , limiter_linX_.has_velocity_limits    );
-  controller_nh.param("linear/x/has_acceleration_limits", limiter_linX_.has_acceleration_limits, limiter_linX_.has_acceleration_limits);
-  controller_nh.param("linear/x/max_velocity"           , limiter_linX_.max_velocity           ,  limiter_linX_.max_velocity          );
-  controller_nh.param("linear/x/min_velocity"           , limiter_linX_.min_velocity           , -limiter_linX_.max_velocity          );
-  controller_nh.param("linear/x/max_acceleration"       , limiter_linX_.max_acceleration       ,  limiter_linX_.max_acceleration      );
-  controller_nh.param("linear/x/min_acceleration"       , limiter_linX_.min_acceleration       , -limiter_linX_.max_acceleration      );
-
-  controller_nh.param("linear/y/has_velocity_limits"    , limiter_linY_.has_velocity_limits    , limiter_linY_.has_velocity_limits    );
-  controller_nh.param("linear/y/has_acceleration_limits", limiter_linY_.has_acceleration_limits, limiter_linY_.has_acceleration_limits);
-  controller_nh.param("linear/y/max_velocity"           , limiter_linY_.max_velocity           ,  limiter_linY_.max_velocity          );
-  controller_nh.param("linear/y/min_velocity"           , limiter_linY_.min_velocity           , -limiter_linY_.max_velocity          );
-  controller_nh.param("linear/y/max_acceleration"       , limiter_linY_.max_acceleration       ,  limiter_linY_.max_acceleration      );
-  controller_nh.param("linear/y/min_acceleration"       , limiter_linY_.min_acceleration       , -limiter_linY_.max_acceleration      );
-
-  controller_nh.param("angular/z/has_velocity_limits"    , limiter_ang_.has_velocity_limits    , limiter_ang_.has_velocity_limits    );
-  controller_nh.param("angular/z/has_acceleration_limits", limiter_ang_.has_acceleration_limits, limiter_ang_.has_acceleration_limits);
-  controller_nh.param("angular/z/max_velocity"           , limiter_ang_.max_velocity           ,  limiter_ang_.max_velocity          );
-  controller_nh.param("angular/z/min_velocity"           , limiter_ang_.min_velocity           , -limiter_ang_.max_velocity          );
-  controller_nh.param("angular/z/max_acceleration"       , limiter_ang_.max_acceleration       ,  limiter_ang_.max_acceleration      );
-  controller_nh.param("angular/z/min_acceleration"       , limiter_ang_.min_acceleration       , -limiter_ang_.max_acceleration      );
-
   // Get the joint objects to use in the realtime loop
   wheel0_jointHandle_ = hw->getHandle(wheel0_name);  // throws on failure
   wheel1_jointHandle_ = hw->getHandle(wheel1_name);  // throws on failure
@@ -142,7 +120,7 @@ bool MecanumDriveController::init(hardware_interface::VelocityJointInterface* hw
 
   setupRtPublishersMsg(root_nh, controller_nh);
 
-  sub_command_ = controller_nh.subscribe("cmd_vel", 1, &MecanumDriveController::cmdVelCallback, this);
+  command_sub_ = controller_nh.subscribe("cmd_vel", 1, &MecanumDriveController::commandCb, this);
 
   return true;
 }
@@ -151,7 +129,7 @@ bool MecanumDriveController::init(hardware_interface::VelocityJointInterface* hw
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MecanumDriveController::update(const ros::Time& time, const ros::Duration& period)
 {
-  // COMPUTE AND PUBLISH ODOMETRY
+  // FORWARD KINEMATICS (odometry).
   double wheel0_vel = wheel0_jointHandle_.getVelocity();
   double wheel1_vel = wheel1_jointHandle_.getVelocity();
   double wheel2_vel = wheel2_jointHandle_.getVelocity();
@@ -181,47 +159,50 @@ void MecanumDriveController::update(const ros::Time& time, const ros::Duration& 
       odom_pub_->msg_.twist.twist.linear.x  = odometry_.getVx();
       odom_pub_->msg_.twist.twist.linear.y  = odometry_.getVy();
       odom_pub_->msg_.twist.twist.angular.z = odometry_.getWz();
+
       odom_pub_->unlockAndPublish();
     }
 
     // Publish tf /odom frame
-    if (enable_odom_tf_ && tf_odom_pub_->trylock())
+    if (enable_odom_tf_ && tf_pub_->trylock())
     {
-      geometry_msgs::TransformStamped& odom_frame = tf_odom_pub_->msg_.transforms[0];
+      geometry_msgs::TransformStamped& odom_frame = tf_pub_->msg_.transforms[0];
       odom_frame.header.stamp = time;
       odom_frame.transform.translation.x = odometry_.getX();
       odom_frame.transform.translation.y = odometry_.getY();
       odom_frame.transform.rotation = orientation;
-      tf_odom_pub_->unlockAndPublish();
+
+      tf_pub_->unlockAndPublish();
     }
   }
 
-  // MOVE ROBOT
-  // Retrieve current velocity command and time step:
-  Commands curr_cmd = *(command_.readFromRT());
-  const double dt = (time - curr_cmd.stamp).toSec();
+  // INVERSE KINEMATICS (move robot).
 
   // Brake if cmd_vel has timeout:
+  Command curr_cmd = *(command_rt_buffer_.readFromRT());
+  const double dt = (time - curr_cmd.stamp).toSec();
+
   if (dt > cmd_vel_timeout_)
   {
-    curr_cmd.linX = 0.0;
-    curr_cmd.linY = 0.0;
-    curr_cmd.ang = 0.0;
+    curr_cmd.vx_Ob_b_b0_b = 0.0;
+    curr_cmd.vy_Ob_b_b0_b = 0.0;
+    curr_cmd.wz_b_b0_b    = 0.0;
   }
-
-  // Limit velocities and accelerations:
-  const double cmd_dt(period.toSec());
-  limiter_linX_.limit(curr_cmd.linX, last_cmd_.linX, cmd_dt);
-  limiter_linY_.limit(curr_cmd.linY, last_cmd_.linY, cmd_dt);
-  limiter_ang_.limit(curr_cmd.ang, last_cmd_.ang, cmd_dt);
-  last_cmd_ = curr_cmd;
 
   // Compute wheels velocities (this is the actual ik):
   // NOTE: the input desired twist (from topic /cmd_vel) is a body twist.
-  const double w0_vel = 1.0 / wheels_radius_ * (curr_cmd.linX - curr_cmd.linY - wheels_k_ * curr_cmd.ang);
-  const double w1_vel = 1.0 / wheels_radius_ * (curr_cmd.linX + curr_cmd.linY - wheels_k_ * curr_cmd.ang);
-  const double w2_vel = 1.0 / wheels_radius_ * (curr_cmd.linX - curr_cmd.linY + wheels_k_ * curr_cmd.ang);
-  const double w3_vel = 1.0 / wheels_radius_ * (curr_cmd.linX + curr_cmd.linY + wheels_k_ * curr_cmd.ang);
+  tf::Matrix3x3 R_b_c         = tf::Matrix3x3(tf::createQuaternionFromYaw(base_frame_offset_[2]));
+  tf::Vector3   v_Ob_b_b0_c   = R_b_c * tf::Vector3(curr_cmd.vx_Ob_b_b0_b, curr_cmd.vy_Ob_b_b0_b, 0.0);
+  tf::Vector3   Ob_c          = tf::Vector3(base_frame_offset_[0], base_frame_offset_[1], 0.0);
+
+  double vx_Oc_c_c0_c_ = v_Ob_b_b0_c.x() + Ob_c.y() * curr_cmd.wz_b_b0_b;
+  double vy_Oc_c_c0_c_ = v_Ob_b_b0_c.y() - Ob_c.x() * curr_cmd.wz_b_b0_b;
+  double wz_c_c0_c_    = curr_cmd.wz_b_b0_b;
+
+  double w0_vel = 1.0 / wheels_radius_ * (vx_Oc_c_c0_c_ - vy_Oc_c_c0_c_ - wheels_k_ * wz_c_c0_c_);
+  double w1_vel = 1.0 / wheels_radius_ * (vx_Oc_c_c0_c_ + vy_Oc_c_c0_c_ - wheels_k_ * wz_c_c0_c_);
+  double w2_vel = 1.0 / wheels_radius_ * (vx_Oc_c_c0_c_ - vy_Oc_c_c0_c_ + wheels_k_ * wz_c_c0_c_);
+  double w3_vel = 1.0 / wheels_radius_ * (vx_Oc_c_c0_c_ + vy_Oc_c_c0_c_ + wheels_k_ * wz_c_c0_c_);
 
   // Set wheels velocities:
   wheel0_jointHandle_.setCommand(w0_vel);
@@ -257,26 +238,27 @@ void MecanumDriveController::brake()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MecanumDriveController::cmdVelCallback(const geometry_msgs::Twist& command)
+void MecanumDriveController::commandCb(const geometry_msgs::Twist& command)
 {
-  if(isRunning())
-  {
-    command_struct_.ang   = command.angular.z;
-    command_struct_.linX  = command.linear.x;
-    command_struct_.linY  = command.linear.y;
-    command_struct_.stamp = ros::Time::now();
-    command_.writeFromNonRT (command_struct_);
+    if (!isRunning())
+    {
+      ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
+      return;
+    }
+
+    command_.vx_Ob_b_b0_b  = command.linear.x;
+    command_.vy_Ob_b_b0_b  = command.linear.y;
+    command_.wz_b_b0_b  = command.angular.z;
+
+    command_.stamp = ros::Time::now();
+    command_rt_buffer_.writeFromNonRT(command_);
+
     ROS_DEBUG_STREAM_NAMED(name_,
                            "Added values to command. "
-                           << "Ang: "   << command_struct_.ang << ", "
-                           << "Lin: "   << command_struct_.linX << ", "
-                           << "Lin: "   << command_struct_.linY << ", "
-                           << "Stamp: " << command_struct_.stamp);
-  }
-  else
-  {
-    ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
-  }
+                           << "vx_Ob_b_b0_b : "   << command_.vx_Ob_b_b0_b << ", "
+                           << "vy_Ob_b_b0_b : "   << command_.vy_Ob_b_b0_b << ", "
+                           << "wz_b_b0_b    : "   << command_.wz_b_b0_b << ", "
+                           << "Stamp        : " << command_.stamp);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -465,11 +447,11 @@ void MecanumDriveController::setupRtPublishersMsg(ros::NodeHandle& root_nh, ros:
       (0)  (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
 
   // Setup tf msg.
-  tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
-  tf_odom_pub_->msg_.transforms.resize(1);
-  tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;
-  tf_odom_pub_->msg_.transforms[0].child_frame_id = base_frame_id_;
-  tf_odom_pub_->msg_.transforms[0].header.frame_id = "odom";
+  tf_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
+  tf_pub_->msg_.transforms.resize(1);
+  tf_pub_->msg_.transforms[0].transform.translation.z = 0.0;
+  tf_pub_->msg_.transforms[0].child_frame_id = base_frame_id_;
+  tf_pub_->msg_.transforms[0].header.frame_id = "odom";
 }
 
 } // namespace mecanum_drive_controller

@@ -12,32 +12,22 @@ namespace bacc = boost::accumulators;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Odometry::Odometry(size_t velocity_rolling_window_size)
 : timestamp_(0.0)
-, px_b_b0(0.0)
-, py_b_b0(0.0)
-, rz_b_b0(0.0)
-, vx_Oc_c_c0_c_(0.0)
-, vy_Oc_c_c0_c_(0.0)
-, wz_c_c0_c_(0.0)
+
+, px_b_b0_(0.0)
+, py_b_b0_(0.0)
+, rz_b_b0_(0.0)
 , vx_Ob_b_b0_b_(0.0)
 , vy_Ob_b_b0_b_(0.0)
 , wz_b_b0_b_(0.0)
+
 , wheels_k_(0.0)
 , wheels_radius_(0.0)
-, velocity_rolling_window_size_(velocity_rolling_window_size)
-, linearX_acc_(RollingWindow::window_size = velocity_rolling_window_size)
-, linearY_acc_(RollingWindow::window_size = velocity_rolling_window_size)
-, angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Odometry::init(const ros::Time& time, double base_frame_offset[PLANAR_POINT_DIM])
 {
-  // Reset accumulators:
-  linearX_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-  linearY_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-  angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-
   // Reset timestamp:
   timestamp_ = time;
 
@@ -63,28 +53,28 @@ bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, d
   /// NOTE: in the diff drive the velocity is filtered out, but we prefer to return it raw and let the user perform
   ///       post-processing at will. We prefer this way of doing as filtering introduces delay (which makes it
   ///       difficult to interpret and compare behavior curves).
-  vx_Oc_c_c0_c_ = 0.25 * wheels_radius_              * ( wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
-  vy_Oc_c_c0_c_ = 0.25 * wheels_radius_              * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
-  wz_c_c0_c_    = 0.25 * wheels_radius_  / wheels_k_ * (-wheel0_vel - wheel1_vel + wheel2_vel + wheel3_vel);
+  double vx_Oc_c_c0_c = 0.25 * wheels_radius_              * ( wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
+  double vy_Oc_c_c0_c = 0.25 * wheels_radius_              * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
+  double wz_c_c0_c    = 0.25 * wheels_radius_  / wheels_k_ * (-wheel0_vel - wheel1_vel + wheel2_vel + wheel3_vel);
 
   tf::Matrix3x3 R_c_b         = tf::Matrix3x3(tf::createQuaternionFromYaw(-base_frame_offset_[2]));
-  tf::Vector3   v_Oc_c_c0_b   = R_c_b * tf::Vector3(vx_Oc_c_c0_c_, vy_Oc_c_c0_c_, 0.0);
+  tf::Vector3   v_Oc_c_c0_b   = R_c_b * tf::Vector3(vx_Oc_c_c0_c, vy_Oc_c_c0_c, 0.0);
   tf::Vector3   Oc_b          = R_c_b * tf::Vector3(-base_frame_offset_[0], -base_frame_offset_[1], 0.0);
 
-  vx_Ob_b_b0_b_ = v_Oc_c_c0_b.x() + Oc_b.y() * wz_c_c0_c_;
-  vy_Ob_b_b0_b_ = v_Oc_c_c0_b.y() - Oc_b.x() * wz_c_c0_c_;
-  wz_b_b0_b_    = wz_c_c0_c_;
+  vx_Ob_b_b0_b_ = v_Oc_c_c0_b.x() + Oc_b.y() * wz_c_c0_c;
+  vy_Ob_b_b0_b_ = v_Oc_c_c0_b.y() - Oc_b.x() * wz_c_c0_c;
+  wz_b_b0_b_    = wz_c_c0_c;
 
   /// Integration.
   /// NOTE: the position is expressed in the odometry frame (frame b0), unlike the twist which is expressed in the body
   ///       frame (frame b).
-  rz_b_b0 += wz_b_b0_b_ * dt;
+  rz_b_b0_ += wz_b_b0_b_ * dt;
 
-  tf::Matrix3x3 R_b_b0 = tf::Matrix3x3(tf::createQuaternionFromYaw(rz_b_b0));
+  tf::Matrix3x3 R_b_b0 = tf::Matrix3x3(tf::createQuaternionFromYaw(rz_b_b0_));
   tf::Vector3 vx_Ob_b_b0_b0 = R_b_b0 * tf::Vector3(vx_Ob_b_b0_b_, vy_Ob_b_b0_b_, 0.0);
 
-  px_b_b0 += vx_Ob_b_b0_b0.x() * dt;
-  py_b_b0 += vx_Ob_b_b0_b0.y() * dt;
+  px_b_b0_ += vx_Ob_b_b0_b0.x() * dt;
+  py_b_b0_ += vx_Ob_b_b0_b0.y() * dt;
 
   return true;
 }

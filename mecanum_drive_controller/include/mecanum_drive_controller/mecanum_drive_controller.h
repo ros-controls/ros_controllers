@@ -64,22 +64,22 @@ private:
   hardware_interface::JointHandle wheel3_jointHandle_;
 
   /// Velocity command related:
-  struct Commands
+  struct Command
   {
-    double linX;
-    double linY;
-    double ang;
+    double vx_Ob_b_b0_b;
+    double vy_Ob_b_b0_b;
+    double wz_b_b0_b;
     ros::Time stamp;
 
-    Commands() : linX(0.0), linY(0.0), ang(0.0), stamp(0.0) {}
+    Command() : vx_Ob_b_b0_b(0.0), vy_Ob_b_b0_b(0.0), wz_b_b0_b(0.0), stamp(0.0) {}
   };
-  realtime_tools::RealtimeBuffer<Commands> command_;
-  Commands command_struct_;
-  ros::Subscriber sub_command_;
+  realtime_tools::RealtimeBuffer<Command> command_rt_buffer_;
+  Command command_;
+  ros::Subscriber command_sub_;
 
   /// Odometry related:
   boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
-  boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
+  boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_pub_;
   Odometry odometry_;
   geometry_msgs::TransformStamped odom_frame_;
 
@@ -101,12 +101,6 @@ private:
   /// Number of wheel joints:
   size_t wheel_joints_size_;
 
-  // Speed limiters:
-  Commands last_cmd_;
-  SpeedLimiter limiter_linX_;
-  SpeedLimiter limiter_linY_;
-  SpeedLimiter limiter_ang_;
-
 private:
   /**
    * \brief Brakes the wheels, i.e. sets the velocity to 0
@@ -117,7 +111,7 @@ private:
    * \brief Velocity command callback
    * \param command Velocity command message (twist)
    */
-  void cmdVelCallback(const geometry_msgs::Twist& command);
+  void commandCb(const geometry_msgs::Twist& command);
 
   /**
    * \brief Sets odometry parameters from the URDF, i.e. the wheel radius and separation

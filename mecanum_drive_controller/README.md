@@ -14,6 +14,7 @@ RESTRICTIONS and ASSUMPTIONS
       - Y is left
    * the 4 wheels are identical in radius
    * the wheels rotation axis is aligned with Y (not -Y)
+      - that is the axis of rotation of each wheel is in the Y direction 
    * the wheels need to have the same parent frame
    * the projection of the wheels frame origin on the floor is the contact point of the wheel
 
@@ -25,3 +26,8 @@ DESCRIPTION
    * The odometry computes the location of a frame which is also the BASE frame 
       - The reference frame of the odometry is the initial position of the BASE frame at t=0
       - This reference frame is called the ODOMETRY frame
+   * The wheels are refered to using an index 0, 1, 2, 3
+      - wheel 0: front left wheel
+      - wheel 1: back left wheel
+      - wheel 2: back right wheel
+      - wheel 3: front right wheel

@@ -248,7 +248,7 @@ void MecanumDriveController::commandCb(const geometry_msgs::Twist& command)
 
     command_.vx_Ob_b_b0_b  = command.linear.x;
     command_.vy_Ob_b_b0_b  = command.linear.y;
-    command_.wz_b_b0_b  = command.angular.z;
+    command_.wz_b_b0_b     = command.angular.z;
 
     command_.stamp = ros::Time::now();
     command_rt_buffer_.writeFromNonRT(command_);
@@ -258,7 +258,7 @@ void MecanumDriveController::commandCb(const geometry_msgs::Twist& command)
                            << "vx_Ob_b_b0_b : "   << command_.vx_Ob_b_b0_b << ", "
                            << "vy_Ob_b_b0_b : "   << command_.vy_Ob_b_b0_b << ", "
                            << "wz_b_b0_b    : "   << command_.wz_b_b0_b << ", "
-                           << "Stamp        : " << command_.stamp);
+                           << "Stamp        : "   << command_.stamp);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

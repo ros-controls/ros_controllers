@@ -4,6 +4,7 @@ project(diff_drive_controller)
 find_package(catkin REQUIRED
   COMPONENTS
     cmake_modules
+    dynamic_reconfigure
     controller_interface
     urdf
     realtime_tools
@@ -16,6 +17,8 @@ find_package(Eigen REQUIRED)
 find_package(sophus REQUIRED)
 
 find_package(Ceres REQUIRED)
+
+generate_dynamic_reconfigure_options(cfg/DiffDriveController.cfg)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -32,6 +35,7 @@ roslint_cpp()
 add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
 # Note that the entry for ${Ceres_LIBRARIES} was removed as we only used headers from that package
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

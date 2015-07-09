@@ -281,6 +281,11 @@ namespace diff_drive_controller
 
     setOdomPubFields(root_nh, controller_nh);
 
+    // Set dynamic reconfigure server callback:
+    cfg_server_.reset(new ReconfigureServer(controller_nh));
+    cfg_server_->setCallback(
+        boost::bind(&DiffDriveController::reconfigureCallback, this, _1, _2));
+
     // Get the joint object to use in the realtime loop
     for (int i = 0; i < wheel_joints_size_; ++i)
     {
@@ -440,6 +445,34 @@ namespace diff_drive_controller
     {
       ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
     }
+  }
+
+  void DiffDriveController::reconfigureCallback(
+      DiffDriveControllerConfig& config, uint32_t level)
+  {
+    // @todo make this real-time safe!!!
+    wheel_separation_multiplier_ = config.wheel_separation_multiplier;
+
+    left_wheel_radius_multiplier_  = config.left_wheel_radius_multiplier;
+    right_wheel_radius_multiplier_ = config.right_wheel_radius_multiplier;
+
+    k_l_ = config.k_l;
+    k_r_ = config.k_r;
+
+    // Set the odometry parameters
+    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
+    const double wrl = left_wheel_radius_multiplier_  * wheel_radius_;
+    const double wrr = right_wheel_radius_multiplier_ * wheel_radius_;
+    odometry_.setWheelParams(ws, wrl, wrr);
+    ROS_INFO_STREAM_NAMED(name_,
+                          "Odometry params : wheel separation " << ws
+                          << ", left wheel radius "  << wrl
+                          << ", right wheel radius " << wrr);
+
+    odometry_.setMeasCovarianceParams(k_l_, k_r_);
+    ROS_INFO_STREAM_NAMED(name_,
+                          "Measurement Covariance Model params : k_l " << k_l_
+                          << ", k_r " << k_r_);
   }
 
   bool DiffDriveController::getWheelNames(ros::NodeHandle& controller_nh,

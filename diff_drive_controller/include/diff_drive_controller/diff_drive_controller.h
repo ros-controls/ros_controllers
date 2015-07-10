@@ -139,9 +139,29 @@ namespace diff_drive_controller
     Odometry odometry_;
     geometry_msgs::TransformStamped odom_frame_;
 
-    /// Dynamic reconfigure server:
+    /// Dynamic reconfigure server related:
     typedef dynamic_reconfigure::Server<DiffDriveControllerConfig> ReconfigureServer;
     boost::shared_ptr<ReconfigureServer> cfg_server_;
+
+    struct DynamicParams
+    {
+      double wheel_separation_multiplier;
+      double left_wheel_radius_multiplier;
+      double right_wheel_radius_multiplier;
+
+      double k_l;
+      double k_r;
+
+      DynamicParams()
+        : wheel_separation_multiplier(1.0)
+        , left_wheel_radius_multiplier(1.0)
+        , right_wheel_radius_multiplier(1.0)
+        , k_l(1.0)
+        , k_r(1.0)
+      {}
+    };
+    realtime_tools::RealtimeBuffer<DynamicParams> dynamic_params_;
+    DynamicParams dynamic_params_struct_;
 
     /// Wheel separation, wrt the midpoint of the wheel width:
     double wheel_separation_;

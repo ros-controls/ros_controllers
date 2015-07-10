@@ -134,6 +134,7 @@ namespace diff_drive_controller
   DiffDriveController::DiffDriveController()
     : open_loop_(false)
     , command_struct_()
+    , dynamic_params_struct_()
     , wheel_separation_(0.0)
     , wheel_radius_(0.0)
     , wheel_separation_multiplier_(1.0)
@@ -279,6 +280,16 @@ namespace diff_drive_controller
                           "Measurement Covariance Model params : k_l " << k_l_
                           << ", k_r " << k_r_);
 
+    dynamic_params_struct_.wheel_separation_multiplier = wheel_separation_multiplier_;
+
+    dynamic_params_struct_.left_wheel_radius_multiplier  = left_wheel_radius_multiplier_;
+    dynamic_params_struct_.right_wheel_radius_multiplier = right_wheel_radius_multiplier_;
+
+    dynamic_params_struct_.k_l = k_l_;
+    dynamic_params_struct_.k_r = k_r_;
+
+    dynamic_params_.writeFromNonRT(dynamic_params_struct_);
+
     setOdomPubFields(root_nh, controller_nh);
 
     // Set dynamic reconfigure server callback:
@@ -303,6 +314,38 @@ namespace diff_drive_controller
 
   void DiffDriveController::update(const ros::Time& time, const ros::Duration& period)
   {
+    // UPDATE DYNAMIC PARAMS
+    // Retreive dynamic params:
+    DynamicParams dynamic_params = *(dynamic_params_.readFromRT());
+
+    // Update dynamic params:
+    //
+    // NOTE we cannot do the following because there's no writeFromRT method!
+    // see https://github.com/ros-controls/realtime_tools/issues/14
+    //
+    // if (dynamic_params.changed)
+    // {
+    //   dynamic_params.changed = false;
+    //   dynamic_params_.writeFromRT(dynamic_params);
+    //
+    //   ...
+    // }
+    wheel_separation_multiplier_ = dynamic_params.wheel_separation_multiplier;
+    left_wheel_radius_multiplier_ = dynamic_params.left_wheel_radius_multiplier;
+    right_wheel_radius_multiplier_ = dynamic_params.right_wheel_radius_multiplier;
+
+    k_l_ = dynamic_params.k_l;
+    k_r_ = dynamic_params.k_r;
+
+    // Apply multipliers:
+    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
+    const double wrl = left_wheel_radius_multiplier_  * wheel_radius_;
+    const double wrr = right_wheel_radius_multiplier_ * wheel_radius_;
+
+    // Set the odometry parameters:
+    odometry_.setWheelParams(ws, wrl, wrr);
+    odometry_.setMeasCovarianceParams(k_l_, k_r_);
+
     // COMPUTE AND PUBLISH ODOMETRY
     if (open_loop_)
     {
@@ -385,11 +428,6 @@ namespace diff_drive_controller
     limiter_ang_.limit(curr_cmd.ang, last_cmd_.ang, cmd_dt);
     last_cmd_ = curr_cmd;
 
-    // Apply multipliers:
-    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
-    const double wrl = left_wheel_radius_multiplier_  * wheel_radius_;
-    const double wrr = right_wheel_radius_multiplier_ * wheel_radius_;
-
     // Compute wheels velocities:
     const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wrl;
     const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wrr;
@@ -450,29 +488,26 @@ namespace diff_drive_controller
   void DiffDriveController::reconfigureCallback(
       DiffDriveControllerConfig& config, uint32_t level)
   {
-    // @todo make this real-time safe!!!
-    wheel_separation_multiplier_ = config.wheel_separation_multiplier;
+    dynamic_params_struct_.wheel_separation_multiplier = config.wheel_separation_multiplier;
 
-    left_wheel_radius_multiplier_  = config.left_wheel_radius_multiplier;
-    right_wheel_radius_multiplier_ = config.right_wheel_radius_multiplier;
+    dynamic_params_struct_.left_wheel_radius_multiplier  = config.left_wheel_radius_multiplier;
+    dynamic_params_struct_.right_wheel_radius_multiplier = config.right_wheel_radius_multiplier;
 
-    k_l_ = config.k_l;
-    k_r_ = config.k_r;
+    dynamic_params_struct_.k_l = config.k_l;
+    dynamic_params_struct_.k_r = config.k_r;
 
-    // Set the odometry parameters
-    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
-    const double wrl = left_wheel_radius_multiplier_  * wheel_radius_;
-    const double wrr = right_wheel_radius_multiplier_ * wheel_radius_;
-    odometry_.setWheelParams(ws, wrl, wrr);
-    ROS_INFO_STREAM_NAMED(name_,
-                          "Odometry params : wheel separation " << ws
-                          << ", left wheel radius "  << wrl
-                          << ", right wheel radius " << wrr);
+    dynamic_params_.writeFromNonRT(dynamic_params_struct_);
 
-    odometry_.setMeasCovarianceParams(k_l_, k_r_);
-    ROS_INFO_STREAM_NAMED(name_,
-                          "Measurement Covariance Model params : k_l " << k_l_
-                          << ", k_r " << k_r_);
+    ROS_DEBUG_STREAM_NAMED(name_,
+                          "Reconfigured Odometry params. "
+                          << "wheel separation:   " << dynamic_params_struct_.wheel_separation_multiplier << ", "
+                          << "left wheel radius:  " << dynamic_params_struct_.left_wheel_radius_multiplier << ", "
+                          << "right wheel radius: " << dynamic_params_struct_.left_wheel_radius_multiplier);
+
+    ROS_DEBUG_STREAM_NAMED(name_,
+                          "Reconfigured Measurement Covariance Model params. "
+                          << "k_l: " << dynamic_params_struct_.k_l << ", "
+                          << "k_r: " << dynamic_params_struct_.k_r);
   }
 
   bool DiffDriveController::getWheelNames(ros::NodeHandle& controller_nh,

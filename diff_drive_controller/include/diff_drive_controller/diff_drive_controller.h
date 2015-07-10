@@ -46,11 +46,14 @@
 #include <nav_msgs/Odometry.h>
 #include <tf/tfMessage.h>
 
+#include <dynamic_reconfigure/server.h>
+
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
 
 #include <diff_drive_controller/odometry.h>
 #include <diff_drive_controller/speed_limiter.h>
+#include <diff_drive_controller/DiffDriveControllerConfig.h>
 
 #include <vector>
 #include <string>
@@ -136,6 +139,30 @@ namespace diff_drive_controller
     Odometry odometry_;
     geometry_msgs::TransformStamped odom_frame_;
 
+    /// Dynamic reconfigure server related:
+    typedef dynamic_reconfigure::Server<DiffDriveControllerConfig> ReconfigureServer;
+    boost::shared_ptr<ReconfigureServer> cfg_server_;
+
+    struct DynamicParams
+    {
+      double wheel_separation_multiplier;
+      double left_wheel_radius_multiplier;
+      double right_wheel_radius_multiplier;
+
+      double k_l;
+      double k_r;
+
+      DynamicParams()
+        : wheel_separation_multiplier(1.0)
+        , left_wheel_radius_multiplier(1.0)
+        , right_wheel_radius_multiplier(1.0)
+        , k_l(1.0)
+        , k_r(1.0)
+      {}
+    };
+    realtime_tools::RealtimeBuffer<DynamicParams> dynamic_params_;
+    DynamicParams dynamic_params_struct_;
+
     /// Wheel separation, wrt the midpoint of the wheel width:
     double wheel_separation_;
 
@@ -179,6 +206,14 @@ namespace diff_drive_controller
      * \param command Velocity command message (twist)
      */
     void cmdVelCallback(const geometry_msgs::Twist& command);
+
+    /**
+     * \brief Reconfigure callback
+     * \param [in, out] config Input new desired configuration and
+     *                         output applied configuration
+     * \param [in]      level  Reconfigure level
+     */
+    void reconfigureCallback(DiffDriveControllerConfig& config, uint32_t level);
 
     /**
      * \brief Get the wheel names from a wheel param

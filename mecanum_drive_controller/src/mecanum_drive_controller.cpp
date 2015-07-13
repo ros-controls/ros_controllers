@@ -423,7 +423,7 @@ void MecanumDriveController::setupRtPublishersMsg(ros::NodeHandle& root_nh, ros:
     ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
   // Setup odometry msg.
-  odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odom", 100));
+  odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odomTopic", 100));
   odom_pub_->msg_.header.frame_id = "odom";
   odom_pub_->msg_.child_frame_id = base_frame_id_;
   odom_pub_->msg_.pose.pose.position.z = 0;

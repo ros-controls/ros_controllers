@@ -52,10 +52,6 @@ public:
 private:
   std::string name_;
 
-  /// Odometry related:
-  ros::Duration publish_period_;
-  ros::Time last_state_publish_time_;
-
   /// Hardware handles:
   hardware_interface::JointHandle wheel0_jointHandle_;
   hardware_interface::JointHandle wheel1_jointHandle_;
@@ -77,10 +73,15 @@ private:
   ros::Subscriber command_sub_;
 
   /// Odometry related:
+  Odometry odometry_;
+
   boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
   boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_pub_;
-  Odometry odometry_;
+
   geometry_msgs::TransformStamped odom_frame_;
+
+  ros::Duration publish_period_;
+  ros::Time last_state_publish_time_;
 
   /// Wheel radius (assuming it's the same for the left and right wheels):
   bool use_realigned_roller_joints_;

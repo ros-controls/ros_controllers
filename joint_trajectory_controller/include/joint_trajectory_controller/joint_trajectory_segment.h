@@ -275,6 +275,38 @@ std::vector<Scalar> wraparoundOffset(const std::vector<Scalar>& prev_position,
   return pos_offset;
 }
 
+/**
+ * \param prev_position Previous position from which to compute the wraparound offset.
+ * \param next_position Next position from which to compute the wraparound offset.
+ * \param angle_wraparound Vector of booleans where true values correspond to joints that wrap around
+ * (ie. are continuous). Offsets will be computed only for these joints, otherwise they are set to zero.
+ * \return Wraparound offsets that should be applied to \p next_position such that no multi-turns are performed when
+ * transitioning from \p prev_position.
+ * \tparam Scalar Scalar type.
+ */
+template <class Scalar>
+Scalar wraparoundJointOffset(const Scalar& prev_position,
+                             const Scalar& next_position,
+                             const bool&   angle_wraparound)
+{
+  // Return value
+  Scalar pos_offset = 0.0;
+
+  if (angle_wraparound)
+  {
+    Scalar dist = angles::shortest_angular_distance(prev_position, next_position);
+
+    // Deal with singularity at M_PI shortest distance
+    if (std::abs(dist) - M_PI < 1e-9)
+    {
+      dist = next_position > prev_position ? std::abs(dist) : -std::abs(dist);
+    }
+    pos_offset = (prev_position + dist) - next_position;
+  }
+
+  return pos_offset;
+}
+
 } // namespace
 
 #endif // header guard

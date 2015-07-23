@@ -166,8 +166,10 @@ private:
   typedef boost::scoped_ptr<StatePublisher>                                                   StatePublisherPtr;
 
   typedef JointTrajectorySegment<SegmentImpl> Segment;
-  typedef std::vector<Segment> Trajectory;
+  typedef std::vector<Segment> TrajectoryPerJoint;
+  typedef std::vector<TrajectoryPerJoint> Trajectory;
   typedef boost::shared_ptr<Trajectory> TrajectoryPtr;
+  typedef boost::shared_ptr<TrajectoryPerJoint> TrajectoryPerJointPtr;
   typedef realtime_tools::RealtimeBox<TrajectoryPtr> TrajectoryBox;
   typedef typename Segment::Scalar Scalar;
 
@@ -193,12 +195,14 @@ private:
    */
   TrajectoryBox curr_trajectory_box_;
   TrajectoryPtr hold_trajectory_ptr_; ///< Last hold trajectory values.
+  TrajectoryPerJointPtr hold_trajectory_per_joint_ptr_; ///< Last hold trajectory values.
 
   typename Segment::State current_state_;    ///< Preallocated workspace variable.
   typename Segment::State desired_state_;    ///< Preallocated workspace variable.
   typename Segment::State state_error_;      ///< Preallocated workspace variable.
   typename Segment::State hold_start_state_; ///< Preallocated workspace variable.
   typename Segment::State hold_end_state_;   ///< Preallocated workspace variable.
+  typename Segment::State desired_joint_state_;    ///< Preallocated workspace variable.
 
   realtime_tools::RealtimeBuffer<TimeData> time_data_;
 

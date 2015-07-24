@@ -244,6 +244,9 @@ SegmentTolerances<Scalar> getSegmentTolerances(const ros::NodeHandle& nh,
     nh.param(joint_names[i] + "/trajectory", tolerances.state_tolerance[i].position,      0.0);
     nh.param(joint_names[i] + "/goal",       tolerances.goal_state_tolerance[i].position, 0.0);
     tolerances.goal_state_tolerance[i].velocity = stopped_velocity_tolerance;
+
+    //ROS_ERROR_STREAM("**************** "<<joint_names[i] << "/trajectory" << tolerances.state_tolerance[i].position <<  0.0);
+    //ROS_ERROR_STREAM("**************** "<<joint_names[i] << "/goal" << tolerances.goal_state_tolerance[i].position <<  0.0);
   }
 
   // Goal time tolerance

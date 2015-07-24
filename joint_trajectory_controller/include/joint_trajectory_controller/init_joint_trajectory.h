@@ -194,7 +194,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
 
   const ros::Time msg_start_time = internal::startTime(msg, time); // Message start time
 
-  ROS_INFO_STREAM("Figuring out new trajectory starting at time "
+  ROS_DEBUG_STREAM("Figuring out new trajectory starting at time "
                    << std::fixed << std::setprecision(3) << msg_start_time.toSec());
 
   // Empty trajectory
@@ -328,8 +328,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     }
   }
 
-
-
   // Initialize result trajectory: combination of:
   // - Useful segments of currently followed trajectory
   // - Useful segments of new trajectory (contained in ROS message)
@@ -346,9 +344,10 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     unsigned int joint_id = permutation_vector[msg_joint_it];
 
     ROS_WARN_STREAM("********** Processing trajectory for joint " << joint_names[joint_id]);
+
     // Initialize offsets due to wrapping joints to zero
     std::vector<Scalar> position_offset(1, 0.0);
-    //Scalar position_offset = 0.0;
+
 
     // Bridge current trajectory to new one
     if (has_current_trajectory)
@@ -438,9 +437,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       next_it_point_per_joint.velocities.resize(1, next_it->velocities[msg_joint_it]);
       next_it_point_per_joint.accelerations.resize(1, next_it->accelerations[msg_joint_it]);
       next_it_point_per_joint.time_from_start = next_it->time_from_start;
-
-      //if (!permutation.empty() && joint_dim != permutation.size())
-      // unsigned int joint_dim = point.positions.size();
 
       Segment segment(o_msg_start_time, it_point_per_joint, next_it_point_per_joint, permutation_vector_per_joint, position_offset);
       segment.setGoalHandle(options.rt_goal_handle);

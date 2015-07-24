@@ -379,7 +379,6 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
     state_publisher_->msg_.error.velocities.resize(n_joints);
     state_publisher_->unlock();
   }
-  ROS_ERROR_NAMED(name_,"********************* finish init");
   return true;
 }
 
@@ -429,30 +428,35 @@ update(const ros::Time& time, const ros::Duration& period)
     state_error_.position[i] = desired_joint_state_.position[0] - current_state_.position[i];
     state_error_.velocity[i] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
     state_error_.acceleration[i] = 0.0;
+
+    //ROS_WARN_STREAM_NAMED(name_, "Check tolerances for joint: "<<i);
+    // Check tolerances if segment corresponds to currently active action goal
+    const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
+    if (rt_segment_goal && rt_segment_goal == rt_active_goal_)
+    {
+      // Check tolerances
+      if (time_data.uptime.toSec() < segment_it->endTime())
+      {
+        ROS_WARN_NAMED(name_, "Currently executing a segment: check path tolerances");
+        // Currently executing a segment: check path tolerances
+        checkPathTolerances(state_error_,
+                            *segment_it);
+      }
+      else if (segment_it == --curr_traj[i].end())
+      {
+        ROS_WARN_NAMED(name_, "Finished executing the LAST segment: check goal tolerances");
+        if (verbose_)
+          ROS_DEBUG_STREAM_THROTTLE_NAMED(1,name_,"Finished executing last segment, checking goal tolerances");
+
+        // Finished executing the LAST segment: check goal tolerances
+        checkGoalTolerances(state_error_,
+                             *segment_it);
+      }
+    }
   }
-//
-//  // Check tolerances if segment corresponds to currently active action goal
-//  const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
-//  if (rt_segment_goal && rt_segment_goal == rt_active_goal_)
-//  {
-//    // Check tolerances
-//    if (time_data.uptime.toSec() < segment_it->endTime())
-//    {
-//      // Currently executing a segment: check path tolerances
-//      checkPathTolerances(state_error_,
-//                          *segment_it);
-//    }
-//    else if (segment_it == --curr_traj.end())
-//    {
-//      if (verbose_)
-//        ROS_DEBUG_STREAM_THROTTLE_NAMED(1,name_,"Finished executing last segement, checking goal tolerances");
-//
-//      // Finished executing the LAST segment: check goal tolerances
-//      checkGoalTolerances(state_error_,
-//                           *segment_it);
-//    }
-//  }
-//
+
+
+
   // Hardware interface adapter: Generate and send commands
   hw_iface_adapter_.updateCommand(time_data.uptime, time_data.period,
                                   desired_state_, state_error_);
@@ -575,6 +579,11 @@ goalCB(GoalHandle gh)
   if (update_ok)
   {
     // Accept new goal
+
+    // If new goal has less joints than current active goal
+    // create a new one and do not preempt the other
+    // store them in an array of active goals
+
     preemptActiveGoal();
     gh.setAccepted();
     rt_active_goal_ = rt_goal;
@@ -635,26 +644,35 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
   const ros::Duration time_offset = req.time - time_data->time;
   const ros::Time sample_time = time_data->uptime + time_offset;
 
-//  // Sample trajectory at requested time
-//  TrajectoryPtr curr_traj_ptr;
-//  curr_trajectory_box_.get(curr_traj_ptr);
-//  Trajectory& curr_traj = *curr_traj_ptr;
-  return false;
-//  typename Segment::State state;
-//  typename Trajectory::const_iterator segment_it = sample(curr_traj, sample_time.toSec(), state);
-//  if (curr_traj.end() == segment_it)
-//  {
-//    ROS_ERROR_STREAM_NAMED(name_, "Requested sample time preceeds trajectory start time.");
-//    return false;
-//  }
-//
-//  // Populate response
-//  resp.name         = joint_names_;
-//  resp.position     = state.position;
-//  resp.velocity     = state.velocity;
-//  resp.acceleration = state.acceleration;
-//
-//  return true;
+  // Sample trajectory at requested time
+  TrajectoryPtr curr_traj_ptr;
+  curr_trajectory_box_.get(curr_traj_ptr);
+  Trajectory& curr_traj = *curr_traj_ptr;
+
+  typename Segment::State response_point = typename Segment::State(joint_names_.size());
+
+  for (unsigned int i = 0; i < joints_.size(); ++i)
+  {
+    typename Segment::State state;
+    typename TrajectoryPerJoint::const_iterator segment_it = sample(curr_traj[i], sample_time.toSec(), state);
+    if (curr_traj[i].end() == segment_it)
+    {
+      ROS_ERROR_STREAM_NAMED(name_, "Requested sample time precedes trajectory start time.");
+      return false;
+    }
+
+    response_point.position[i]     = state.position[0];
+    response_point.velocity[i]     = state.velocity[0];
+    response_point.acceleration[i] = state.acceleration[0];
+  }
+  
+  // Populate response
+  resp.name         = joint_names_;
+  resp.position     = response_point.position;
+  resp.velocity     = response_point.velocity;
+  resp.acceleration = response_point.acceleration;
+
+  return true;
 }
 
 template <class SegmentImpl, class HardwareInterface>

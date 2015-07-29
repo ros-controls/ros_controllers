@@ -171,7 +171,7 @@ public:
                          const Time&  end_time,
                          const State& end_state)
     : rt_goal_handle_(),
-      tolerances_(start_state.position.size())
+      tolerances_()
   {
     Segment::init(start_time, start_state, end_time, end_state);
   }
@@ -194,7 +194,7 @@ public:
                          const std::vector<unsigned int>&             permutation     = std::vector<unsigned int>(),
                          const std::vector<Scalar>&                   position_offset = std::vector<Scalar>())
     : rt_goal_handle_(),
-      tolerances_(start_point.positions.size())
+      tolerances_()
   {
     if (start_point.positions.size() != end_point.positions.size())
     {
@@ -227,14 +227,14 @@ public:
   void setGoalHandle(RealtimeGoalHandlePtr rt_goal_handle) {rt_goal_handle_ = rt_goal_handle;}
 
   /** \return Tolerances this segment is associated to. */
-  const SegmentTolerances<Scalar>& getTolerances() const {return tolerances_;}
+  const SegmentTolerancesPerJoint<Scalar>& getTolerances() const {return tolerances_;}
 
   /** \brief Set the tolerances this segment is associated to. */
-  void setTolerances(const SegmentTolerances<Scalar>& tolerances) {tolerances_ = tolerances;}
+  void setTolerances(const SegmentTolerancesPerJoint<Scalar>& tolerances) {tolerances_ = tolerances;}
 
 private:
   RealtimeGoalHandlePtr     rt_goal_handle_;
-  SegmentTolerances<Scalar> tolerances_;
+  SegmentTolerancesPerJoint<Scalar> tolerances_;
 };
 
 /**

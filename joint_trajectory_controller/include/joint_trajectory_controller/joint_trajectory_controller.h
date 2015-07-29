@@ -156,6 +156,8 @@ private:
     ros::Time     uptime; ///< Controller uptime. Set to zero at every restart.
   };
 
+  int previous_status;
+
   typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>                  ActionServer;
   typedef boost::shared_ptr<ActionServer>                                                     ActionServerPtr;
   typedef ActionServer::GoalHandle                                                            GoalHandle;
@@ -184,7 +186,8 @@ private:
   SegmentTolerances<Scalar> default_tolerances_; ///< Default trajectory segment tolerances.
   HwIfaceAdapter            hw_iface_adapter_;   ///< Adapts desired trajectory state to HW interface.
 
-  RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
+  //RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
+  std::vector<RealtimeGoalHandlePtr> rt_active_goals_;     ///< Currently active action goal, if any.
 
   /**
    * Thread-safe container with a smart pointer to trajectory currently being followed.
@@ -202,7 +205,6 @@ private:
   typename Segment::State state_error_;      ///< Preallocated workspace variable.
   typename Segment::State hold_start_state_; ///< Preallocated workspace variable.
   typename Segment::State hold_end_state_;   ///< Preallocated workspace variable.
-  typename Segment::State desired_joint_state_;    ///< Preallocated workspace variable.
 
   realtime_tools::RealtimeBuffer<TimeData> time_data_;
 
@@ -225,7 +227,7 @@ private:
   void trajectoryCommandCB(const JointTrajectoryConstPtr& msg);
   void goalCB(GoalHandle gh);
   void cancelCB(GoalHandle gh);
-  void preemptActiveGoal();
+  void preemptActiveGoals();
   bool queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
                          control_msgs::QueryTrajectoryState::Response& resp);
 
@@ -255,8 +257,8 @@ private:
    *
    * \pre \p segment is associated to the active goal handle.
    **/
-  void checkPathTolerances(const typename Segment::State& state_error,
-                           const Segment&                 segment);
+//  void checkPathTolerances(const typename Segment::State& state_error,
+//                           const Segment&                 segment);
 
   /**
    * \brief Check goal tolerances.

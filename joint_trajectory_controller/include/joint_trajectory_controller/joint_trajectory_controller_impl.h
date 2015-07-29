@@ -153,7 +153,7 @@ template <class SegmentImpl, class HardwareInterface>
 inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 stopping(const ros::Time& time)
 {
-  preemptActiveGoal();
+  preemptActiveGoals();
 }
 
 template <class SegmentImpl, class HardwareInterface>
@@ -161,77 +161,98 @@ inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 trajectoryCommandCB(const JointTrajectoryConstPtr& msg)
 {
   const bool update_ok = updateTrajectoryCommand(msg, RealtimeGoalHandlePtr());
-  if (update_ok) {preemptActiveGoal();}
+  if (update_ok) {preemptActiveGoals();}
 }
 
 template <class SegmentImpl, class HardwareInterface>
 inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-preemptActiveGoal()
+preemptActiveGoals()
 {
-  RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
-
-  // Cancels the currently active goal
-  if (current_active_goal)
+  // Check that cancel request refers to currently active goals (if any)
+  for (unsigned int i = 0; i < rt_active_goals_.size(); ++i)
   {
-    // Marks the current goal as canceled
-    rt_active_goal_.reset();
-    current_active_goal->gh_.setCanceled();
-  }
-}
+    RealtimeGoalHandlePtr current_active_goal(rt_active_goals_[i]);
 
-template <class SegmentImpl, class HardwareInterface>
-inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-checkPathTolerances(const typename Segment::State& state_error,
-                    const Segment&                 segment)
-{
-  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
-  const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
-  if (!checkStateTolerance(state_error, tolerances.state_tolerance))
-  {
-    rt_segment_goal->preallocated_result_->error_code =
-    control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
-    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
-    rt_active_goal_.reset();
-  }
-}
-
-template <class SegmentImpl, class HardwareInterface>
-inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-checkGoalTolerances(const typename Segment::State& state_error,
-                    const Segment&                 segment)
-{
-  // Controller uptime
-  const ros::Time uptime = time_data_.readFromRT()->uptime;
-
-  // Checks that we have ended inside the goal tolerances
-  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
-  const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
-  const bool inside_goal_tolerances = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
-
-  if (inside_goal_tolerances)
-  {
-    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
-    rt_segment_goal->setSucceeded(rt_segment_goal->preallocated_result_);
-    rt_active_goal_.reset();
-  }
-  else if (uptime.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
-  {
-    // Still have some time left to meet the goal state tolerances
-  }
-  else
-  {
-    if (verbose_)
+    // Cancels the currently active goal
+    if (current_active_goal)
     {
-      ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed");
-      // Check the tolerances one more time to output the errors that occures
-      checkStateTolerance(state_error, tolerances.goal_state_tolerance, true);
+      // Marks the current goal as canceled
+      rt_active_goals_[i].reset();
+      rt_active_goals_.erase(rt_active_goals_.begin()+i);
+      current_active_goal->gh_.setCanceled();
     }
-
-    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
-    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
-    rt_active_goal_.reset();
   }
 }
+
+//template <class SegmentImpl, class HardwareInterface>
+//inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+//preemptActiveGoal()
+//{
+//
+//  RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
+//
+//  // Cancels the currently active goal
+//  if (current_active_goal)
+//  {
+//    // Marks the current goal as canceled
+//    rt_active_goal_.reset();
+//    current_active_goal->gh_.setCanceled();
+//  }
+//}
+
+//template <class SegmentImpl, class HardwareInterface>
+//inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+//checkPathTolerances(const typename Segment::State& state_error,
+//                    const Segment&                 segment)
+//{
+//  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
+//  const SegmentTolerancesPerJoint<Scalar>& tolerances = segment.getTolerances();
+//  if (!checkStateTolerancePerJoint(state_error, tolerances.state_tolerance))
+//  {
+//    rt_segment_goal->preallocated_result_->error_code =
+//    control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
+//    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
+//    rt_active_goal_.reset();
+//  }
+//}
+
+//template <class SegmentImpl, class HardwareInterface>
+//inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+//checkGoalTolerances(const typename Segment::State& state_error,
+//                    const Segment&                 segment)
+//{
+//  // Controller uptime
+//  const ros::Time uptime = time_data_.readFromRT()->uptime;
+//
+//  // Checks that we have ended inside the goal tolerances
+//  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
+//  const SegmentTolerancesPerJoint<Scalar>& tolerances = segment.getTolerances();
+//  const bool inside_goal_tolerances = checkStateTolerancePerJoint(state_error, tolerances.goal_state_tolerance);
+//
+//  if (inside_goal_tolerances)
+//  {
+//    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
+//    rt_segment_goal->setSucceeded(rt_segment_goal->preallocated_result_);
+//    rt_active_goal_.reset();
+//  }
+//  else if (uptime.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
+//  {
+//    // Still have some time left to meet the goal state tolerances
+//  }
+//  else
+//  {
+//    if (verbose_)
+//    {
+//      ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed");
+//      // Check the tolerances one more time to output the errors that occures
+//      checkStateTolerance(state_error, tolerances.goal_state_tolerance, true);
+//    }
+//
+//    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
+//    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
+//    rt_active_goal_.reset();
+//  }
+//}
 
 template <class SegmentImpl, class HardwareInterface>
 JointTrajectoryController<SegmentImpl, HardwareInterface>::
@@ -349,7 +370,6 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   desired_state_    = typename Segment::State(n_joints);
   state_error_      = typename Segment::State(n_joints);
 
-  desired_joint_state_ = typename Segment::State(1);
   hold_start_state_ = typename Segment::State(1);
   hold_end_state_   = typename Segment::State(1);
 
@@ -409,6 +429,9 @@ update(const ros::Time& time, const ros::Duration& period)
   // Update current state and state error
   for (unsigned int i = 0; i < joints_.size(); ++i)
   {
+    typename Segment::State desired_joint_state_ = typename Segment::State(1);
+    typename Segment::State state_joint_error_= typename Segment::State(1);
+
     current_state_.position[i] = joints_[i].getPosition();
     current_state_.velocity[i] = joints_[i].getVelocity();
     // There's no acceleration data available in a joint handle
@@ -425,37 +448,167 @@ update(const ros::Time& time, const ros::Duration& period)
     desired_state_.velocity[i] = desired_joint_state_.velocity[0];
     desired_state_.acceleration[i] = 0.0;
 
+    state_joint_error_.position[0] = desired_joint_state_.position[0] - current_state_.position[i];
+    state_joint_error_.velocity[0] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
+    state_joint_error_.acceleration[0] = 0.0;
+
     state_error_.position[i] = desired_joint_state_.position[0] - current_state_.position[i];
     state_error_.velocity[i] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
     state_error_.acceleration[i] = 0.0;
 
-    //ROS_WARN_STREAM_NAMED(name_, "Check tolerances for joint: "<<i);
-    // Check tolerances if segment corresponds to currently active action goal
     const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
-    if (rt_segment_goal && rt_segment_goal == rt_active_goal_)
-    {
-      // Check tolerances
-      if (time_data.uptime.toSec() < segment_it->endTime())
+    if (i == 22)
+      if (rt_segment_goal)
       {
-        ROS_WARN_NAMED(name_, "Currently executing a segment: check path tolerances");
-        // Currently executing a segment: check path tolerances
-        checkPathTolerances(state_error_,
-                            *segment_it);
+        int new_status = int(rt_segment_goal->gh_.getGoalStatus().status);
+        if (previous_status != new_status)
+          ROS_WARN_STREAM_NAMED(name_,"Status " << int(new_status) << " for goal: "<< rt_segment_goal->gh_.getGoalStatus().goal_id.id);
+        previous_status = new_status;
       }
-      else if (segment_it == --curr_traj[i].end())
-      {
-        ROS_WARN_NAMED(name_, "Finished executing the LAST segment: check goal tolerances");
-        if (verbose_)
-          ROS_DEBUG_STREAM_THROTTLE_NAMED(1,name_,"Finished executing last segment, checking goal tolerances");
-
-        // Finished executing the LAST segment: check goal tolerances
-        checkGoalTolerances(state_error_,
-                             *segment_it);
-      }
-    }
   }
 
+  //if (rt_active_goals_.size()>0)
+  //  ROS_ERROR_STREAM_NAMED(name_,"****************** Number rt_active_goals_:" << rt_active_goals_.size());
 
+  // Check tolerances if segment corresponds to currently active action goal
+  for (unsigned int active_goal_id = 0; active_goal_id < rt_active_goals_.size(); ++active_goal_id)
+  {
+    std::vector<unsigned int> permutation_vector = internal::permutation(rt_active_goals_[active_goal_id]->gh_.getGoal()->trajectory.joint_names, joint_names_);
+    std::vector<bool> successful_joint_traj;
+    successful_joint_traj.resize(permutation_vector.size(), false);
+
+    //Check names in active goal
+    for (unsigned int j = 0; j < permutation_vector.size(); ++j)
+    {
+      unsigned int joint_id = permutation_vector[j];
+      //ROS_ERROR_STREAM_NAMED(name_,"Joint_name:" << joint_names_[joint_id]);
+
+      typename Segment::State desired_joint_state_ = typename Segment::State(1);
+      typename Segment::State state_joint_error_= typename Segment::State(1);
+
+      state_joint_error_.position[0] = state_error_.position[joint_id];
+      state_joint_error_.velocity[0] = state_error_.velocity[joint_id];
+      state_joint_error_.acceleration[0] = state_error_.acceleration[joint_id];
+
+      //sample trajectory and see if it is active
+      typename TrajectoryPerJoint::const_iterator segment_it = sample(curr_traj[joint_id], time_data.uptime.toSec(), desired_joint_state_);
+      const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
+
+      if (rt_segment_goal && rt_segment_goal == rt_active_goals_[active_goal_id])
+      {
+        // Check tolerances
+        if (time_data.uptime.toSec() < segment_it->endTime())
+        {
+          //ROS_WARN_NAMED(name_, "Currently executing a segment: check path tolerances");
+          // Currently executing a segment: check path tolerances
+          const SegmentTolerancesPerJoint<Scalar>& joint_tolerances = segment_it->getTolerances();
+          if (!checkStateTolerancePerJoint(state_joint_error_, joint_tolerances.state_tolerance))
+          {
+            ROS_ERROR_STREAM_NAMED(name_, "PATH_TOLERANCE_VIOLATED! joint_id:" << joint_id);
+            rt_segment_goal->preallocated_result_->error_code =
+            control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
+            rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
+
+            rt_active_goals_[active_goal_id].reset();
+            //ROS_ERROR_STREAM_NAMED(name_,"Trajectory failed #active_goals: " << rt_active_goals_.size());
+            rt_active_goals_.erase(rt_active_goals_.begin()+active_goal_id);
+            //ROS_ERROR_STREAM_NAMED(name_,"Trajectory failed after #active_goals: " << rt_active_goals_.size());
+            break;
+          }
+        }
+        else if (segment_it == --curr_traj[joint_id].end())
+        {
+          //ROS_WARN_NAMED(name_, "Finished executing the LAST segment: check goal tolerances");
+          if (verbose_)
+            ROS_DEBUG_STREAM_THROTTLE_NAMED(1,name_,"Finished executing last segment, checking goal tolerances");
+
+          // Controller uptime
+          const ros::Time uptime = time_data_.readFromRT()->uptime;
+
+          // Checks that we have ended inside the goal tolerances
+          const SegmentTolerancesPerJoint<Scalar>& tolerances = segment_it->getTolerances();
+          const bool inside_goal_tolerances = checkStateTolerancePerJoint(state_joint_error_, tolerances.goal_state_tolerance);
+
+          if (inside_goal_tolerances)
+          {
+            //ROS_WARN_STREAM_NAMED(name_, "TrajectoryResult::SUCCESSFUL joint_id: "<< joint_id);
+            successful_joint_traj[joint_id] = true;
+
+          }
+          else if (uptime.toSec() < segment_it->endTime() + tolerances.goal_time_tolerance)
+          {
+            //ROS_WARN_STREAM_NAMED(name_, "Still have some time left  joint_id: "<< joint_id);
+            // Still have some time left to meet the goal state tolerances
+          }
+          else
+          {
+            if (verbose_)
+            {
+              ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed");
+              // Check the tolerances one more time to output the errors that occurs
+              checkStateTolerancePerJoint(state_joint_error_, tolerances.goal_state_tolerance, true);
+            }
+
+            //ROS_ERROR_STREAM_NAMED(name_,"Aborting active_goal: " << rt_active_goals_[active_goal_id]->gh_.getGoalID().id);
+            ROS_ERROR_STREAM_NAMED(name_,"Aborting active_goal: " << rt_segment_goal->gh_.getGoalID().id);
+
+
+            //ROS_ERROR_STREAM_NAMED(name_, "GOAL_TOLERANCE_VIOLATED goal_id:"<< active_goal_id << " joint_id:" << joint_id);
+            //ROS_ERROR_STREAM_NAMED(name_,"Status before aborting: " << rt_segment_goal->gh_.getGoalStatus() );
+            //rt_active_goals_[active_goal_id]->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
+            //rt_active_goals_[active_goal_id]->setAborted(rt_segment_goal->preallocated_result_);
+
+            RealtimeGoalHandlePtr current_active_goal(rt_active_goals_[active_goal_id]);
+            current_active_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
+            current_active_goal->setAborted(current_active_goal->preallocated_result_);
+
+            //ROS_ERROR_STREAM_NAMED(name_,"Status after aborting: " << rt_segment_goal->gh_.getGoalStatus() );
+            //rt_active_goals_[active_goal_id].reset();
+            //ROS_ERROR_STREAM_NAMED(name_,"Trajectory failed #active_goals: " << rt_active_goals_.size());
+
+            //rt_active_goals_.erase(rt_active_goals_.begin()+active_goal_id);
+            //ROS_ERROR_STREAM_NAMED(name_,"Trajectory failed after #active_goals: " << rt_active_goals_.size());
+
+            break;
+          }
+        }
+      }
+    }
+
+    if (std::find(successful_joint_traj.begin(), successful_joint_traj.end(), false) == successful_joint_traj.end()) // All true
+    {
+      ROS_WARN_NAMED(name_, "Whole TrajectoryResult::SUCCESSFUL !!!");
+
+      for (unsigned int j = 0; j < permutation_vector.size(); ++j)
+      {
+        unsigned int joint_id = permutation_vector[j];
+
+        typename Segment::State desired_joint_state_ = typename Segment::State(1);
+        typename TrajectoryPerJoint::const_iterator segment_it = sample(curr_traj[joint_id], time_data.uptime.toSec(), desired_joint_state_);
+        const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
+
+        rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
+        rt_segment_goal->setSucceeded(rt_segment_goal->preallocated_result_);
+      }
+      rt_active_goals_[active_goal_id].reset();
+      rt_active_goals_.erase(rt_active_goals_.begin()+active_goal_id);
+      break;
+    }
+
+  }
+
+  // Check which goals have finished and reset pointer
+  for (unsigned int active_goal_id = 0; active_goal_id < rt_active_goals_.size(); ++active_goal_id)
+  {
+    int status = int(rt_active_goals_[active_goal_id]->gh_.getGoalStatus().status);
+    if (status == 3 or status == 4)
+    {
+      ROS_WARN_STREAM_NAMED(name_,"**********Status " << int(status) << " for goal: "<< rt_active_goals_[active_goal_id]->gh_.getGoalStatus().goal_id.id);
+      rt_active_goals_[active_goal_id].reset();
+      rt_active_goals_.erase(rt_active_goals_.begin()+active_goal_id);
+      break; // Find the way to erase pointer!!!!!!!!!!!!!
+    }
+  }
 
   // Hardware interface adapter: Generate and send commands
   hw_iface_adapter_.updateCommand(time_data.uptime, time_data.period,
@@ -584,9 +737,11 @@ goalCB(GoalHandle gh)
     // create a new one and do not preempt the other
     // store them in an array of active goals
 
-    preemptActiveGoal();
+    //preempt if same joints
+    //preemptActiveGoal();
     gh.setAccepted();
-    rt_active_goal_ = rt_goal;
+    rt_active_goals_.push_back(rt_goal);
+    ROS_ERROR_STREAM_NAMED(name_,"Trajectory accepted #active_goals: " << rt_active_goals_.size());
 
     // Setup goal status checking timer
     goal_handle_timer_ = controller_nh_.createTimer(action_monitor_period_,
@@ -607,23 +762,29 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 cancelCB(GoalHandle gh)
 {
-  RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
+  //RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
+  std::vector<RealtimeGoalHandlePtr> current_active_goals(rt_active_goals_);
 
   // Check that cancel request refers to currently active goal (if any)
-  if (current_active_goal && current_active_goal->gh_ == gh)
+  for (unsigned int i = 0; i < current_active_goals.size(); ++i)
   {
-    // Reset current goal
-    rt_active_goal_.reset();
+    if (current_active_goals[i] && current_active_goals[i]->gh_ == gh)
+    {
+      // Reset current goal
+      rt_active_goals_[i].reset();
+      rt_active_goals_.erase(rt_active_goals_.begin()+i);
 
-    // Controller uptime
-    const ros::Time uptime = time_data_.readFromRT()->uptime;
+      // Controller uptime
+      const ros::Time uptime = time_data_.readFromRT()->uptime;
 
-    // Enter hold current position mode
-    setHoldPosition(uptime);
-    ROS_DEBUG_NAMED(name_, "Canceling active action goal because cancel callback recieved from actionlib.");
+      // Enter hold current position mode
+      setHoldPosition(uptime);
+      ROS_DEBUG_NAMED(name_, "Canceling active action goal because cancel callback received from actionlib.");
 
-    // Mark the current goal as canceled
-    current_active_goal->gh_.setCanceled();
+      // Mark the current goal as canceled
+      current_active_goals[i]->gh_.setCanceled();
+      return;
+    }
   }
 }
 

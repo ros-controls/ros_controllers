@@ -203,8 +203,7 @@ private:
   typename Segment::State current_state_;    ///< Preallocated workspace variable.
   typename Segment::State desired_state_;    ///< Preallocated workspace variable.
   typename Segment::State state_error_;      ///< Preallocated workspace variable.
-  typename Segment::State hold_start_state_; ///< Preallocated workspace variable.
-  typename Segment::State hold_end_state_;   ///< Preallocated workspace variable.
+
 
   realtime_tools::RealtimeBuffer<TimeData> time_data_;
 

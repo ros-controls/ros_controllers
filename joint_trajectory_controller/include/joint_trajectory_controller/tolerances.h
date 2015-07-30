@@ -161,7 +161,7 @@ inline bool checkStateTolerance(const State&                                    
 /**
  * \param state_error State error to check.
  * \param state_tolerance State tolerances to check \p state_error against.
- * \param show_errors If the joints that violate their tolerances should be output to console. NOT REALTIME if true
+ * \param show_errors If the joint that violate its tolerance should be output to console. NOT REALTIME if true
  * \return True if \p state_error fulfills \p state_tolerance.
  */
 template <class State>
@@ -305,9 +305,6 @@ SegmentTolerances<Scalar> getSegmentTolerances(const ros::NodeHandle& nh,
     nh.param(joint_names[i] + "/trajectory", tolerances.state_tolerance[i].position,      0.0);
     nh.param(joint_names[i] + "/goal",       tolerances.goal_state_tolerance[i].position, 0.0);
     tolerances.goal_state_tolerance[i].velocity = stopped_velocity_tolerance;
-
-    //ROS_ERROR_STREAM("**************** "<<joint_names[i] << "/trajectory" << tolerances.state_tolerance[i].position <<  0.0);
-    //ROS_ERROR_STREAM("**************** "<<joint_names[i] << "/goal" << tolerances.goal_state_tolerance[i].position <<  0.0);
   }
 
   // Goal time tolerance

@@ -240,47 +240,9 @@ private:
 /**
  * \param prev_position Previous position from which to compute the wraparound offset.
  * \param next_position Next position from which to compute the wraparound offset.
- * \param angle_wraparound Vector of booleans where true values correspond to joints that wrap around
- * (ie. are continuous). Offsets will be computed only for these joints, otherwise they are set to zero.
- * \return Wraparound offsets that should be applied to \p next_position such that no multi-turns are performed when
- * transitioning from \p prev_position.
- * \tparam Scalar Scalar type.
- */
-template <class Scalar>
-std::vector<Scalar> wraparoundOffset(const std::vector<Scalar>& prev_position,
-                                     const std::vector<Scalar>& next_position,
-                                     const std::vector<bool>&   angle_wraparound)
-{
-  // Preconditions
-  const unsigned int n_joints = angle_wraparound.size();
-  if (n_joints != prev_position.size() || n_joints != next_position.size()) {return std::vector<Scalar>();}
-
-  // Return value
-  std::vector<Scalar> pos_offset(n_joints, 0.0);
-
-  for (unsigned int i = 0; i < angle_wraparound.size(); ++i)
-  {
-    if (angle_wraparound[i])
-    {
-      Scalar dist = angles::shortest_angular_distance(prev_position[i], next_position[i]);
-
-      // Deal with singularity at M_PI shortest distance
-      if (std::abs(dist) - M_PI < 1e-9)
-      {
-        dist = next_position[i] > prev_position[i] ? std::abs(dist) : -std::abs(dist);
-      }
-      pos_offset[i] = (prev_position[i] + dist) - next_position[i];
-    }
-  }
-  return pos_offset;
-}
-
-/**
- * \param prev_position Previous position from which to compute the wraparound offset.
- * \param next_position Next position from which to compute the wraparound offset.
- * \param angle_wraparound Vector of booleans where true values correspond to joints that wrap around
- * (ie. are continuous). Offsets will be computed only for these joints, otherwise they are set to zero.
- * \return Wraparound offsets that should be applied to \p next_position such that no multi-turns are performed when
+ * \param angle_wraparound Boolean where true value corresponds to a joint that wrap around
+ * (ie. is continuous). Offset will be computed only for this joint, otherwise it is set to zero.
+ * \return Wraparound offset that should be applied to \p next_position such that no multi-turns are performed when
  * transitioning from \p prev_position.
  * \tparam Scalar Scalar type.
  */

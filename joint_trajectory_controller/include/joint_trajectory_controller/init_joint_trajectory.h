@@ -66,9 +66,6 @@ inline std::vector<unsigned int> permutation(const T& t1, const T& t2)
 {
   typedef unsigned int SizeType;
 
-  // Arguments must have the same size
-  //if (t1.size() != t2.size()) {return std::vector<SizeType>();}
-
   std::vector<SizeType> permutation_vector(t1.size()); // Return value
   for (typename T::const_iterator t1_it = t1.begin(); t1_it != t1.end(); ++t1_it)
   {
@@ -246,33 +243,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   // If unspecified, a trivial map (no permutation) is computed
   const std::vector<std::string> joint_names = has_joint_names ? *(options.joint_names) : msg.joint_names;
 
-  std::stringstream log_str;
-
-
-//  ROS_INFO_STREAM("Joint names size" << joint_names.size());
-//
-//  log_str.str("");
-//  log_str << "Joint names size:" ;
-//  for (unsigned int i=0; i < joint_names.size();i++) log_str << joint_names[i] << "\t";
-//  log_str << "\n";
-//  ROS_INFO_STREAM(log_str.str());
-//
-//  log_str.str("");
-//  log_str << "msg.joint_names size:" ;
-//  for (unsigned int i=0; i < msg.joint_names.size();i++) log_str << msg.joint_names[i] << "\t";
-//  log_str << "\n";
-//  ROS_INFO_STREAM(log_str.str());
-//
-//  log_str.str("");
-//  log_str << "msg.position size:" ;
-//  for (unsigned int i=0; i < msg.points.size();i++)
-//  {
-//    for (unsigned int j=0; j < msg.points[i].positions.size();j++)
-//      log_str << msg.points[i].positions[j] << "\t";
-//    log_str << "\n";
-//  }
-//  ROS_INFO_STREAM(log_str.str());
-
+  //std::stringstream log_str;
   std::vector<unsigned int> permutation_vector = internal::permutation(msg.joint_names,joint_names);
 
   if (permutation_vector.empty())
@@ -280,13 +251,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     ROS_ERROR("Cannot create trajectory from message. It does not contain the expected joints.");
     return Trajectory();
   }
-
-//  //std::stringstream log_str;
-//  log_str.str("");
-//  log_str << "permutation_vector:" ;
-//  for (unsigned int i=0; i < permutation_vector.size();i++) log_str << permutation_vector[i] << "\t";
-//  log_str << "\n";
-//  ROS_INFO_STREAM(log_str.str());
 
   // Tolerances to be used in all new segments
   SegmentTolerances<Scalar> tolerances = has_default_tolerances ?
@@ -305,7 +269,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   if (msg_it == msg.points.end())
   {
     msg_it = msg.points.begin();  // Entire trajectory is after current time
-    ROS_WARN_STREAM("Entire trajectory is after current time");
   }
   else
   {
@@ -329,8 +292,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
                       next_point_dur.toSec() << "s.");
     }
   }
-
-
 
   // Initialize result trajectory: combination of:
   // - Useful segments of currently followed trajectory
@@ -375,12 +336,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       typename Segment::State last_curr_state;
       sample(curr_joint_traj, last_curr_time, last_curr_state);
 
-//      log_str.str("");
-//      log_str << "last_curr_state.position:" ;
-//      for (unsigned int i=0; i < last_curr_state.position.size();i++) log_str << last_curr_state.position[i] << "\t";
-//      log_str << "\n";
-//      ROS_INFO_STREAM(log_str.str());
-
       // Get the first time and state that will be executed from the new trajectory
       trajectory_msgs::JointTrajectoryPoint point_per_joint;
       point_per_joint.positions.resize(1, it->positions[msg_joint_it]);
@@ -391,12 +346,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
 
       const typename Segment::Time first_new_time = o_msg_start_time.toSec() + (it->time_from_start).toSec();
       typename Segment::State first_new_state(point_per_joint, permutation_vector_per_joint); // Here offsets are not yet applied
-
-//      log_str.str("");
-//      log_str << "first_new_state.position:" ;
-//      for (unsigned int i=0; i < first_new_state.position.size();i++) log_str << first_new_state.position[i] << "\t";
-//      log_str << "\n";
-//      ROS_INFO_STREAM(log_str.str());
 
       // Compute offsets due to wrapping joints
       if (has_angle_wraparound)
@@ -428,7 +377,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       bridge_seg.setGoalHandle(options.rt_goal_handle);
       if (has_rt_goal_handle) {bridge_seg.setTolerances(tolerances_per_joint);}
       result_traj_per_joint.push_back(bridge_seg);
-      //ROS_INFO_STREAM("Finish adding old trajectory segment");
     }
 
     // Constants used in log statement at the end
@@ -442,7 +390,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     {
       std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator next_it = it; ++next_it;
 
-      //ROS_INFO_STREAM("Inside while");
       trajectory_msgs::JointTrajectoryPoint it_point_per_joint, next_it_point_per_joint;
       it_point_per_joint.positions.resize(1, it->positions[msg_joint_it]);
       it_point_per_joint.velocities.resize(1, it->velocities[msg_joint_it]);
@@ -473,9 +420,8 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
                                  " points) taken from the input trajectory.";}
     }
     else {log_str << ".";}
-    //ROS_WARN_STREAM(log_str.str());
+    ROS_DEBUG_STREAM(log_str.str());
 
-    //ROS_WARN_STREAM("********** result_traj_per_joint" << result_traj[joint_id].size());
     result_traj[joint_id] = result_traj_per_joint;
 
   }

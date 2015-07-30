@@ -179,60 +179,6 @@ preemptActiveGoal()
   }
 }
 
-//template <class SegmentImpl, class HardwareInterface>
-//inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-//checkPathTolerances(const typename Segment::State& state_error,
-//                    const Segment&                 segment)
-//{
-//  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
-//  const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
-//  if (!checkStateTolerance(state_error, tolerances.state_tolerance))
-//  {
-//    rt_segment_goal->preallocated_result_->error_code =
-//    control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
-//    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
-//    rt_active_goal_.reset();
-//  }
-//}
-//
-//template <class SegmentImpl, class HardwareInterface>
-//inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-//checkGoalTolerances(const typename Segment::State& state_error,
-//                    const Segment&                 segment)
-//{
-//  // Controller uptime
-//  const ros::Time uptime = time_data_.readFromRT()->uptime;
-//
-//  // Checks that we have ended inside the goal tolerances
-//  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
-//  const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
-//  const bool inside_goal_tolerances = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
-//
-//  if (inside_goal_tolerances)
-//  {
-//    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
-//    rt_segment_goal->setSucceeded(rt_segment_goal->preallocated_result_);
-//    rt_active_goal_.reset();
-//  }
-//  else if (uptime.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
-//  {
-//    // Still have some time left to meet the goal state tolerances
-//  }
-//  else
-//  {
-//    if (verbose_)
-//    {
-//      ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed");
-//      // Check the tolerances one more time to output the errors that occures
-//      checkStateTolerance(state_error, tolerances.goal_state_tolerance, true);
-//    }
-//
-//    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
-//    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
-//    rt_active_goal_.reset();
-//  }
-//}
-
 template <class SegmentImpl, class HardwareInterface>
 JointTrajectoryController<SegmentImpl, HardwareInterface>::
 JointTrajectoryController()
@@ -434,16 +380,6 @@ update(const ros::Time& time, const ros::Duration& period)
     state_error_.velocity[i] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
     state_error_.acceleration[i] = 0.0;
 
-//    const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
-//    if (i == 22)
-//      if (rt_segment_goal)
-//      {
-//        int new_status = int(rt_segment_goal->gh_.getGoalStatus().status);
-//        if (previous_status != new_status)
-//          ROS_WARN_STREAM_NAMED(name_,"Status " << int(new_status) << " for goal: "<< rt_segment_goal->gh_.getGoalStatus().goal_id.id);
-//        previous_status = new_status;
-//      }
-
     //Check tolerances
     const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
     if (rt_segment_goal && rt_segment_goal == rt_active_goal_)
@@ -455,7 +391,7 @@ update(const ros::Time& time, const ros::Duration& period)
         const SegmentTolerancesPerJoint<Scalar>& joint_tolerances = segment_it->getTolerances();
         if (!checkStateTolerancePerJoint(state_joint_error_, joint_tolerances.state_tolerance))
         {
-          ROS_ERROR_STREAM_NAMED(name_, "PATH_TOLERANCE_VIOLATED! joint_id:" << i);
+          //ROS_ERROR_STREAM_NAMED(name_, "PATH_TOLERANCE_VIOLATED! joint_id:" << i);
           rt_segment_goal->preallocated_result_->error_code =
           control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);

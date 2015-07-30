@@ -330,10 +330,21 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     }
   }
 
+
+
   // Initialize result trajectory: combination of:
   // - Useful segments of currently followed trajectory
   // - Useful segments of new trajectory (contained in ROS message)
   Trajectory result_traj = *(options.current_trajectory);
+
+  //Iterate to all segments to set the new goal handler
+  for (unsigned int joint_id=0; joint_id < joint_names.size();joint_id++)
+  {
+    for (unsigned int segment_id=0; segment_id < result_traj[joint_id].size(); segment_id++)
+    {
+      (result_traj[joint_id])[segment_id].setGoalHandle(options.rt_goal_handle);
+    }
+  }
 
   std::vector<unsigned int> permutation_vector_per_joint(1,0); //refactor this and remove it as it is not needed
 

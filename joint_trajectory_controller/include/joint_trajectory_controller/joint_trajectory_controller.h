@@ -186,8 +186,8 @@ private:
   SegmentTolerances<Scalar> default_tolerances_; ///< Default trajectory segment tolerances.
   HwIfaceAdapter            hw_iface_adapter_;   ///< Adapts desired trajectory state to HW interface.
 
-  //RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
-  std::vector<RealtimeGoalHandlePtr> rt_active_goals_;     ///< Currently active action goal, if any.
+  RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
+  //std::vector<RealtimeGoalHandlePtr> rt_active_goals_;     ///< Currently active action goal, if any.
 
   /**
    * Thread-safe container with a smart pointer to trajectory currently being followed.
@@ -227,7 +227,7 @@ private:
   void trajectoryCommandCB(const JointTrajectoryConstPtr& msg);
   void goalCB(GoalHandle gh);
   void cancelCB(GoalHandle gh);
-  void preemptActiveGoals();
+  void preemptActiveGoal();
   bool queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
                          control_msgs::QueryTrajectoryState::Response& resp);
 

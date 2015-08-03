@@ -113,6 +113,12 @@ struct InitJointTrajectoryOptions
   ros::Time*                 other_time_base;
 };
 
+template <class Trajectory>
+bool IsNotEmpty(typename Trajectory::value_type trajPerJoint)
+{
+  return trajPerJoint.size()>0;
+};
+
 /**
  * \brief Initialize a joint trajectory from ROS message data.
  *
@@ -243,7 +249,31 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   // If unspecified, a trivial map (no permutation) is computed
   const std::vector<std::string> joint_names = has_joint_names ? *(options.joint_names) : msg.joint_names;
 
-  //std::stringstream log_str;
+  if (has_angle_wraparound)
+  {
+    // Preconditions
+    const unsigned int n_angle_wraparound = options.angle_wraparound->size();
+    if (n_angle_wraparound != joint_names.size())
+    {
+      ROS_ERROR("Cannot create trajectory from message. "
+                "Vector specifying whether joints wrap around has an invalid size.");
+      return Trajectory();
+    }
+  }
+
+//  std::stringstream log_str;
+//  log_str.str("");
+//  log_str << "Joint names size:" ;
+//  for (unsigned int i=0; i < joint_names.size();i++) log_str << joint_names[i] << "\t";
+//  log_str << "\n";
+//  ROS_INFO_STREAM(log_str.str());
+//
+//  log_str.str("");
+//  log_str << "msg.joint_names size:" ;
+//  for (unsigned int i=0; i < msg.joint_names.size();i++) log_str << msg.joint_names[i] << "\t";
+//  log_str << "\n";
+//  ROS_INFO_STREAM(log_str.str());
+
   std::vector<unsigned int> permutation_vector = internal::permutation(msg.joint_names,joint_names);
 
   if (permutation_vector.empty())
@@ -251,7 +281,14 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     ROS_ERROR("Cannot create trajectory from message. It does not contain the expected joints.");
     return Trajectory();
   }
-
+  
+  //std::stringstream log_str;
+//  log_str.str("");
+//  log_str << "permutation_vector:" ;
+//  for (unsigned int i=0; i < permutation_vector.size();i++) log_str << permutation_vector[i] << "\t";
+//  log_str << "\n";
+//  ROS_INFO_STREAM(log_str.str());
+  
   // Tolerances to be used in all new segments
   SegmentTolerances<Scalar> tolerances = has_default_tolerances ?
                                          *(options.default_tolerances) : SegmentTolerances<Scalar>(n_joints);
@@ -296,16 +333,23 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   // Initialize result trajectory: combination of:
   // - Useful segments of currently followed trajectory
   // - Useful segments of new trajectory (contained in ROS message)
-  Trajectory result_traj = *(options.current_trajectory);
+  Trajectory result_traj;
 
-  //Iterate to all segments to set the new goal handler
-  for (unsigned int joint_id=0; joint_id < joint_names.size();joint_id++)
+  if (has_current_trajectory)
   {
-    for (unsigned int segment_id=0; segment_id < result_traj[joint_id].size(); segment_id++)
+    result_traj = *(options.current_trajectory);
+
+    //Iterate to all segments to set the new goal handler
+    for (unsigned int joint_id=0; joint_id < joint_names.size();joint_id++)
     {
-      (result_traj[joint_id])[segment_id].setGoalHandle(options.rt_goal_handle);
+      for (unsigned int segment_id=0; segment_id < result_traj[joint_id].size(); segment_id++)
+      {
+        (result_traj[joint_id])[segment_id].setGoalHandle(options.rt_goal_handle);
+      }
     }
   }
+  else
+    result_traj.resize(joint_names.size());
 
   std::vector<unsigned int> permutation_vector_per_joint(1,0); //refactor this and remove it as it is not needed
 
@@ -422,8 +466,15 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     else {log_str << ".";}
     ROS_DEBUG_STREAM(log_str.str());
 
-    result_traj[joint_id] = result_traj_per_joint;
+    if (result_traj_per_joint.size() > 0)
+      result_traj[joint_id] = result_traj_per_joint;
+  }
 
+  // If the trajectory for all joints is empty, empty the trajectory vector
+  typename Trajectory::const_iterator trajIter = std::find_if (result_traj.begin(), result_traj.end(), IsNotEmpty<Trajectory>);
+  if (trajIter == result_traj.end())
+  {
+    result_traj.clear();
   }
 
   return result_traj;

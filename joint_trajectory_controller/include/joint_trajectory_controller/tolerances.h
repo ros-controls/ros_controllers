@@ -172,7 +172,7 @@ inline bool checkStateTolerancePerJoint(const State&                            
 
   using std::abs;
 
-  const bool is_valid = !(state_tolerance.position     > 0.0 && abs(state_error.position[0])     > state_tolerance.position); //&&
+  const bool is_valid = !(state_tolerance.position     > 0.0 && abs(state_error.position[0])     > state_tolerance.position) &&
                         !(state_tolerance.velocity     > 0.0 && abs(state_error.velocity[0])     > state_tolerance.velocity) &&
                         !(state_tolerance.acceleration > 0.0 && abs(state_error.acceleration[0]) > state_tolerance.acceleration);
 

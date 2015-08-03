@@ -28,15 +28,8 @@
         args="/rrbot_controller/state/desired/velocities[0]:velocities[1],/rrbot_controller/state/actual/velocities[0]:velocities[1]" />
 
   <!-- Controller test -->
-  <!--
   <test test-name="joint_trajectory_controller_test"
         pkg="joint_trajectory_controller"
         type="joint_trajectory_controller_test"
-        time-limit="30.0"/-->
-
-  <node name="joint_trajectory_controller_test"
-        pkg="joint_trajectory_controller"
-        type="joint_trajectory_controller_test" output="screen" />
-        
-
+        time-limit="80.0"/>
 </launch>

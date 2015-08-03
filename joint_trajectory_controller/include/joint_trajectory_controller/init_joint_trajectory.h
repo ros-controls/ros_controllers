@@ -193,8 +193,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   typedef typename TrajectoryPerJoint::value_type Segment;
   typedef typename Segment::Scalar Scalar;
 
-  ROS_ERROR("-----------------------*****HERE!");
-
   const unsigned int n_joints = msg.joint_names.size();
 
   const ros::Time msg_start_time = internal::startTime(msg, time); // Message start time
@@ -263,20 +261,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     }
   }
 
-
-//  std::stringstream log_str;
-//  log_str.str("");
-//  log_str << "Joint names size:" ;
-//  for (unsigned int i=0; i < joint_names.size();i++) log_str << joint_names[i] << "\t";
-//  log_str << "\n";
-//  ROS_INFO_STREAM(log_str.str());
-//
-//  log_str.str("");
-//  log_str << "msg.joint_names size:" ;
-//  for (unsigned int i=0; i < msg.joint_names.size();i++) log_str << msg.joint_names[i] << "\t";
-//  log_str << "\n";
-//  ROS_INFO_STREAM(log_str.str());
-
   std::vector<unsigned int> permutation_vector = internal::permutation(msg.joint_names,joint_names);
 
   if (permutation_vector.empty())
@@ -284,14 +268,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     ROS_ERROR("Cannot create trajectory from message. It does not contain the expected joints.");
     return Trajectory();
   }
-  
-  //std::stringstream log_str;
-//  log_str.str("");
-//  log_str << "permutation_vector:" ;
-//  for (unsigned int i=0; i < permutation_vector.size();i++) log_str << permutation_vector[i] << "\t";
-//  log_str << "\n";
-//  ROS_INFO_STREAM(log_str.str());
-  
+
   // Tolerances to be used in all new segments
   SegmentTolerances<Scalar> tolerances = has_default_tolerances ?
                                          *(options.default_tolerances) : SegmentTolerances<Scalar>(n_joints);
@@ -383,14 +360,16 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       typename Segment::State last_curr_state;
       sample(curr_joint_traj, last_curr_time, last_curr_state);
 
-      ROS_ERROR("*****HERE1!");
       // Get the first time and state that will be executed from the new trajectory
+      if (!isValid(*it, it->positions.size()))
+      {
+        throw(std::invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
+      }
       trajectory_msgs::JointTrajectoryPoint point_per_joint;
       point_per_joint.positions.resize(1, it->positions[msg_joint_it]);
       point_per_joint.velocities.resize(1, it->velocities[msg_joint_it]);
       point_per_joint.accelerations.resize(1, it->accelerations[msg_joint_it]);
       point_per_joint.time_from_start = it->time_from_start;
-      ROS_ERROR("*****HERE2!");
 
       const typename Segment::Time first_new_time = o_msg_start_time.toSec() + (it->time_from_start).toSec();
       typename Segment::State first_new_state(point_per_joint, permutation_vector_per_joint); // Here offsets are not yet applied

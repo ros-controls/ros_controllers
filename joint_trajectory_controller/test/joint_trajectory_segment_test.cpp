@@ -60,10 +60,10 @@ TEST(WraparoundOffsetTest, WrappingPositions)
   // No wrapping joints
   {
     std::vector<bool> angle_wraparound(2, false);
-    std::vector<double> wraparound_offset = wraparoundOffset(pos1, pos2, angle_wraparound);
-    EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
-    EXPECT_NEAR(0.0, wraparound_offset[0], EPS);
-    EXPECT_NEAR(0.0, wraparound_offset[1], EPS);
+    double wraparound_offset1 = wraparoundJointOffset(pos1[0], pos2[0], angle_wraparound[0]);
+    double wraparound_offset2 = wraparoundJointOffset(pos1[1], pos2[1], angle_wraparound[1]);
+    EXPECT_NEAR(0.0, wraparound_offset1, EPS);
+    EXPECT_NEAR(0.0, wraparound_offset2, EPS);
   }
 
   // Single wrapping joint
@@ -74,18 +74,18 @@ TEST(WraparoundOffsetTest, WrappingPositions)
 
     // From state1 to state2
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos1, pos2, angle_wraparound);
-      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
-      EXPECT_NEAR(-two_pi, wraparound_offset[0], EPS);
-      EXPECT_NEAR(0.0, wraparound_offset[1], EPS);
+      double wraparound_offset1 = wraparoundJointOffset(pos1[0], pos2[0], angle_wraparound[0]);
+      double wraparound_offset2 = wraparoundJointOffset(pos1[1], pos2[1], angle_wraparound[1]);
+      EXPECT_NEAR(-two_pi, wraparound_offset1, EPS);
+      EXPECT_NEAR(0.0, wraparound_offset2, EPS);
     }
 
     // From state2 to state1
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos2, pos1, angle_wraparound);
-      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
-      EXPECT_NEAR(two_pi, wraparound_offset[0], EPS);
-      EXPECT_NEAR(0.0, wraparound_offset[1], EPS);
+      double wraparound_offset1 = wraparoundJointOffset(pos2[0], pos1[0], angle_wraparound[0]);
+      double wraparound_offset2 = wraparoundJointOffset(pos2[1], pos1[1], angle_wraparound[1]);
+      EXPECT_NEAR(two_pi, wraparound_offset1, EPS);
+      EXPECT_NEAR(0.0, wraparound_offset2, EPS);
     }
   }
 
@@ -95,18 +95,18 @@ TEST(WraparoundOffsetTest, WrappingPositions)
 
     // From state1 to state2
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos1, pos2, angle_wraparound);
-      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
-      EXPECT_NEAR(-two_pi, wraparound_offset[0], EPS);
-      EXPECT_NEAR(-2.0 * two_pi, wraparound_offset[1], EPS);
+      double wraparound_offset1 = wraparoundJointOffset(pos1[0], pos2[0], angle_wraparound[0]);
+      double wraparound_offset2 = wraparoundJointOffset(pos1[1], pos2[1], angle_wraparound[1]);
+      EXPECT_NEAR(-two_pi, wraparound_offset1, EPS);
+      EXPECT_NEAR(-2.0 * two_pi, wraparound_offset2, EPS);
     }
 
     // From state2 to state1
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos2, pos1, angle_wraparound);
-      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
-      EXPECT_NEAR(two_pi, wraparound_offset[0], EPS);
-      EXPECT_NEAR(2.0 * two_pi, wraparound_offset[1], EPS);
+      double wraparound_offset1 = wraparoundJointOffset(pos2[0], pos1[0], angle_wraparound[0]);
+      double wraparound_offset2 = wraparoundJointOffset(pos2[1], pos1[1], angle_wraparound[1]);
+      EXPECT_NEAR(two_pi, wraparound_offset1, EPS);
+      EXPECT_NEAR(2.0 * two_pi, wraparound_offset2, EPS);
     }
   }
 }
@@ -122,16 +122,14 @@ TEST(WraparoundOffsetTest, WrappingPositionsPiSingularity)
   std::vector<bool> angle_wraparound(1, true);
   // From state1 to state2
   {
-    std::vector<double> wraparound_offset = wraparoundOffset<double>(pos1, pos2, angle_wraparound);
-    EXPECT_EQ(pos1.size(), wraparound_offset.size());
-    EXPECT_NEAR(0.0, wraparound_offset[0], EPS);
+    double wraparound_offset1 = wraparoundJointOffset(pos1[0], pos2[0], angle_wraparound[0]);
+    EXPECT_NEAR(0.0, wraparound_offset1, EPS);
   }
 
   // From state2 to state1
   {
-    std::vector<double> wraparound_offset = wraparoundOffset<double>(pos2, pos1, angle_wraparound);
-    EXPECT_EQ(pos1.size(), wraparound_offset.size());
-    EXPECT_NEAR(0.0, wraparound_offset[0], EPS);
+    double wraparound_offset1 = wraparoundJointOffset(pos2[0], pos1[0], angle_wraparound[0]);
+    EXPECT_NEAR(0.0, wraparound_offset1, EPS);
   }
 }
 
@@ -154,18 +152,18 @@ TEST(WraparoundOffsetTest, NonWrappingPositions)
 
     // From state1 to state2
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos1, pos2, angle_wraparound);
-      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
-      EXPECT_NEAR(0.0, wraparound_offset[0], EPS);
-      EXPECT_NEAR(0.0, wraparound_offset[1], EPS);
+      double wraparound_offset1 = wraparoundJointOffset(pos1[0], pos2[0], angle_wraparound[0]);
+      double wraparound_offset2 = wraparoundJointOffset(pos1[1], pos2[1], angle_wraparound[1]);
+      EXPECT_NEAR(0.0, wraparound_offset1, EPS);
+      EXPECT_NEAR(0.0, wraparound_offset2, EPS);
     }
 
     // From state2 to state1
     {
-      std::vector<double> wraparound_offset = wraparoundOffset<double>(pos2, pos1, angle_wraparound);
-      EXPECT_NEAR(pos1.size(), wraparound_offset.size(), EPS);
-      EXPECT_NEAR(0.0, wraparound_offset[0], EPS);
-      EXPECT_NEAR(0.0, wraparound_offset[1], EPS);
+      double wraparound_offset1 = wraparoundJointOffset(pos2[0], pos1[0], angle_wraparound[0]);
+      double wraparound_offset2 = wraparoundJointOffset(pos2[1], pos1[1], angle_wraparound[1]);
+      EXPECT_NEAR(0.0, wraparound_offset1, EPS);
+      EXPECT_NEAR(0.0, wraparound_offset2, EPS);
     }
   }
 }

@@ -159,7 +159,6 @@ protected:
 
   // Currently executed trajectory
   Trajectory curr_traj;
-
 };
 
 //Now it is possible to have different sizes

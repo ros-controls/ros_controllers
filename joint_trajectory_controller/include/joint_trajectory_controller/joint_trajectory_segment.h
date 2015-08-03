@@ -85,7 +85,7 @@ public:
     /**
      * \param point Trajectory point.
      *
-     * \param permutation Permutation vector for mapping the joint order of a \p point to a desired order.
+     * \param permutation (Should be remove it) Permutation vector for mapping the joint order of a \p point to a desired order.
      * For instance, if \p point contains data associated to joints <tt>"{B, D, A, C}"</tt>, and we are interested in
      * constructing a segment with joints ordered as <tt>"{A, B, C, D}"</tt>, the permutation vector should
      * be set to <tt>"{2, 0, 3, 1}"</tt>.

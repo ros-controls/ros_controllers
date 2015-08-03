@@ -156,8 +156,6 @@ private:
     ros::Time     uptime; ///< Controller uptime. Set to zero at every restart.
   };
 
-  int previous_status;
-
   typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>                  ActionServer;
   typedef boost::shared_ptr<ActionServer>                                                     ActionServerPtr;
   typedef ActionServer::GoalHandle                                                            GoalHandle;
@@ -187,7 +185,6 @@ private:
   HwIfaceAdapter            hw_iface_adapter_;   ///< Adapts desired trajectory state to HW interface.
 
   RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
-  //std::vector<RealtimeGoalHandlePtr> rt_active_goals_;     ///< Currently active action goal, if any.
 
   /**
    * Thread-safe container with a smart pointer to trajectory currently being followed.
@@ -198,12 +195,10 @@ private:
    */
   TrajectoryBox curr_trajectory_box_;
   TrajectoryPtr hold_trajectory_ptr_; ///< Last hold trajectory values.
-  TrajectoryPerJointPtr hold_trajectory_per_joint_ptr_; ///< Last hold trajectory values.
 
   typename Segment::State current_state_;    ///< Preallocated workspace variable.
   typename Segment::State desired_state_;    ///< Preallocated workspace variable.
   typename Segment::State state_error_;      ///< Preallocated workspace variable.
-
 
   realtime_tools::RealtimeBuffer<TimeData> time_data_;
 
@@ -245,33 +240,6 @@ private:
    * \note This method is realtime-safe.
    */
   void setHoldPosition(const ros::Time& time);
-
-  /**
-   * \brief Check path tolerances.
-   *
-   * If path tolerances are violated, the currently active action goal will be aborted.
-   *
-   * \param state_error Error between the current and desired trajectory states.
-   * \param segment Currently active trajectory segment.
-   *
-   * \pre \p segment is associated to the active goal handle.
-   **/
-//  void checkPathTolerances(const typename Segment::State& state_error,
-//                           const Segment&                 segment);
-
-  /**
-   * \brief Check goal tolerances.
-   *
-   * If goal tolerances are fulfilled, the currently active action goal will be considered successful.
-   * If they are violated, the action goal will be aborted.
-   *
-   * \param state_error Error between the current and desired trajectory states.
-   * \param segment Currently active trajectory segment.
-   *
-   * \pre \p segment is associated to the active goal handle.
-   **/
-  void checkGoalTolerances(const typename Segment::State& state_error,
-                           const Segment&                 segment);
 
 };
 

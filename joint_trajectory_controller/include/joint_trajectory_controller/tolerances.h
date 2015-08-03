@@ -89,7 +89,7 @@ struct SegmentTolerances
 };
 
 /**
- * \brief Trajectory segment tolerances per Joint (to replace the previous function
+ * \brief Trajectory segment tolerances per Joint
  */
 template<class Scalar>
 struct SegmentTolerancesPerJoint

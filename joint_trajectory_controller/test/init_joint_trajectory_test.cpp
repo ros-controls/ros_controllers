@@ -161,12 +161,11 @@ protected:
   Trajectory curr_traj;
 };
 
-//Now it is possible to have different sizes
 TEST_F(InitTrajectoryTest, InitException)
 {
   // Invalid input should throw an exception
   trajectory_msg.points.back().positions.push_back(0.0); // Inconsistent size in last element
-  EXPECT_NO_THROW(initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp));
+  EXPECT_THROW(initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp), std::invalid_argument);
 }
 
 // Test logic of parsing a trajectory message. No current trajectory is specified

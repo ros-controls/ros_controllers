@@ -338,6 +338,9 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   for (unsigned int msg_joint_it=0; msg_joint_it < permutation_vector.size();msg_joint_it++)
   {
     std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator it = msg_it;
+    if (!isValid(*it, it->positions.size()))
+      throw(std::invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
+
     TrajectoryPerJoint result_traj_per_joint; // Currently empty
     unsigned int joint_id = permutation_vector[msg_joint_it];
 
@@ -361,14 +364,10 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       sample(curr_joint_traj, last_curr_time, last_curr_state);
 
       // Get the first time and state that will be executed from the new trajectory
-      if (!isValid(*it, it->positions.size()))
-      {
-        throw(std::invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
-      }
       trajectory_msgs::JointTrajectoryPoint point_per_joint;
-      point_per_joint.positions.resize(1, it->positions[msg_joint_it]);
-      point_per_joint.velocities.resize(1, it->velocities[msg_joint_it]);
-      point_per_joint.accelerations.resize(1, it->accelerations[msg_joint_it]);
+      if (!it->positions.empty())     {point_per_joint.positions.resize(1, it->positions[msg_joint_it]);}
+      if (!it->velocities.empty())    {point_per_joint.velocities.resize(1, it->velocities[msg_joint_it]);}
+      if (!it->accelerations.empty()) {point_per_joint.accelerations.resize(1, it->accelerations[msg_joint_it]);}
       point_per_joint.time_from_start = it->time_from_start;
 
       const typename Segment::Time first_new_time = o_msg_start_time.toSec() + (it->time_from_start).toSec();
@@ -418,14 +417,19 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator next_it = it; ++next_it;
 
       trajectory_msgs::JointTrajectoryPoint it_point_per_joint, next_it_point_per_joint;
-      it_point_per_joint.positions.resize(1, it->positions[msg_joint_it]);
-      it_point_per_joint.velocities.resize(1, it->velocities[msg_joint_it]);
-      it_point_per_joint.accelerations.resize(1, it->accelerations[msg_joint_it]);
+
+      if (!isValid(*it, it->positions.size()))
+            throw(std::invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
+      if (!it->positions.empty())     {it_point_per_joint.positions.resize(1, it->positions[msg_joint_it]);}
+      if (!it->velocities.empty())    {it_point_per_joint.velocities.resize(1, it->velocities[msg_joint_it]);}
+      if (!it->accelerations.empty()) {it_point_per_joint.accelerations.resize(1, it->accelerations[msg_joint_it]);}
       it_point_per_joint.time_from_start = it->time_from_start;
 
-      next_it_point_per_joint.positions.resize(1, next_it->positions[msg_joint_it]);
-      next_it_point_per_joint.velocities.resize(1, next_it->velocities[msg_joint_it]);
-      next_it_point_per_joint.accelerations.resize(1, next_it->accelerations[msg_joint_it]);
+      if (!isValid(*next_it, next_it->positions.size()))
+            throw(std::invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
+      if (!next_it->positions.empty()) {next_it_point_per_joint.positions.resize(1, next_it->positions[msg_joint_it]);}
+      if (!next_it->velocities.empty()) {next_it_point_per_joint.velocities.resize(1, next_it->velocities[msg_joint_it]);}
+      if (!next_it->accelerations.empty()) {next_it_point_per_joint.accelerations.resize(1, next_it->accelerations[msg_joint_it]);}
       next_it_point_per_joint.time_from_start = next_it->time_from_start;
 
       Segment segment(o_msg_start_time, it_point_per_joint, next_it_point_per_joint, permutation_vector_per_joint, position_offset);

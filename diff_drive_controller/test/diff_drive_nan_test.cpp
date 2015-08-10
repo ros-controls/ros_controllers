@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2013, PAL Robotics S.L.
+// Copyright (C) 2014, PAL Robotics S.L.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -25,28 +25,63 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-/// \author Paul Mathieu
+/// \author Enrique Fernandez
 
 #include "test_common.h"
 
+// NaN
+#include <limits>
+
 // TEST CASES
-TEST_F(DiffDriveControllerTest, testWrongJointName)
+TEST_F(DiffDriveControllerTest, testNaN)
 {
-  // the controller should never be alive
-  int secs = 0;
-  while(!isControllerAlive() && secs < 5)
+  // wait for ROS
+  while(!isControllerAlive())
   {
-    ros::Duration(1.0).sleep();
-    secs++;
+    ros::Duration(0.1).sleep();
   }
-  // give up and assume controller load failure after 5 seconds
-  EXPECT_GE(secs, 5);
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(2.0).sleep();
+
+  // send a command
+  cmd_vel.linear.x = 0.1;
+  ros::Duration(2.0).sleep();
+
+  // stop robot (will generate NaN)
+  stop();
+  ros::Duration(2.0).sleep();
+
+  nav_msgs::Odometry odom = getLastOdom();
+
+  EXPECT_NE(std::isnan(odom.twist.twist.linear.x), true);
+  EXPECT_NE(std::isnan(odom.twist.twist.angular.z), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.position.x), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.position.y), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.orientation.z), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.orientation.w), true);
+
+  // start robot
+  start();
+  ros::Duration(2.0).sleep();
+
+  odom = getLastOdom();
+
+  EXPECT_NE(std::isnan(odom.twist.twist.linear.x), true);
+  EXPECT_NE(std::isnan(odom.twist.twist.angular.z), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.position.x), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.position.y), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.orientation.z), true);
+  EXPECT_NE(std::isnan(odom.pose.pose.orientation.w), true);
 }
 
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "diff_drive_fail_test");
+  ros::init(argc, argv, "diff_drive_nan_test");
 
   ros::AsyncSpinner spinner(1);
   spinner.start();

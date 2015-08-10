@@ -54,10 +54,12 @@ TEST_F(DiffDriveControllerTest, testForward)
 
   nav_msgs::Odometry new_odom = getLastOdom();
 
-  // check if the robot travelled 1 meter in x, changes in the other fields should be ~~0
-  EXPECT_NEAR(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 1.0, POSITION_TOLERANCE);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
+  // check if the robot traveled 1 meter in XY plane, changes in z should be ~~0
+  const double dx = new_odom.pose.pose.position.x - old_odom.pose.pose.position.x;
+  const double dy = new_odom.pose.pose.position.y - old_odom.pose.pose.position.y;
+  const double dz = new_odom.pose.pose.position.z - old_odom.pose.pose.position.z;
+  EXPECT_NEAR(sqrt(dx*dx + dy*dy), 1.0, POSITION_TOLERANCE);
+  EXPECT_LT(fabs(dz), EPS);
 
   // convert to rpy and test that way
   double roll_old, pitch_old, yaw_old;
@@ -67,7 +69,7 @@ TEST_F(DiffDriveControllerTest, testForward)
   EXPECT_LT(fabs(roll_new - roll_old), EPS);
   EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
   EXPECT_LT(fabs(yaw_new - yaw_old), EPS);
-  EXPECT_NEAR(fabs(new_odom.twist.twist.linear.x), 0.1, EPS);
+  EXPECT_NEAR(fabs(new_odom.twist.twist.linear.x), cmd_vel.linear.x, EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.linear.z), EPS);
 

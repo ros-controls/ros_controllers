@@ -180,7 +180,7 @@ inline bool checkStateTolerancePerJoint(const State&                            
   {
     if( show_errors )
     {
-      ROS_ERROR_STREAM_NAMED("tolerances","Path state tolerances failed on joint");
+      ROS_ERROR_STREAM_NAMED("tolerances","Path state tolerances failed:");
 
       if (state_tolerance.position     > 0.0 && abs(state_error.position[0])     > state_tolerance.position)
         ROS_ERROR_STREAM_NAMED("tolerances","Position Error: " << state_error.position[0] <<

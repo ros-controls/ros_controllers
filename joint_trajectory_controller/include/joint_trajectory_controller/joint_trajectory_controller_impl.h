@@ -391,7 +391,6 @@ update(const ros::Time& time, const ros::Duration& period)
         const SegmentTolerancesPerJoint<Scalar>& joint_tolerances = segment_it->getTolerances();
         if (!checkStateTolerancePerJoint(state_joint_error_, joint_tolerances.state_tolerance))
         {
-          //ROS_ERROR_STREAM_NAMED(name_, "PATH_TOLERANCE_VIOLATED! joint_id:" << i);
           rt_segment_goal->preallocated_result_->error_code =
           control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
@@ -412,7 +411,6 @@ update(const ros::Time& time, const ros::Duration& period)
 
         if (inside_goal_tolerances)
         {
-          //ROS_WARN_STREAM_NAMED(name_, "TrajectoryResult::SUCCESSFUL i: "<< i);
           successful_joint_traj[i] = true;
 
         }
@@ -424,7 +422,7 @@ update(const ros::Time& time, const ros::Duration& period)
         {
           if (verbose_)
           {
-            ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed");
+            ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed for joint: "<< joint_names_[i]);
             // Check the tolerances one more time to output the errors that occurs
             checkStateTolerancePerJoint(state_joint_error_, tolerances.goal_state_tolerance, true);
           }

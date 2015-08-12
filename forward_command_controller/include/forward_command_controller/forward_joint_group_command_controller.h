@@ -111,7 +111,7 @@ public:
   }
 
   void starting(const ros::Time& time);
-  void update(const ros::Time& time, const ros::Duration& period) 
+  void update(const ros::Time& /*time*/, const ros::Duration& /*period*/)
   {
     std::vector<double> & commands = *commands_buffer_.readFromRT();
     for(unsigned int i=0; i<n_joints_; i++)

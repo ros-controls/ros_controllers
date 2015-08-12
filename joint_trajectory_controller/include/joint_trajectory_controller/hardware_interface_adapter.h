@@ -55,18 +55,18 @@ template <class HardwareInterface, class State>
 class HardwareInterfaceAdapter
 {
 public:
-  bool init(std::vector<typename HardwareInterface::ResourceHandleType>& joint_handles, ros::NodeHandle& controller_nh)
+  bool init(std::vector<typename HardwareInterface::ResourceHandleType>& /*joint_handles*/, ros::NodeHandle& /*controller_nh*/)
   {
     return false;
   }
 
-  void starting(const ros::Time& time) {}
-  void stopping(const ros::Time& time) {}
+  void starting(const ros::Time& /*time*/) {}
+  void stopping(const ros::Time& /*time*/) {}
 
-  void updateCommand(const ros::Time&     time,
-                     const ros::Duration& period,
-                     const State&         desired_state,
-                     const State&         state_error) {}
+  void updateCommand(const ros::Time&     /*time*/,
+                     const ros::Duration& /*period*/,
+                     const State&         /*desired_state*/,
+                     const State&         /*state_error*/) {}
 };
 
 /**
@@ -95,7 +95,7 @@ class HardwareInterfaceAdapter<hardware_interface::PositionJointInterface, State
 public:
   HardwareInterfaceAdapter() : joint_handles_ptr_(0) {}
 
-  bool init(std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& controller_nh)
+  bool init(std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& /*controller_nh*/)
   {
     // Store pointer to joint handles
     joint_handles_ptr_ = &joint_handles;
@@ -103,18 +103,18 @@ public:
     return true;
   }
 
-  void starting(const ros::Time& time)
+  void starting(const ros::Time& /*time*/)
   {
     if (!joint_handles_ptr_) {return;}
-    
+
     // Semantic zero for commands
     for (unsigned int i = 0; i < joint_handles_ptr_->size(); ++i)
     {
       (*joint_handles_ptr_)[i].setCommand((*joint_handles_ptr_)[i].getPosition());
     }
   }
-  
-  void stopping(const ros::Time& time) {}
+
+  void stopping(const ros::Time& /*time*/) {}
 
   void updateCommand(const ros::Time&     /*time*/,
                      const ros::Duration& /*period*/,
@@ -278,7 +278,7 @@ public:
     return true;
   }
 
-  void starting(const ros::Time& time)
+  void starting(const ros::Time& /*time*/)
   {
     if (!joint_handles_ptr_) {return;}
 
@@ -290,7 +290,7 @@ public:
     }
   }
 
-  void stopping(const ros::Time& time) {}
+  void stopping(const ros::Time& /*time*/) {}
 
   void updateCommand(const ros::Time&     /*time*/,
                      const ros::Duration& period,

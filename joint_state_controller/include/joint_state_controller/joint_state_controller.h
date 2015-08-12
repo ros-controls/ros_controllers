@@ -85,8 +85,8 @@ public:
                     ros::NodeHandle&                         root_nh,
                     ros::NodeHandle&                         controller_nh);
   virtual void starting(const ros::Time& time);
-  virtual void update(const ros::Time& time, const ros::Duration& period);
-  virtual void stopping(const ros::Time& time);
+  virtual void update(const ros::Time& time, const ros::Duration& /*period*/);
+  virtual void stopping(const ros::Time& /*time*/);
 
 private:
   std::vector<hardware_interface::JointStateHandle> joint_state_;

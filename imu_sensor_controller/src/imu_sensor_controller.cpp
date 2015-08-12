@@ -71,7 +71,7 @@ namespace imu_sensor_controller
     }
   }
 
-  void ImuSensorController::update(const ros::Time& time, const ros::Duration& period)
+  void ImuSensorController::update(const ros::Time& time, const ros::Duration& /*period*/)
   {
     using namespace hardware_interface;
 
@@ -187,7 +187,7 @@ namespace imu_sensor_controller
     }
   }
 
-  void ImuSensorController::stopping(const ros::Time& time)
+  void ImuSensorController::stopping(const ros::Time& /*time*/)
   {}
 
 }

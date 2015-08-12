@@ -140,7 +140,7 @@ public:
   void starting(const ros::Time& time);
 
   /** \brief Cancels the active action goal, if any. */
-  void stopping(const ros::Time& time);
+  void stopping(const ros::Time& /*time*/);
 
   void update(const ros::Time& time, const ros::Duration& period);
   /*\}*/

@@ -103,7 +103,17 @@ public:
     return true;
   }
 
-  void starting(const ros::Time& time) {}
+  void starting(const ros::Time& time)
+  {
+    if (!joint_handles_ptr_) {return;}
+    
+    // Semantic zero for commands
+    for (unsigned int i = 0; i < joint_handles_ptr_->size(); ++i)
+    {
+      (*joint_handles_ptr_)[i].setCommand((*joint_handles_ptr_)[i].getPosition());
+    }
+  }
+  
   void stopping(const ros::Time& time) {}
 
   void updateCommand(const ros::Time&     /*time*/,

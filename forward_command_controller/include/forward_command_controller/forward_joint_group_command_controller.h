@@ -55,9 +55,7 @@ namespace forward_command_controller
 /**
  * \brief Forward command controller for a set of joints.
  *
- * This class forwards the command signal down to a set of joints.
- * Command signal and joint hardware interface are of the same type, e.g. effort commands for an effort-controlled
- * joint.
+ * This class updates foint handles from a RealtimeBuffer
  *
  * \tparam T Type implementing the JointCommandInterface.
  *
@@ -66,17 +64,12 @@ namespace forward_command_controller
  * \param type hardware interface type.
  * \param joints Names of the joints to control.
  *
- * Subscribes to:
- * - \b command (std_msgs::Float64MultiArray) : The joint commands to apply.
  */
 template <class T>
-class ForwardJointGroupCommandController: public controller_interface::Controller<T>
+class ForwardJointGroupCommandControllerBase: public controller_interface::Controller<T>
 {
 public:
-  ForwardJointGroupCommandController() {}
-  ~ForwardJointGroupCommandController() {sub_command_.shutdown();}
-
-  bool init(T* hw, ros::NodeHandle &n)
+  virtual bool init(T* hw, ros::NodeHandle &n)
   {
     // List of controlled joints
     std::string param_name = "joints";
@@ -95,7 +88,7 @@ public:
     {
       try
       {
-        joints_.push_back(hw->getHandle(joint_names_[i]));  
+        joints_.push_back(hw->getHandle(joint_names_[i]));
       }
       catch (const hardware_interface::HardwareInterfaceException& e)
       {
@@ -106,33 +99,87 @@ public:
 
     commands_buffer_.writeFromNonRT(std::vector<double>(n_joints_, 0.0));
 
-    sub_command_ = n.subscribe<std_msgs::Float64MultiArray>("command", 1, &ForwardJointGroupCommandController::commandCB, this);
     return true;
   }
 
-  void starting(const ros::Time& time);
-  void update(const ros::Time& /*time*/, const ros::Duration& /*period*/)
+  virtual void starting(const ros::Time& time);
+  virtual void update(const ros::Time& /*time*/, const ros::Duration& /*period*/)
   {
     std::vector<double> & commands = *commands_buffer_.readFromRT();
     for(unsigned int i=0; i<n_joints_; i++)
     {  joints_[i].setCommand(commands[i]);  }
   }
 
+protected:
   std::vector< std::string > joint_names_;
   std::vector< hardware_interface::JointHandle > joints_;
   realtime_tools::RealtimeBuffer<std::vector<double> > commands_buffer_;
   unsigned int n_joints_;
+};
+
+template <> void ForwardJointGroupCommandControllerBase<hardware_interface::EffortJointInterface>::starting(const ros::Time& time)
+{
+  // Start controller with 0.0 efforts
+  this->commands_buffer_.readFromRT()->assign(this->n_joints_, 0.0);
+}
+
+
+template <> void ForwardJointGroupCommandControllerBase<hardware_interface::PositionJointInterface>::starting(const ros::Time& time)
+{
+  // Start controller with current joint positions
+  std::vector<double> & commands = *this->commands_buffer_.readFromRT();
+  for(unsigned int i=0; i<this->joints_.size(); i++)
+  {
+    commands[i]=this->joints_[i].getPosition();
+  }
+}
+
+template <> void ForwardJointGroupCommandControllerBase<hardware_interface::VelocityJointInterface>::starting(const ros::Time& time)
+{
+  // Start controller with 0.0 velocities
+  this->commands_buffer_.readFromRT()->assign(this->n_joints_, 0.0);
+}
+
+/**
+ * \brief Forward command controller for a set of joints.
+ *
+ * This class forwards the command signal down to a set of joints.
+ * Command signal and joint hardware interface are of the same type, e.g. effort commands for an effort-controlled
+ * joint.
+ *
+ * \tparam T Type implementing the JointCommandInterface.
+ *
+ * \section ROS interface
+ *
+ * Subscribes to:
+ * - \b command (std_msgs::Float64MultiArray) : The joint commands to apply.
+ */
+template <class T>
+class ForwardJointGroupCommandController: public ForwardJointGroupCommandControllerBase<T>
+{
+public:
+  virtual ~ForwardJointGroupCommandController() {sub_command_.shutdown();}
+
+  virtual bool init(T* hw, ros::NodeHandle &n)
+  {
+    if(!ForwardJointGroupCommandControllerBase<T>::init(hw, n)){
+        return false;
+    }else{
+        sub_command_ = n.subscribe<std_msgs::Float64MultiArray>("command", 1, &ForwardJointGroupCommandController::commandCB, this);
+        return true;
+    }
+  }
 
 private:
   ros::Subscriber sub_command_;
-  void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg) 
+  void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg)
   {
-    if(msg->data.size()!=n_joints_)
-    { 
-      ROS_ERROR_STREAM("Dimension of command (" << msg->data.size() << ") does not match number of joints (" << n_joints_ << ")! Not executing!");
-      return; 
+    if(msg->data.size()!=this->n_joints_)
+    {
+      ROS_ERROR_STREAM("Dimension of command (" << msg->data.size() << ") does not match number of joints (" << this->n_joints_ << ")! Not executing!");
+      return;
     }
-    commands_buffer_.writeFromNonRT(msg->data);
+    this->commands_buffer_.writeFromNonRT(msg->data);
   }
 };
 

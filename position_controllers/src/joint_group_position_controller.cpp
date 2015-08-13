@@ -38,16 +38,4 @@
 #include <position_controllers/joint_group_position_controller.h>
 #include <pluginlib/class_list_macros.h>
 
-template <class T>
-void forward_command_controller::ForwardJointGroupCommandController<T>::starting(const ros::Time& time)
-{
-  // Start controller with current joint positions
-  std::vector<double> & commands = *commands_buffer_.readFromRT();
-  for(unsigned int i=0; i<joints_.size(); i++)
-  {
-    commands[i]=joints_[i].getPosition();
-  }
-}
-
-
 PLUGINLIB_EXPORT_CLASS(position_controllers::JointGroupPositionController,controller_interface::ControllerBase)

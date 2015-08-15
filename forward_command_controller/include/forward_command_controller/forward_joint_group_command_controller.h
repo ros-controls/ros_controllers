@@ -117,14 +117,14 @@ protected:
   unsigned int n_joints_;
 };
 
-template <> void ForwardJointGroupCommandControllerBase<hardware_interface::EffortJointInterface>::starting(const ros::Time& time)
+template <> inline void ForwardJointGroupCommandControllerBase<hardware_interface::EffortJointInterface>::starting(const ros::Time& time)
 {
   // Start controller with 0.0 efforts
   this->commands_buffer_.readFromRT()->assign(this->n_joints_, 0.0);
 }
 
 
-template <> void ForwardJointGroupCommandControllerBase<hardware_interface::PositionJointInterface>::starting(const ros::Time& time)
+template <> inline void ForwardJointGroupCommandControllerBase<hardware_interface::PositionJointInterface>::starting(const ros::Time& time)
 {
   // Start controller with current joint positions
   std::vector<double> & commands = *this->commands_buffer_.readFromRT();
@@ -134,7 +134,7 @@ template <> void ForwardJointGroupCommandControllerBase<hardware_interface::Posi
   }
 }
 
-template <> void ForwardJointGroupCommandControllerBase<hardware_interface::VelocityJointInterface>::starting(const ros::Time& time)
+template <> inline void ForwardJointGroupCommandControllerBase<hardware_interface::VelocityJointInterface>::starting(const ros::Time& time)
 {
   // Start controller with 0.0 velocities
   this->commands_buffer_.readFromRT()->assign(this->n_joints_, 0.0);

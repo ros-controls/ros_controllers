@@ -41,7 +41,7 @@ using namespace trajectory_msgs;
 const double EPS = 1e-9;
 
 typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
-typedef std::vector<unsigned int> PermutationType;
+typedef std::vector<unsigned int> MappingType;
 
 TEST(WraparoundOffsetTest, WrappingPositions)
 {
@@ -237,28 +237,28 @@ TEST_F(JointTrajectorySegmentTest, InvalidSegmentConstruction)
     catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
   }
 
-  // Invalid permutation vector size
+  // Invalid mapping vector size
   {
-    PermutationType permutation(2, 1);
-    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, permutation), std::invalid_argument);
-    try {Segment(traj_start_time, p_start, p_end, permutation);}
+    MappingType mapping(2, 1);
+    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, mapping), std::invalid_argument);
+    try {Segment(traj_start_time, p_start, p_end, mapping);}
     catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
   }
 
-  // Invalid permutation vector indices
+  // Invalid mapping vector indices
   {
-    PermutationType permutation(1, 1);
-    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, permutation), std::invalid_argument);
-    try {Segment(traj_start_time, p_start, p_end, permutation);}
+    MappingType mapping(1, 1);
+    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, mapping), std::invalid_argument);
+    try {Segment(traj_start_time, p_start, p_end, mapping);}
     catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
   }
 
   // Invalid joint wraparound specification
   {
-    PermutationType permutation;
+    MappingType mapping;
     std::vector<double> pos_offset(2);
-    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, permutation, pos_offset), std::invalid_argument);
-    try {Segment(traj_start_time, p_start, p_end, permutation, pos_offset);}
+    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, mapping, pos_offset), std::invalid_argument);
+    try {Segment(traj_start_time, p_start, p_end, mapping, pos_offset);}
     catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
   }
 }
@@ -370,7 +370,7 @@ TEST_F(JointTrajectorySegmentTest, CrossValidateSegmentConstruction)
 }
 
 // TODO: Test with dimension four data
-TEST_F(JointTrajectorySegmentTest, PermutationTest)
+TEST_F(JointTrajectorySegmentTest, MappingTest)
 {
   // Add an extra joint to the trajectory point messages created in the fixture
   p_start.positions.push_back(-p_start.positions[0]);
@@ -379,7 +379,7 @@ TEST_F(JointTrajectorySegmentTest, PermutationTest)
   p_end.positions.push_back(-p_end.positions[0]);
   p_end.velocities.push_back(-p_end.velocities[0]);
 
-  // No permutation vector
+  // No mapping vector
   {
     // Construct segment from ROS message
     EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end));
@@ -392,15 +392,15 @@ TEST_F(JointTrajectorySegmentTest, PermutationTest)
     EXPECT_EQ(p_start.positions[1], state.position[1]);
   }
 
-  // Permutation vector preserving trajectory message joint order
+  // Mapping vector preserving trajectory message joint order
   {
-    PermutationType permutation(2);
-    permutation[0] = 0;
-    permutation[1] = 1;
+    MappingType mapping(2);
+    mapping[0] = 0;
+    mapping[1] = 1;
 
     // Construct segment from ROS message
-    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, permutation));
-    Segment segment(traj_start_time, p_start, p_end, permutation);
+    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, mapping));
+    Segment segment(traj_start_time, p_start, p_end, mapping);
 
     // Check position values of start state only
     typename Segment::State state;
@@ -409,15 +409,15 @@ TEST_F(JointTrajectorySegmentTest, PermutationTest)
     EXPECT_EQ(p_start.positions[1], state.position[1]);
   }
 
-  // Permutation vector reversing trajectory message joint order
+  // Mapping vector reversing trajectory message joint order
   {
-    PermutationType permutation(2);
-    permutation[0] = 1;
-    permutation[1] = 0;
+    MappingType mapping(2);
+    mapping[0] = 1;
+    mapping[1] = 0;
 
     // Construct segment from ROS message
-    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, permutation));
-    Segment segment(traj_start_time, p_start, p_end, permutation);
+    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, mapping));
+    Segment segment(traj_start_time, p_start, p_end, mapping);
 
     // Check position values of start state only
     typename Segment::State state;

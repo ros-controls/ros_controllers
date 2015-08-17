@@ -85,21 +85,12 @@ public:
     /**
      * \param point Trajectory point.
      *
-     * \param permutation (Should be remove it) Permutation vector for mapping the joint order of a \p point to a desired order.
-     * For instance, if \p point contains data associated to joints <tt>"{B, D, A, C}"</tt>, and we are interested in
-     * constructing a segment with joints ordered as <tt>"{A, B, C, D}"</tt>, the permutation vector should
-     * be set to <tt>"{2, 0, 3, 1}"</tt>.
-     * If unspecified (empty), the joint order of \p point is preserved; if specified, its size must coincide with that
-     * of \p point.
-     * This vector can be computed using the \ref trajectory_interface::internal::permutation()
-     * "permutation" utility function.
+     * \param permutation (Should be removed)
      *
-     * \param position_offset Position offset to applpy to the data in \p point. This parameter is useful for handling
+     * \param position_offset Position offset to apply to the data in \p point. This parameter is useful for handling
      * joints that wrap around (ie. continuous), to compensate for multi-turn offsets.
      * If unspecified (empty), zero offsets are applied; if specified, its size must coincide with that of \p point.
      *
-     * \note The offsets in \p position_offsets correspond to joints not ordered according to \p point, but to joints
-     * in the expected order, that is \p point with \p permutation applied to it.
      */
     State(const trajectory_msgs::JointTrajectoryPoint& point,
           const std::vector<unsigned int>&             permutation     = std::vector<unsigned int>(),

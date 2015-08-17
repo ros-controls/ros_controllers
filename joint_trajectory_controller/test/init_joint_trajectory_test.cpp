@@ -48,59 +48,70 @@ typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double
 typedef vector<Segment> TrajectoryPerJoint;
 typedef vector<TrajectoryPerJoint> Trajectory;
 
-TEST(PermutationTest, Permutation)
+TEST(MappingTest, Mapping)
 {
   vector<string> t1(4);
-  t1[0] = "A";
-  t1[1] = "B";
-  t1[2] = "C";
-  t1[3] = "D";
+  t1[0] = "B";
+  t1[1] = "D";
+  t1[2] = "A";
+  t1[3] = "C";
 
   vector<string> t2(4);
-  t2[0] = "B";
-  t2[1] = "D";
-  t2[2] = "A";
-  t2[3] = "C";
+  t2[0] = "A";
+  t2[1] = "B";
+  t2[2] = "C";
+  t2[3] = "D";
 
-  typedef vector<unsigned int> PermutationType;
-  PermutationType ground_truth(4);
+  typedef vector<unsigned int> MappingType;
+  MappingType ground_truth(4);
   ground_truth[0] = 2;
   ground_truth[1] = 0;
   ground_truth[2] = 3;
   ground_truth[3] = 1;
 
-  // Mismatching sizes: Return empty permutation vector
+  // Mismatching sizes (t2 smaller than t1): Return empty mapping vector
   {
     vector<string> t2_bad(1,"A");
-    PermutationType perm = internal::permutation(t1, t2_bad);
-    EXPECT_TRUE(perm.empty());
+    MappingType mapping = internal::mapping(t1, t2_bad);
+    EXPECT_TRUE(mapping.empty());
   }
 
-  // Mismatching contents: Return empty permutation vector
+  // Mismatching contents: Return empty mapping vector
   {
     vector<string> t2_bad(3,"A");
-    PermutationType perm = internal::permutation(t1, t2_bad);
-    EXPECT_TRUE(perm.empty());
+    MappingType mapping = internal::mapping(t1, t2_bad);
+    EXPECT_TRUE(mapping.empty());
   }
 
   // Valid parameters
   {
-    PermutationType perm = internal::permutation(t1, t2);
-    EXPECT_EQ(ground_truth.size(), perm.size());
-    EXPECT_EQ(ground_truth[0], perm[0]);
-    EXPECT_EQ(ground_truth[1], perm[1]);
-    EXPECT_EQ(ground_truth[2], perm[2]);
-    EXPECT_EQ(ground_truth[3], perm[3]);
+    MappingType mapping = internal::mapping(t1, t2);
+    EXPECT_EQ(ground_truth.size(), mapping.size());
+    EXPECT_EQ(ground_truth[3], mapping[0]);
+    EXPECT_EQ(ground_truth[2], mapping[1]);
+    EXPECT_EQ(ground_truth[1], mapping[2]);
+    EXPECT_EQ(ground_truth[0], mapping[3]);
   }
 
-  // Valid parameters, inverse parameter order yields inverse permutation vector
+  // Valid parameters, inverse parameter order yields inverse mapping vector
   {
-    PermutationType perm = internal::permutation(t2, t1);
-    EXPECT_EQ(ground_truth.size(), perm.size());
-    EXPECT_EQ(ground_truth[3], perm[0]);
-    EXPECT_EQ(ground_truth[2], perm[1]);
-    EXPECT_EQ(ground_truth[1], perm[2]);
-    EXPECT_EQ(ground_truth[0], perm[3]);
+    MappingType mapping = internal::mapping(t2, t1);
+    EXPECT_EQ(ground_truth.size(), mapping.size());
+    EXPECT_EQ(ground_truth[0], mapping[0]);
+    EXPECT_EQ(ground_truth[1], mapping[1]);
+    EXPECT_EQ(ground_truth[2], mapping[2]);
+    EXPECT_EQ(ground_truth[3], mapping[3]);
+  }
+
+  // Valid parameters, partial trajectory
+  {
+    vector<string> t1_partial(2);
+    t1_partial[0] = "B";
+    t1_partial[1] = "D";
+    MappingType mapping = internal::mapping(t1_partial, t2);
+    EXPECT_EQ(t1_partial.size(), mapping.size());
+    EXPECT_EQ(1, mapping[0]);
+    EXPECT_EQ(3, mapping[1]);
   }
 }
 
@@ -475,7 +486,7 @@ TEST_F(InitTrajectoryTest, InitValuesCombine)
   }
 }
 
-TEST_F(InitTrajectoryTest, JointPermutation)
+TEST_F(InitTrajectoryTest, JointMapping)
 {
   // Add an extra joint to the trajectory message created in the fixture
   trajectory_msg.points[0].positions.push_back(-2.0);

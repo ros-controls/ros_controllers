@@ -196,9 +196,11 @@ private:
   TrajectoryBox curr_trajectory_box_;
   TrajectoryPtr hold_trajectory_ptr_; ///< Last hold trajectory values.
 
-  typename Segment::State current_state_;    ///< Preallocated workspace variable.
-  typename Segment::State desired_state_;    ///< Preallocated workspace variable.
-  typename Segment::State state_error_;      ///< Preallocated workspace variable.
+  typename Segment::State current_state_;         ///< Preallocated workspace variable.
+  typename Segment::State desired_state_;         ///< Preallocated workspace variable.
+  typename Segment::State state_error_;           ///< Preallocated workspace variable.
+  typename Segment::State desired_joint_state_;   ///< Preallocated workspace variable.
+  typename Segment::State state_joint_error_;     ///< Preallocated workspace variable.
 
   realtime_tools::RealtimeBuffer<TimeData> time_data_;
 
@@ -206,6 +208,7 @@ private:
   ros::Duration action_monitor_period_;
 
   typename Segment::Time stop_trajectory_duration_;
+  std::vector<bool> successful_joint_traj_;
 
   // ROS API
   ros::NodeHandle    controller_nh_;

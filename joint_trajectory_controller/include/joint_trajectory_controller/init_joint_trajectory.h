@@ -57,16 +57,19 @@ namespace joint_trajectory_controller
 namespace internal
 {
 /**
- * \return The permutation vector between two containers.
- * If \p t1 is <tt>"{A, B, C, D}"</tt> and \p t2 is <tt>"{B, D, A, C}"</tt>, the associated permutation vector is
- * <tt>"{2, 0, 3, 1}"</tt>.
+ * \return The map between \p t1 indices (implicitly encoded in return vector indices) to \t2 indices.
+ * If \p t1 is <tt>"{C, B}"</tt> and \p t2 is <tt>"{A, B, C, D}"</tt>, the associated mapping vector is
+ * <tt>"{2, 1}"</tt>.
  */
 template <class T>
-inline std::vector<unsigned int> permutation(const T& t1, const T& t2)
+inline std::vector<unsigned int> mapping(const T& t1, const T& t2)
 {
   typedef unsigned int SizeType;
+  
+  // t1 must be a subset of t2
+  if (t1.size() > t2.size()) {return std::vector<SizeType>();}
 
-  std::vector<SizeType> permutation_vector(t1.size()); // Return value
+  std::vector<SizeType> mapping_vector(t1.size()); // Return value
   for (typename T::const_iterator t1_it = t1.begin(); t1_it != t1.end(); ++t1_it)
   {
     typename T::const_iterator t2_it = std::find(t2.begin(), t2.end(), *t1_it);
@@ -75,10 +78,10 @@ inline std::vector<unsigned int> permutation(const T& t1, const T& t2)
     {
       const SizeType t1_dist = std::distance(t1.begin(), t1_it);
       const SizeType t2_dist = std::distance(t2.begin(), t2_it);
-      permutation_vector[t1_dist] = t2_dist;
+      mapping_vector[t1_dist] = t2_dist;
     }
   }
-  return permutation_vector;
+  return mapping_vector;
 }
 
 } // namespace
@@ -114,9 +117,9 @@ struct InitJointTrajectoryOptions
 };
 
 template <class Trajectory>
-bool IsNotEmpty(typename Trajectory::value_type trajPerJoint)
+bool isNotEmpty(typename Trajectory::value_type trajPerJoint)
 {
-  return trajPerJoint.size()>0;
+  return !trajPerJoint.empty();
 };
 
 /**
@@ -245,8 +248,8 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     o_msg_start_time = msg_start_time;
   }
 
-  // Permutation vector mapping the expected joint order to the message joint order
-  // If unspecified, a trivial map (no permutation) is computed
+  // Mapping vector contains the map between the message joint order and the expected joint order
+  // If unspecified, a trivial map is computed
   const std::vector<std::string> joint_names = has_joint_names ? *(options.joint_names) : msg.joint_names;
 
   if (has_angle_wraparound)
@@ -261,9 +264,9 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     }
   }
 
-  std::vector<unsigned int> permutation_vector = internal::permutation(msg.joint_names,joint_names);
+  std::vector<unsigned int> mapping_vector = internal::mapping(msg.joint_names,joint_names);
 
-  if (permutation_vector.empty())
+  if (mapping_vector.empty())
   {
     ROS_ERROR("Cannot create trajectory from message. It does not contain the expected joints.");
     return Trajectory();
@@ -331,18 +334,18 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   else
     result_traj.resize(joint_names.size());
 
-  std::vector<unsigned int> permutation_vector_per_joint(1,0); //refactor this and remove it as it is not needed
+  std::vector<unsigned int> mapping_vector_per_joint(1,0); //refactor this and remove it as it is not needed
 
-  //Iterate through the joints that are in the message, in the order of the permutation vector
+  //Iterate through the joints that are in the message, in the order of the mapping vector
   //for (unsigned int joint_id=0; joint_id < joint_names.size();joint_id++)
-  for (unsigned int msg_joint_it=0; msg_joint_it < permutation_vector.size();msg_joint_it++)
+  for (unsigned int msg_joint_it=0; msg_joint_it < mapping_vector.size();msg_joint_it++)
   {
     std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator it = msg_it;
     if (!isValid(*it, it->positions.size()))
       throw(std::invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
 
     TrajectoryPerJoint result_traj_per_joint; // Currently empty
-    unsigned int joint_id = permutation_vector[msg_joint_it];
+    unsigned int joint_id = mapping_vector[msg_joint_it];
 
     // Initialize offsets due to wrapping joints to zero
     std::vector<Scalar> position_offset(1, 0.0);
@@ -371,7 +374,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       point_per_joint.time_from_start = it->time_from_start;
 
       const typename Segment::Time first_new_time = o_msg_start_time.toSec() + (it->time_from_start).toSec();
-      typename Segment::State first_new_state(point_per_joint, permutation_vector_per_joint); // Here offsets are not yet applied
+      typename Segment::State first_new_state(point_per_joint, mapping_vector_per_joint); // Here offsets are not yet applied
 
       // Compute offsets due to wrapping joints
       if (has_angle_wraparound)
@@ -382,7 +385,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       }
 
       // Apply offset to first state that will be executed from the new trajectory
-      first_new_state = typename Segment::State(point_per_joint, permutation_vector_per_joint, position_offset); // Now offsets are applied
+      first_new_state = typename Segment::State(point_per_joint, mapping_vector_per_joint, position_offset); // Now offsets are applied
 
       // Add useful segments of current trajectory to result
       {
@@ -432,7 +435,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       if (!next_it->accelerations.empty()) {next_it_point_per_joint.accelerations.resize(1, next_it->accelerations[msg_joint_it]);}
       next_it_point_per_joint.time_from_start = next_it->time_from_start;
 
-      Segment segment(o_msg_start_time, it_point_per_joint, next_it_point_per_joint, permutation_vector_per_joint, position_offset);
+      Segment segment(o_msg_start_time, it_point_per_joint, next_it_point_per_joint, mapping_vector_per_joint, position_offset);
       segment.setGoalHandle(options.rt_goal_handle);
       if (has_rt_goal_handle) {segment.setTolerances(tolerances_per_joint);}
       result_traj_per_joint.push_back(segment);
@@ -458,7 +461,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   }
 
   // If the trajectory for all joints is empty, empty the trajectory vector
-  typename Trajectory::const_iterator trajIter = std::find_if (result_traj.begin(), result_traj.end(), IsNotEmpty<Trajectory>);
+  typename Trajectory::const_iterator trajIter = std::find_if (result_traj.begin(), result_traj.end(), isNotEmpty<Trajectory>);
   if (trajIter == result_traj.end())
   {
     result_traj.clear();

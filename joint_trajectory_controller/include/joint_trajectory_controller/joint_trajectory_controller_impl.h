@@ -290,9 +290,13 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
                                                          this);
 
   // Preeallocate resources
-  current_state_    = typename Segment::State(n_joints);
-  desired_state_    = typename Segment::State(n_joints);
-  state_error_      = typename Segment::State(n_joints);
+  current_state_       = typename Segment::State(n_joints);
+  desired_state_       = typename Segment::State(n_joints);
+  state_error_         = typename Segment::State(n_joints);
+  desired_joint_state_ = typename Segment::State(1);
+  state_joint_error_   = typename Segment::State(1);
+
+  successful_joint_traj_.resize(joints_.size(), false);
 
   // Initialize trajectory with all joints
   typename Segment::State current_joint_state_ = typename Segment::State(1);
@@ -347,15 +351,9 @@ update(const ros::Time& time, const ros::Duration& period)
   // fetch the currently followed trajectory, it has been updated by the non-rt thread with something that starts in the
   // next control cycle, leaving the current cycle without a valid trajectory.
 
-  std::vector<bool> successful_joint_traj;
-  successful_joint_traj.resize(joints_.size(), false);
-
   // Update current state and state error
   for (unsigned int i = 0; i < joints_.size(); ++i)
   {
-    typename Segment::State desired_joint_state_ = typename Segment::State(1);
-    typename Segment::State state_joint_error_= typename Segment::State(1);
-
     current_state_.position[i] = joints_[i].getPosition();
     current_state_.velocity[i] = joints_[i].getVelocity();
     // There's no acceleration data available in a joint handle
@@ -391,6 +389,7 @@ update(const ros::Time& time, const ros::Duration& period)
         const SegmentTolerancesPerJoint<Scalar>& joint_tolerances = segment_it->getTolerances();
         if (!checkStateTolerancePerJoint(state_joint_error_, joint_tolerances.state_tolerance))
         {
+          ROS_ERROR_STREAM_NAMED(name_,"Path tolerances failed for joint: " << joint_names_[i]);
           rt_segment_goal->preallocated_result_->error_code =
           control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
@@ -411,7 +410,7 @@ update(const ros::Time& time, const ros::Duration& period)
 
         if (inside_goal_tolerances)
         {
-          successful_joint_traj[i] = true;
+          successful_joint_traj_[i] = true;
 
         }
         else if (uptime.toSec() < segment_it->endTime() + tolerances.goal_time_tolerance)
@@ -436,7 +435,7 @@ update(const ros::Time& time, const ros::Duration& period)
   }
 
   //If all segments finished successfully then set goal as succeeded
-  if (std::find(successful_joint_traj.begin(), successful_joint_traj.end(), false) == successful_joint_traj.end())
+  if (std::find(successful_joint_traj_.begin(), successful_joint_traj_.end(), false) == successful_joint_traj_.end())
   {
     rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
     rt_active_goal_->setSucceeded(rt_active_goal_->preallocated_result_);
@@ -544,11 +543,11 @@ goalCB(GoalHandle gh)
     return;
   }
 
-  // Goal should specify all controller joints (they can be ordered differently). Reject if this is not the case
-  using internal::permutation;
-  std::vector<unsigned int> permutation_vector = permutation(gh.getGoal()->trajectory.joint_names, joint_names_);
+  // Goal should specify valid controller joints (they can be ordered differently). Reject if this is not the case
+  using internal::mapping;
+  std::vector<unsigned int> mapping_vector = mapping(gh.getGoal()->trajectory.joint_names, joint_names_);
 
-  if (permutation_vector.empty())
+  if (mapping_vector.empty())
   {
     ROS_ERROR_NAMED(name_, "Joints on incoming goal don't match the controller joints.");
     control_msgs::FollowJointTrajectoryResult result;

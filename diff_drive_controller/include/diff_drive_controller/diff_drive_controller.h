@@ -93,7 +93,7 @@ namespace diff_drive_controller{
      * \brief Stops controller
      * \param time Current time
      */
-    void stopping(const ros::Time& time);
+    void stopping(const ros::Time& /*time*/);
 
   private:
     std::string name_;

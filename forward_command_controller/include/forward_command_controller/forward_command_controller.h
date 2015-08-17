@@ -86,7 +86,7 @@ public:
   }
 
   void starting(const ros::Time& time);
-  void update(const ros::Time& time, const ros::Duration& period) {joint_.setCommand(*command_buffer_.readFromRT());}
+  void update(const ros::Time& /*time*/, const ros::Duration& /*period*/) {joint_.setCommand(*command_buffer_.readFromRT());}
 
   hardware_interface::JointHandle joint_;
   realtime_tools::RealtimeBuffer<double> command_buffer_;

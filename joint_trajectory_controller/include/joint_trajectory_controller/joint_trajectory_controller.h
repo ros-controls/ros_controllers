@@ -40,6 +40,7 @@
 // Boost
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/dynamic_bitset.hpp>
 
 // ROS
 #include <ros/node_handle.h>
@@ -208,7 +209,7 @@ private:
   ros::Duration action_monitor_period_;
 
   typename Segment::Time stop_trajectory_duration_;
-  std::vector<bool> successful_joint_traj_;
+  boost::dynamic_bitset<> successful_joint_traj_;
 
   // ROS API
   ros::NodeHandle    controller_nh_;

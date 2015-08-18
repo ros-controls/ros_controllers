@@ -296,7 +296,7 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   desired_joint_state_ = typename Segment::State(1);
   state_joint_error_   = typename Segment::State(1);
 
-  successful_joint_traj_.resize(joints_.size(), false);
+  successful_joint_traj_ = boost::dynamic_bitset<>(joints_.size());
 
   // Initialize trajectory with all joints
   typename Segment::State current_joint_state_ = typename Segment::State(1);
@@ -394,6 +394,7 @@ update(const ros::Time& time, const ros::Duration& period)
           control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
           rt_active_goal_.reset();
+          successful_joint_traj_.reset();
         }
       }
       else if (segment_it == --curr_traj[i].end())
@@ -410,8 +411,7 @@ update(const ros::Time& time, const ros::Duration& period)
 
         if (inside_goal_tolerances)
         {
-          successful_joint_traj_[i] = true;
-
+          successful_joint_traj_[i] = 1;
         }
         else if (uptime.toSec() < segment_it->endTime() + tolerances.goal_time_tolerance)
         {
@@ -429,17 +429,20 @@ update(const ros::Time& time, const ros::Duration& period)
           rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
           rt_active_goal_.reset();
+          successful_joint_traj_.reset();
         }
       }
     }
   }
 
-  //If all segments finished successfully then set goal as succeeded
-  if (std::find(successful_joint_traj_.begin(), successful_joint_traj_.end(), false) == successful_joint_traj_.end())
+  //If there is an active goal and all segments finished successfully then set goal as succeeded
+  RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
+  if (current_active_goal and successful_joint_traj_.count() == joints_.size())
   {
     rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
     rt_active_goal_->setSucceeded(rt_active_goal_->preallocated_result_);
     rt_active_goal_.reset();
+    successful_joint_traj_.reset();
   }
 
   // Hardware interface adapter: Generate and send commands
@@ -692,7 +695,6 @@ setHoldPosition(const ros::Time& time)
 
   assert(joint_names_.size() == hold_trajectory_ptr_->size());
 
-  ROS_INFO_STREAM_NAMED(name_, "Setting hold position");
   typename Segment::State hold_start_state_ = typename Segment::State(1);
   typename Segment::State hold_end_state_ = typename Segment::State(1);
 

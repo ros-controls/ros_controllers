@@ -237,28 +237,11 @@ TEST_F(JointTrajectorySegmentTest, InvalidSegmentConstruction)
     catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
   }
 
-  // Invalid mapping vector size
-  {
-    MappingType mapping(2, 1);
-    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, mapping), std::invalid_argument);
-    try {Segment(traj_start_time, p_start, p_end, mapping);}
-    catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
-  }
-
-  // Invalid mapping vector indices
-  {
-    MappingType mapping(1, 1);
-    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, mapping), std::invalid_argument);
-    try {Segment(traj_start_time, p_start, p_end, mapping);}
-    catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
-  }
-
   // Invalid joint wraparound specification
   {
-    MappingType mapping;
     std::vector<double> pos_offset(2);
-    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, mapping, pos_offset), std::invalid_argument);
-    try {Segment(traj_start_time, p_start, p_end, mapping, pos_offset);}
+    EXPECT_THROW(Segment(traj_start_time, p_start, p_end, pos_offset), std::invalid_argument);
+    try {Segment(traj_start_time, p_start, p_end, pos_offset);}
     catch (const std::invalid_argument& ex) {ROS_ERROR_STREAM(ex.what());}
   }
 }
@@ -390,42 +373,6 @@ TEST_F(JointTrajectorySegmentTest, MappingTest)
     segment.sample(segment.startTime(), state);
     EXPECT_EQ(p_start.positions[0], state.position[0]);
     EXPECT_EQ(p_start.positions[1], state.position[1]);
-  }
-
-  // Mapping vector preserving trajectory message joint order
-  {
-    MappingType mapping(2);
-    mapping[0] = 0;
-    mapping[1] = 1;
-
-    // Construct segment from ROS message
-    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, mapping));
-    Segment segment(traj_start_time, p_start, p_end, mapping);
-
-    // Check position values of start state only
-    typename Segment::State state;
-    segment.sample(segment.startTime(), state);
-    EXPECT_EQ(p_start.positions[0], state.position[0]);
-    EXPECT_EQ(p_start.positions[1], state.position[1]);
-  }
-
-  // Mapping vector reversing trajectory message joint order
-  {
-    MappingType mapping(2);
-    mapping[0] = 1;
-    mapping[1] = 0;
-
-    // Construct segment from ROS message
-    EXPECT_NO_THROW(Segment(traj_start_time, p_start, p_end, mapping));
-    Segment segment(traj_start_time, p_start, p_end, mapping);
-
-    // Check position values of start state only
-    typename Segment::State state;
-    segment.sample(segment.startTime(), state);
-    EXPECT_NE(p_start.positions[0], state.position[0]);
-    EXPECT_NE(p_start.positions[1], state.position[1]);
-    EXPECT_EQ(p_start.positions[0], state.position[1]);
-    EXPECT_EQ(p_start.positions[1], state.position[0]);
   }
 }
 

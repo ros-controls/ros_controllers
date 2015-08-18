@@ -85,22 +85,18 @@ public:
     /**
      * \param point Trajectory point.
      *
-     * \param permutation (Should be removed)
-     *
      * \param position_offset Position offset to apply to the data in \p point. This parameter is useful for handling
      * joints that wrap around (ie. continuous), to compensate for multi-turn offsets.
      * If unspecified (empty), zero offsets are applied; if specified, its size must coincide with that of \p point.
      *
      */
     State(const trajectory_msgs::JointTrajectoryPoint& point,
-          const std::vector<unsigned int>&             permutation     = std::vector<unsigned int>(),
           const std::vector<Scalar>&                   position_offset = std::vector<Scalar>())
     {
-      init(point, permutation, position_offset);
+      init(point, position_offset);
     }
 
     void init(const trajectory_msgs::JointTrajectoryPoint& point,
-              const std::vector<unsigned int>&             permutation     = std::vector<unsigned int>(),
               const std::vector<Scalar>&                   position_offset = std::vector<Scalar>())
     {
       using std::invalid_argument;
@@ -111,17 +107,6 @@ public:
       if (!isValid(point, joint_dim))
       {
         throw(invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
-      }
-      if (!permutation.empty() && joint_dim != permutation.size())
-      {
-        throw(invalid_argument("Size mismatch between trajectory point and permutation vector."));
-      }
-      for (unsigned int i = 0; i < permutation.size(); ++i)
-      {
-        if (permutation[i] >= joint_dim)
-        {
-          throw(invalid_argument("Permutation vector contains out-of-range indices."));
-        }
       }
       if (!position_offset.empty() && joint_dim != position_offset.size())
       {
@@ -136,15 +121,12 @@ public:
 
       for (unsigned int i = 0; i < joint_dim; ++i)
       {
-        // Apply permutation only if it was specified, otherwise preserve original message order
-        const unsigned int id = permutation.empty() ? i : permutation[i];
-
         // Apply position offset only if it was specified
         const Scalar offset = position_offset.empty() ? 0.0 : position_offset[i];
 
-        if (!point.positions.empty())     {this->position[i]     = point.positions[id] + offset;}
-        if (!point.velocities.empty())    {this->velocity[i]     = point.velocities[id];}
-        if (!point.accelerations.empty()) {this->acceleration[i] = point.accelerations[id];}
+        if (!point.positions.empty())     {this->position[i]     = point.positions[i] + offset;}
+        if (!point.velocities.empty())    {this->velocity[i]     = point.velocities[i];}
+        if (!point.accelerations.empty()) {this->acceleration[i] = point.accelerations[i];}
       }
     }
   };
@@ -174,7 +156,6 @@ public:
    * segment start time.
    * \param start_point Start state in ROS message format.
    * \param end_point End state in ROS message format.
-   * \param permutation See \ref JointTrajectorySegment::State.
    * \param position_offset See \ref JointTrajectorySegment::State.
    *
    * \throw std::invalid_argument If input parameters are inconsistent and a valid segment can't be constructed.
@@ -182,7 +163,6 @@ public:
   JointTrajectorySegment(const ros::Time&                             traj_start_time,
                          const trajectory_msgs::JointTrajectoryPoint& start_point,
                          const trajectory_msgs::JointTrajectoryPoint& end_point,
-                         const std::vector<unsigned int>&             permutation     = std::vector<unsigned int>(),
                          const std::vector<Scalar>&                   position_offset = std::vector<Scalar>())
     : rt_goal_handle_(),
       tolerances_()
@@ -198,8 +178,8 @@ public:
 
     try
     {
-      const State start_state(start_point, permutation, position_offset);
-      const State end_state(end_point,     permutation, position_offset);
+      const State start_state(start_point, position_offset);
+      const State end_state(end_point,     position_offset);
 
       this->init(start_time, start_state,
                  end_time,   end_state);

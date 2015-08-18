@@ -194,6 +194,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   typedef typename Trajectory::value_type TrajectoryPerJoint;
   typedef typename TrajectoryPerJoint::value_type Segment;
   typedef typename Segment::Scalar Scalar;
+  typedef typename TrajectoryPerJoint::const_iterator TrajIter;
 
   const unsigned int n_joints = msg.joint_names.size();
 
@@ -317,16 +318,21 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   // - Useful segments of new trajectory (contained in ROS message)
   Trajectory result_traj;
 
+  // Set active goal to segments after current time
   if (has_current_trajectory)
   {
     result_traj = *(options.current_trajectory);
 
-    //Iterate to all segments to set the new goal handler
+    //Iterate to all segments after current time to set the new goal handler
     for (unsigned int joint_id=0; joint_id < joint_names.size();joint_id++)
     {
-      for (unsigned int segment_id=0; segment_id < result_traj[joint_id].size(); segment_id++)
+      const TrajectoryPerJoint& curr_joint_traj = result_traj[joint_id];
+      TrajIter active_seg = findSegment(curr_joint_traj, o_time.toSec());   // Currently active segment
+
+      while (std::distance(active_seg, curr_joint_traj.end())>=1)
       {
-        (result_traj[joint_id])[segment_id].setGoalHandle(options.rt_goal_handle);
+        (result_traj[joint_id])[std::distance(curr_joint_traj.begin(),active_seg)].setGoalHandle(options.rt_goal_handle);
+        ++active_seg;
       }
     }
   }
@@ -386,7 +392,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
 
       // Add useful segments of current trajectory to result
       {
-        typedef typename TrajectoryPerJoint::const_iterator TrajIter;
         TrajIter first = findSegment(curr_joint_traj, o_time.toSec());   // Currently active segment
         TrajIter last  = findSegment(curr_joint_traj, last_curr_time); // Segment active when new trajectory starts
         if (first == curr_joint_traj.end() || last == curr_joint_traj.end())

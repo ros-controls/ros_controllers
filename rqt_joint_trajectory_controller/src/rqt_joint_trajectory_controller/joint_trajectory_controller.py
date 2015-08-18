@@ -220,10 +220,19 @@ class JointTrajectoryController(Plugin):
             self._widget.jtc_combo.clear()
             return
 
-        # Update widget
+        # List of running controllers with a valid joint limits specification
+        # for _all_ their joints
         running_jtc = self._running_jtc_info()
-        running_jtc_names = [data.name for data in running_jtc]
-        update_combo(self._widget.jtc_combo, sorted(running_jtc_names))
+        valid_jtc = []
+        for jtc_info in running_jtc:
+            has_limits = all(name in self._robot_joint_limits
+                             for name in _jtc_joint_names(jtc_info))
+            if has_limits:
+                valid_jtc.append(jtc_info);
+        valid_jtc_names = [data.name for data in valid_jtc]
+
+        # Update widget
+        update_combo(self._widget.jtc_combo, sorted(valid_jtc_names))
 
     def _on_speed_scaling_change(self, val):
         self._speed_scale = val / self._speed_scaling_widget.slider.maximum()

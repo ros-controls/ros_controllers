@@ -272,7 +272,7 @@ class JointTrajectoryController(Plugin):
     def _load_jtc(self):
         # Initialize joint data corresponding to selected controller
         running_jtc = self._running_jtc_info()
-        self._joint_names = next(x.resources for x in running_jtc
+        self._joint_names = next(_jtc_joint_names(x) for x in running_jtc
                                  if x.name == self._jtc_name)
         for name in self._joint_names:
             self._joint_pos[name] = {}
@@ -414,6 +414,8 @@ class JointTrajectoryController(Plugin):
                                          QFormLayout.FieldRole).widget())
         return widgets
 
+def _jtc_joint_names(jtc_info):
+    return jtc_info.resources
 
 def _resolve_controller_ns(cm_ns, controller_name):
     """

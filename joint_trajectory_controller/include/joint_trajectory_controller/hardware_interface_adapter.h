@@ -183,7 +183,7 @@ public:
     return true;
   }
 
-  void starting(const ros::Time& time)
+  void starting(const ros::Time& /*time*/)
   {
     if (!joint_handles_ptr_) {return;}
 
@@ -199,7 +199,7 @@ public:
 
   void updateCommand(const ros::Time&     /*time*/,
                      const ros::Duration& period,
-                     const State&         desired_state,
+                     const State&         /*desired_state*/,
                      const State&         state_error)
   {
     const unsigned int n_joints = joint_handles_ptr_->size();

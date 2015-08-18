@@ -196,14 +196,30 @@ class JointTrajectoryController(Plugin):
         self._unregister_cmd_pub()
 
     def save_settings(self, plugin_settings, instance_settings):
-        # TODO save intrinsic configuration, usually using:
-        # instance_settings.set_value(k, v)
-        pass
+        instance_settings.set_value('cm_ns', self._cm_ns)
+        instance_settings.set_value('jtc_name', self._jtc_name)
 
     def restore_settings(self, plugin_settings, instance_settings):
-        # TODO restore intrinsic configuration, usually using:
-        # v = instance_settings.value(k)
-        pass
+        # Restore last session's controller_manager, if present
+        self._update_cm_list()
+        cm_ns = instance_settings.value('cm_ns')
+        cm_combo = self._widget.cm_combo
+        cm_list = [cm_combo.itemText(i) for i in range(cm_combo.count())]
+        try:
+            idx = cm_list.index(cm_ns)
+            cm_combo.setCurrentIndex(idx)
+            # Resore last session's controller, if running
+            self._update_jtc_list()
+            jtc_name = instance_settings.value('jtc_name')
+            jtc_combo = self._widget.jtc_combo
+            jtc_list = [jtc_combo.itemText(i) for i in range(jtc_combo.count())]
+            try:
+                idx = jtc_list.index(jtc_name)
+                jtc_combo.setCurrentIndex(idx)
+            except (ValueError):
+                pass
+        except (ValueError):
+            pass
 
     # def trigger_configuration(self):
         # Comment in to signal that the plugin has a way to configure

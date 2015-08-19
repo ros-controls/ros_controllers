@@ -105,7 +105,8 @@ struct InitJointTrajectoryOptions
       angle_wraparound(0),
       rt_goal_handle(),
       default_tolerances(0),
-      other_time_base(0)
+      other_time_base(0),
+      allow_partial_joints_goal(false)
   {}
 
   Trajectory*                current_trajectory;
@@ -114,6 +115,7 @@ struct InitJointTrajectoryOptions
   RealtimeGoalHandlePtr      rt_goal_handle;
   SegmentTolerances<Scalar>* default_tolerances;
   ros::Time*                 other_time_base;
+  bool                       allow_partial_joints_goal;
 };
 
 template <class Trajectory>
@@ -248,8 +250,6 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     o_msg_start_time = msg_start_time;
   }
 
-  // Mapping vector contains the map between the message joint order and the expected joint order
-  // If unspecified, a trivial map is computed
   const std::vector<std::string> joint_names = has_joint_names ? *(options.joint_names) : msg.joint_names;
 
   if (has_angle_wraparound)
@@ -264,6 +264,18 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     }
   }
 
+  // If partial joints goals are not allowed, goal should specify all controller joints
+  if (!options.allow_partial_joints_goal)
+  {
+    if (msg.joint_names.size() != joint_names.size())
+    {
+      ROS_ERROR("Cannot create trajectory from message. It does not contain the expected joints.");
+      return Trajectory();
+    }
+  }
+
+  // Mapping vector contains the map between the message joint order and the expected joint order
+  // If unspecified, a trivial map is computed
   std::vector<unsigned int> mapping_vector = internal::mapping(msg.joint_names,joint_names);
 
   if (mapping_vector.empty())

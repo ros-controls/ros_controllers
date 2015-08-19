@@ -210,6 +210,7 @@ private:
 
   typename Segment::Time stop_trajectory_duration_;
   boost::dynamic_bitset<> successful_joint_traj_;
+  bool allow_partial_joints_goal_;
 
   // ROS API
   ros::NodeHandle    controller_nh_;

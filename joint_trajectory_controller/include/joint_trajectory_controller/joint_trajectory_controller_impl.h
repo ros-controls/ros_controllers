@@ -223,6 +223,13 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   }
   ROS_DEBUG_STREAM_NAMED(name_, "Stop trajectory has a duration of " << stop_trajectory_duration_ << "s.");
 
+  // Checking if partial trajectories are allowed
+  controller_nh_.param<bool>("allow_partial_joints_goal", allow_partial_joints_goal_, false);
+  if (allow_partial_joints_goal_)
+  {
+    ROS_ERROR_NAMED(name_, "Goals with partial set of joints are allowed");
+  }
+
   // List of controlled joints
   joint_names_ = getStrings(controller_nh_, "joints");
   if (joint_names_.empty()) {return false;}
@@ -494,12 +501,13 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   curr_trajectory_box_.get(curr_traj_ptr);
 
   Options options;
-  options.other_time_base    = &next_update_uptime;
-  options.current_trajectory = curr_traj_ptr.get();
-  options.joint_names        = &joint_names_;
-  options.angle_wraparound   = &angle_wraparound_;
-  options.rt_goal_handle     = gh;
-  options.default_tolerances = &default_tolerances_;
+  options.other_time_base           = &next_update_uptime;
+  options.current_trajectory        = curr_traj_ptr.get();
+  options.joint_names               = &joint_names_;
+  options.angle_wraparound          = &angle_wraparound_;
+  options.rt_goal_handle            = gh;
+  options.default_tolerances        = &default_tolerances_;
+  options.allow_partial_joints_goal = allow_partial_joints_goal_;
 
   // Update currently executing trajectory
   try
@@ -544,6 +552,19 @@ goalCB(GoalHandle gh)
     result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL; // TODO: Add better error status to msg?
     gh.setRejected(result);
     return;
+  }
+
+  // If partial joints goals are not allowed, goal should specify all controller joints
+  if (!allow_partial_joints_goal_)
+  {
+    if (gh.getGoal()->trajectory.joint_names.size() != joint_names_.size())
+    {
+      ROS_ERROR_NAMED(name_, "Joints on incoming goal don't match the controller joints.");
+      control_msgs::FollowJointTrajectoryResult result;
+      result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;
+      gh.setRejected(result);
+      return;
+    }
   }
 
   // Goal should specify valid controller joints (they can be ordered differently). Reject if this is not the case

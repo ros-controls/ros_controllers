@@ -439,8 +439,8 @@ update(const ros::Time& time, const ros::Duration& period)
   RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
   if (current_active_goal and successful_joint_traj_.count() == joints_.size())
   {
-    rt_active_goal_->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
-    rt_active_goal_->setSucceeded(rt_active_goal_->preallocated_result_);
+    current_active_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
+    current_active_goal->setSucceeded(current_active_goal->preallocated_result_);
     rt_active_goal_.reset();
     successful_joint_traj_.reset();
   }

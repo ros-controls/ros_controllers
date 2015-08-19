@@ -148,7 +148,7 @@ class JointTrajectoryController(Plugin):
         self._cm_ns = []  # Namespace of the selected controller manager
         self._joint_pos = {}  # name->pos map for joints of selected controller
         self._joint_names = []  # Ordered list of selected controller joints
-        self._robot_joint_limits = get_joint_limits()  # For all robot joints
+        self._robot_joint_limits = {} # Lazily evaluated on first use
 
         # Timer for sending commands to active controller
         self._update_cmd_timer = QTimer(self)
@@ -239,6 +239,8 @@ class JointTrajectoryController(Plugin):
         # List of running controllers with a valid joint limits specification
         # for _all_ their joints
         running_jtc = self._running_jtc_info()
+        if running_jtc and not self._robot_joint_limits:
+            self._robot_joint_limits = get_joint_limits()  # Lazy evaluation
         valid_jtc = []
         for jtc_info in running_jtc:
             has_limits = all(name in self._robot_joint_limits

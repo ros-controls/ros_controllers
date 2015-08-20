@@ -227,7 +227,7 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   controller_nh_.param<bool>("allow_partial_joints_goal", allow_partial_joints_goal_, false);
   if (allow_partial_joints_goal_)
   {
-    ROS_ERROR_NAMED(name_, "Goals with partial set of joints are allowed");
+    ROS_DEBUG_NAMED(name_, "Goals with partial set of joints are allowed");
   }
 
   // List of controlled joints
@@ -396,7 +396,11 @@ update(const ros::Time& time, const ros::Duration& period)
         const SegmentTolerancesPerJoint<Scalar>& joint_tolerances = segment_it->getTolerances();
         if (!checkStateTolerancePerJoint(state_joint_error_, joint_tolerances.state_tolerance))
         {
-          ROS_ERROR_STREAM_NAMED(name_,"Path tolerances failed for joint: " << joint_names_[i]);
+          if (verbose_)
+          {
+            ROS_ERROR_STREAM_NAMED(name_,"Path tolerances failed for joint: " << joint_names_[i]);
+            checkStateTolerancePerJoint(state_joint_error_, joint_tolerances.state_tolerance, true);
+          }
           rt_segment_goal->preallocated_result_->error_code =
           control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);

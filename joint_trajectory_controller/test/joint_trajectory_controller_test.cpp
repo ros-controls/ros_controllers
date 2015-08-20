@@ -248,7 +248,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
   ASSERT_TRUE(initState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
-  // Invalid size => Now this is possible. Partial trajectory
+  // Invalid size (No partial joints goals allowed)
   {
     trajectory_msgs::JointTrajectoryPoint point;
     point.positions.resize(1, 0.0);
@@ -264,7 +264,8 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
 
     bad_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
     action_client->sendGoal(bad_goal);
-    ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, long_timeout));
+    ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS);
   }
 
   // Incompatible joint names

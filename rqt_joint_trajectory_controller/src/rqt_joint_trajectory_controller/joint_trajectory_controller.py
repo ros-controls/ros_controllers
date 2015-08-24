@@ -237,6 +237,10 @@ class JointTrajectoryController(Plugin):
         self._cm_ns = cm_ns
         if cm_ns:
             self._list_controllers = ControllerLister(cm_ns)
+            # NOTE: Clear below is important, as different controller managers
+            # might have controllers with the same name but different
+            # configurations. Clearing forces controller re-discovery
+            self._widget.jtc_combo.clear()
             self._update_jtc_list()
         else:
             self._list_controllers = None

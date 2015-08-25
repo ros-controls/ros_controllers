@@ -33,12 +33,15 @@ def get_joint_limits(key='robot_description', use_smallest_joint_limits=True):
             if jtype == 'fixed':
                 continue
             name = child.getAttribute('name')
+            try:
+                limit = child.getElementsByTagName('limit')[0]
+            except:
+                continue
             if jtype == 'continuous':
                 minval = -pi
                 maxval = pi
             else:
                 try:
-                    limit = child.getElementsByTagName('limit')[0]
                     minval = float(limit.getAttribute('lower'))
                     maxval = float(limit.getAttribute('upper'))
                 except:
@@ -46,8 +49,7 @@ def get_joint_limits(key='robot_description', use_smallest_joint_limits=True):
             try:
                 maxvel = float(limit.getAttribute('velocity'))
             except:
-                rospy.logwarn("Joint '%s' has no maximum velocity specification in URDF. Defaulting to 1.0.", name)
-                maxvel = 1.0
+                continue
             safety_tags = child.getElementsByTagName('safety_controller')
             if use_small and len(safety_tags) == 1:
                 tag = safety_tags[0]

@@ -96,6 +96,12 @@ void JointVelocityController::getGains(double &p, double &i, double &d, double &
   pid_controller_.getGains(p,i,d,i_max,i_min,antiwindup);
 }
 
+void JointVelocityController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
+{
+  bool dummy;
+  pid_controller_.getGains(p,i,d,i_max,i_min,dummy);
+}
+
 void JointVelocityController::printDebug()
 {
   pid_controller_.printValues();

@@ -86,16 +86,14 @@ bool JointVelocityController::init(hardware_interface::EffortJointInterface *rob
   return true;
 }
 
-
-void JointVelocityController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
+void JointVelocityController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min, const bool &antiwindup)
 {
-  pid_controller_.setGains(p,i,d,i_max,i_min);
-
+  pid_controller_.setGains(p,i,d,i_max,i_min,antiwindup);
 }
 
-void JointVelocityController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
+void JointVelocityController::getGains(double &p, double &i, double &d, double &i_max, double &i_min, bool &antiwindup)
 {
-  pid_controller_.getGains(p,i,d,i_max,i_min);
+  pid_controller_.getGains(p,i,d,i_max,i_min,antiwindup);
 }
 
 void JointVelocityController::printDebug()
@@ -149,11 +147,14 @@ void JointVelocityController::update(const ros::Time& time, const ros::Duration&
       controller_state_publisher_->msg_.command = commanded_effort;
 
       double dummy;
+      bool antiwindup;
       getGains(controller_state_publisher_->msg_.p,
-               controller_state_publisher_->msg_.i,
-               controller_state_publisher_->msg_.d,
-               controller_state_publisher_->msg_.i_clamp,
-               dummy);
+        controller_state_publisher_->msg_.i,
+        controller_state_publisher_->msg_.d,
+        controller_state_publisher_->msg_.i_clamp,
+        dummy,
+        antiwindup);
+      controller_state_publisher_->msg_.antiwindup = static_cast<char>(antiwindup);
       controller_state_publisher_->unlockAndPublish();
     }
   }

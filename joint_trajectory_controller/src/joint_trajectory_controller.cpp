@@ -66,6 +66,30 @@ namespace effort_controllers
           JointTrajectoryController;
 }
 
+namespace posvel_controllers
+{
+  /**
+   * \brief Joint trajectory controller that represents trajectory segments as <b>quintic splines</b> and sends
+   * commands to an \b posvel interface.
+   */
+  typedef joint_trajectory_controller::JointTrajectoryController<trajectory_interface::QuinticSplineSegment<double>,
+                                                                 hardware_interface::PosVelJointInterface>
+          JointTrajectoryController;
+}
+
+namespace posvelacc_controllers
+{
+  /**
+   * \brief Joint trajectory controller that represents trajectory segments as <b>quintic splines</b> and sends
+   * commands to an \b posvelacc interface.
+   */
+  typedef joint_trajectory_controller::JointTrajectoryController<trajectory_interface::QuinticSplineSegment<double>,
+                                                                 hardware_interface::PosVelAccJointInterface>
+          JointTrajectoryController;
+}
+
 PLUGINLIB_EXPORT_CLASS(position_controllers::JointTrajectoryController, controller_interface::ControllerBase)
 PLUGINLIB_EXPORT_CLASS(velocity_controllers::JointTrajectoryController, controller_interface::ControllerBase)
 PLUGINLIB_EXPORT_CLASS(effort_controllers::JointTrajectoryController,   controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(posvel_controllers::JointTrajectoryController,   controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(posvelacc_controllers::JointTrajectoryController,   controller_interface::ControllerBase)

@@ -101,6 +101,12 @@ void JointPositionController::setGains(const double &p, const double &i, const d
   pid_controller_.setGains(p,i,d,i_max,i_min,antiwindup);
 }
 
+void JointPositionController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
+{
+  bool dummy;
+  pid_controller_.getGains(p,i,d,i_max,i_min,dummy);
+}
+
 void JointPositionController::getGains(double &p, double &i, double &d, double &i_max, double &i_min, bool &antiwindup)
 {
   pid_controller_.getGains(p,i,d,i_max,i_min,antiwindup);

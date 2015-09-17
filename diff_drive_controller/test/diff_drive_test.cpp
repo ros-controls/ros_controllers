@@ -31,6 +31,84 @@
 #include <tf/transform_listener.h>
 
 // TEST CASES
+TEST_F(DiffDriveControllerTest, testNoMove)
+{
+  // wait for ROS
+  while (!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(0.1).sleep();
+  // get initial odom
+  nav_msgs::Odometry old_odom = getLastOdom();
+  // don't send any velocity command, so it doesn't move
+  // wait for 10s
+  ros::Duration(10.0).sleep();
+
+  nav_msgs::Odometry new_odom = getLastOdom();
+
+  // check if the robot didn't moved, changes on all fields should be ~~0
+  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), EPS);
+  EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
+  EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
+
+  // convert to rpy and test that way
+  double roll_old, pitch_old, yaw_old;
+  double roll_new, pitch_new, yaw_new;
+  tf::Matrix3x3(tfQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
+  tf::Matrix3x3(tfQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
+  EXPECT_LT(fabs(roll_new - roll_old), EPS);
+  EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
+  EXPECT_LT(fabs(yaw_new - yaw_old), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.x), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.z), EPS);
+
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z), EPS);
+
+  // propagation
+  double x = old_odom.pose.pose.position.x;
+  double y = old_odom.pose.pose.position.y;
+  double yaw = tf::getYaw(old_odom.pose.pose.orientation);
+
+  const double v_x = new_odom.twist.twist.linear.x;
+  const double v_y = new_odom.twist.twist.linear.y;
+  const double v_yaw = new_odom.twist.twist.angular.z;
+
+  const double dt = (new_odom.header.stamp - old_odom.header.stamp).toSec();
+  propagate(x, y, yaw, v_x, v_y, v_yaw, dt);
+
+  EXPECT_LT(std::abs(x - new_odom.pose.pose.position.x), EPS);
+  EXPECT_LT(std::abs(y - new_odom.pose.pose.position.y), EPS);
+  EXPECT_LT(angles::shortest_angular_distance(yaw,
+        tf::getYaw(new_odom.pose.pose.orientation)), EPS);
+
+  // covariance
+  diff_drive_controller::Odometry::PoseCovariance pose_covariance;
+  diff_drive_controller::Odometry::TwistCovariance twist_covariance;
+
+  msgToCovariance(new_odom.pose.covariance, pose_covariance);
+  msgToCovariance(new_odom.twist.covariance, twist_covariance);
+
+  // a covariance matrix must be positive semidefinite, but at this point it
+  // must also be positive definite
+  EXPECT_TRUE(isPositiveDefinite(pose_covariance));
+  EXPECT_TRUE(isPositiveDefinite(twist_covariance));
+
+  // when the robot doesn't move the twist covariance should be exactly a
+  // diagonal matrix with all the elements on the diagonal = 1e-9
+  EXPECT_TRUE(twist_covariance(0, 0) = 1e-9);
+  EXPECT_TRUE(twist_covariance(1, 1) = 1e-9);
+  EXPECT_TRUE(twist_covariance(2, 2) = 1e-9);
+}
+
 TEST_F(DiffDriveControllerTest, testForward)
 {
   // wait for ROS

@@ -43,6 +43,7 @@
 
 #include <boost/assign.hpp>
 
+#include <diff_drive_controller/covariance.h>
 #include <diff_drive_controller/diff_drive_controller.h>
 
 static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3& vec2)
@@ -115,21 +116,6 @@ static bool getWheelRadius(
 
 namespace diff_drive_controller
 {
-
-  /*
-   * \brief Converts odometry covariance into message format
-   * \param [in]  Covariance matrix
-   * \param [out] Covariance message
-   */
-  static void covarianceToMsg(const Odometry::Covariance& covariance,
-      nav_msgs::Odometry::_pose_type::_covariance_type& msg)
-  {
-    Eigen::Map< Eigen::Matrix<double, 6, 6> > C(msg.data());
-    C.topLeftCorner<2, 2>() = covariance.topLeftCorner<2, 2>();
-    C(0, 5) = C(5, 0) = covariance(0, 2);
-    C(1, 5) = C(5, 1) = covariance(1, 2);
-    C(5, 5) = covariance(2, 2);
-  }
 
   DiffDriveController::DiffDriveController()
     : open_loop_(false)
@@ -654,6 +640,24 @@ namespace diff_drive_controller
       odometry_.setPoseCovariance(pose_covariance.asDiagonal());
 
       ROS_INFO_STREAM("Pose covariance initialized to: " << pose_covariance);
+    }
+
+    /// Set odometry minimum twist covariance
+    XmlRpc::XmlRpcValue twist_cov_list;
+    if (controller_nh.getParam("minimum_twist_covariance_diagonal", twist_cov_list))
+    {
+      ROS_ASSERT(twist_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+      ROS_ASSERT(twist_cov_list.size() == 3);
+      for (int i = 0; i < twist_cov_list.size(); ++i)
+        ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+
+      Eigen::Vector3d twist_covariance;
+      twist_covariance << static_cast<double>(twist_cov_list[0]),
+                          static_cast<double>(twist_cov_list[1]),
+                          static_cast<double>(twist_cov_list[2]);
+      odometry_.setMinimumTwistCovariance(twist_covariance.asDiagonal());
+
+      ROS_INFO_STREAM("Minimum Twist covariance set to: " << twist_covariance);
     }
 
     /// Setup odometry message constant fields

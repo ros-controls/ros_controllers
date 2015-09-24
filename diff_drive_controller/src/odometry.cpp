@@ -194,8 +194,8 @@ namespace diff_drive_controller
     /// Jacobians for the relative transformation between p0 and p1
     IntegrateFunction::PoseJacobian J_dummy;
     IntegrateFunction::MeasJacobian J_meas;
-    double zero = 0.0;
-    (*integrate_fun_)(zero, zero, zero, v_l, v_r, J_dummy, J_meas);
+    double x = 0.0, y = 0.0, yaw = 0.0;
+    (*integrate_fun_)(x, y, yaw, v_l, v_r, J_dummy, J_meas);
 
     /// Include the Jacobian of dividing by dt, which is equivalent to divide
     /// all the elements of the other Jacobian by dt:

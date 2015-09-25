@@ -53,6 +53,9 @@ namespace diff_drive_controller
 {
   namespace bacc = boost::accumulators;
 
+  const double Odometry::DEFAULT_MINIMUM_TWIST_COVARIANCE = 1e-9;
+  const double Odometry::DEFAULT_POSE_COVARIANCE = 1e-6;
+
   Odometry::Odometry(size_t velocity_rolling_window_size)
   : timestamp_(0.0)
   , x_(0.0)
@@ -80,11 +83,15 @@ namespace diff_drive_controller
   {
     meas_covariance_.setZero();
 
-    twist_covariance_.setIdentity();
-    twist_covariance_ *= 1e-9;
+    minimum_twist_covariance_.setIdentity();
+    minimum_twist_covariance_ *= DEFAULT_MINIMUM_TWIST_COVARIANCE;
+
+    // There's no need to initialize the twist covariance because it's updated
+    // from scratch on each cycle, but it's safer to initialize it anyway:
+    twist_covariance_ = minimum_twist_covariance_;
 
     pose_covariance_.setIdentity();
-    pose_covariance_ *= 1e-6;
+    pose_covariance_ *= DEFAULT_POSE_COVARIANCE;
   }
 
   void Odometry::init(const ros::Time& time)
@@ -204,12 +211,10 @@ namespace diff_drive_controller
     /// Update twist covariance:
     twist_covariance_ = J_meas * meas_covariance_ * J_meas.transpose();
 
-    /// Make sure the matrix is positive definite by setting the values equal
-    /// to 0 on the diagonal to some small value:
-    for (size_t i = 0; i < twist_covariance_.rows(); ++i)
-    {
-      twist_covariance_(i, i) = std::max(twist_covariance_(i, i), 1e-9);
-    }
+    /// Add minimum (diagonal) covariance to avoid ill-conditioned covariance
+    /// matrices, i.e. with a very large condition number, which would make
+    /// inverse or Cholesky decomposition fail on many algorithms:
+    twist_covariance_ += minimum_twist_covariance_;
 
     return true;
   }

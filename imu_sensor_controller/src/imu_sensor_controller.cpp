@@ -100,7 +100,7 @@ namespace imu_sensor_controller
           if (sensors_[i].getOrientationCovariance())
           {
             for (unsigned j=0; j<realtime_pubs_[i]->msg_.orientation_covariance.size(); ++j){
-              realtime_pubs_[i]->msg_.orientation_covariance[i] = sensors_[i].getOrientationCovariance()[i];
+              realtime_pubs_[i]->msg_.orientation_covariance[j] = sensors_[i].getOrientationCovariance()[j];
             }
           }
           else
@@ -131,7 +131,7 @@ namespace imu_sensor_controller
           if (sensors_[i].getAngularVelocityCovariance())
           {
             for (unsigned j=0; j<realtime_pubs_[i]->msg_.angular_velocity_covariance.size(); ++j){
-              realtime_pubs_[i]->msg_.angular_velocity_covariance[i] = sensors_[i].getAngularVelocityCovariance()[i];
+              realtime_pubs_[i]->msg_.angular_velocity_covariance[j] = sensors_[i].getAngularVelocityCovariance()[j];
             }
           }
           else
@@ -162,7 +162,7 @@ namespace imu_sensor_controller
           if (sensors_[i].getLinearAccelerationCovariance())
           {
             for (unsigned j=0; j<realtime_pubs_[i]->msg_.linear_acceleration_covariance.size(); ++j){
-              realtime_pubs_[i]->msg_.linear_acceleration_covariance[i] = sensors_[i].getLinearAccelerationCovariance()[i];
+              realtime_pubs_[i]->msg_.linear_acceleration_covariance[j] = sensors_[i].getLinearAccelerationCovariance()[j];
             }
           }
           else

@@ -40,6 +40,7 @@
 #include <angles/angles.h>
 
 #include <diff_drive_controller/odometry.h>
+#include <diff_drive_controller/DiffDriveControllerState.h>
 
 #include <Eigen/Dense>
 
@@ -60,6 +61,9 @@ public:
   DiffDriveControllerTest()
   : cmd_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100))
   , odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
+  , cmd_vel_limited_sub(nh.subscribe("cmd_vel_limited", 100, &DiffDriveControllerTest::cmdVelLimitedCallback, this))
+  , state_sub(nh.subscribe("state", 100, &DiffDriveControllerTest::diffDriveControllerStateCallback, this))
+  , last_states(3)
   , start_srv(nh.serviceClient<std_srvs::Empty>("start"))
   , stop_srv(nh.serviceClient<std_srvs::Empty>("stop"))
   {
@@ -68,9 +72,14 @@ public:
   ~DiffDriveControllerTest()
   {
     odom_sub.shutdown();
+    cmd_vel_limited_sub.shutdown();
+    state_sub.shutdown();
   }
 
   nav_msgs::Odometry getLastOdom(){ return last_odom; }
+  geometry_msgs::TwistStamped getLastCmdVelLimited(){ return last_cmd_vel_limited; }
+  diff_drive_controller::DiffDriveControllerState getLastState(){ return last_states[0]; }
+  std::vector<diff_drive_controller::DiffDriveControllerState> getLastStates(){ return last_states; }
   void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
   bool isControllerAlive(){ return (odom_sub.getNumPublishers() > 0) && (cmd_pub.getNumSubscribers() > 0); }
 
@@ -120,19 +129,40 @@ private:
   ros::NodeHandle nh;
   ros::Publisher cmd_pub;
   ros::Subscriber odom_sub;
+  ros::Subscriber cmd_vel_limited_sub;
+  ros::Subscriber state_sub;
   nav_msgs::Odometry last_odom;
+  geometry_msgs::TwistStamped last_cmd_vel_limited;
+  std::vector<diff_drive_controller::DiffDriveControllerState> last_states;
 
   ros::ServiceClient start_srv;
   ros::ServiceClient stop_srv;
 
   void odomCallback(const nav_msgs::Odometry& odom)
   {
-    ROS_INFO_STREAM("Callback reveived: pos.x: " << odom.pose.pose.position.x
+    ROS_INFO_STREAM("Odometry callback reveived: pos.x: " << odom.pose.pose.position.x
                      << ", orient.z: " << odom.pose.pose.orientation.z
                      << ", lin_est: " << odom.twist.twist.linear.x
                      << ", ang_est: " << odom.twist.twist.angular.z);
     last_odom = odom;
   }
+
+  void cmdVelLimitedCallback(const geometry_msgs::TwistStamped& twist)
+  {
+    ROS_INFO_STREAM("Twist callback reveived: linear: " << twist.twist.linear.x
+                     << ", angular: " << twist.twist.angular.z);
+    last_cmd_vel_limited = twist;
+  }
+
+  void diffDriveControllerStateCallback(const diff_drive_controller::DiffDriveControllerState& msg)
+  {
+    ROS_INFO("Joint trajectory controller state callback reveived");
+
+    last_states[2] = last_states[1];
+    last_states[1] = last_states[0];
+    last_states[0] = msg;
+  }
+
 };
 
 inline tf::Quaternion tfQuatFromGeomQuat(const geometry_msgs::Quaternion& quat)

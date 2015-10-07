@@ -44,6 +44,8 @@
 #include <pluginlib/class_list_macros.h>
 
 #include <nav_msgs/Odometry.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <diff_drive_controller/DiffDriveControllerState.h>
 #include <tf/tfMessage.h>
 
 #include <dynamic_reconfigure/server.h>
@@ -113,7 +115,7 @@ namespace diff_drive_controller
 
     /// Odometry related:
     ros::Duration publish_period_;
-    ros::Time last_state_publish_time_;
+    ros::Time last_odom_publish_time_;
     bool open_loop_;
     bool position_feedback_;
 
@@ -139,6 +141,40 @@ namespace diff_drive_controller
     boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
     Odometry odometry_;
 
+    boost::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped> > cmd_vel_limited_pub_;
+
+    boost::shared_ptr<realtime_tools::RealtimePublisher<DiffDriveControllerState> > state_pub_;
+
+    std::vector<double> left_positions_;
+    std::vector<double> right_positions_;
+
+    std::vector<double> left_velocities_;
+    std::vector<double> right_velocities_;
+
+    std::vector<double> left_positions_estimated_;
+    std::vector<double> right_positions_estimated_;
+
+    std::vector<double> left_velocities_estimated_;
+    std::vector<double> right_velocities_estimated_;
+
+    std::vector<double> left_positions_previous_;
+    std::vector<double> right_positions_previous_;
+
+    std::vector<double> left_velocities_previous_;
+    std::vector<double> right_velocities_previous_;
+
+    std::vector<double> left_velocities_estimated_previous_;
+    std::vector<double> right_velocities_estimated_previous_;
+
+    double left_velocity_average_previous_;
+    double right_velocity_average_previous_;
+
+    double left_velocity_estimated_average_previous_;
+    double right_velocity_estimated_average_previous_;
+
+    double left_velocity_command_previous_;
+    double right_velocity_command_previous_;
+
     /// Dynamic reconfigure server related:
     typedef dynamic_reconfigure::Server<DiffDriveControllerConfig> ReconfigureServer;
     boost::shared_ptr<ReconfigureServer> cfg_server_;
@@ -152,12 +188,17 @@ namespace diff_drive_controller
       double k_l;
       double k_r;
 
+      bool publish_state;
+      bool publish_cmd_vel_limited;
+
       DynamicParams()
         : wheel_separation_multiplier(1.0)
         , left_wheel_radius_multiplier(1.0)
         , right_wheel_radius_multiplier(1.0)
         , k_l(1.0)
         , k_r(1.0)
+        , publish_state(false)
+        , publish_cmd_vel_limited(false)
       {}
     };
     realtime_tools::RealtimeBuffer<DynamicParams> dynamic_params_;
@@ -195,6 +236,20 @@ namespace diff_drive_controller
     Commands last0_cmd_;
     SpeedLimiter limiter_lin_;
     SpeedLimiter limiter_ang_;
+
+    /// Publish limited velocity command:
+    /// Note that the realtime_tools::RealtimePublisher doesn't provide any
+    /// method to obtain the number of subscribers because getNumSubscribers()
+    /// isn't RT-safe, so we cannot implement a lazy publisher with:
+    /// cmd_vel_limited_pub_->getNumSubscribers() > 0
+    bool publish_cmd_vel_limited_;
+
+    /// Publish joint trajectory controller state:
+    /// Note that the realtime_tools::RealtimePublisher doesn't provide any
+    /// method to obtain the number of subscribers because getNumSubscribers()
+    /// isn't RT-safe, so we cannot implement a lazy publisher with:
+    /// state_pub_->getNumSubscribers() > 0
+    bool publish_state_;
 
   private:
     /**

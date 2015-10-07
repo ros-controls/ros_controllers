@@ -39,6 +39,8 @@
 
 #include <cmath>
 
+#include <numeric>
+
 #include <tf/transform_datatypes.h>
 
 #include <urdf_parser/urdf_parser.h>
@@ -135,6 +137,8 @@ namespace diff_drive_controller
     , base_frame_id_("base_link")
     , enable_odom_tf_(true)
     , wheel_joints_size_(0)
+    , publish_cmd_vel_limited_(false)
+    , publish_state_(false)
   {
   }
 
@@ -239,6 +243,16 @@ namespace diff_drive_controller
     ROS_INFO_STREAM_NAMED(name_,
         "Publishing to tf is " << (enable_odom_tf_?"enabled":"disabled"));
 
+    controller_nh.param("publish_cmd_vel_limited", publish_cmd_vel_limited_, publish_cmd_vel_limited_);
+    ROS_INFO_STREAM_NAMED(name_,
+        "Publishing the limited velocity command is "
+        << (publish_cmd_vel_limited_?"enabled":"disabled"));
+
+    controller_nh.param("publish_state", publish_state_, publish_state_);
+    ROS_INFO_STREAM_NAMED(name_,
+        "Publishing the joint trajectory controller state is "
+        << (publish_state_?"enabled":"disabled"));
+
     // Velocity and acceleration limits:
     controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
     controller_nh.param("linear/x/has_acceleration_limits", limiter_lin_.has_acceleration_limits, limiter_lin_.has_acceleration_limits);
@@ -297,6 +311,9 @@ namespace diff_drive_controller
     dynamic_params_struct_.k_l = k_l_;
     dynamic_params_struct_.k_r = k_r_;
 
+    dynamic_params_struct_.publish_state = publish_state_;
+    dynamic_params_struct_.publish_cmd_vel_limited = publish_cmd_vel_limited_;
+
     dynamic_params_.writeFromNonRT(dynamic_params_struct_);
 
     setOdomPubFields(root_nh, controller_nh);
@@ -305,6 +322,99 @@ namespace diff_drive_controller
     cfg_server_.reset(new ReconfigureServer(controller_nh));
     cfg_server_->setCallback(
         boost::bind(&DiffDriveController::reconfigureCallback, this, _1, _2));
+
+    // Limited velocity command:
+    cmd_vel_limited_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped>(controller_nh, "cmd_vel_limited", 100));
+
+    cmd_vel_limited_pub_->msg_.header.frame_id = base_frame_id_;
+
+    cmd_vel_limited_pub_->msg_.twist.linear.y = 0.0;
+    cmd_vel_limited_pub_->msg_.twist.linear.z = 0.0;
+
+    cmd_vel_limited_pub_->msg_.twist.angular.x = 0.0;
+    cmd_vel_limited_pub_->msg_.twist.angular.y = 0.0;
+
+    // Joint trajectory controller state:
+    state_pub_.reset(new realtime_tools::RealtimePublisher<DiffDriveControllerState>(controller_nh, "state", 100));
+
+    state_pub_->msg_.header.frame_id = base_frame_id_;
+
+    state_pub_->msg_.joint_names.resize(2 * wheel_joints_size_);
+
+    state_pub_->msg_.desired.positions.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.desired.velocities.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.desired.accelerations.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.desired.effort.resize(2 * wheel_joints_size_);
+
+    state_pub_->msg_.actual.positions.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.actual.velocities.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.actual.accelerations.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.actual.effort.resize(2 * wheel_joints_size_);
+
+    state_pub_->msg_.error.positions.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.error.velocities.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.error.accelerations.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.error.effort.resize(2 * wheel_joints_size_);
+
+    state_pub_->msg_.actual_estimated.positions.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.actual_estimated.velocities.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.actual_estimated.accelerations.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.actual_estimated.effort.resize(2 * wheel_joints_size_);
+
+    state_pub_->msg_.error_estimated.positions.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.error_estimated.velocities.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.error_estimated.accelerations.resize(2 * wheel_joints_size_);
+    state_pub_->msg_.error_estimated.effort.resize(2 * wheel_joints_size_);
+
+    state_pub_->msg_.actual_side_average.positions.resize(2);
+    state_pub_->msg_.actual_side_average.velocities.resize(2);
+    state_pub_->msg_.actual_side_average.accelerations.resize(2);
+    state_pub_->msg_.actual_side_average.effort.resize(2);
+
+    state_pub_->msg_.error_side_average.positions.resize(2);
+    state_pub_->msg_.error_side_average.velocities.resize(2);
+    state_pub_->msg_.error_side_average.accelerations.resize(2);
+    state_pub_->msg_.error_side_average.effort.resize(2);
+
+    state_pub_->msg_.actual_estimated_side_average.positions.resize(2);
+    state_pub_->msg_.actual_estimated_side_average.velocities.resize(2);
+    state_pub_->msg_.actual_estimated_side_average.accelerations.resize(2);
+    state_pub_->msg_.actual_estimated_side_average.effort.resize(2);
+
+    state_pub_->msg_.error_estimated_side_average.positions.resize(2);
+    state_pub_->msg_.error_estimated_side_average.velocities.resize(2);
+    state_pub_->msg_.error_estimated_side_average.accelerations.resize(2);
+    state_pub_->msg_.error_estimated_side_average.effort.resize(2);
+
+    for (size_t i = 0; i < wheel_joints_size_; ++i)
+    {
+      state_pub_->msg_.joint_names[i] = left_wheel_names[i];
+      state_pub_->msg_.joint_names[i + wheel_joints_size_] = right_wheel_names[i];
+    }
+
+    left_positions_.resize(wheel_joints_size_);
+    right_positions_.resize(wheel_joints_size_);
+
+    left_velocities_.resize(wheel_joints_size_);
+    right_velocities_.resize(wheel_joints_size_);
+
+    left_positions_estimated_.resize(wheel_joints_size_, 0.0);
+    right_positions_estimated_.resize(wheel_joints_size_, 0.0);
+
+    left_velocities_estimated_.resize(wheel_joints_size_);
+    right_velocities_estimated_.resize(wheel_joints_size_);
+
+    left_positions_previous_.resize(wheel_joints_size_, 0.0);
+    right_positions_previous_.resize(wheel_joints_size_, 0.0);
+
+    left_velocities_previous_.resize(wheel_joints_size_, 0.0);
+    right_velocities_previous_.resize(wheel_joints_size_, 0.0);
+
+    left_velocities_estimated_previous_.resize(wheel_joints_size_, 0.0);
+    right_velocities_estimated_previous_.resize(wheel_joints_size_, 0.0);
+
+    left_velocity_command_previous_ = 0.0;
+    right_velocity_command_previous_ = 0.0;
 
     // Get the joint object to use in the realtime loop
     for (int i = 0; i < wheel_joints_size_; ++i)
@@ -346,6 +456,9 @@ namespace diff_drive_controller
     k_l_ = dynamic_params.k_l;
     k_r_ = dynamic_params.k_r;
 
+    publish_state_ = dynamic_params.publish_state;
+    publish_cmd_vel_limited_ = dynamic_params.publish_cmd_vel_limited;
+
     // Apply multipliers:
     const double ws  = wheel_separation_multiplier_   * wheel_separation_;
     const double wrl = left_wheel_radius_multiplier_  * wheel_radius_;
@@ -368,13 +481,13 @@ namespace diff_drive_controller
         double right_pos = 0.0;
         for (size_t i = 0; i < wheel_joints_size_; ++i)
         {
-          const double lp = left_wheel_joints_[i].getPosition();
-          const double rp = right_wheel_joints_[i].getPosition();
-          if (std::isnan(lp) || std::isnan(rp))
+          left_positions_[i] = left_wheel_joints_[i].getPosition();
+          right_positions_[i] = right_wheel_joints_[i].getPosition();
+          if (std::isnan(left_positions_[i]) || std::isnan(right_positions_[i]))
             return;
 
-          left_pos  += lp;
-          right_pos += rp;
+          left_pos  += left_positions_[i];
+          right_pos += right_positions_[i];
         }
         left_pos  /= wheel_joints_size_;
         right_pos /= wheel_joints_size_;
@@ -388,13 +501,13 @@ namespace diff_drive_controller
         double right_vel = 0.0;
         for (size_t i = 0; i < wheel_joints_size_; ++i)
         {
-          const double lv = left_wheel_joints_[i].getVelocity();
-          const double rv = right_wheel_joints_[i].getVelocity();
-          if (std::isnan(lv) || std::isnan(rv))
+          left_velocities_[i] = left_wheel_joints_[i].getVelocity();
+          right_velocities_[i] = right_wheel_joints_[i].getVelocity();
+          if (std::isnan(left_velocities_[i]) || std::isnan(right_velocities_[i]))
             return;
 
-          left_vel  += lv;
-          right_vel += rv;
+          left_vel  += left_velocities_[i];
+          right_vel += right_velocities_[i];
         }
         left_vel  /= wheel_joints_size_;
         right_vel /= wheel_joints_size_;
@@ -404,11 +517,41 @@ namespace diff_drive_controller
       }
     }
 
+    // Compute wheel joints positions estimated from the velocities:
+    for (size_t i = 0; i < wheel_joints_size_; ++i)
+    {
+      left_positions_estimated_[i] += left_velocities_[i] * period.toSec();
+      right_positions_estimated_[i] += right_velocities_[i] * period.toSec();
+    }
+
+    // Compute wheel joints velocities estimated from the positions:
+    for (size_t i = 0; i < wheel_joints_size_; ++i)
+    {
+      left_velocities_estimated_[i] = (left_positions_[i] - left_positions_previous_[i]) / period.toSec();
+      right_velocities_estimated_[i] = (right_positions_[i] - right_positions_previous_[i]) / period.toSec();
+    }
+
+    // Compute wheel joints poisitions average per side:
+    const double left_position_average  = std::accumulate(left_positions_.begin(), left_positions_.end(), 0.0) / wheel_joints_size_;
+    const double right_position_average = std::accumulate(right_positions_.begin(), right_positions_.end(), 0.0) / wheel_joints_size_;
+
+    // Compute wheel joints velocities average per side:
+    const double left_velocity_average  = std::accumulate(left_velocities_.begin(), left_velocities_.end(), 0.0) / wheel_joints_size_;
+    const double right_velocity_average = std::accumulate(right_velocities_.begin(), right_velocities_.end(), 0.0) / wheel_joints_size_;
+
+    // Compute wheel joints positions estimated average per side:
+    const double left_position_estimated_average  = std::accumulate(left_positions_estimated_.begin(), left_positions_estimated_.end(), 0.0) / wheel_joints_size_;
+    const double right_position_estimated_average = std::accumulate(right_positions_estimated_.begin(), right_positions_estimated_.end(), 0.0) / wheel_joints_size_;
+
+    // Compute wheel joints velocities estimated average per side:
+    const double left_velocity_estimated_average  = std::accumulate(left_velocities_estimated_.begin(), left_velocities_estimated_.end(), 0.0) / wheel_joints_size_;
+    const double right_velocity_estimated_average = std::accumulate(right_velocities_estimated_.begin(), right_velocities_estimated_.end(), 0.0) / wheel_joints_size_;
+
     // Publish odometry message
     const ros::Duration half_period(0.5 * period.toSec());
-    if (last_state_publish_time_ + publish_period_ < time + half_period)
+    if (last_odom_publish_time_ + publish_period_ < time + half_period)
     {
-      last_state_publish_time_ = time;
+      last_odom_publish_time_ = time;
 
       // Compute and store orientation info
       const geometry_msgs::Quaternion orientation(
@@ -466,14 +609,200 @@ namespace diff_drive_controller
     last0_cmd_ = curr_cmd;
 
     // Compute wheels velocities:
-    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wrl;
-    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wrr;
+    const double left_velocity_command  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wrl;
+    const double right_velocity_command = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wrr;
 
     // Set wheels velocities:
     for (size_t i = 0; i < wheel_joints_size_; ++i)
     {
-      left_wheel_joints_[i].setCommand(vel_left);
-      right_wheel_joints_[i].setCommand(vel_right);
+      left_wheel_joints_[i].setCommand(left_velocity_command);
+      right_wheel_joints_[i].setCommand(right_velocity_command);
+    }
+
+    // Publish limited velocity command:
+    if (dynamic_params.publish_cmd_vel_limited && cmd_vel_limited_pub_->trylock())
+    {
+      cmd_vel_limited_pub_->msg_.header.stamp = time;
+
+      cmd_vel_limited_pub_->msg_.twist.linear.x  = curr_cmd.lin;
+      cmd_vel_limited_pub_->msg_.twist.angular.z = curr_cmd.ang;
+
+      cmd_vel_limited_pub_->unlockAndPublish();
+    }
+
+    // Publish joint trajectory controller state:
+    if (publish_state_)
+    {
+      if (state_pub_->trylock())
+      {
+        state_pub_->msg_.header.stamp = time;
+
+        // Set left wheel joints desired, actual (and actual estimated) state:
+        for (size_t i = 0; i < wheel_joints_size_; ++i)
+        {
+          // Desired state:
+          state_pub_->msg_.desired.accelerations[i] = (left_velocity_command - left_velocity_command_previous_) / period.toSec();
+          state_pub_->msg_.desired.velocities[i] = left_velocity_command;
+          state_pub_->msg_.desired.positions[i] += left_velocity_command * period.toSec();
+          state_pub_->msg_.desired.effort[i] = std::numeric_limits<double>::quiet_NaN();
+
+          // Actual state:
+          const double left_acceleration = (left_velocities_[i] - left_velocities_previous_[i]) / period.toSec();
+
+          state_pub_->msg_.actual.accelerations[i] = left_acceleration;
+          state_pub_->msg_.actual.velocities[i] = left_velocities_[i];
+          state_pub_->msg_.actual.positions[i] = left_positions_[i];
+          state_pub_->msg_.actual.effort[i] = left_wheel_joints_[i].getEffort();
+
+          // Actual estimated state:
+          const double left_acceleration_estimated = (left_velocities_estimated_[i] - left_velocities_estimated_previous_[i]) / period.toSec();
+
+          state_pub_->msg_.actual_estimated.accelerations[i] = left_acceleration_estimated;
+          state_pub_->msg_.actual_estimated.velocities[i] = left_velocities_estimated_[i];
+          state_pub_->msg_.actual_estimated.positions[i] = left_positions_estimated_[i];
+          state_pub_->msg_.actual_estimated.effort[i] = state_pub_->msg_.actual.effort[i];
+        }
+
+        // Set right wheel joints desired, actual (and actual estimated) state:
+        for (size_t i = 0, j = wheel_joints_size_; i < wheel_joints_size_; ++i, ++j)
+        {
+          // Desired state:
+          state_pub_->msg_.desired.accelerations[j] = (right_velocity_command - right_velocity_command_previous_) / period.toSec();
+          state_pub_->msg_.desired.velocities[j] = right_velocity_command;
+          state_pub_->msg_.desired.positions[j] += right_velocity_command * period.toSec();
+          state_pub_->msg_.desired.effort[j] = std::numeric_limits<double>::quiet_NaN();
+
+          // Actual state:
+          const double right_acceleration = (right_velocities_[i] - right_velocities_previous_[i]) / period.toSec();
+
+          state_pub_->msg_.actual.accelerations[j] = right_acceleration;
+          state_pub_->msg_.actual.velocities[j] = right_velocities_[i];
+          state_pub_->msg_.actual.positions[j] = right_positions_[i];
+          state_pub_->msg_.actual.effort[j] = right_wheel_joints_[i].getEffort();
+
+          // Actual estimated state:
+          const double right_acceleration_estimated = (right_velocities_estimated_[i] - right_velocities_estimated_previous_[i]) / period.toSec();
+
+          state_pub_->msg_.actual_estimated.accelerations[j] = right_acceleration_estimated;
+          state_pub_->msg_.actual_estimated.velocities[j] = right_velocities_estimated_[i];
+          state_pub_->msg_.actual_estimated.positions[j] = right_positions_estimated_[i];
+          state_pub_->msg_.actual_estimated.effort[j] = state_pub_->msg_.actual.effort[j];
+        }
+
+        // Set left wheel joints actual (and actual estimated) side average
+        // state:
+        const double left_acceleration_average = (left_velocity_average - left_velocity_average_previous_) / period.toSec();
+
+        state_pub_->msg_.actual_side_average.accelerations[0] = left_acceleration_average;
+        state_pub_->msg_.actual_side_average.velocities[0] = left_velocity_average;
+        state_pub_->msg_.actual_side_average.positions[0] = left_position_average;
+        state_pub_->msg_.actual_side_average.effort[0] = state_pub_->msg_.actual.effort[0];
+
+        const double left_acceleration_estimated_average = (left_velocity_estimated_average - left_velocity_estimated_average_previous_) / period.toSec();
+
+        state_pub_->msg_.actual_estimated_side_average.accelerations[0] = left_acceleration_estimated_average;
+        state_pub_->msg_.actual_estimated_side_average.velocities[0] = left_velocity_estimated_average;
+        state_pub_->msg_.actual_estimated_side_average.positions[0] = left_position_estimated_average;
+        state_pub_->msg_.actual_estimated_side_average.effort[0] = state_pub_->msg_.actual.effort[0];
+
+        // Set right wheel joints actual (and actual estimated) side average
+        // state:
+        const double right_acceleration_average = (right_velocity_average - right_velocity_average_previous_) / period.toSec();
+
+        state_pub_->msg_.actual_side_average.accelerations[1] = right_acceleration_average;
+        state_pub_->msg_.actual_side_average.velocities[1] = right_velocity_average;
+        state_pub_->msg_.actual_side_average.positions[1] = right_position_average;
+        state_pub_->msg_.actual_side_average.effort[1] = state_pub_->msg_.actual.effort[wheel_joints_size_];
+
+        const double right_acceleration_estimated_average = (right_velocity_estimated_average - right_velocity_estimated_average_previous_) / period.toSec();
+
+        state_pub_->msg_.actual_estimated_side_average.accelerations[1] = right_acceleration_estimated_average;
+        state_pub_->msg_.actual_estimated_side_average.velocities[1] = right_velocity_estimated_average;
+        state_pub_->msg_.actual_estimated_side_average.positions[1] = right_position_estimated_average;
+        state_pub_->msg_.actual_estimated_side_average.effort[1] = state_pub_->msg_.actual.effort[wheel_joints_size_];
+
+        for (size_t i = 0; i < 2 * wheel_joints_size_; ++i)
+        {
+          state_pub_->msg_.error.positions[i] =
+            state_pub_->msg_.desired.positions[i] - state_pub_->msg_.actual.positions[i];
+          state_pub_->msg_.error.velocities[i] =
+            state_pub_->msg_.desired.velocities[i] - state_pub_->msg_.actual.velocities[i];
+          state_pub_->msg_.error.accelerations[i] =
+            state_pub_->msg_.desired.accelerations[i] - state_pub_->msg_.actual.accelerations[i];
+          state_pub_->msg_.error.effort[i] =
+            state_pub_->msg_.desired.effort[i] - state_pub_->msg_.actual.effort[i];
+
+          state_pub_->msg_.error_estimated.positions[i] =
+            state_pub_->msg_.desired.positions[i] - state_pub_->msg_.actual_estimated.positions[i];
+          state_pub_->msg_.error_estimated.velocities[i] =
+            state_pub_->msg_.desired.velocities[i] - state_pub_->msg_.actual_estimated.velocities[i];
+          state_pub_->msg_.error_estimated.accelerations[i] =
+            state_pub_->msg_.desired.accelerations[i] - state_pub_->msg_.actual_estimated.accelerations[i];
+          state_pub_->msg_.error_estimated.effort[i] =
+            state_pub_->msg_.desired.effort[i] - state_pub_->msg_.actual_estimated.effort[i];
+
+          state_pub_->msg_.error_estimated.positions[i] =
+            state_pub_->msg_.desired.positions[i] - state_pub_->msg_.actual_estimated.positions[i];
+          state_pub_->msg_.error_estimated.velocities[i] =
+            state_pub_->msg_.desired.velocities[i] - state_pub_->msg_.actual_estimated.velocities[i];
+          state_pub_->msg_.error_estimated.accelerations[i] =
+            state_pub_->msg_.desired.accelerations[i] - state_pub_->msg_.actual_estimated.accelerations[i];
+          state_pub_->msg_.error_estimated.effort[i] =
+            state_pub_->msg_.desired.effort[i] - state_pub_->msg_.actual_estimated.effort[i];
+
+          state_pub_->msg_.error_estimated_side_average.positions[i] =
+            state_pub_->msg_.desired.positions[i] - state_pub_->msg_.actual_estimated_side_average.positions[i];
+          state_pub_->msg_.error_estimated_side_average.velocities[i] =
+            state_pub_->msg_.desired.velocities[i] - state_pub_->msg_.actual_estimated_side_average.velocities[i];
+          state_pub_->msg_.error_estimated_side_average.accelerations[i] =
+            state_pub_->msg_.desired.accelerations[i] - state_pub_->msg_.actual_estimated_side_average.accelerations[i];
+          state_pub_->msg_.error_estimated_side_average.effort[i] =
+            state_pub_->msg_.desired.effort[i] - state_pub_->msg_.actual_estimated_side_average.effort[i];
+        }
+
+        state_pub_->msg_.desired.time_from_start = ros::Duration(dt);
+        state_pub_->msg_.actual.time_from_start = period;
+        state_pub_->msg_.error.time_from_start = state_pub_->msg_.actual.time_from_start;
+
+        state_pub_->msg_.actual_estimated.time_from_start = state_pub_->msg_.actual.time_from_start;
+        state_pub_->msg_.error_estimated.time_from_start = state_pub_->msg_.actual_estimated.time_from_start;
+
+        state_pub_->msg_.actual_side_average.time_from_start = state_pub_->msg_.actual.time_from_start;
+        state_pub_->msg_.error_side_average.time_from_start = state_pub_->msg_.actual_side_average.time_from_start;
+
+        state_pub_->msg_.actual_estimated_side_average.time_from_start = state_pub_->msg_.actual.time_from_start;
+        state_pub_->msg_.error_estimated_side_average.time_from_start = state_pub_->msg_.actual_estimated_side_average.time_from_start;
+
+        state_pub_->unlockAndPublish();
+      }
+
+      // Save wheel joints velocities, needed to estimate the accelerations:
+      for (size_t i = 0; i < wheel_joints_size_; ++i)
+      {
+        // Left wheel joints:
+        left_velocities_previous_[i] = left_velocities_[i];
+        left_velocities_estimated_previous_[i] = left_velocities_estimated_[i];
+
+        // Right wheel joints:
+        right_velocities_previous_[i] = right_velocities_[i];
+        right_velocities_estimated_previous_[i] = right_velocities_estimated_[i];
+      }
+
+      left_velocity_average_previous_ = left_velocity_average;
+      right_velocity_average_previous_ = right_velocity_average;
+
+      left_velocity_estimated_average_previous_ = left_velocity_estimated_average;
+      right_velocity_estimated_average_previous_ = right_velocity_estimated_average;
+
+      left_velocity_command_previous_ = left_velocity_command;
+      right_velocity_command_previous_ = right_velocity_command;
+    }
+
+    // Save wheel joints positions, needed to estimate the velocities:
+    for (size_t i = 0; i < wheel_joints_size_; ++i)
+    {
+      left_positions_previous_[i] = left_positions_[i];
+      right_positions_previous_[i] = right_positions_[i];
     }
   }
 
@@ -482,7 +811,7 @@ namespace diff_drive_controller
     brake();
 
     // Register starting time used to keep fixed rate
-    last_state_publish_time_ = time;
+    last_odom_publish_time_ = time;
 
     odometry_.init(time);
   }
@@ -533,6 +862,9 @@ namespace diff_drive_controller
     dynamic_params_struct_.k_l = config.k_l;
     dynamic_params_struct_.k_r = config.k_r;
 
+    dynamic_params_struct_.publish_state = config.publish_state;
+    dynamic_params_struct_.publish_cmd_vel_limited = config.publish_cmd_vel_limited;
+
     dynamic_params_.writeFromNonRT(dynamic_params_struct_);
 
     ROS_DEBUG_STREAM_NAMED(name_,
@@ -545,6 +877,11 @@ namespace diff_drive_controller
                           "Reconfigured Measurement Covariance Model params. "
                           << "k_l: " << dynamic_params_struct_.k_l << ", "
                           << "k_r: " << dynamic_params_struct_.k_r);
+
+    ROS_DEBUG_STREAM_NAMED(name_,
+                          "Reconfigured Debug Publishers params. "
+                          << "state: " << ( dynamic_params_struct_.publish_state ? "ON" : "OFF" ) << ", "
+                          << "cmd_vel_limited: " << ( dynamic_params_struct_.publish_cmd_vel_limited ? "ON" : "OFF" ));
   }
 
   bool DiffDriveController::getWheelNames(ros::NodeHandle& controller_nh,

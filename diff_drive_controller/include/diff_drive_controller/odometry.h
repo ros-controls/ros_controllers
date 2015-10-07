@@ -89,6 +89,10 @@ namespace diff_drive_controller
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+    /// Default diagonal value to initialize the covariance on the constructor:
+    static const double DEFAULT_MINIMUM_TWIST_COVARIANCE;
+    static const double DEFAULT_POSE_COVARIANCE;
+
     /**
      * \brief Constructor
      * Timestamp will get the current time value
@@ -256,13 +260,10 @@ namespace diff_drive_controller
     void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
 
   private:
+    /// Rolling mean accumulator and window:
+    typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
+    typedef bacc::tag::rolling_window RollingWindow;
 
-  public:
-    /// Default diagonal value to initialize the covariance on the constructor:
-    static const double DEFAULT_MINIMUM_TWIST_COVARIANCE;
-    static const double DEFAULT_POSE_COVARIANCE;
-
-  private:
     /**
      * \brief Updates the odometry class with latest velocity command and wheel
      * velocities
@@ -292,12 +293,6 @@ namespace diff_drive_controller
      * \param v_r [in] Right wheel velocity displacement [rad]
      */
     void updateMeasCovariance(double v_l, double v_r);
-
-
-  private:
-    /// Rolling mean accumulator and window:
-    typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
-    typedef bacc::tag::rolling_window RollingWindow;
 
     /**
      * \brief Reset linear and angular accumulators

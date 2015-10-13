@@ -101,6 +101,16 @@ namespace diff_drive_controller
     bool updateCloseLoop(double left_pos, double right_pos, const ros::Time &time);
 
     /**
+     * \brief Updates the odometry class with latest wheels velocity, i.e. in
+     * close loop
+     * \param left_vel  [in] Left  wheel velocity [rad/s]
+     * \param right_vel [in] Right wheel velocity [rad/s]
+     * \param time      [in] Current time
+     * \return true if the odometry is actually updated
+     */
+    bool updateCloseLoopFromVelocity(double left_pos, double right_pos, const ros::Time &time);
+
+    /**
      * \brief Updates the odometry class with latest velocity command, i.e. in
      * open loop
      * \param linear  [in] Linear  velocity [m/s]

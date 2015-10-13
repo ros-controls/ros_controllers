@@ -115,6 +115,7 @@ namespace diff_drive_controller
     ros::Duration publish_period_;
     ros::Time last_state_publish_time_;
     bool open_loop_;
+    bool position_feedback_;
 
     /// Hardware handles:
     std::vector<hardware_interface::JointHandle> left_wheel_joints_;

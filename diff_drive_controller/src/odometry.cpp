@@ -119,6 +119,19 @@ namespace diff_drive_controller
     return update(left_wheel_est_vel, right_wheel_est_vel, time);
   }
 
+  bool Odometry::updateCloseLoopFromVelocity(double left_vel, double right_vel, const ros::Time& time)
+  {
+    /// Compute time step:
+    const double dt = (time - timestamp_).toSec();
+
+    /// Convert velocities into displacements/movements:
+    left_vel  *= dt;
+    right_vel *= dt;
+
+    /// Update pose and twist:
+    return update(left_vel, right_vel, time);
+  }
+
   bool Odometry::updateOpenLoop(double linear, double angular, const ros::Time& time)
   {
     /// Compute time step:

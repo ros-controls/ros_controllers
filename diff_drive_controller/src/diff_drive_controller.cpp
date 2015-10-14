@@ -119,6 +119,7 @@ namespace diff_drive_controller
 
   DiffDriveController::DiffDriveController()
     : open_loop_(false)
+    , position_feedback_(true)
     , command_struct_()
     , dynamic_params_struct_()
     , wheel_separation_(0.0)
@@ -174,6 +175,13 @@ namespace diff_drive_controller
     publish_period_ = ros::Duration(1.0 / publish_rate);
 
     controller_nh.param("open_loop", open_loop_, open_loop_);
+    ROS_INFO_STREAM_NAMED(name_, "Odometry will be computed in "
+                          << (open_loop_ ? "open" : "close") << " loop.");
+
+    controller_nh.param("position_feedback", position_feedback_, position_feedback_);
+    ROS_DEBUG_STREAM_COND_NAMED(!open_loop_, name_,
+        "Odometry will be computed using the wheel " <<
+        (position_feedback_ ? "postion" : "velocity") << " feedback.");
 
     controller_nh.param("wheel_separation_multiplier",
         wheel_separation_multiplier_, wheel_separation_multiplier_);
@@ -339,23 +347,46 @@ namespace diff_drive_controller
     }
     else
     {
-      double left_pos  = 0.0;
-      double right_pos = 0.0;
-      for (size_t i = 0; i < wheel_joints_size_; ++i)
+      if (position_feedback_)
       {
-        const double lp = left_wheel_joints_[i].getPosition();
-        const double rp = right_wheel_joints_[i].getPosition();
-        if (std::isnan(lp) || std::isnan(rp))
-          return;
+        double left_pos  = 0.0;
+        double right_pos = 0.0;
+        for (size_t i = 0; i < wheel_joints_size_; ++i)
+        {
+          const double lp = left_wheel_joints_[i].getPosition();
+          const double rp = right_wheel_joints_[i].getPosition();
+          if (std::isnan(lp) || std::isnan(rp))
+            return;
 
-        left_pos  += lp;
-        right_pos += rp;
+          left_pos  += lp;
+          right_pos += rp;
+        }
+        left_pos  /= wheel_joints_size_;
+        right_pos /= wheel_joints_size_;
+
+        // Estimate linear and angular velocity using joint position information
+        odometry_.updateCloseLoop(left_pos, right_pos, time);
       }
-      left_pos  /= wheel_joints_size_;
-      right_pos /= wheel_joints_size_;
+      else
+      {
+        double left_vel  = 0.0;
+        double right_vel = 0.0;
+        for (size_t i = 0; i < wheel_joints_size_; ++i)
+        {
+          const double lv = left_wheel_joints_[i].getVelocity();
+          const double rv = right_wheel_joints_[i].getVelocity();
+          if (std::isnan(lv) || std::isnan(rv))
+            return;
 
-      // Estimate linear and angular velocity using joint information
-      odometry_.updateCloseLoop(left_pos, right_pos, time);
+          left_vel  += lv;
+          right_vel += rv;
+        }
+        left_vel  /= wheel_joints_size_;
+        right_vel /= wheel_joints_size_;
+
+        // Estimate linear and angular velocity using joint velocity information
+        odometry_.updateCloseLoopFromVelocity(left_vel, right_vel, time);
+      }
     }
 
     // Publish odometry message

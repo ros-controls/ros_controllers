@@ -393,7 +393,8 @@ namespace diff_drive_controller
     const ros::Duration half_period(0.5 * period.toSec());
     if (last_state_publish_time_ + publish_period_ < time + half_period)
     {
-      last_state_publish_time_ += publish_period_;
+      last_state_publish_time_ = time;
+
       // Compute and store orientation info
       const geometry_msgs::Quaternion orientation(
             tf::createQuaternionMsgFromYaw(odometry_.getHeading()));

@@ -278,7 +278,7 @@ namespace diff_drive_controller
 
     controller_nh.param("publish_state", publish_state_, publish_state_);
     ROS_INFO_STREAM_NAMED(name_,
-        "Publishing the joint trajectory controller state is "
+        "Publishing the controller state is "
         << (publish_state_?"enabled":"disabled"));
 
     controller_nh.param("control_frequency_desired", control_frequency_desired_, control_frequency_desired_);

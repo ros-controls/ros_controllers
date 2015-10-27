@@ -44,10 +44,12 @@ catkin_package(
     trajectory_msgs)
 
 include_directories(
-  include ${catkin_INCLUDE_DIRS}
-  include ${Boost_INCLUDE_DIRS}
-  include ${EIGEN_INCLUDE_DIRS}
-  include ${CERES_INCLUDE_DIRS})
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+  ${EIGEN_INCLUDE_DIRS}
+  ${sophus_INCLUDE_DIRS}
+  ${CERES_INCLUDE_DIRS})
 
 roslint_cpp()
 

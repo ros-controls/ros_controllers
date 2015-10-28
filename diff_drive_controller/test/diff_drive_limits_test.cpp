@@ -42,7 +42,7 @@ TEST_F(DiffDriveControllerTest, testLinearJerkLimits)
   cmd_vel.linear.x = 0.0;
   cmd_vel.angular.z = 0.0;
   publish(cmd_vel);
-  ros::Duration(2.0).sleep();
+  ros::Duration(5.0).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
   // send a big command
@@ -135,7 +135,7 @@ TEST_F(DiffDriveControllerTest, testAngularJerkLimits)
   cmd_vel.linear.x = 0.0;
   cmd_vel.angular.z = 0.0;
   publish(cmd_vel);
-  ros::Duration(2.0).sleep();
+  ros::Duration(5.0).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
   // send a big command

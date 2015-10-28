@@ -96,12 +96,8 @@ namespace diff_drive_controller
 
   void Odometry::init(const ros::Time& time)
   {
-    // Reset accumulators:
-    v_x_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-    v_y_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-    v_yaw_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-
-    // Reset timestamp:
+    // Reset accumulators and timestamp:
+    resetAccumulators();
     timestamp_ = time;
   }
 
@@ -252,10 +248,24 @@ namespace diff_drive_controller
         left_wheel_radius, right_wheel_radius);
   }
 
+  void Odometry::setVelocityRollingWindowSize(size_t velocity_rolling_window_size)
+  {
+    velocity_rolling_window_size_ = velocity_rolling_window_size;
+
+    resetAccumulators();
+  }
+
   void Odometry::setMeasCovarianceParams(double k_l, double k_r)
   {
     k_l_ = k_l;
     k_r_ = k_r;
   }
 
-}  // namespace diff_drive_controller
+  void Odometry::resetAccumulators()
+  {
+    v_x_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    v_y_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    v_yaw_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+  }
+
+} // namespace diff_drive_controller

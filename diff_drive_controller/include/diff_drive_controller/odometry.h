@@ -236,6 +236,14 @@ namespace diff_drive_controller
      */
     void setMeasCovarianceParams(double k_l, double k_r);
 
+    /**
+     * \brief Velocity rolling window size setter
+     * \param[in] velocity_rolling_window_size Velocity rolling window size
+     */
+    void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
+
+  private:
+
   public:
     /// Default diagonal value to initialize the covariance on the constructor:
     static const double DEFAULT_MINIMUM_TWIST_COVARIANCE;
@@ -277,6 +285,11 @@ namespace diff_drive_controller
     /// Rolling mean accumulator and window:
     typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
     typedef bacc::tag::rolling_window RollingWindow;
+
+    /**
+     * \brief Reset linear and angular accumulators
+     */
+    void resetAccumulators();
 
     /// Current timestamp:
     ros::Time timestamp_;

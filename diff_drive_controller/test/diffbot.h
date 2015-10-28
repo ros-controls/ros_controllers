@@ -112,13 +112,13 @@ public:
     }
   }
 
-  bool start_callback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+  bool start_callback(std_srvs::Empty::Request& /*req*/, std_srvs::Empty::Response& /*res*/)
   {
     running_ = true;
     return true;
   }
 
-  bool stop_callback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+  bool stop_callback(std_srvs::Empty::Request& /*req*/, std_srvs::Empty::Response& /*res*/)
   {
     running_ = false;
     return true;

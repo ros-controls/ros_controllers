@@ -1,0 +1,13 @@
+joint_state_controller:
+  type: joint_state_controller/JointStateController
+  publish_rate: 10
+  extra_joints:
+    - name:     'extra1'
+      position: 10.0
+      velocity: 20.0
+      effort:   30.0
+
+    - name:     'extra2'
+      position: -10.0
+
+    - name:     'extra3'

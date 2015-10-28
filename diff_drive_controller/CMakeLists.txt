@@ -12,6 +12,8 @@ find_package(catkin REQUIRED
     nav_msgs
     roslint)
 
+find_package(Boost REQUIRED)
+
 find_package(Eigen REQUIRED)
 
 find_package(sophus REQUIRED)
@@ -26,6 +28,7 @@ catkin_package(
 
 include_directories(
   include ${catkin_INCLUDE_DIRS}
+  include ${Boost_INCLUDE_DIRS}
   include ${EIGEN_INCLUDE_DIRS}
   include ${sophus_INCLUDE_DIRS}
   include ${CERES_INCLUDE_DIRS})

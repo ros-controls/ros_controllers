@@ -4,6 +4,7 @@
 Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF-Controller%20Example
 -->
   <xacro:include filename="$(find diff_drive_controller)/test/wheel.xacro"/>
+
   <xacro:property name="deg_to_rad" value="0.01745329251994329577"/>
 
   <!-- Constants for robot dimensions -->

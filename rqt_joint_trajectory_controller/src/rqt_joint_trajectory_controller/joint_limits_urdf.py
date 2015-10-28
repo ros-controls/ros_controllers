@@ -33,12 +33,15 @@ def get_joint_limits(key='robot_description', use_smallest_joint_limits=True):
             if jtype == 'fixed':
                 continue
             name = child.getAttribute('name')
+            try:
+                limit = child.getElementsByTagName('limit')[0]
+            except:
+                continue
             if jtype == 'continuous':
                 minval = -pi
                 maxval = pi
             else:
                 try:
-                    limit = child.getElementsByTagName('limit')[0]
                     minval = float(limit.getAttribute('lower'))
                     maxval = float(limit.getAttribute('upper'))
                 except:

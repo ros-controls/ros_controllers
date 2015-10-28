@@ -43,10 +43,14 @@
 
 #include <Eigen/Dense>
 
+#include <std_srvs/Empty.h>
+
 // Floating-point value comparison threshold
 const double EPS = 0.01;
 const double POSITION_TOLERANCE = 0.01; // 1 cm-s precision
 const double VELOCITY_TOLERANCE = 0.02; // 2 cm-s-1 precision
+const double JERK_LINEAR_VELOCITY_TOLERANCE = 0.10; // 10 cm-s-1 precision
+const double JERK_ANGULAR_VELOCITY_TOLERANCE = 0.05; // 3 deg-s-1 precision
 const double ORIENTATION_TOLERANCE = 0.03; // 0.57 degree precision
 
 class DiffDriveControllerTest : public ::testing::Test
@@ -54,8 +58,10 @@ class DiffDriveControllerTest : public ::testing::Test
 public:
 
   DiffDriveControllerTest()
-    : cmd_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100)),
-      odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
+  : cmd_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100))
+  , odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
+  , start_srv(nh.serviceClient<std_srvs::Empty>("start"))
+  , stop_srv(nh.serviceClient<std_srvs::Empty>("stop"))
   {
   }
 
@@ -67,6 +73,9 @@ public:
   nav_msgs::Odometry getLastOdom(){ return last_odom; }
   void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
   bool isControllerAlive(){ return (odom_sub.getNumPublishers() > 0) && (cmd_pub.getNumSubscribers() > 0); }
+
+  void start(){ std_srvs::Empty srv; start_srv.call(srv); }
+  void stop(){ std_srvs::Empty srv; stop_srv.call(srv); }
 
   void goToYaw(double target,
       double tolerance = ORIENTATION_TOLERANCE,
@@ -112,6 +121,9 @@ private:
   ros::Publisher cmd_pub;
   ros::Subscriber odom_sub;
   nav_msgs::Odometry last_odom;
+
+  ros::ServiceClient start_srv;
+  ros::ServiceClient stop_srv;
 
   void odomCallback(const nav_msgs::Odometry& odom)
   {

@@ -1,0 +1,12 @@
+<launch>
+  <rosparam command="load" ns="test_ok"
+                           file="$(find joint_state_controller)/test/joint_state_controller_ok.yaml" />
+  <rosparam command="load" ns="test_ko"
+                           file="$(find joint_state_controller)/test/joint_state_controller_ko.yaml" />
+  <rosparam command="load" ns="test_extra_joints_ok"
+                           file="$(find joint_state_controller)/test/joint_state_controller_extra_joints_ok.yaml" />
+  <rosparam command="load" ns="test_extra_joints_ko"
+                           file="$(find joint_state_controller)/test/joint_state_controller_extra_joints_ko.yaml" />
+
+  <test test-name="joint_state_controller_test" pkg="joint_state_controller" type="joint_state_controller_test"/>
+</launch>

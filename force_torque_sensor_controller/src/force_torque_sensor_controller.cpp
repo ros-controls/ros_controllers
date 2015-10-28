@@ -71,7 +71,7 @@ namespace force_torque_sensor_controller
     }
   }
 
-  void ForceTorqueSensorController::update(const ros::Time& time, const ros::Duration& period)
+  void ForceTorqueSensorController::update(const ros::Time& time, const ros::Duration& /*period*/)
   {
     // limit rate of publishing
     for (unsigned i=0; i<realtime_pubs_.size(); i++){
@@ -98,7 +98,7 @@ namespace force_torque_sensor_controller
     }
   }
 
-  void ForceTorqueSensorController::stopping(const ros::Time& time)
+  void ForceTorqueSensorController::stopping(const ros::Time& /*time*/)
   {}
 
 }

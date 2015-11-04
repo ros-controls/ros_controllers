@@ -267,14 +267,7 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
 
   // Stop trajectory duration
   stop_trajectory_duration_ = 0.0;
-  if (!controller_nh_.getParam("stop_trajectory_duration", stop_trajectory_duration_))
-  {
-    // TODO: Remove this check/warning in Indigo
-    if (controller_nh_.getParam("hold_trajectory_duration", stop_trajectory_duration_))
-    {
-      ROS_WARN("The 'hold_trajectory_duration' has been deprecated in favor of the 'stop_trajectory_duration' parameter. Please update your controller configuration.");
-    }
-  }
+  controller_nh_.getParam("stop_trajectory_duration", stop_trajectory_duration_);
   ROS_DEBUG_STREAM_NAMED(name_, "Stop trajectory has a duration of " << stop_trajectory_duration_ << "s.");
 
   // List of controlled joints
@@ -397,10 +390,16 @@ update(const ros::Time& time, const ros::Duration& period)
   typename Trajectory::const_iterator segment_it = sample(curr_traj, time_data.uptime.toSec(), desired_state_);
   if (curr_traj.end() == segment_it)
   {
-    // Non-realtime safe, but should never happen under normal operation
-    ROS_ERROR_NAMED(name_,
-                    "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
-    return;
+    // If the difference is small, use the first trajectoy segment.
+    if (!curr_traj.empty() && curr_traj.front().startTime() - time_data.uptime.toSec() < period.toSec()) {
+      segment_it = curr_traj.begin();
+    }
+    else {
+      // Non-realtime safe, but should never happen under normal operation
+      ROS_ERROR_NAMED(name_,
+                      "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
+      return;
+    }
   }
 
   // Update current state and state error
@@ -527,6 +526,18 @@ void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 goalCB(GoalHandle gh)
 {
   ROS_DEBUG_STREAM_NAMED(name_,"Recieved new action goal");
+
+  // Optional latency testing -------------------------------
+#define USE_LATENCY_MEASURING 0 // Set to 1 to enable debug output
+#if USE_LATENCY_MEASURING
+  double latency = (ros::Time::now() - gh.getGoal()->trajectory.header.stamp).toSec();
+  static double total_latency = 0;
+  static int total_count = 0;
+  total_latency += latency;
+  total_count++;
+  std::cout << "Msg Latency: " << latency << " Average: " << total_latency / total_count << std::endl;
+#endif
+    // ----------------------------------------------------
 
   // Precondition: Running controller
   if (!this->isRunning())

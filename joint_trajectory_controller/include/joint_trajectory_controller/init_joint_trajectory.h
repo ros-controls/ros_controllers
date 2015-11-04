@@ -146,7 +146,7 @@ struct InitJointTrajectoryOptions
  * a pointer to it, and to the trajectory tolerances it contains (if any).
  *
  * - \b default_tolerances Default trajectory tolerances. This option is only used when \p rt_goal_handle is also
- * specified. It contains the default tolernaces to check when executing an action goal. If the action goal specifies
+ * specified. It contains the default tolerances to check when executing an action goal. If the action goal specifies
  * tolerances (totally or partially), these values will take precedence over the defaults.
  *
  * - \b other_time_base When initializing a new trajectory, it might be the case that we desire the result expressed in

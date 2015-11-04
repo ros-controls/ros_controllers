@@ -450,6 +450,18 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
 {
   typedef InitJointTrajectoryOptions<Trajectory> Options;
 
+  // Optional latency testing -------------------------------
+#define USE_LATENCY_MEASURING 0 // Set to 1 to enable debug output
+#if USE_LATENCY_MEASURING
+  double latency = (ros::Time::now() - msg->header.stamp).toSec();
+  static double total_latency = 0;
+  static int total_count = 0;
+  total_latency += latency;
+  total_count++;
+  std::cout << "Msg Latency: " << latency << " Average: " << total_latency / total_count << std::endl;
+#endif
+    // ----------------------------------------------------
+
   // Preconditions
   if (!this->isRunning())
   {
@@ -526,18 +538,6 @@ void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 goalCB(GoalHandle gh)
 {
   ROS_DEBUG_STREAM_NAMED(name_,"Recieved new action goal");
-
-  // Optional latency testing -------------------------------
-#define USE_LATENCY_MEASURING 0 // Set to 1 to enable debug output
-#if USE_LATENCY_MEASURING
-  double latency = (ros::Time::now() - gh.getGoal()->trajectory.header.stamp).toSec();
-  static double total_latency = 0;
-  static int total_count = 0;
-  total_latency += latency;
-  total_count++;
-  std::cout << "Msg Latency: " << latency << " Average: " << total_latency / total_count << std::endl;
-#endif
-    // ----------------------------------------------------
 
   // Precondition: Running controller
   if (!this->isRunning())

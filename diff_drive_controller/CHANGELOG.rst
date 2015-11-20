@@ -2,6 +2,22 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Address -Wunused-parameter warnings
+* Limit jerk
+* Add param velocity_rolling_window_size
+* Minor fixes
+  1. Coding style
+  2. Tolerance to fall-back to Runge-Kutta 2 integration
+  3. Remove unused variables
+* Fix the following bugs in the testForward test:
+  1. Check traveled distance in XY plane
+  2. Use expected speed variable on test check
+* Add test for NaN
+* Add test for bad URDF
+* Contributors: Adolfo Rodriguez Tsouroukdissian, Enrique Fernandez, Paul Mathieu
+
 0.9.2 (2015-05-04)
 ------------------
 * Allow the wheel separation and radius to be set from different sources

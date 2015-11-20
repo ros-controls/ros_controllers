@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.10.0 (2015-11-20)
+-------------------
 * Address -Wunused-parameter warnings
 * Limit jerk
 * Add param velocity_rolling_window_size

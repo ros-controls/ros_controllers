@@ -458,7 +458,8 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   static int total_count = 0;
   total_latency += latency;
   total_count++;
-  std::cout << "Msg Latency: " << latency << " Average: " << total_latency / total_count << std::endl;
+  const double average = total_latency / total_count;
+  ROS_INFO_STREAM_THROTTLE_NAMED(1, name_, "Msg Latency: " << latency << " Average: " << average);
 #endif
     // ----------------------------------------------------
 

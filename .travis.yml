@@ -1,8 +1,8 @@
 # Travis Continuous Integration Configuration File For ROS Control Projects
 # Author: Dave Coleman
-language:
-  - cpp
-  - python
+sudo: required
+dist: trusty
+language: generic
 python:
   - "2.7"
 compiler:
@@ -16,11 +16,11 @@ notifications:
     on_failure: change #[always|never|change] # default: always
 before_install: # Use this to prepare the system to install prerequisites or dependencies
   # Define some config vars
-  - export ROS_DISTRO=hydro
+  - export ROS_DISTRO=indigo
   - export CI_SOURCE_PATH=$(pwd)
   - export REPOSITORY_NAME=${PWD##*/}
   - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
-  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu precise main" > /etc/apt/sources.list.d/ros-latest.list'
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
   - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
   - sudo apt-get update -qq
   - sudo apt-get install -qq -y python-catkin-pkg python-rosdep python-wstool ros-$ROS_DISTRO-catkin ros-$ROS_DISTRO-ros

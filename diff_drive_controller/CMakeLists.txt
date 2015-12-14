@@ -78,6 +78,14 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_pub_cmd_vel_out.test
     test/diff_drive_pub_cmd_vel_out_test.cpp)
   target_link_libraries(diff_drive_pub_cmd_vel_out_test ${catkin_LIBRARIES})
+  add_rostest_gtest(diff_drive_default_odom_frame_test
+    test/diff_drive_default_odom_frame.test
+    test/diff_drive_default_odom_frame_test.cpp)
+  target_link_libraries(diff_drive_default_odom_frame_test ${catkin_LIBRARIES})
+  add_rostest_gtest(diff_drive_odom_frame_test
+    test/diff_drive_odom_frame.test
+    test/diff_drive_odom_frame_test.cpp)
+  target_link_libraries(diff_drive_odom_frame_test ${catkin_LIBRARIES})
   add_rostest(test/diff_drive_open_loop.test)
   add_rostest(test/skid_steer_controller.test)
   add_rostest(test/skid_steer_no_wheels.test)

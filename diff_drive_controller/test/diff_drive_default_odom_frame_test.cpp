@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2014, PAL Robotics S.L.
+// Copyright (C) 2015, Locus Robotics Corp.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -53,12 +53,6 @@ TEST_F(DiffDriveControllerTest, testOdomTopic)
     ros::Duration(0.1).sleep();
   }
 
-  // zero everything before test
-  geometry_msgs::Twist cmd_vel;
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.angular.z = 0.0;
-  publish(cmd_vel);
-  ros::Duration(0.1).sleep();
   // get an odom message
   nav_msgs::Odometry odom_msg = getLastOdom();
   // check its frame_id

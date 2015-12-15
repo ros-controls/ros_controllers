@@ -6,7 +6,6 @@
   <rosparam>
     diffbot_controller:
       odom_frame_id: new_odom
-      enable_odom_tf: True
   </rosparam>
 
   <!-- Controller test -->

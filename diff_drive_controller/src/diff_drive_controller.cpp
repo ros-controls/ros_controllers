@@ -270,8 +270,6 @@ namespace diff_drive_controller{
     else
     {
       bool trust_velocity = !estimate_velocity_from_position_;
-      bool never_trusted = estimate_velocity_from_position_;
-      bool found_nan = false;
       double left_pos  = 0.0;
       double right_pos = 0.0;
       double left_vel  = 0.0;
@@ -293,7 +291,6 @@ namespace diff_drive_controller{
         if (std::isnan(lv) || std::isnan(rv))
         {
           trust_velocity = false;
-          found_nan = true;
           continue;
         }
 

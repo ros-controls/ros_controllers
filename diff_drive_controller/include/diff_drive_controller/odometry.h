@@ -59,6 +59,19 @@ namespace diff_drive_controller
   /**
    * \brief The Odometry class handles odometry readings
    * (2D pose and velocity with related timestamp)
+   *
+   * The odometry covariance is computed according with the model presented in:
+   *
+   * [Siegwart, 2004]:
+   *   Roland Siegwart, Illah R. Nourbakhsh
+   *   Introduction to Autonomous Mobile Robots
+   *   1st Edition, 2004
+   *
+   * Section:
+   *   5.2.4 'An error model for odometric position estimation' (pp. 186-191)
+   *
+   * Although the twist covariance doesn't appear explicitly, the implementation
+   * here is based on the same covariance model used for the pose covariance.
    */
   class Odometry
   {

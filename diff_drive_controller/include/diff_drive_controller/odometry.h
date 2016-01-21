@@ -97,22 +97,25 @@ namespace diff_drive_controller
      * \brief Constructor
      * Timestamp will get the current time value
      * Value will be set to zero
-     * \param velocity_rolling_window_size Rolling window size used to compute the velocity mean
+     * \param[in] velocity_rolling_window_size Rolling window size used to
+     *                                         compute the velocity mean
      */
-    explicit Odometry(size_t velocity_rolling_window_size = 10);
+    explicit Odometry(const size_t velocity_rolling_window_size = 10);
 
     /**
      * \brief Initialize the odometry
-     * \param time [in] Current time
+     * \param[in] time Current time
      */
     void init(const ros::Time &time);
 
     /**
      * \brief Updates the odometry class with latest wheels position, i.e. in
      * close loop
-     * \param left_pos  [in] Left  wheel position [rad]
-     * \param right_pos [in] Right wheel position [rad]
-     * \param time      [in] Current time
+     * \param[in] left_position  Left  wheel position [rad]
+     * \param[in] right_position Right wheel position [rad]
+     * \param[in] left_velocity  Left  wheel velocity [rad/s]
+     * \param[in] right_velocity Right wheel velocity [rad/s]
+     * \param[in] time           Current time
      * \return true if the odometry is actually updated
      */
     bool updateCloseLoop(
@@ -123,16 +126,17 @@ namespace diff_drive_controller
     /**
      * \brief Updates the odometry class with latest velocity command, i.e. in
      * open loop
-     * \param linear  [in] Linear  velocity [m/s]
-     * \param angular [in] Angular velocity [rad/s]
-     * \param time    [in] Current time
+     * \param[in] linear  Linear  velocity [m/s]
+     * \param[in] angular Angular velocity [rad/s]
+     * \param[in] time    Current time
      * \return true if the odometry is actually updated
      */
-    bool updateOpenLoop(double linear, double angular, const ros::Time &time);
+    bool updateOpenLoop(const double linear, const double angular,
+        const ros::Time &time);
 
     /**
-     * \brief heading getter
-     * \return heading [rad]
+     * \brief Heading getter
+     * \return Heading [rad]
      */
     double getHeading() const
     {
@@ -185,8 +189,8 @@ namespace diff_drive_controller
     }
 
     /**
-     * \brief pose covariance getter
-     * \return pose covariance
+     * \brief Pose covariance getter
+     * \return Pose covariance
      */
     const PoseCovariance& getPoseCovariance() const
     {
@@ -194,8 +198,8 @@ namespace diff_drive_controller
     }
 
     /**
-     * \brief twist covariance getter
-     * \return twist covariance
+     * \brief Twist covariance getter
+     * \return Twist covariance
      */
     const TwistCovariance& getTwistCovariance() const
     {
@@ -203,8 +207,8 @@ namespace diff_drive_controller
     }
 
     /**
-     * \brief minimum twist covariance getter
-     * \return minimum twist covariance
+     * \brief Minimum twist covariance getter
+     * \return Minimum twist covariance
      */
     const TwistCovariance& getMinimumTwistCovariance() const
     {
@@ -212,8 +216,8 @@ namespace diff_drive_controller
     }
 
     /**
-     * \brief pose covariance setter
-     * \param pose_covariance [in] pose covariance
+     * \brief Pose covariance setter
+     * \param[in] pose_covariance Pose covariance
      */
     void setPoseCovariance(const PoseCovariance& pose_covariance)
     {
@@ -221,8 +225,8 @@ namespace diff_drive_controller
     }
 
     /**
-     * \brief minimum twist covariance setter
-     * \param twist_covariance [in] twist covariance
+     * \brief Minimum twist covariance setter
+     * \param[in] twist_covariance Twist covariance
      */
     void setMinimumTwistCovariance(const TwistCovariance& twist_covariance)
     {
@@ -231,26 +235,27 @@ namespace diff_drive_controller
 
     /**
      * \brief Sets the wheel parameters: radius and separation
-     * \param wheel_separation   [in] Seperation between
-     *                                left and right wheels [m]
-     * \param left_wheel_radius  [in] Left  wheel radius [m]
-     * \param right_wheel_radius [in] Right wheel radius [m]
+     * \param[in] wheel_separation   Seperation between
+     *                               left and right wheels [m]
+     * \param[in] left_wheel_radius  Left  wheel radius [m]
+     * \param[in] right_wheel_radius Right wheel radius [m]
      */
-    void setWheelParams(double wheel_separation,
-        double left_wheel_radius, double right_wheel_radius);
+    void setWheelParams(const double wheel_separation,
+        const double left_wheel_radius, const double right_wheel_radius);
 
     /**
      * \brief Sets the Measurement Covariance Model parameters: k_l and k_r
-     * \param k_l [in] Left  wheel velocity multiplier
-     * \param k_r [in] Right wheel velocity multiplier
+     * \param[in] k_l Left  wheel velocity multiplier
+     * \param[in] k_r Right wheel velocity multiplier
      */
-    void setMeasCovarianceParams(double k_l, double k_r);
+    void setMeasCovarianceParams(const double k_l, const double k_r);
 
     /**
      * \brief Velocity rolling window size setter
      * \param[in] velocity_rolling_window_size Velocity rolling window size
      */
-    void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
+    void setVelocityRollingWindowSize(
+        const size_t velocity_rolling_window_size);
 
   private:
     /// Rolling mean accumulator and window:
@@ -273,11 +278,11 @@ namespace diff_drive_controller
     /**
      * \brief Update the odometry twist with the previous and current odometry
      * pose
-     * \param p0   [in] Previous odometry pose
-     * \param p1   [in] Current  odometry pose
-     * \param v_l  [in] Left  wheel velocity displacement [rad]
-     * \param v_r  [in] Right wheel velocity displacement [rad]
-     * \param time [in] Current time
+     * \param[in] p0   Previous odometry pose
+     * \param[in] p1   Current  odometry pose
+     * \param[in] v_l  Left  wheel velocity [rad/s]
+     * \param[in] v_r  Right wheel velocity [rad/s]
+     * \param[in] time Current time
      * \return true if the odometry twist is actually updated
      */
     bool updateTwist(const SE2& p0, const SE2& p1,
@@ -285,10 +290,10 @@ namespace diff_drive_controller
 
     /**
      * \brief Update the measurement covariance
-     * \param v_l [in] Left  wheel velocity displacement [rad]
-     * \param v_r [in] Right wheel velocity displacement [rad]
+     * \param[in] dp_l Left  wheel position increment [rad]
+     * \param[in] dp_r Right wheel position increment [rad]
      */
-    void updateMeasCovariance(double v_l, double v_r);
+    void updateMeasCovariance(const double dp_l, const double dp_r);
 
     /**
      * \brief Reset linear and angular accumulators

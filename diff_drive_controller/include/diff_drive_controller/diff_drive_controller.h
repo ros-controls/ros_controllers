@@ -200,6 +200,8 @@ namespace diff_drive_controller
       bool publish_state;
       bool publish_cmd_vel_limited;
 
+      double control_frequency_desired;
+
       DynamicParams()
         : pose_from_joint_position(true)
         , twist_from_joint_position(false)
@@ -210,6 +212,7 @@ namespace diff_drive_controller
         , k_r(1.0)
         , publish_state(false)
         , publish_cmd_vel_limited(false)
+        , control_frequency_desired(0.0)
       {}
     };
     realtime_tools::RealtimeBuffer<DynamicParams> dynamic_params_;
@@ -261,6 +264,15 @@ namespace diff_drive_controller
     /// isn't RT-safe, so we cannot implement a lazy publisher with:
     /// state_pub_->getNumSubscribers() > 0
     bool publish_state_;
+
+    /// Desired control frequency [Hz] (and corresponding period [s]):
+    /// This can be used when the actual/real control frequency/period has too
+    /// much jitter.
+    /// If !(control_frequency_desired_ > 0.0), the actual/real
+    /// frequency/period provided on the update hook (method) is used, which is
+    /// the default and preferred behaviour in general.
+    double control_frequency_desired_;
+    double control_period_desired_;
 
   private:
     /**

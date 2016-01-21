@@ -577,46 +577,49 @@ namespace diff_drive_controller
       odometry_.updateCloseLoop(left_position, right_position, left_velocity, right_velocity, time);
     }
 
-    // Publish odometry message
+    // Publish odometry message:
     const ros::Duration half_period(0.5 * period.toSec());
-    if (last_odom_publish_time_ + publish_period_ < time + half_period)
+    if (last_odom_publish_time_ + publish_period_ < time + half_period &&
+        odom_pub_->trylock())
     {
-      // @todo should be after the trylock
-      // and duplicate the condition for the odom and odom_tf!
       last_odom_publish_time_ = time;
 
-      // Compute and store orientation info
+      // Populate odom message and publish:
       const geometry_msgs::Quaternion orientation(
             tf::createQuaternionMsgFromYaw(odometry_.getHeading()));
 
-      // Populate odom message and publish
-      if (odom_pub_->trylock())
-      {
-        odom_pub_->msg_.header.stamp = time;
-        odom_pub_->msg_.pose.pose.position.x = odometry_.getX();
-        odom_pub_->msg_.pose.pose.position.y = odometry_.getY();
-        odom_pub_->msg_.pose.pose.orientation = orientation;
+      odom_pub_->msg_.header.stamp = time;
+      odom_pub_->msg_.pose.pose.position.x = odometry_.getX();
+      odom_pub_->msg_.pose.pose.position.y = odometry_.getY();
+      odom_pub_->msg_.pose.pose.orientation = orientation;
 
-        odom_pub_->msg_.twist.twist.linear.x  = odometry_.getVx();
-        odom_pub_->msg_.twist.twist.linear.y  = odometry_.getVy();
-        odom_pub_->msg_.twist.twist.angular.z = odometry_.getVyaw();
+      odom_pub_->msg_.twist.twist.linear.x  = odometry_.getVx();
+      odom_pub_->msg_.twist.twist.linear.y  = odometry_.getVy();
+      odom_pub_->msg_.twist.twist.angular.z = odometry_.getVyaw();
 
-        covarianceToMsg(odometry_.getPoseCovariance() , odom_pub_->msg_.pose.covariance);
-        covarianceToMsg(odometry_.getTwistCovariance(), odom_pub_->msg_.twist.covariance);
+      covarianceToMsg(odometry_.getPoseCovariance() , odom_pub_->msg_.pose.covariance);
+      covarianceToMsg(odometry_.getTwistCovariance(), odom_pub_->msg_.twist.covariance);
 
-        odom_pub_->unlockAndPublish();
-      }
+      odom_pub_->unlockAndPublish();
+    }
 
-      // Publish tf /odom frame
-      if (enable_odom_tf_ && tf_odom_pub_->trylock())
-      {
-        geometry_msgs::TransformStamped& odom_frame = tf_odom_pub_->msg_.transforms[0];
-        odom_frame.header.stamp = time;
-        odom_frame.transform.translation.x = odometry_.getX();
-        odom_frame.transform.translation.y = odometry_.getY();
-        odom_frame.transform.rotation = orientation;
-        tf_odom_pub_->unlockAndPublish();
-      }
+    // Publish tf odometry frame:
+    if (enable_odom_tf_ &&
+        last_odom_tf_publish_time_ + publish_period_ < time + half_period &&
+        tf_odom_pub_->trylock())
+    {
+      last_odom_tf_publish_time_ = time;
+
+      // Populate tf odometry frame message and publish:
+      const geometry_msgs::Quaternion orientation(
+            tf::createQuaternionMsgFromYaw(odometry_.getHeading()));
+
+      geometry_msgs::TransformStamped& odom_frame = tf_odom_pub_->msg_.transforms[0];
+      odom_frame.header.stamp = time;
+      odom_frame.transform.translation.x = odometry_.getX();
+      odom_frame.transform.translation.y = odometry_.getY();
+      odom_frame.transform.rotation = orientation;
+      tf_odom_pub_->unlockAndPublish();
     }
 
     // MOVE ROBOT
@@ -844,7 +847,7 @@ namespace diff_drive_controller
     brake();
 
     // Register starting time used to keep fixed rate
-    last_odom_publish_time_ = time;
+    last_odom_publish_time_ = last_odom_tf_publish_time_ = time;
 
     odometry_.init(time);
   }

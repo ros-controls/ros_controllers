@@ -46,6 +46,10 @@ const double RIGHT_WHEEL_RADIUS = LEFT_WHEEL_RADIUS;
 
 const double K_L = 0.01;
 const double K_R = K_L;
+// Instead of a more realistic wheel resolution like the one below, we can also
+// use 0.0 to avoid minor errors (see EPS_ constants below), but even with 0.0
+// we have them:
+const double WHEEL_RESOLUTION = 2.0 * M_PI / (25.0 * 1024);
 
 const size_t CONTROL_STEPS = 100;
 const double CONTROL_PERIOD = 0.02;  // [s]
@@ -62,7 +66,7 @@ static void setupOdometry(diff_drive_controller::Odometry& odometry)
   odometry.setWheelParams(WHEEL_SEPARATION,
       LEFT_WHEEL_RADIUS, RIGHT_WHEEL_RADIUS);
 
-  odometry.setMeasCovarianceParams(K_L, K_R);
+  odometry.setMeasCovarianceParams(K_L, K_R, WHEEL_RESOLUTION);
 }
 
 static void moveOdometry(diff_drive_controller::Odometry& odometry,
@@ -167,6 +171,10 @@ TEST(OdometryTest, testIntegrateMotionNoMoveFromInitial)
 
   diff_drive_controller::Odometry odometry(1);
   setupOdometry(odometry);
+
+  // Set wheel resolution to 0.0, because when it's != 0.0 the covariance
+  // always grows a little on every single step, even if the robot doesn't move:
+  odometry.setMeasCovarianceParams(K_L, K_R, 0.0);
 
   // Save initial/current pose and twist state and covariance:
   const double x_0   = odometry.getX();

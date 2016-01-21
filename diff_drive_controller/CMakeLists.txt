@@ -49,12 +49,16 @@ include_directories(
   include ${catkin_INCLUDE_DIRS}
   include ${Boost_INCLUDE_DIRS}
   include ${EIGEN_INCLUDE_DIRS}
-  include ${sophus_INCLUDE_DIRS}
   include ${CERES_INCLUDE_DIRS})
 
 roslint_cpp()
 
-add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
+add_library(${PROJECT_NAME}
+  src/diff_drive_controller.cpp
+  src/linear_meas_covariance_model.cpp
+  src/quadratic_meas_covariance_model.cpp
+  src/odometry.cpp
+  src/speed_limiter.cpp)
 # Note that the entry for ${Ceres_LIBRARIES} was removed as we only used headers from that package
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)

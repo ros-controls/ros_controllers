@@ -50,6 +50,8 @@
 #include <boost/accumulators/statistics/rolling_mean.hpp>
 #include <boost/function.hpp>
 
+#include <diff_drive_controller/meas_covariance_model.h>
+
 #include <diff_drive_controller/integrate_function.h>
 
 namespace diff_drive_controller
@@ -59,19 +61,6 @@ namespace diff_drive_controller
   /**
    * \brief The Odometry class handles odometry readings
    * (2D pose and velocity with related timestamp)
-   *
-   * The odometry covariance is computed according with the model presented in:
-   *
-   * [Siegwart, 2004]:
-   *   Roland Siegwart, Illah R. Nourbakhsh
-   *   Introduction to Autonomous Mobile Robots
-   *   1st Edition, 2004
-   *
-   * Section:
-   *   5.2.4 'An error model for odometric position estimation' (pp. 186-191)
-   *
-   * Although the twist covariance doesn't appear explicitly, the implementation
-   * here is based on the same covariance model used for the pose covariance.
    */
   class Odometry
   {
@@ -85,7 +74,7 @@ namespace diff_drive_controller
     typedef Covariance PoseCovariance;
     typedef Covariance TwistCovariance;
 
-    typedef Eigen::Matrix2d MeasCovariance;
+    typedef MeasCovarianceModel::MeasCovariance MeasCovariance;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -259,8 +248,11 @@ namespace diff_drive_controller
      * \brief Sets the Measurement Covariance Model parameters: k_l and k_r
      * \param[in] k_l Left  wheel velocity multiplier
      * \param[in] k_r Right wheel velocity multiplier
+     * \param[in] wheel_resolution Wheel resolution [rad] (assumed the same for
+     *                             both wheels
      */
-    void setMeasCovarianceParams(const double k_l, const double k_r);
+    void setMeasCovarianceParams(const double k_l, const double k_r,
+        const double wheel_resolution);
 
     /**
      * \brief Velocity rolling window size setter
@@ -294,13 +286,6 @@ namespace diff_drive_controller
      * \param[in] dp_r  Right wheel position increment [rad]
      */
     void updateIncrementalPose(const double dp_l, const double dp_r);
-
-    /**
-     * \brief Update the measurement covariance
-     * \param[in] dp_l Left  wheel position increment [rad]
-     * \param[in] dp_r Right wheel position increment [rad]
-     */
-    void updateMeasCovariance(const double dp_l, const double dp_r);
 
     /**
      * \brief Reset linear and angular accumulators
@@ -339,17 +324,13 @@ namespace diff_drive_controller
     TwistCovariance twist_covariance_;
     TwistCovariance minimum_twist_covariance_;
 
-    /// Measurement covariance:
-    MeasCovariance meas_covariance_;
+    /// Meas(urement) Covariance Model:
+    boost::shared_ptr<MeasCovarianceModel> meas_covariance_model_;
 
     /// Wheel kinematic parameters [m]:
     double wheel_separation_;
     double left_wheel_radius_;
     double right_wheel_radius_;
-
-    /// Measurement Covariance Model parameters:
-    double k_l_;
-    double k_r_;
 
     /// Previous wheel position/state [rad]:
     double left_position_previous_;

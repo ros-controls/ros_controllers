@@ -43,6 +43,9 @@
 
 #include <diff_drive_controller/autodiff_integrate_function.h>
 
+#include <diff_drive_controller/linear_meas_covariance_model.h>
+#include <diff_drive_controller/quadratic_meas_covariance_model.h>
+
 #include <diff_drive_controller/direct_kinematics_integrate_functor.h>
 #include <diff_drive_controller/runge_kutta_2_integrate_functor.h>
 #include <diff_drive_controller/exact_integrate_functor.h>
@@ -71,22 +74,19 @@ namespace diff_drive_controller
   , wheel_separation_(0.0)
   , left_wheel_radius_(0.0)
   , right_wheel_radius_(0.0)
-  , k_l_(1.0)
-  , k_r_(1.0)
   , left_position_previous_(0.0)
   , right_position_previous_(0.0)
   , velocity_rolling_window_size_(velocity_rolling_window_size)
   , v_x_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , v_y_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , v_yaw_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , meas_covariance_model_(new LinearMeasCovarianceModel())
   , integrate_fun_(
       new AutoDiffIntegrateFunction<DirectKinematicsIntegrateFunctor,
                                     ExactIntegrateFunctor>(
       new DirectKinematicsIntegrateFunctor<ExactIntegrateFunctor>(
       new ExactIntegrateFunctor)))
   {
-    meas_covariance_.setZero();
-
     minimum_twist_covariance_.setIdentity();
     minimum_twist_covariance_ *= DEFAULT_MINIMUM_TWIST_COVARIANCE;
 
@@ -159,11 +159,11 @@ namespace diff_drive_controller
     (*integrate_fun_)(x_, y_, heading_, dp_l, dp_r, J_pose, J_meas);
 
     /// Update Measurement Covariance with the wheel joint position increments:
-    updateMeasCovariance(dp_l, dp_r);
+    MeasCovariance meas_covariance = meas_covariance_model_->compute(dp_l, dp_r);
 
     /// Update pose covariance:
     pose_covariance_ = J_pose * pose_covariance_ * J_pose.transpose() +
-                       J_meas * meas_covariance_ * J_meas.transpose();
+                       J_meas * meas_covariance  * J_meas.transpose();
 
     /// Update incremental pose:
     // @todo in principle there's no need to use v_l, v_r at all, but this
@@ -184,12 +184,12 @@ namespace diff_drive_controller
     (*integrate_fun_)(d_x_, d_y_, d_yaw_, dp_l, dp_r, J_pose, J_meas);
 
     /// Update Measurement Covariance with the wheel joint position increments:
-    updateMeasCovariance(dp_l, dp_r);
+    MeasCovariance meas_covariance = meas_covariance_model_->compute(dp_l, dp_r);
 
     /// Update incremental pose covariance:
     incremental_pose_covariance_ =
         J_pose * incremental_pose_covariance_ * J_pose.transpose() +
-        J_meas * meas_covariance_ * J_meas.transpose();
+        J_meas * meas_covariance  * J_meas.transpose();
   }
 
   bool Odometry::updateTwist(const ros::Time& time)
@@ -231,15 +231,6 @@ namespace diff_drive_controller
     return true;
   }
 
-  void Odometry::updateMeasCovariance(double v_l, double v_r)
-  {
-    /// Compute Measurement Covariance Model:
-    // @todo This can be extended to support lateral slippage
-    // k_s_ * [see/find Olson notes]
-    meas_covariance_.diagonal() << k_l_ * std::abs(v_l),
-                                   k_r_ * std::abs(v_r);
-  }
-
   void Odometry::setWheelParams(const double wheel_separation,
       const double left_wheel_radius, const double right_wheel_radius)
   {
@@ -259,10 +250,12 @@ namespace diff_drive_controller
     resetAccumulators();
   }
 
-  void Odometry::setMeasCovarianceParams(const double k_l, const double k_r)
+  void Odometry::setMeasCovarianceParams(const double k_l, const double k_r,
+      const double wheel_resolution)
   {
-    k_l_ = k_l;
-    k_r_ = k_r;
+    meas_covariance_model_->setKl(k_l);
+    meas_covariance_model_->setKr(k_r);
+    meas_covariance_model_->setWheelResolution(wheel_resolution);
   }
 
   void Odometry::resetAccumulators()

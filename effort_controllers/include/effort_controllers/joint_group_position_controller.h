@@ -72,7 +72,6 @@ public:
   ~JointGroupPositionController();
 
   bool init(hardware_interface::EffortJointInterface* hw, ros::NodeHandle &n);
-  void starting(const ros::Time& time);
   void update(const ros::Time& /*time*/, const ros::Duration& /*period*/);
 
   std::vector< std::string > joint_names_;

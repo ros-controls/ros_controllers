@@ -42,11 +42,9 @@
 #include <urdf/model.h>
 #include <control_toolbox/pid.h>
 #include <boost/scoped_ptr.hpp>
-#include <boost/thread/condition.hpp>
 #include <realtime_tools/realtime_publisher.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <controller_interface/controller.h>
-#include <control_msgs/JointControllerState.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <control_msgs/JointControllerState.h>
 #include <realtime_tools/realtime_buffer.h>

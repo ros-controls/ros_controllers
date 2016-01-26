@@ -82,6 +82,8 @@ namespace effort_controllers
       return false;
     }
 
+    pid_controllers_.resize(n_joints_);
+
     for(unsigned int i=0; i<n_joints_; i++)
     {
       try

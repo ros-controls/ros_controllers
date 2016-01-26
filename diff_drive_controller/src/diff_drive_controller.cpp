@@ -620,6 +620,12 @@ namespace diff_drive_controller
     if (last_odom_publish_time_ + publish_period_ < time + half_period &&
         odom_pub_->trylock())
     {
+      // Update twist:
+      // Note that the twist must be computed at the same frequency that it gets
+      // published, because otherwise the code that uses it cannot apply the
+      // same period it was used to compute it.
+      odometry_.updateTwist(time);
+
       last_odom_publish_time_ = time;
 
       // Populate odom message and publish:
@@ -646,6 +652,12 @@ namespace diff_drive_controller
         last_odom_tf_publish_time_ + publish_period_ < time + half_period &&
         tf_odom_pub_->trylock())
     {
+      // Note that the tf odometry doesn't need the twist, only the pose.
+      // In the current implementation the pose is computed on its own, ie. w/o
+      // using the (internal) incremental pose. Therefore, it's always up to
+      // date with every control cycle and can be published at any rate because
+      // it doesn't depend on any period.
+
       last_odom_tf_publish_time_ = time;
 
       // Populate tf odometry frame message and publish:

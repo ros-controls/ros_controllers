@@ -135,6 +135,18 @@ namespace diff_drive_controller
         const ros::Time &time);
 
     /**
+     * \brief Update the odometry twist with the (internal) incremental pose,
+     * since the last update/call to this method; this resets the (internal)
+     * incremental pose
+     * \param[in] time Current time, used to compute the time step/increment,
+     *                 which is used to divide the (internal) incremental pose
+     *                 by dt and obtain the twist
+     * \return true if twist is actually updated; it won't be updated if the
+     *         time step/increment is very small, to avoid division by zero
+     */
+    bool updateTwist(const ros::Time& time);
+
+    /**
      * \brief Heading getter
      * \return Heading [rad]
      */
@@ -276,17 +288,12 @@ namespace diff_drive_controller
         const double v_l, const double v_r, const ros::Time& time);
 
     /**
-     * \brief Update the odometry twist with the previous and current odometry
-     * pose
-     * \param[in] p0   Previous odometry pose
-     * \param[in] p1   Current  odometry pose
-     * \param[in] v_l  Left  wheel velocity [rad/s]
-     * \param[in] v_r  Right wheel velocity [rad/s]
-     * \param[in] time Current time
-     * \return true if the odometry twist is actually updated
+     * \brief Updates the (internal) incremental odometry with latest left and
+     * right wheel position increments
+     * \param[in] dp_l  Left  wheel position increment [rad]
+     * \param[in] dp_r  Right wheel position increment [rad]
      */
-    bool updateTwist(const SE2& p0, const SE2& p1,
-        const double v_l, const double v_r, const ros::Time& time);
+    void updateIncrementalPose(const double dp_l, const double dp_r);
 
     /**
      * \brief Update the measurement covariance
@@ -303,18 +310,30 @@ namespace diff_drive_controller
     /// Current timestamp:
     ros::Time timestamp_;
 
+    /// Timestamp for last twist computed, ie. since when the (internal)
+    /// incremental pose has been computed:
+    ros::Time timestamp_twist_;
+
     /// Current pose:
     double x_;        //   [m]
     double y_;        //   [m]
     double heading_;  // [rad]
 
+    /// Current incremental pose:
+    double d_x_;    //   [m]
+    double d_y_;    //   [m]
+    double d_yaw_;  // [rad]
+
     /// Current velocity:
-    double v_x_;   //   [m/s]
-    double v_y_;   //   [m/s]
-    double v_yaw_; // [rad/s]
+    double v_x_;    //   [m/s]
+    double v_y_;    //   [m/s]
+    double v_yaw_;  // [rad/s]
 
     /// Pose covariance:
     PoseCovariance pose_covariance_;
+
+    /// Incremental Pose covariance:
+    PoseCovariance incremental_pose_covariance_;
 
     /// Twist (and minimum twist) covariance:
     TwistCovariance twist_covariance_;

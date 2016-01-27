@@ -51,9 +51,16 @@ class Diffbot : public hardware_interface::RobotHW
 public:
   Diffbot()
   : running_(true)
+  , period_(0.01)
   , start_srv_(nh_.advertiseService("start", &Diffbot::start_callback, this))
   , stop_srv_(nh_.advertiseService("stop", &Diffbot::stop_callback, this))
   {
+    // Read params:
+    ros::NodeHandle nh_priv("~");
+    nh_priv.param("period", period_, period_);
+
+    ROS_INFO_STREAM("Diffbot period: " << period_ << "s.");
+
     // Intialize raw data
     std::fill_n(pos_, NUM_JOINTS, 0.0);
     std::fill_n(vel_, NUM_JOINTS, 0.0);
@@ -78,7 +85,7 @@ public:
   }
 
   ros::Time getTime() const {return ros::Time::now();}
-  ros::Duration getPeriod() const {return ros::Duration(0.01);}
+  ros::Duration getPeriod() const {return ros::Duration(period_);}
 
   void read()
   {
@@ -132,6 +139,7 @@ private:
   double vel_[NUM_JOINTS];
   double eff_[NUM_JOINTS];
   bool running_;
+  double period_;
 
   ros::NodeHandle nh_;
   ros::ServiceServer start_srv_;

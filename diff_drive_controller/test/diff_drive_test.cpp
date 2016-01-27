@@ -34,8 +34,8 @@
 
 #include <tf/transform_listener.h>
 
-#define POSE_COVARIANCE_MAX_CONDITION_NUMBER 1e8
-#define TWIST_COVARIANCE_MAX_CONDITION_NUMBER 1e8
+const double POSE_COVARIANCE_MAX_CONDITION_NUMBER  = 1e8;
+const double TWIST_COVARIANCE_MAX_CONDITION_NUMBER = POSE_COVARIANCE_MAX_CONDITION_NUMBER;
 
 // TEST CASES
 TEST_F(DiffDriveControllerTest, testNoMove)
@@ -147,7 +147,7 @@ TEST_F(DiffDriveControllerTest, testNoMove)
   // where Odometry::DEFAULT_MINIMUM_TWIST_COVARIANCE == 1e-9
   TwistCovariance minimum_twist_covariance = 1e-9 * TwistCovariance::Identity();
   EXPECT_TRUE(((twist_covariance - minimum_twist_covariance).array() == 0).all())
-    << "Twist covariance=\n" << twist_covariance.format(HeavyFmt);
+    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt);
 }
 
 TEST_F(DiffDriveControllerTest, testForward)

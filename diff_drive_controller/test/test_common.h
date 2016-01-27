@@ -23,7 +23,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 /// \author Bence Magyar
 
@@ -63,6 +63,7 @@ public:
   , odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
   , cmd_vel_limited_sub(nh.subscribe("cmd_vel_limited", 100, &DiffDriveControllerTest::cmdVelLimitedCallback, this))
   , state_sub(nh.subscribe("state", 100, &DiffDriveControllerTest::diffDriveControllerStateCallback, this))
+  , last_odoms(2)
   , last_states(3)
   , start_srv(nh.serviceClient<std_srvs::Empty>("start"))
   , stop_srv(nh.serviceClient<std_srvs::Empty>("stop"))
@@ -76,7 +77,8 @@ public:
     state_sub.shutdown();
   }
 
-  nav_msgs::Odometry getLastOdom(){ return last_odom; }
+  nav_msgs::Odometry getLastOdom(){ return last_odoms[0]; }
+  std::vector<nav_msgs::Odometry> getLastOdoms(){ return last_odoms; }
   geometry_msgs::TwistStamped getLastCmdVelLimited(){ return last_cmd_vel_limited; }
   diff_drive_controller::DiffDriveControllerState getLastState(){ return last_states[0]; }
   std::vector<diff_drive_controller::DiffDriveControllerState> getLastStates(){ return last_states; }
@@ -131,7 +133,7 @@ private:
   ros::Subscriber odom_sub;
   ros::Subscriber cmd_vel_limited_sub;
   ros::Subscriber state_sub;
-  nav_msgs::Odometry last_odom;
+  std::vector<nav_msgs::Odometry> last_odoms;
   geometry_msgs::TwistStamped last_cmd_vel_limited;
   std::vector<diff_drive_controller::DiffDriveControllerState> last_states;
 
@@ -140,23 +142,38 @@ private:
 
   void odomCallback(const nav_msgs::Odometry& odom)
   {
-    ROS_INFO_STREAM("Odometry callback reveived: pos.x: " << odom.pose.pose.position.x
+    ROS_INFO_STREAM("Odometry callback reveived (" << odom.header.seq
+                     << "): pos.x: " << odom.pose.pose.position.x
                      << ", orient.z: " << odom.pose.pose.orientation.z
                      << ", lin_est: " << odom.twist.twist.linear.x
                      << ", ang_est: " << odom.twist.twist.angular.z);
-    last_odom = odom;
+
+    if (last_odoms[0].header.seq > 0)
+    {
+      EXPECT_EQ(last_odoms[0].header.seq + 1, odom.header.seq);
+    }
+
+    last_odoms[1] = last_odoms[0];
+    last_odoms[0] = odom;
   }
 
   void cmdVelLimitedCallback(const geometry_msgs::TwistStamped& twist)
   {
     ROS_INFO_STREAM("Twist callback reveived: linear: " << twist.twist.linear.x
                      << ", angular: " << twist.twist.angular.z);
+
     last_cmd_vel_limited = twist;
   }
 
   void diffDriveControllerStateCallback(const diff_drive_controller::DiffDriveControllerState& msg)
   {
-    ROS_INFO("Joint trajectory controller state callback reveived");
+    ROS_INFO_STREAM("Joint trajectory controller state callback reveived("
+                    << msg.header.seq << ")");
+
+    if (last_states[0].header.seq > 0)
+    {
+      EXPECT_EQ(last_states[0].header.seq + 1, msg.header.seq);
+    }
 
     last_states[2] = last_states[1];
     last_states[1] = last_states[0];

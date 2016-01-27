@@ -23,7 +23,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 /// \author Bence Magyar
 /// \author Enrique Fernandez
@@ -31,8 +31,11 @@
 #include "test_common.h"
 
 #include <diff_drive_controller/covariance.h>
+#include <diff_drive_controller/rigid_body_motion.h>
 
 #include <tf/transform_listener.h>
+
+#include <limits>
 
 const double POSE_COVARIANCE_MAX_CONDITION_NUMBER  = 1e8;
 const double TWIST_COVARIANCE_MAX_CONDITION_NUMBER = POSE_COVARIANCE_MAX_CONDITION_NUMBER;
@@ -60,25 +63,25 @@ TEST_F(DiffDriveControllerTest, testNoMove)
   nav_msgs::Odometry new_odom = getLastOdom();
 
   // check if the robot didn't moved, changes on all fields should be ~~0
-  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), EPS);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
+  EXPECT_NEAR(old_odom.pose.pose.position.x, new_odom.pose.pose.position.x, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(old_odom.pose.pose.position.y, new_odom.pose.pose.position.y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(old_odom.pose.pose.position.z, new_odom.pose.pose.position.z, std::numeric_limits<double>::epsilon());
 
   // convert to rpy and test that way
   double roll_old, pitch_old, yaw_old;
   double roll_new, pitch_new, yaw_new;
   tf::Matrix3x3(tfQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
   tf::Matrix3x3(tfQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
-  EXPECT_LT(fabs(roll_new - roll_old), EPS);
-  EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
-  EXPECT_LT(fabs(yaw_new - yaw_old), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.x), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.z), EPS);
+  EXPECT_NEAR(roll_old , roll_new , std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(pitch_old, pitch_new, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(yaw_old  , yaw_new  , std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, new_odom.twist.twist.linear.x, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, new_odom.twist.twist.linear.y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, new_odom.twist.twist.linear.z, std::numeric_limits<double>::epsilon());
 
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.z), EPS);
+  EXPECT_NEAR(0.0, new_odom.twist.twist.angular.x, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, new_odom.twist.twist.angular.y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, new_odom.twist.twist.angular.z, std::numeric_limits<double>::epsilon());
 
   // propagation
   double x = old_odom.pose.pose.position.x;
@@ -92,10 +95,10 @@ TEST_F(DiffDriveControllerTest, testNoMove)
   const double dt = (new_odom.header.stamp - old_odom.header.stamp).toSec();
   propagate(x, y, yaw, v_x, v_y, v_yaw, dt);
 
-  EXPECT_LT(std::abs(x - new_odom.pose.pose.position.x), EPS);
-  EXPECT_LT(std::abs(y - new_odom.pose.pose.position.y), EPS);
-  EXPECT_LT(angles::shortest_angular_distance(yaw,
-        tf::getYaw(new_odom.pose.pose.orientation)), EPS);
+  EXPECT_NEAR(new_odom.pose.pose.position.x, x, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(new_odom.pose.pose.position.y, y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, angles::shortest_angular_distance(yaw,
+        tf::getYaw(new_odom.pose.pose.orientation)), std::numeric_limits<double>::epsilon());
 
   // covariance
   using namespace diff_drive_controller;
@@ -147,7 +150,83 @@ TEST_F(DiffDriveControllerTest, testNoMove)
   // where Odometry::DEFAULT_MINIMUM_TWIST_COVARIANCE == 1e-9
   TwistCovariance minimum_twist_covariance = 1e-9 * TwistCovariance::Identity();
   EXPECT_TRUE(((twist_covariance - minimum_twist_covariance).array() == 0).all())
-    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt);
+    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt) << "\n"
+    << "Minimum twist covariance =\n" << minimum_twist_covariance.format(HeavyFmt);
+
+  // Take the last two odometry messages:
+  std::vector<nav_msgs::Odometry> odoms = getLastOdoms();
+
+  EXPECT_GT(odoms.size(), 1);
+
+  // Take pose and twist state and covariance for the current odometry:
+  const ros::Time t_0 = odoms[0].header.stamp;
+
+  const double x_0   = odoms[0].pose.pose.position.x;
+  const double y_0   = odoms[0].pose.pose.position.y;
+  const double yaw_0 = tf::getYaw(odoms[0].pose.pose.orientation);
+
+  const double v_x_0   = odoms[0].twist.twist.linear.x;
+  const double v_y_0   = odoms[0].twist.twist.linear.y;
+  const double v_yaw_0 = odoms[0].twist.twist.angular.z;
+
+  PoseCovariance  pose_covariance_0;
+  msgToCovariance(odoms[0].pose.covariance, pose_covariance_0, no_tag());
+
+  TwistCovariance twist_covariance_0;
+  msgToCovariance(odoms[0].twist.covariance, twist_covariance_0, no_tag());
+
+  // Take pose and twist state and covariance for the previous odometry:
+  const ros::Time t_1 = odoms[1].header.stamp;
+
+  const double x_1   = odoms[1].pose.pose.position.x;
+  const double y_1   = odoms[1].pose.pose.position.y;
+  const double yaw_1 = tf::getYaw(odoms[1].pose.pose.orientation);
+
+  const double v_x_1   = odoms[1].twist.twist.linear.x;
+  const double v_y_1   = odoms[1].twist.twist.linear.y;
+  const double v_yaw_1 = odoms[1].twist.twist.angular.z;
+
+  PoseCovariance  pose_covariance_1;
+  msgToCovariance(odoms[1].pose.covariance, pose_covariance_1, no_tag());
+
+  TwistCovariance twist_covariance_1;
+  msgToCovariance(odoms[1].twist.covariance, twist_covariance_1, no_tag());
+
+  // Integrate motion:
+  const double dt_odoms = (t_0 - t_1).toSec();
+  x   = x_1;
+  y   = y_1;
+  yaw = yaw_1;
+  Eigen::Matrix3d J_pose, J_twist;
+  diff_drive_controller::integrate_motion(x, y, yaw,
+      v_x_0, v_y_0, v_yaw_0,
+      dt_odoms,
+      J_pose, J_twist);
+
+  // Correct the twist covariance removing the minimum twist covariance, which
+  // is always added to it to avoid ill-conditioned covariance matrices.
+  // We need to do this to obtain the correct expected pose covariance,
+  // because this one doesn't include the minimum twist covariance.
+  // We could also set the minimum twist covariance to zero, but that would
+  // generate a zero covariance matrix when the robot doesn't move (as in this
+  // test):
+  const TwistCovariance twist_covariance_0_corrected =
+      twist_covariance_0 - 1e-9 * TwistCovariance::Identity();
+
+  // Propagate covariance:
+  PoseCovariance pose_covariance_0_expected =
+    J_pose * pose_covariance_1 * J_pose.transpose() +
+    J_twist * twist_covariance_0_corrected * J_twist.transpose();
+
+  // Check new pose is equal to the expected one:
+  EXPECT_EQ(x_0, x);
+  EXPECT_EQ(y_0, y);
+  EXPECT_EQ(yaw_0, yaw);
+
+  // Check new pose covariance is equal to the expected one:
+  EXPECT_TRUE(((pose_covariance_0_expected - pose_covariance_0).array().abs() < std::numeric_limits<double>::epsilon()).all())
+    << "Pose covariance actual =\n" << pose_covariance_0.format(HeavyFmt)
+    << "\nPose covariance expected =\n" << pose_covariance_0_expected.format(HeavyFmt);
 }
 
 TEST_F(DiffDriveControllerTest, testForward)
@@ -178,23 +257,23 @@ TEST_F(DiffDriveControllerTest, testForward)
   const double dy = new_odom.pose.pose.position.y - old_odom.pose.pose.position.y;
   const double dz = new_odom.pose.pose.position.z - old_odom.pose.pose.position.z;
   EXPECT_NEAR(sqrt(dx*dx + dy*dy), 1.0, POSITION_TOLERANCE);
-  EXPECT_LT(fabs(dz), EPS);
+  EXPECT_NEAR(0.0, dz, std::numeric_limits<double>::epsilon());
 
   // convert to rpy and test that way
   double roll_old, pitch_old, yaw_old;
   double roll_new, pitch_new, yaw_new;
   tf::Matrix3x3(tfQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
   tf::Matrix3x3(tfQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
-  EXPECT_LT(fabs(roll_new - roll_old), EPS);
-  EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
-  EXPECT_LT(fabs(yaw_new - yaw_old), EPS);
-  EXPECT_NEAR(fabs(new_odom.twist.twist.linear.x), cmd_vel.linear.x, EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.z), EPS);
+  EXPECT_NEAR(roll_old , roll_new , std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(pitch_old, pitch_new, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(yaw_old  , yaw_new  , std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(cmd_vel.linear.x, new_odom.twist.twist.linear.x, EPS);
+  EXPECT_NEAR(0.0, new_odom.twist.twist.linear.y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, new_odom.twist.twist.linear.z, std::numeric_limits<double>::epsilon());
 
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.z), EPS);
+  EXPECT_NEAR(0.0, new_odom.twist.twist.angular.x, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, new_odom.twist.twist.angular.y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, new_odom.twist.twist.angular.z, std::numeric_limits<double>::epsilon());
 
   // propagation
   double x = old_odom.pose.pose.position.x;
@@ -208,10 +287,10 @@ TEST_F(DiffDriveControllerTest, testForward)
   const double dt = (new_odom.header.stamp - old_odom.header.stamp).toSec();
   propagate(x, y, yaw, v_x, v_y, v_yaw, dt);
 
-  EXPECT_LT(std::abs(x - new_odom.pose.pose.position.x), EPS);
-  EXPECT_LT(std::abs(y - new_odom.pose.pose.position.y), EPS);
-  EXPECT_LT(angles::shortest_angular_distance(yaw,
-        tf::getYaw(new_odom.pose.pose.orientation)), EPS);
+  EXPECT_NEAR(new_odom.pose.pose.position.x, x, EPS);
+  EXPECT_NEAR(new_odom.pose.pose.position.y, y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, angles::shortest_angular_distance(yaw,
+        tf::getYaw(new_odom.pose.pose.orientation)), std::numeric_limits<double>::epsilon());
 
   // covariance
   using namespace diff_drive_controller;
@@ -255,6 +334,81 @@ TEST_F(DiffDriveControllerTest, testForward)
       TWIST_COVARIANCE_MAX_CONDITION_NUMBER)
     << "Twist covariance =\n" << twist_covariance.format(HeavyFmt) << "\n"
     << "Eigenvalues = " << twist_eigensolver.eigenvalues().transpose().format(HeavyFmt);
+
+  // Take the last two odometry messages:
+  std::vector<nav_msgs::Odometry> odoms = getLastOdoms();
+
+  EXPECT_GT(odoms.size(), 1);
+
+  // Take pose and twist state and covariance for the current odometry:
+  const ros::Time t_0 = odoms[0].header.stamp;
+
+  const double x_0   = odoms[0].pose.pose.position.x;
+  const double y_0   = odoms[0].pose.pose.position.y;
+  const double yaw_0 = tf::getYaw(odoms[0].pose.pose.orientation);
+
+  const double v_x_0   = odoms[0].twist.twist.linear.x;
+  const double v_y_0   = odoms[0].twist.twist.linear.y;
+  const double v_yaw_0 = odoms[0].twist.twist.angular.z;
+
+  PoseCovariance  pose_covariance_0;
+  msgToCovariance(odoms[0].pose.covariance, pose_covariance_0, no_tag());
+
+  TwistCovariance twist_covariance_0;
+  msgToCovariance(odoms[0].twist.covariance, twist_covariance_0, no_tag());
+
+  // Take pose and twist state and covariance for the previous odometry:
+  const ros::Time t_1 = odoms[1].header.stamp;
+
+  const double x_1   = odoms[1].pose.pose.position.x;
+  const double y_1   = odoms[1].pose.pose.position.y;
+  const double yaw_1 = tf::getYaw(odoms[1].pose.pose.orientation);
+
+  const double v_x_1   = odoms[1].twist.twist.linear.x;
+  const double v_y_1   = odoms[1].twist.twist.linear.y;
+  const double v_yaw_1 = odoms[1].twist.twist.angular.z;
+
+  PoseCovariance  pose_covariance_1;
+  msgToCovariance(odoms[1].pose.covariance, pose_covariance_1, no_tag());
+
+  TwistCovariance twist_covariance_1;
+  msgToCovariance(odoms[1].twist.covariance, twist_covariance_1, no_tag());
+
+  // Integrate motion:
+  const double dt_odoms = (t_0 - t_1).toSec();
+  x   = x_1;
+  y   = y_1;
+  yaw = yaw_1;
+  Eigen::Matrix3d J_pose, J_twist;
+  diff_drive_controller::integrate_motion(x, y, yaw,
+      v_x_0, v_y_0, v_yaw_0,
+      dt_odoms,
+      J_pose, J_twist);
+
+  // Correct the twist covariance removing the minimum twist covariance, which
+  // is always added to it to avoid ill-conditioned covariance matrices.
+  // We need to do this to obtain the correct expected pose covariance,
+  // because this one doesn't include the minimum twist covariance.
+  // We could also set the minimum twist covariance to zero, but that would
+  // generate a zero covariance matrix when the robot doesn't move (as in this
+  // test):
+  const TwistCovariance twist_covariance_0_corrected =
+      twist_covariance_0 - 1e-9 * TwistCovariance::Identity();
+
+  // Propagate covariance:
+  PoseCovariance pose_covariance_0_expected =
+    J_pose * pose_covariance_1 * J_pose.transpose() +
+    J_twist * twist_covariance_0_corrected * J_twist.transpose();
+
+  // Check new pose is equal to the expected one:
+  EXPECT_NEAR(x_0, x, POSITION_TOLERANCE);
+  EXPECT_NEAR(y_0, y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(yaw_0, yaw, std::numeric_limits<double>::epsilon());
+
+  // Check new pose covariance is equal to the expected one:
+  EXPECT_TRUE(((pose_covariance_0_expected - pose_covariance_0).array().abs() < 1e-5).all())
+    << "Pose covariance actual =\n" << pose_covariance_0.format(HeavyFmt)
+    << "\nPose covariance expected =\n" << pose_covariance_0_expected.format(HeavyFmt);
 }
 
 TEST_F(DiffDriveControllerTest, testTurn)
@@ -281,26 +435,30 @@ TEST_F(DiffDriveControllerTest, testTurn)
   nav_msgs::Odometry new_odom = getLastOdom();
 
   // check if the robot rotated PI around z, changes in the other fields should be ~~0
-  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), EPS);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
-  EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
+  EXPECT_NEAR(old_odom.pose.pose.position.x, new_odom.pose.pose.position.x, std::numeric_limits<double>::epsilon());
+  // Cannot use std::numeric_limits<double>::epsilon() in the next check because
+  // it's to strict for the test_diff_drive_multipliers rostest:
+  EXPECT_NEAR(old_odom.pose.pose.position.y, new_odom.pose.pose.position.y, 1e-13);
+  EXPECT_NEAR(old_odom.pose.pose.position.z, new_odom.pose.pose.position.z, std::numeric_limits<double>::epsilon());
 
   // convert to rpy and test that way
   double roll_old, pitch_old, yaw_old;
   double roll_new, pitch_new, yaw_new;
   tf::Matrix3x3(tfQuatFromGeomQuat(old_odom.pose.pose.orientation)).getRPY(roll_old, pitch_old, yaw_old);
   tf::Matrix3x3(tfQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
-  EXPECT_LT(fabs(roll_new - roll_old), EPS);
-  EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
-  EXPECT_NEAR(fabs(yaw_new - yaw_old), M_PI, ORIENTATION_TOLERANCE);
+  EXPECT_NEAR(roll_old , roll_new , std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(pitch_old, pitch_new, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(M_PI, fabs(yaw_new - yaw_old), ORIENTATION_TOLERANCE);
 
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.x), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.z), EPS);
+  // Cannot use std::numeric_limits<double>::epsilon() in the next check because
+  // it's to strict for the test_diff_drive_multipliers rostest:
+  EXPECT_NEAR(0.0, new_odom.twist.twist.linear.x, 1e-12);
+  EXPECT_NEAR(0.0, new_odom.twist.twist.linear.y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, new_odom.twist.twist.linear.z, std::numeric_limits<double>::epsilon());
 
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
-  EXPECT_NEAR(fabs(new_odom.twist.twist.angular.z), M_PI/10.0, EPS);
+  EXPECT_NEAR(0.0, new_odom.twist.twist.angular.x, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(0.0, new_odom.twist.twist.angular.y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(M_PI/10.0, new_odom.twist.twist.angular.z, EPS);
 
   // propagation
   double x = old_odom.pose.pose.position.x;
@@ -314,10 +472,12 @@ TEST_F(DiffDriveControllerTest, testTurn)
   const double dt = (new_odom.header.stamp - old_odom.header.stamp).toSec();
   propagate(x, y, yaw, v_x, v_y, v_yaw, dt);
 
-  EXPECT_LT(std::abs(x - new_odom.pose.pose.position.x), EPS);
-  EXPECT_LT(std::abs(y - new_odom.pose.pose.position.y), EPS);
-  EXPECT_LT(angles::shortest_angular_distance(yaw,
-        tf::getYaw(new_odom.pose.pose.orientation)), EPS);
+  EXPECT_NEAR(new_odom.pose.pose.position.x, x, EPS);
+  // Cannot use std::numeric_limits<double>::epsilon() in the next check because
+  // it's to strict for the test_diff_drive_multipliers rostest:
+  EXPECT_NEAR(new_odom.pose.pose.position.y, y, 1e-13);
+  EXPECT_NEAR(0.0, angles::shortest_angular_distance(yaw,
+        tf::getYaw(new_odom.pose.pose.orientation)), ORIENTATION_TOLERANCE);
 
   // covariance
   using namespace diff_drive_controller;
@@ -364,6 +524,81 @@ TEST_F(DiffDriveControllerTest, testTurn)
       TWIST_COVARIANCE_MAX_CONDITION_NUMBER)
     << "Twist covariance =\n" << twist_covariance.format(HeavyFmt) << "\n"
     << "Eigenvalues = " << twist_eigensolver.eigenvalues().transpose().format(HeavyFmt);
+
+  // Take the last two odometry messages:
+  std::vector<nav_msgs::Odometry> odoms = getLastOdoms();
+
+  EXPECT_GT(odoms.size(), 1);
+
+  // Take pose and twist state and covariance for the current odometry:
+  const ros::Time t_0 = odoms[0].header.stamp;
+
+  const double x_0   = odoms[0].pose.pose.position.x;
+  const double y_0   = odoms[0].pose.pose.position.y;
+  const double yaw_0 = tf::getYaw(odoms[0].pose.pose.orientation);
+
+  const double v_x_0   = odoms[0].twist.twist.linear.x;
+  const double v_y_0   = odoms[0].twist.twist.linear.y;
+  const double v_yaw_0 = odoms[0].twist.twist.angular.z;
+
+  PoseCovariance  pose_covariance_0;
+  msgToCovariance(odoms[0].pose.covariance, pose_covariance_0, no_tag());
+
+  TwistCovariance twist_covariance_0;
+  msgToCovariance(odoms[0].twist.covariance, twist_covariance_0, no_tag());
+
+  // Take pose and twist state and covariance for the previous odometry:
+  const ros::Time t_1 = odoms[1].header.stamp;
+
+  const double x_1   = odoms[1].pose.pose.position.x;
+  const double y_1   = odoms[1].pose.pose.position.y;
+  const double yaw_1 = tf::getYaw(odoms[1].pose.pose.orientation);
+
+  const double v_x_1   = odoms[1].twist.twist.linear.x;
+  const double v_y_1   = odoms[1].twist.twist.linear.y;
+  const double v_yaw_1 = odoms[1].twist.twist.angular.z;
+
+  PoseCovariance  pose_covariance_1;
+  msgToCovariance(odoms[1].pose.covariance, pose_covariance_1, no_tag());
+
+  TwistCovariance twist_covariance_1;
+  msgToCovariance(odoms[1].twist.covariance, twist_covariance_1, no_tag());
+
+  // Integrate motion:
+  const double dt_odoms = (t_0 - t_1).toSec();
+  x   = x_1;
+  y   = y_1;
+  yaw = yaw_1;
+  Eigen::Matrix3d J_pose, J_twist;
+  diff_drive_controller::integrate_motion(x, y, yaw,
+      v_x_0, v_y_0, v_yaw_0,
+      dt_odoms,
+      J_pose, J_twist);
+
+  // Correct the twist covariance removing the minimum twist covariance, which
+  // is always added to it to avoid ill-conditioned covariance matrices.
+  // We need to do this to obtain the correct expected pose covariance,
+  // because this one doesn't include the minimum twist covariance.
+  // We could also set the minimum twist covariance to zero, but that would
+  // generate a zero covariance matrix when the robot doesn't move (as in this
+  // test):
+  const TwistCovariance twist_covariance_0_corrected =
+      twist_covariance_0 - 1e-9 * TwistCovariance::Identity();
+
+  // Propagate covariance:
+  PoseCovariance pose_covariance_0_expected =
+    J_pose * pose_covariance_1 * J_pose.transpose() +
+    J_twist * twist_covariance_0_corrected * J_twist.transpose();
+
+  // Check new pose is equal to the expected one:
+  EXPECT_NEAR(x_0, x, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(y_0, y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(yaw_0, yaw, ORIENTATION_TOLERANCE);
+
+  // Check new pose covariance is equal to the expected one:
+  EXPECT_TRUE(((pose_covariance_0_expected - pose_covariance_0).array().abs() < 1e-5).all())
+    << "Pose covariance actual =\n" << pose_covariance_0.format(HeavyFmt)
+    << "\nPose covariance expected =\n" << pose_covariance_0_expected.format(HeavyFmt);
 }
 
 TEST_F(DiffDriveControllerTest, testMoveX)

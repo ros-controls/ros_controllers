@@ -33,6 +33,8 @@
 
 #include <gtest/gtest.h>
 
+#include <limits>
+
 #include <cmath>
 
 const double POSE_COVARIANCE_MAX_CONDITION_NUMBER  = 1e8;
@@ -49,7 +51,7 @@ const size_t CONTROL_STEPS = 100;
 const double CONTROL_PERIOD = 0.02;  // [s]
 const double POSITION_INCREMENT = 0.02;  // [rad]
 
-const double EPS_INTEGRATE_MOTION_COVARIANCE = 1e-15;
+const double EPS_INTEGRATE_MOTION_COVARIANCE = std::numeric_limits<double>::epsilon();
 
 /**
  * \brief Setup the odometry params
@@ -237,6 +239,11 @@ TEST(OdometryTest, testIntegrateMotionNoMoveFromInitial)
   EXPECT_EQ(0.0, v_y_1);
   EXPECT_EQ(0.0, v_yaw_1);
 
+  // Check new pose is equal to the expected one:
+  EXPECT_EQ(x_1, x);
+  EXPECT_EQ(y_1, y);
+  EXPECT_EQ(yaw_1, yaw);
+
   // Check all pose and twist covariances are valid:
   const Eigen::IOFormat HeavyFmt(
       Eigen::FullPrecision, 0, ", ", ";\n", "[", "]", "[", "]");
@@ -387,6 +394,11 @@ TEST(OdometryTest, testIntegrateMotionForwardFromInitial)
     J_pose * pose_covariance_0 * J_pose.transpose() +
     J_twist * twist_covariance_1_corrected * J_twist.transpose();
 
+  // Check new pose is equal to the expected one:
+  EXPECT_EQ(x_1, x);
+  EXPECT_EQ(y_1, y);
+  EXPECT_EQ(yaw_1, yaw);
+
   // Check all pose and twist covariances are valid:
   const Eigen::IOFormat HeavyFmt(
       Eigen::FullPrecision, 0, ", ", ";\n", "[", "]", "[", "]");
@@ -530,6 +542,13 @@ TEST(OdometryTest, testIntegrateMotionForwardFromNotInitial)
   PoseCovariance pose_covariance_1_expected =
     J_pose * pose_covariance_0 * J_pose.transpose() +
     J_twist * twist_covariance_1_corrected * J_twist.transpose();
+
+  // Check new pose is equal to the expected one:
+  // Note that at this point the pose is not computed using the (internal)
+  // incremental pose, so we have an error greater than the double eps!
+  EXPECT_NEAR(x_1, x, 1e-14);
+  EXPECT_NEAR(y_1, y, std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(yaw_1, yaw, 1e-14);
 
   // Check all pose and twist covariances are valid:
   const Eigen::IOFormat HeavyFmt(

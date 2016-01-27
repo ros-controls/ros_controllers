@@ -166,8 +166,11 @@ namespace diff_drive_controller
                        J_meas * meas_covariance_ * J_meas.transpose();
 
     /// Update incremental pose:
-    // @todo in principle there's no need to use v_l, v_r at all!
-    //updateIncrementalPose(v_l * dt, v_r * dt);
+    // @todo in principle there's no need to use v_l, v_r at all, but this
+    // should be decided from outside, so here we should use:
+    // updateIncrementalPose(v_l * dt, v_r * dt);
+    // which could be equivalent to dp_l, dp_r or not.
+    // Note that we need to obtain dt from the time (which it's not used now)
     updateIncrementalPose(dp_l, dp_r);
 
     return true;

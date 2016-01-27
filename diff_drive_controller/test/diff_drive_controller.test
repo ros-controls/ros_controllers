@@ -1,6 +1,10 @@
 <launch>
+  <arg name="plot" default="false"/>
+
   <!-- Load common test stuff -->
-  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
+  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch">
+    <arg name="plot" default="$(arg plot)"/>
+  </include>
 
   <!-- Controller test -->
   <test test-name="diff_drive_test"

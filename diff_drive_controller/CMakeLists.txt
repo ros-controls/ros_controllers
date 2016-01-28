@@ -4,12 +4,16 @@ project(diff_drive_controller)
 find_package(catkin REQUIRED
   COMPONENTS
     cmake_modules
+    message_generation
     dynamic_reconfigure
     controller_interface
     urdf
     realtime_tools
     tf
+    std_msgs
+    geometry_msgs
     nav_msgs
+    trajectory_msgs
     roslint)
 
 find_package(Boost REQUIRED)
@@ -20,11 +24,24 @@ find_package(sophus REQUIRED)
 
 find_package(Ceres REQUIRED)
 
+add_message_files(
+  FILES
+    DiffDriveControllerState.msg)
+
+generate_messages(
+  DEPENDENCIES
+    std_msgs
+    trajectory_msgs)
+
 generate_dynamic_reconfigure_options(cfg/DiffDriveController.cfg)
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME})
+  LIBRARIES ${PROJECT_NAME}
+  CATKIN_DEPENDS
+    message_runtime
+    std_msgs
+    trajectory_msgs)
 
 include_directories(
   include ${catkin_INCLUDE_DIRS}
@@ -38,7 +55,7 @@ roslint_cpp()
 add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
 # Note that the entry for ${Ceres_LIBRARIES} was removed as we only used headers from that package
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
-add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -70,33 +87,49 @@ if (CATKIN_ENABLE_TESTING)
   add_executable(skidsteerbot test/skidsteerbot.cpp)
   target_link_libraries(skidsteerbot ${catkin_LIBRARIES})
 
-  add_dependencies(tests diffbot skidsteerbot)
+  add_dependencies(tests ${PROJECT_NAME} diffbot skidsteerbot)
 
   add_rostest_gtest(diff_drive_test
     test/diff_drive_controller.test
     test/diff_drive_test.cpp)
   target_link_libraries(diff_drive_test ${catkin_LIBRARIES})
+  add_dependencies(diff_drive_test ${${PROJECT_NAME}_EXPORTED_TARGETS})
   add_rostest_gtest(diff_drive_nan_test
     test/diff_drive_controller_nan.test
     test/diff_drive_nan_test.cpp)
   target_link_libraries(diff_drive_nan_test ${catkin_LIBRARIES})
+  add_dependencies(diff_drive_nan_test ${${PROJECT_NAME}_EXPORTED_TARGETS})
   add_rostest_gtest(diff_drive_limits_test
     test/diff_drive_controller_limits.test
     test/diff_drive_limits_test.cpp)
   target_link_libraries(diff_drive_limits_test ${catkin_LIBRARIES})
+  add_dependencies(diff_drive_limits_test ${${PROJECT_NAME}_EXPORTED_TARGETS})
   add_rostest_gtest(diff_drive_timeout_test
     test/diff_drive_timeout.test
     test/diff_drive_timeout_test.cpp)
   target_link_libraries(diff_drive_timeout_test ${catkin_LIBRARIES})
+  add_dependencies(diff_drive_timeout_test ${${PROJECT_NAME}_EXPORTED_TARGETS})
   add_rostest(test/diff_drive_multipliers.test)
   add_rostest_gtest(diff_drive_fail_test
     test/diff_drive_wrong.test
     test/diff_drive_fail_test.cpp)
   target_link_libraries(diff_drive_fail_test ${catkin_LIBRARIES})
+  add_dependencies(diff_drive_fail_test ${${PROJECT_NAME}_EXPORTED_TARGETS})
   add_rostest_gtest(diff_drive_odom_tf_test
     test/diff_drive_odom_tf.test
     test/diff_drive_odom_tf_test.cpp)
   target_link_libraries(diff_drive_odom_tf_test ${catkin_LIBRARIES})
+  add_dependencies(diff_drive_odom_tf_test ${${PROJECT_NAME}_EXPORTED_TARGETS})
+  add_rostest_gtest(diff_drive_publish_state_test
+    test/diff_drive_publish_state.test
+    test/diff_drive_publish_state_test.cpp)
+  target_link_libraries(diff_drive_publish_state_test ${catkin_LIBRARIES})
+  add_dependencies(diff_drive_publish_state_test ${${PROJECT_NAME}_EXPORTED_TARGETS})
+  add_rostest_gtest(diff_drive_publish_cmd_vel_limited_test
+    test/diff_drive_publish_cmd_vel_limited.test
+    test/diff_drive_publish_cmd_vel_limited_test.cpp)
+  target_link_libraries(diff_drive_publish_cmd_vel_limited_test ${catkin_LIBRARIES})
+  add_dependencies(diff_drive_publish_cmd_vel_limited_test ${${PROJECT_NAME}_EXPORTED_TARGETS})
   add_rostest(test/diff_drive_open_loop.test)
   add_rostest(test/diff_drive_velocity_feedback.test)
   add_rostest(test/skid_steer_controller.test)

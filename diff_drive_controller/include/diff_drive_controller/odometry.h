@@ -115,17 +115,10 @@ namespace diff_drive_controller
      * \param time      [in] Current time
      * \return true if the odometry is actually updated
      */
-    bool updateCloseLoop(double left_pos, double right_pos, const ros::Time &time);
-
-    /**
-     * \brief Updates the odometry class with latest wheels velocity, i.e. in
-     * close loop
-     * \param left_vel  [in] Left  wheel velocity [rad/s]
-     * \param right_vel [in] Right wheel velocity [rad/s]
-     * \param time      [in] Current time
-     * \return true if the odometry is actually updated
-     */
-    bool updateCloseLoopFromVelocity(double left_pos, double right_pos, const ros::Time &time);
+    bool updateCloseLoop(
+        const double left_position, const double right_position,
+        const double left_velocity, const double right_velocity,
+        const ros::Time &time);
 
     /**
      * \brief Updates the odometry class with latest velocity command, i.e. in
@@ -267,12 +260,15 @@ namespace diff_drive_controller
     /**
      * \brief Updates the odometry class with latest velocity command and wheel
      * velocities
-     * \param v_l  [in] Left  wheel velocity displacement [rad]
-     * \param v_r  [in] Right wheel velocity displacement [rad]
-     * \param time [in] Current time
+     * \param[in] dp_l  Left  wheel position increment [rad]
+     * \param[in] dp_r  Right wheel position increment [rad]
+     * \param[in] v_l   Left  wheel velocity [rad/s]
+     * \param[in] v_r   Right wheel velocity [rad/s]
+     * \param[in] time  Current time
      * \return true if the odometry is actually updated
      */
-    bool update(double v_l, double v_r, const ros::Time& time);
+    bool update(const double dp_l, const double dp_r,
+        const double v_l, const double v_r, const ros::Time& time);
 
     /**
      * \brief Update the odometry twist with the previous and current odometry
@@ -332,8 +328,8 @@ namespace diff_drive_controller
     double k_r_;
 
     /// Previous wheel position/state [rad]:
-    double left_wheel_old_pos_;
-    double right_wheel_old_pos_;
+    double left_position_previous_;
+    double right_position_previous_;
 
     /// Rolling mean accumulators for the linar and angular velocities:
     size_t velocity_rolling_window_size_;

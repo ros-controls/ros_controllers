@@ -58,7 +58,9 @@ namespace diff_drive_controller
     double min_acceleration,
     double max_acceleration,
     double min_jerk,
-    double max_jerk
+    double max_jerk,
+    double min_deceleration,
+    double max_deceleration
   )
   : has_velocity_limits(has_velocity_limits)
   , has_acceleration_limits(has_acceleration_limits)
@@ -69,6 +71,8 @@ namespace diff_drive_controller
   , max_acceleration(max_acceleration)
   , min_jerk(min_jerk)
   , max_jerk(max_jerk)
+  , min_deceleration(min_deceleration)
+  , max_deceleration(max_deceleration)
   {
   }
 
@@ -98,13 +102,45 @@ namespace diff_drive_controller
   double SpeedLimiter::limit_acceleration(double& v, double v0, double dt)
   {
     const double tmp = v;
+    double dv_min, dv_max, dv;
 
     if (has_acceleration_limits)
     {
-      const double dv_min = min_acceleration * dt;
-      const double dv_max = max_acceleration * dt;
-
-      const double dv = clamp(v - v0, dv_min, dv_max);
+      if (v0 >= 0.0 && v >= 0.0)
+      {
+        // Moving in positive direction
+        dv_min = min_deceleration * dt;
+        dv_max = max_acceleration * dt;
+        dv = clamp(v - v0, dv_min, dv_max);
+      }
+      else if (v0 <= 0.0 && v <= 0.0)
+      {
+        // Moving in the negative direction
+        dv_min = min_acceleration * dt;
+        dv_max = max_deceleration * dt;
+        dv = clamp(v - v0, dv_min, dv_max);
+      }
+      else
+      {
+        // Transitioning from positive to negative velocity
+        if (v0 > 0)
+        {
+          dv = min_deceleration * dt;
+          if (v0 + dv < 0)
+          {
+            dv = min_acceleration * (dt - v0 / min_deceleration);
+          }
+        }
+        // Transitioning from negative to positive velocity
+        else if (v0 < 0)
+        {
+          dv = max_deceleration * dt;
+          if (v0 + dv > 0)
+          {
+            dv = max_acceleration * (dt - v0 / max_deceleration);
+          }
+        }
+      }
 
       v = v0 + dv;
     }

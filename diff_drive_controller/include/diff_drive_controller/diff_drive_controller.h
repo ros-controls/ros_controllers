@@ -57,6 +57,8 @@
 #include <diff_drive_controller/speed_limiter.h>
 #include <diff_drive_controller/DiffDriveControllerConfig.h>
 
+#include <boost/timer/timer.hpp>
+
 #include <vector>
 #include <string>
 
@@ -184,6 +186,9 @@ namespace diff_drive_controller
     /// Dynamic reconfigure server related:
     typedef dynamic_reconfigure::Server<DiffDriveControllerConfig> ReconfigureServer;
     boost::shared_ptr<ReconfigureServer> cfg_server_;
+
+    /// Timing related:
+    boost::timer::cpu_timer cpu_timer_;
 
     struct DynamicParams
     {

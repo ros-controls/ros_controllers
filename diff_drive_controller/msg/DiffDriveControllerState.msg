@@ -1,9 +1,14 @@
-# This initial part is the same as JointTrajectoryControllerState.msg:
+# This initial part is the same as JointTrajectoryControllerState.msg.
+# Note theat error = desired - actual, as it's generally done in any controller:
 Header header
 string[] joint_names
 trajectory_msgs/JointTrajectoryPoint desired
 trajectory_msgs/JointTrajectoryPoint actual
 trajectory_msgs/JointTrajectoryPoint error  # Redundant, but useful
+
+# Limited state, which might be different from the desired because of the
+# velocity/acceleration/jerk limits enforced, when they're enabled:
+trajectory_msgs/JointTrajectoryPoint limited
 
 # Actual wheel joint trajectory controller state estimated from the positions,
 # i.e. the velocities are NOT the ones directly reported from the joints, but

@@ -123,13 +123,13 @@ namespace diff_drive_controller
     double min_acceleration;
     double max_acceleration;
 
-    // Deceleration limits
-    double min_deceleration;  // Minimum acceleration used to slow down vehicle to zero velocity.
-    double max_deceleration;  // Maximum acceleration used to slow down vehicle to zero velocity.
-
     // Jerk limits:
     double min_jerk;
     double max_jerk;
+
+    // Deceleration limits
+    double min_deceleration;  // Minimum acceleration used to slow down vehicle to zero velocity.
+    double max_deceleration;  // Maximum acceleration used to slow down vehicle to zero velocity.
   };
 
 }  // namespace diff_drive_controller

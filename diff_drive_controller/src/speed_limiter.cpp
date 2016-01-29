@@ -102,10 +102,11 @@ namespace diff_drive_controller
   double SpeedLimiter::limit_acceleration(double& v, double v0, double dt)
   {
     const double tmp = v;
-    double dv_min, dv_max, dv;
 
     if (has_acceleration_limits)
     {
+      double dv_min, dv_max, dv;
+
       if (v0 >= 0.0 && v >= 0.0)
       {
         // Moving in positive direction

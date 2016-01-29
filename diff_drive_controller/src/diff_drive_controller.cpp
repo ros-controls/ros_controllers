@@ -261,6 +261,8 @@ namespace diff_drive_controller
     controller_nh.param("linear/x/min_velocity"           , limiter_lin_.min_velocity           , -limiter_lin_.max_velocity          );
     controller_nh.param("linear/x/max_acceleration"       , limiter_lin_.max_acceleration       ,  limiter_lin_.max_acceleration      );
     controller_nh.param("linear/x/min_acceleration"       , limiter_lin_.min_acceleration       , -limiter_lin_.max_acceleration      );
+    controller_nh.param("linear/x/max_deceleration"       , limiter_lin_.max_deceleration       ,  limiter_lin_.max_acceleration      );
+    controller_nh.param("linear/x/min_deceleration"       , limiter_lin_.min_deceleration       ,  limiter_lin_.min_acceleration      );
     controller_nh.param("linear/x/max_jerk"               , limiter_lin_.max_jerk               ,  limiter_lin_.max_jerk              );
     controller_nh.param("linear/x/min_jerk"               , limiter_lin_.min_jerk               , -limiter_lin_.max_jerk              );
 
@@ -271,6 +273,8 @@ namespace diff_drive_controller
     controller_nh.param("angular/z/min_velocity"           , limiter_ang_.min_velocity           , -limiter_ang_.max_velocity          );
     controller_nh.param("angular/z/max_acceleration"       , limiter_ang_.max_acceleration       ,  limiter_ang_.max_acceleration      );
     controller_nh.param("angular/z/min_acceleration"       , limiter_ang_.min_acceleration       , -limiter_ang_.max_acceleration      );
+    controller_nh.param("angular/z/max_deceleration"       , limiter_ang_.max_deceleration       ,  limiter_ang_.max_acceleration      );
+    controller_nh.param("angular/z/min_deceleration"       , limiter_ang_.min_deceleration       ,  limiter_ang_.min_acceleration      );
     controller_nh.param("angular/z/max_jerk"               , limiter_ang_.max_jerk               ,  limiter_ang_.max_jerk              );
     controller_nh.param("angular/z/min_jerk"               , limiter_ang_.min_jerk               , -limiter_ang_.max_jerk              );
 

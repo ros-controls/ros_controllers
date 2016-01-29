@@ -56,6 +56,8 @@ namespace diff_drive_controller
      * \param [in] max_acceleration Maximum acceleration [m/s^2], usually >= 0
      * \param [in] min_jerk Minimum jerk [m/s^3], usually <= 0
      * \param [in] max_jerk Maximum jerk [m/s^3], usually >= 0
+     * \param [in] min_deceleration Minimum deceleration [m/s^2], usually <= 0
+     * \param [in] max_deceleration Maximum deceleration [m/s^2], usually >= 0
      */
     SpeedLimiter(
       bool has_velocity_limits = false,
@@ -66,7 +68,9 @@ namespace diff_drive_controller
       double min_acceleration = 0.0,
       double max_acceleration = 0.0,
       double min_jerk = 0.0,
-      double max_jerk = 0.0);
+      double max_jerk = 0.0,
+      double min_deceleration = 0.0,
+      double max_deceleration = 0.0);
 
     /**
      * \brief Limit the velocity and acceleration
@@ -122,6 +126,10 @@ namespace diff_drive_controller
     // Jerk limits:
     double min_jerk;
     double max_jerk;
+
+    // Deceleration limits
+    double min_deceleration;  // Minimum acceleration used to slow down vehicle to zero velocity.
+    double max_deceleration;  // Maximum acceleration used to slow down vehicle to zero velocity.
   };
 
 }  // namespace diff_drive_controller

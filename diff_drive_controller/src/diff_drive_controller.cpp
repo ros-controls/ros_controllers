@@ -466,6 +466,12 @@ namespace diff_drive_controller
 
   void DiffDriveController::update(const ros::Time& time, const ros::Duration& period)
   {
+    // Start/Resume CPU timer to measure the control time:
+    if (publish_state_)
+    {
+      cpu_timer_.start();
+    }
+
     // UPDATE DYNAMIC PARAMS
     // Retreive dynamic params:
     DynamicParams dynamic_params = *(dynamic_params_.readFromRT());
@@ -818,6 +824,7 @@ namespace diff_drive_controller
             state_pub_->msg_.desired.effort[i] - state_pub_->msg_.actual_estimated_side_average.effort[i];
         }
 
+        // Set time from start:
         state_pub_->msg_.desired.time_from_start = ros::Duration(dt);
         state_pub_->msg_.actual.time_from_start = ros::Duration(control_period);
         state_pub_->msg_.error.time_from_start = state_pub_->msg_.actual.time_from_start;
@@ -831,9 +838,17 @@ namespace diff_drive_controller
         state_pub_->msg_.actual_estimated_side_average.time_from_start = state_pub_->msg_.actual.time_from_start;
         state_pub_->msg_.error_estimated_side_average.time_from_start = state_pub_->msg_.actual_estimated_side_average.time_from_start;
 
+        // Set control period (update method):
         state_pub_->msg_.control_period_desired = control_period_desired_;
         state_pub_->msg_.control_period_actual  = period.toSec();
         state_pub_->msg_.control_period_error   = state_pub_->msg_.control_period_desired - state_pub_->msg_.control_period_actual;
+
+        // Set control wall, user and system time:
+        boost::timer::cpu_times control_times = cpu_timer_.elapsed();
+
+        state_pub_->msg_.control_time_wall   = 1e-9 * control_times.wall;
+        state_pub_->msg_.control_time_user   = 1e-9 * control_times.user;
+        state_pub_->msg_.control_time_system = 1e-9 * control_times.system;
 
         state_pub_->unlockAndPublish();
       }

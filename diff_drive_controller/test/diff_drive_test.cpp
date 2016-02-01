@@ -114,40 +114,17 @@ TEST_F(DiffDriveControllerTest, testNoMove)
 
   // check we have a positive definite covariance matrix
   // isCovariance = isSymmetric + isPositiveDefinite
-  const Eigen::IOFormat HeavyFmt(
-      Eigen::FullPrecision, 0, ", ", ";\n", "[", "]", "[", "]");
-
-  typedef Eigen::SelfAdjointEigenSolver<PoseCovariance> PoseEigenSolver;
-  typedef Eigen::SelfAdjointEigenSolver<TwistCovariance> TwistEigenSolver;
-
-  PoseEigenSolver pose_eigensolver(pose_covariance);
-  TwistEigenSolver twist_eigensolver(twist_covariance);
-
-  EXPECT_TRUE(isSymmetric(pose_covariance))
-    << "Pose covariance =\n" << pose_covariance.format(HeavyFmt);
-  EXPECT_TRUE(isPositiveDefinite(pose_covariance, no_tag()))
-    << "Pose covariance =\n" << pose_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << pose_eigensolver.eigenvalues().transpose().format(HeavyFmt);
-  EXPECT_LT(conditionNumber(pose_covariance),
-      POSE_COVARIANCE_MAX_CONDITION_NUMBER)
-    << "Pose covariance =\n" << pose_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << pose_eigensolver.eigenvalues().transpose().format(HeavyFmt);
-
-  EXPECT_TRUE(isSymmetric(twist_covariance))
-    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt);
-  EXPECT_TRUE(isPositiveDefinite(twist_covariance, no_tag()))
-    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << twist_eigensolver.eigenvalues().transpose().format(HeavyFmt);
-  EXPECT_LT(conditionNumber(pose_covariance),
-      TWIST_COVARIANCE_MAX_CONDITION_NUMBER)
-    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << twist_eigensolver.eigenvalues().transpose().format(HeavyFmt);
+  testCovariance(pose_covariance, POSE_COVARIANCE_MAX_CONDITION_NUMBER);
+  testCovariance(twist_covariance, TWIST_COVARIANCE_MAX_CONDITION_NUMBER);
 
   // when the robot doesn't move the twist covariance should be exactly the
   // minimum twist covariance, which is defined as a diagonal covariance matrix
   // like this:
   //   Odometry::DEFAULT_MINIMUM_TWIST_COVARIANCE * TwistCovariance::Identity()
   // where Odometry::DEFAULT_MINIMUM_TWIST_COVARIANCE == 1e-9
+  const Eigen::IOFormat HeavyFmt(
+      Eigen::FullPrecision, 0, ", ", ";\n", "[", "]", "[", "]");
+
   TwistCovariance minimum_twist_covariance = 1e-9 * TwistCovariance::Identity();
   EXPECT_TRUE(((twist_covariance - minimum_twist_covariance).array() == 0).all())
     << "Twist covariance =\n" << twist_covariance.format(HeavyFmt) << "\n"
@@ -306,34 +283,8 @@ TEST_F(DiffDriveControllerTest, testForward)
 
   // check we have a positive definite covariance matrix
   // isCovariance = isSymmetric + isPositiveDefinite
-  const Eigen::IOFormat HeavyFmt(
-      Eigen::FullPrecision, 0, ", ", ";\n", "[", "]", "[", "]");
-
-  typedef Eigen::SelfAdjointEigenSolver<PoseCovariance> PoseEigenSolver;
-  typedef Eigen::SelfAdjointEigenSolver<TwistCovariance> TwistEigenSolver;
-
-  PoseEigenSolver pose_eigensolver(pose_covariance);
-  TwistEigenSolver twist_eigensolver(twist_covariance);
-
-  EXPECT_TRUE(isSymmetric(pose_covariance))
-    << "Pose covariance =\n" << pose_covariance.format(HeavyFmt);
-  EXPECT_TRUE(isPositiveDefinite(pose_covariance, no_tag()))
-    << "Pose covariance =\n" << pose_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << pose_eigensolver.eigenvalues().transpose().format(HeavyFmt);
-  EXPECT_LT(conditionNumber(pose_covariance),
-      POSE_COVARIANCE_MAX_CONDITION_NUMBER)
-    << "Pose covariance =\n" << pose_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << pose_eigensolver.eigenvalues().transpose().format(HeavyFmt);
-
-  EXPECT_TRUE(isSymmetric(twist_covariance))
-    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt);
-  EXPECT_TRUE(isPositiveDefinite(twist_covariance, no_tag()))
-    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << twist_eigensolver.eigenvalues().transpose().format(HeavyFmt);
-  EXPECT_LT(conditionNumber(pose_covariance),
-      TWIST_COVARIANCE_MAX_CONDITION_NUMBER)
-    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << twist_eigensolver.eigenvalues().transpose().format(HeavyFmt);
+  testCovariance(pose_covariance, POSE_COVARIANCE_MAX_CONDITION_NUMBER);
+  testCovariance(twist_covariance, TWIST_COVARIANCE_MAX_CONDITION_NUMBER);
 
   // Take the last two odometry messages:
   std::vector<nav_msgs::Odometry> odoms = getLastOdoms();
@@ -406,6 +357,9 @@ TEST_F(DiffDriveControllerTest, testForward)
   EXPECT_NEAR(yaw_0, yaw, std::numeric_limits<double>::epsilon());
 
   // Check new pose covariance is equal to the expected one:
+  const Eigen::IOFormat HeavyFmt(
+      Eigen::FullPrecision, 0, ", ", ";\n", "[", "]", "[", "]");
+
   EXPECT_TRUE(((pose_covariance_0_expected - pose_covariance_0).array().abs() < 1e-5).all())
     << "Pose covariance actual =\n" << pose_covariance_0.format(HeavyFmt)
     << "\nPose covariance expected =\n" << pose_covariance_0_expected.format(HeavyFmt);
@@ -493,37 +447,8 @@ TEST_F(DiffDriveControllerTest, testTurn)
 
   // check we have a positive definite covariance matrix
   // isCovariance = isSymmetric + isPositiveDefinite
-  const Eigen::IOFormat HeavyFmt(
-      Eigen::FullPrecision, 0, ", ", ";\n", "[", "]", "[", "]");
-
-  typedef Eigen::SelfAdjointEigenSolver<PoseCovariance> PoseEigenSolver;
-  typedef Eigen::SelfAdjointEigenSolver<TwistCovariance> TwistEigenSolver;
-
-  PoseEigenSolver pose_eigensolver(pose_covariance);
-  TwistEigenSolver twist_eigensolver(twist_covariance);
-
-  EXPECT_TRUE(pose_eigensolver.info() == Eigen::Success);
-  EXPECT_TRUE(twist_eigensolver.info() == Eigen::Success);
-
-  EXPECT_TRUE(isSymmetric(pose_covariance))
-    << "Pose covariance =\n" << pose_covariance.format(HeavyFmt);
-  EXPECT_TRUE(isPositiveDefinite(pose_covariance, no_tag()))
-    << "Pose covariance =\n" << pose_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << pose_eigensolver.eigenvalues().transpose().format(HeavyFmt);
-  EXPECT_LT(conditionNumber(pose_covariance),
-      POSE_COVARIANCE_MAX_CONDITION_NUMBER)
-    << "Pose covariance =\n" << pose_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << pose_eigensolver.eigenvalues().transpose().format(HeavyFmt);
-
-  EXPECT_TRUE(isSymmetric(twist_covariance))
-    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt);
-  EXPECT_TRUE(isPositiveDefinite(twist_covariance, no_tag()))
-    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << twist_eigensolver.eigenvalues().transpose().format(HeavyFmt);
-  EXPECT_LT(conditionNumber(pose_covariance),
-      TWIST_COVARIANCE_MAX_CONDITION_NUMBER)
-    << "Twist covariance =\n" << twist_covariance.format(HeavyFmt) << "\n"
-    << "Eigenvalues = " << twist_eigensolver.eigenvalues().transpose().format(HeavyFmt);
+  testCovariance(pose_covariance, POSE_COVARIANCE_MAX_CONDITION_NUMBER);
+  testCovariance(twist_covariance, TWIST_COVARIANCE_MAX_CONDITION_NUMBER);
 
   // Take the last two odometry messages:
   std::vector<nav_msgs::Odometry> odoms = getLastOdoms();
@@ -596,6 +521,9 @@ TEST_F(DiffDriveControllerTest, testTurn)
   EXPECT_NEAR(yaw_0, yaw, ORIENTATION_TOLERANCE);
 
   // Check new pose covariance is equal to the expected one:
+  const Eigen::IOFormat HeavyFmt(
+      Eigen::FullPrecision, 0, ", ", ";\n", "[", "]", "[", "]");
+
   EXPECT_TRUE(((pose_covariance_0_expected - pose_covariance_0).array().abs() < 1e-5).all())
     << "Pose covariance actual =\n" << pose_covariance_0.format(HeavyFmt)
     << "\nPose covariance expected =\n" << pose_covariance_0_expected.format(HeavyFmt);

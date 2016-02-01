@@ -78,6 +78,8 @@ static void integrate_motion(double& x, double &y, double &yaw,
  * \param[in] v_y   Velocity/Twist y   component
  * \param[in] v_yaw Velocity/Twist yaw component
  * \param[in] dt Time step
+ * \param[out] J_pose Jacobian wrt the pose
+ * \param[out] J_twist Jacobian wrt the velocity/twist
  */
 static void integrate_motion(double& x, double &y, double &yaw,
     const double v_x, const double v_y, const double v_yaw,

@@ -41,6 +41,8 @@
 
 #include <Eigen/Dense>
 
+#include <boost/array.hpp>
+
 #include <limits>
 
 namespace diff_drive_controller

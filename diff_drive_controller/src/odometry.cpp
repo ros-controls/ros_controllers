@@ -242,8 +242,8 @@ namespace diff_drive_controller
                                    k_r_ * std::abs(v_r);
   }
 
-  void Odometry::setWheelParams(double wheel_separation,
-      double left_wheel_radius, double right_wheel_radius)
+  void Odometry::setWheelParams(const double wheel_separation,
+      const double left_wheel_radius, const double right_wheel_radius)
   {
     wheel_separation_   = wheel_separation;
     left_wheel_radius_  = left_wheel_radius;
@@ -253,14 +253,15 @@ namespace diff_drive_controller
         left_wheel_radius, right_wheel_radius);
   }
 
-  void Odometry::setVelocityRollingWindowSize(size_t velocity_rolling_window_size)
+  void Odometry::setVelocityRollingWindowSize(
+      const size_t velocity_rolling_window_size)
   {
     velocity_rolling_window_size_ = velocity_rolling_window_size;
 
     resetAccumulators();
   }
 
-  void Odometry::setMeasCovarianceParams(double k_l, double k_r)
+  void Odometry::setMeasCovarianceParams(const double k_l, const double k_r)
   {
     k_l_ = k_l;
     k_r_ = k_r;

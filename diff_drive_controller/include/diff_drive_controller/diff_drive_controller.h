@@ -116,6 +116,7 @@ namespace diff_drive_controller
     /// Odometry related:
     ros::Duration publish_period_;
     ros::Time last_odom_publish_time_;
+    ros::Time last_odom_tf_publish_time_;
     bool open_loop_;
 
     bool pose_from_joint_position_;

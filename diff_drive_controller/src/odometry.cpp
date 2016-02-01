@@ -69,8 +69,8 @@ namespace diff_drive_controller
   , right_wheel_radius_(0.0)
   , k_l_(1.0)
   , k_r_(1.0)
-  , left_wheel_old_pos_(0.0)
-  , right_wheel_old_pos_(0.0)
+  , left_position_previous_(0.0)
+  , right_position_previous_(0.0)
   , velocity_rolling_window_size_(velocity_rolling_window_size)
   , v_x_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , v_y_acc_(RollingWindow::window_size = velocity_rolling_window_size)
@@ -101,51 +101,50 @@ namespace diff_drive_controller
     timestamp_ = time;
   }
 
-  bool Odometry::updateCloseLoop(double left_pos, double right_pos, const ros::Time &time)
+  bool Odometry::updateCloseLoop(
+      const double left_position, const double right_position,
+      const double left_velocity, const double right_velocity,
+      const ros::Time &time)
   {
-    /// Estimate velocity of wheels using old and current position:
-    const double left_wheel_est_vel  = left_pos  - left_wheel_old_pos_;
-    const double right_wheel_est_vel = right_pos - right_wheel_old_pos_;
+    /// Estimate wheels position increment using previous and current position:
+    const double left_position_increment  = left_position  - left_position_previous_;
+    const double right_position_increment = right_position - right_position_previous_;
 
-    /// Update old position with current:
-    left_wheel_old_pos_  = left_pos;
-    right_wheel_old_pos_ = right_pos;
+    /// Update previous position with current:
+    left_position_previous_  = left_position;
+    right_position_previous_ = right_position;
 
     /// Update pose and twist:
-    return update(left_wheel_est_vel, right_wheel_est_vel, time);
+    return update(left_position_increment, right_position_increment,
+        left_velocity, right_velocity, time);
   }
 
-  bool Odometry::updateCloseLoopFromVelocity(double left_vel, double right_vel, const ros::Time& time)
+  bool Odometry::updateOpenLoop(const double linear, const double angular,
+      const ros::Time& time)
   {
-    /// Compute time step:
-    const double dt = (time - timestamp_).toSec();
-
-    /// Convert velocities into displacements/movements:
-    left_vel  *= dt;
-    right_vel *= dt;
-
-    /// Update pose and twist:
-    return update(left_vel, right_vel, time);
-  }
-
-  bool Odometry::updateOpenLoop(double linear, double angular, const ros::Time& time)
-  {
-    /// Compute time step:
-    const double dt = (time - timestamp_).toSec();
-
-    /// Convert velocities into displacements/movements:
-    linear  *= dt;
-    angular *= dt;
-
     /// Compute wheel velocities, i.e. Inverse Kinematics:
+    // @todo we should expose a method to compute this:
+    // void inverseKinematics(const double linear, const double angular,
+    //                        double& left, double &right);
+    // note that the input/output can be velocity or relative position
+    // (incremental position/displacement)
+    //
+    // this method would be use here and to 'Compute wheels velocities' in
+    // diff_drive_controller; here is displacement, there is velocity
     const double v_l = (linear - angular * wheel_separation_ / 2.0) / left_wheel_radius_;
     const double v_r = (linear + angular * wheel_separation_ / 2.0) / right_wheel_radius_;
 
+    /// Compute time step:
+    const double dt = (time - timestamp_).toSec();
+
     /// Update pose and twist:
-    return update(v_l, v_r, time);
+    return update(v_l * dt, v_r * dt, v_l, v_r, time);
   }
 
-  bool Odometry::update(double v_l, double v_r, const ros::Time& time)
+  bool Odometry::update(
+      const double dp_l, const double dp_r,
+      const double v_l, const double v_r,
+      const ros::Time& time)
   {
     /// Safe current state:
     const SE2 p0(SE2::Scalar(heading_), SE2::Point(x_, y_));
@@ -153,10 +152,10 @@ namespace diff_drive_controller
     /// Integrate odometry pose:
     IntegrateFunction::PoseJacobian J_pose;
     IntegrateFunction::MeasJacobian J_meas;
-    (*integrate_fun_)(x_, y_, heading_, v_l, v_r, J_pose, J_meas);
+    (*integrate_fun_)(x_, y_, heading_, dp_l, dp_r, J_pose, J_meas);
 
-    /// Update Measurement Covariance:
-    updateMeasCovariance(v_l, v_r);
+    /// Update Measurement Covariance with the wheel joint position increments:
+    updateMeasCovariance(dp_l, dp_r);
 
     /// Update pose covariance:
     pose_covariance_ = J_pose * pose_covariance_ * J_pose.transpose() +
@@ -208,14 +207,20 @@ namespace diff_drive_controller
     /// Integrate odometry twist:
     /// Note that this is done this way because it isn't trivial to compute the
     /// Jacobians for the relative transformation between p0 and p1
+    const double dp_l = v_l * dt;
+    const double dp_r = v_r * dt;
+
     IntegrateFunction::PoseJacobian J_dummy;
     IntegrateFunction::MeasJacobian J_meas;
     double x = 0.0, y = 0.0, yaw = 0.0;
-    (*integrate_fun_)(x, y, yaw, v_l, v_r, J_dummy, J_meas);
+    (*integrate_fun_)(x, y, yaw, dp_l, dp_r, J_dummy, J_meas);
 
     /// Include the Jacobian of dividing by dt, which is equivalent to divide
     /// all the elements of the other Jacobian by dt:
     J_meas /= dt;
+
+    /// Update Measurement Covariance with the wheel joint velocites:
+    updateMeasCovariance(dp_l, dp_r);
 
     /// Update twist covariance:
     twist_covariance_ = J_meas * meas_covariance_ * J_meas.transpose();

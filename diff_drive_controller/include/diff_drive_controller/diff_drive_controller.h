@@ -117,7 +117,12 @@ namespace diff_drive_controller
     ros::Duration publish_period_;
     ros::Time last_odom_publish_time_;
     bool open_loop_;
-    bool position_feedback_;
+
+    bool pose_from_joint_position_;
+    bool twist_from_joint_position_;
+
+    bool use_position_;
+    bool use_velocity_;
 
     /// Hardware handles:
     std::vector<hardware_interface::JointHandle> left_wheel_joints_;
@@ -181,6 +186,9 @@ namespace diff_drive_controller
 
     struct DynamicParams
     {
+      bool pose_from_joint_position;
+      bool twist_from_joint_position;
+
       double wheel_separation_multiplier;
       double left_wheel_radius_multiplier;
       double right_wheel_radius_multiplier;
@@ -192,7 +200,9 @@ namespace diff_drive_controller
       bool publish_cmd_vel_limited;
 
       DynamicParams()
-        : wheel_separation_multiplier(1.0)
+        : pose_from_joint_position(true)
+        , twist_from_joint_position(false)
+        , wheel_separation_multiplier(1.0)
         , left_wheel_radius_multiplier(1.0)
         , right_wheel_radius_multiplier(1.0)
         , k_l(1.0)

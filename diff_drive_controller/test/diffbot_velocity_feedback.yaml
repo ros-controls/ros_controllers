@@ -1,2 +1,2 @@
 diffbot_controller:
-  position_feedback: false
+  pose_from_joint_position: false

@@ -180,8 +180,11 @@ namespace diff_drive_controller
     double left_velocity_estimated_average_previous_;
     double right_velocity_estimated_average_previous_;
 
-    double left_velocity_command_previous_;
-    double right_velocity_command_previous_;
+    double left_velocity_desired_previous_;
+    double right_velocity_desired_previous_;
+
+    double left_velocity_limited_previous_;
+    double right_velocity_limited_previous_;
 
     /// Dynamic reconfigure server related:
     typedef dynamic_reconfigure::Server<DiffDriveControllerConfig> ReconfigureServer;

@@ -140,6 +140,8 @@ namespace diff_drive_controller
     , wheel_joints_size_(0)
     , publish_cmd_vel_limited_(false)
     , publish_state_(false)
+    , control_frequency_desired_(0.0)
+    , control_period_desired_(0.0)
   {
   }
 
@@ -262,6 +264,19 @@ namespace diff_drive_controller
         "Publishing the joint trajectory controller state is "
         << (publish_state_?"enabled":"disabled"));
 
+    controller_nh.param("control_frequency_desired", control_frequency_desired_, control_frequency_desired_);
+    if (control_frequency_desired_ > 0.0)
+    {
+      control_period_desired_ = 1.0 / control_frequency_desired_;
+
+      ROS_INFO_STREAM_NAMED(name_, "Using desired/expected "
+          << control_frequency_desired_ << "Hz control frequency.");
+    }
+    else
+    {
+      ROS_INFO_STREAM_NAMED(name_, "Using real control frequency.");
+    }
+
     // Velocity and acceleration limits:
     controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
     controller_nh.param("linear/x/has_acceleration_limits", limiter_lin_.has_acceleration_limits, limiter_lin_.has_acceleration_limits);
@@ -329,6 +344,8 @@ namespace diff_drive_controller
 
     dynamic_params_struct_.publish_state = publish_state_;
     dynamic_params_struct_.publish_cmd_vel_limited = publish_cmd_vel_limited_;
+
+    dynamic_params_struct_.control_frequency_desired = control_frequency_desired_;
 
     dynamic_params_.writeFromNonRT(dynamic_params_struct_);
 
@@ -478,6 +495,9 @@ namespace diff_drive_controller
     publish_state_ = dynamic_params.publish_state;
     publish_cmd_vel_limited_ = dynamic_params.publish_cmd_vel_limited;
 
+    control_frequency_desired_ = dynamic_params.control_frequency_desired;
+    control_period_desired_ = control_frequency_desired_ > 0.0 ? 1.0 / control_frequency_desired_ : 0.0;
+
     // Apply multipliers:
     const double ws  = wheel_separation_multiplier_   * wheel_separation_;
     const double wrl = left_wheel_radius_multiplier_  * wheel_radius_;
@@ -529,18 +549,22 @@ namespace diff_drive_controller
       }
     }
 
+    // Compute/Set control period and frequency (desired/expected or real):
+    const double control_period    = control_period_desired_    > 0.0 ? control_period_desired_    : period.toSec();
+    const double control_frequency = control_frequency_desired_ > 0.0 ? control_frequency_desired_ : 1.0 / control_period;
+
     // Compute wheel joints positions estimated from the velocities:
     for (size_t i = 0; i < wheel_joints_size_; ++i)
     {
-      left_positions_estimated_[i] += left_velocities_[i] * period.toSec();
-      right_positions_estimated_[i] += right_velocities_[i] * period.toSec();
+      left_positions_estimated_[i] += left_velocities_[i] * control_period;
+      right_positions_estimated_[i] += right_velocities_[i] * control_period;
     }
 
     // Compute wheel joints velocities estimated from the positions:
     for (size_t i = 0; i < wheel_joints_size_; ++i)
     {
-      left_velocities_estimated_[i] = (left_positions_[i] - left_positions_previous_[i]) / period.toSec();
-      right_velocities_estimated_[i] = (right_positions_[i] - right_positions_previous_[i]) / period.toSec();
+      left_velocities_estimated_[i] = (left_positions_[i] - left_positions_previous_[i]) * control_frequency;
+      right_velocities_estimated_[i] = (right_positions_[i] - right_positions_previous_[i]) * control_frequency;
     }
 
     // Compute wheel joints poisitions average per side:
@@ -578,7 +602,7 @@ namespace diff_drive_controller
     }
 
     // Publish odometry message:
-    const ros::Duration half_period(0.5 * period.toSec());
+    const ros::Duration half_period(0.5 * control_period);
     if (last_odom_publish_time_ + publish_period_ < time + half_period &&
         odom_pub_->trylock())
     {
@@ -635,11 +659,9 @@ namespace diff_drive_controller
     }
 
     // Limit velocities and accelerations:
-    const double cmd_dt(period.toSec());
-
     // @todo add an option to limit the velocity considering the actual velocity
-    limiter_lin_.limit(curr_cmd.lin, last0_cmd_.lin, last1_cmd_.lin, cmd_dt);
-    limiter_ang_.limit(curr_cmd.ang, last0_cmd_.ang, last1_cmd_.ang, cmd_dt);
+    limiter_lin_.limit(curr_cmd.lin, last0_cmd_.lin, last1_cmd_.lin, control_period);
+    limiter_ang_.limit(curr_cmd.ang, last0_cmd_.ang, last1_cmd_.ang, control_period);
 
     last1_cmd_ = last0_cmd_;
     last0_cmd_ = curr_cmd;
@@ -677,13 +699,13 @@ namespace diff_drive_controller
         for (size_t i = 0; i < wheel_joints_size_; ++i)
         {
           // Desired state:
-          state_pub_->msg_.desired.accelerations[i] = (left_velocity_command - left_velocity_command_previous_) / period.toSec();
+          state_pub_->msg_.desired.accelerations[i] = (left_velocity_command - left_velocity_command_previous_) * control_frequency;
           state_pub_->msg_.desired.velocities[i] = left_velocity_command;
-          state_pub_->msg_.desired.positions[i] += left_velocity_command * period.toSec();
+          state_pub_->msg_.desired.positions[i] += left_velocity_command * control_period;
           state_pub_->msg_.desired.effort[i] = std::numeric_limits<double>::quiet_NaN();
 
           // Actual state:
-          const double left_acceleration = (left_velocities_[i] - left_velocities_previous_[i]) / period.toSec();
+          const double left_acceleration = (left_velocities_[i] - left_velocities_previous_[i]) * control_frequency;
 
           state_pub_->msg_.actual.accelerations[i] = left_acceleration;
           state_pub_->msg_.actual.velocities[i] = left_velocities_[i];
@@ -691,7 +713,7 @@ namespace diff_drive_controller
           state_pub_->msg_.actual.effort[i] = left_wheel_joints_[i].getEffort();
 
           // Actual estimated state:
-          const double left_acceleration_estimated = (left_velocities_estimated_[i] - left_velocities_estimated_previous_[i]) / period.toSec();
+          const double left_acceleration_estimated = (left_velocities_estimated_[i] - left_velocities_estimated_previous_[i]) * control_frequency;
 
           state_pub_->msg_.actual_estimated.accelerations[i] = left_acceleration_estimated;
           state_pub_->msg_.actual_estimated.velocities[i] = left_velocities_estimated_[i];
@@ -703,13 +725,13 @@ namespace diff_drive_controller
         for (size_t i = 0, j = wheel_joints_size_; i < wheel_joints_size_; ++i, ++j)
         {
           // Desired state:
-          state_pub_->msg_.desired.accelerations[j] = (right_velocity_command - right_velocity_command_previous_) / period.toSec();
+          state_pub_->msg_.desired.accelerations[j] = (right_velocity_command - right_velocity_command_previous_) * control_frequency;
           state_pub_->msg_.desired.velocities[j] = right_velocity_command;
-          state_pub_->msg_.desired.positions[j] += right_velocity_command * period.toSec();
+          state_pub_->msg_.desired.positions[j] += right_velocity_command * control_period;
           state_pub_->msg_.desired.effort[j] = std::numeric_limits<double>::quiet_NaN();
 
           // Actual state:
-          const double right_acceleration = (right_velocities_[i] - right_velocities_previous_[i]) / period.toSec();
+          const double right_acceleration = (right_velocities_[i] - right_velocities_previous_[i]) * control_frequency;
 
           state_pub_->msg_.actual.accelerations[j] = right_acceleration;
           state_pub_->msg_.actual.velocities[j] = right_velocities_[i];
@@ -717,7 +739,7 @@ namespace diff_drive_controller
           state_pub_->msg_.actual.effort[j] = right_wheel_joints_[i].getEffort();
 
           // Actual estimated state:
-          const double right_acceleration_estimated = (right_velocities_estimated_[i] - right_velocities_estimated_previous_[i]) / period.toSec();
+          const double right_acceleration_estimated = (right_velocities_estimated_[i] - right_velocities_estimated_previous_[i]) * control_frequency;
 
           state_pub_->msg_.actual_estimated.accelerations[j] = right_acceleration_estimated;
           state_pub_->msg_.actual_estimated.velocities[j] = right_velocities_estimated_[i];
@@ -727,14 +749,14 @@ namespace diff_drive_controller
 
         // Set left wheel joints actual (and actual estimated) side average
         // state:
-        const double left_acceleration_average = (left_velocity_average - left_velocity_average_previous_) / period.toSec();
+        const double left_acceleration_average = (left_velocity_average - left_velocity_average_previous_) * control_frequency;
 
         state_pub_->msg_.actual_side_average.accelerations[0] = left_acceleration_average;
         state_pub_->msg_.actual_side_average.velocities[0] = left_velocity_average;
         state_pub_->msg_.actual_side_average.positions[0] = left_position_average;
         state_pub_->msg_.actual_side_average.effort[0] = state_pub_->msg_.actual.effort[0];
 
-        const double left_acceleration_estimated_average = (left_velocity_estimated_average - left_velocity_estimated_average_previous_) / period.toSec();
+        const double left_acceleration_estimated_average = (left_velocity_estimated_average - left_velocity_estimated_average_previous_) * control_frequency;
 
         state_pub_->msg_.actual_estimated_side_average.accelerations[0] = left_acceleration_estimated_average;
         state_pub_->msg_.actual_estimated_side_average.velocities[0] = left_velocity_estimated_average;
@@ -743,14 +765,14 @@ namespace diff_drive_controller
 
         // Set right wheel joints actual (and actual estimated) side average
         // state:
-        const double right_acceleration_average = (right_velocity_average - right_velocity_average_previous_) / period.toSec();
+        const double right_acceleration_average = (right_velocity_average - right_velocity_average_previous_) * control_frequency;
 
         state_pub_->msg_.actual_side_average.accelerations[1] = right_acceleration_average;
         state_pub_->msg_.actual_side_average.velocities[1] = right_velocity_average;
         state_pub_->msg_.actual_side_average.positions[1] = right_position_average;
         state_pub_->msg_.actual_side_average.effort[1] = state_pub_->msg_.actual.effort[wheel_joints_size_];
 
-        const double right_acceleration_estimated_average = (right_velocity_estimated_average - right_velocity_estimated_average_previous_) / period.toSec();
+        const double right_acceleration_estimated_average = (right_velocity_estimated_average - right_velocity_estimated_average_previous_) * control_frequency;
 
         state_pub_->msg_.actual_estimated_side_average.accelerations[1] = right_acceleration_estimated_average;
         state_pub_->msg_.actual_estimated_side_average.velocities[1] = right_velocity_estimated_average;
@@ -797,7 +819,7 @@ namespace diff_drive_controller
         }
 
         state_pub_->msg_.desired.time_from_start = ros::Duration(dt);
-        state_pub_->msg_.actual.time_from_start = period;
+        state_pub_->msg_.actual.time_from_start = ros::Duration(control_period);
         state_pub_->msg_.error.time_from_start = state_pub_->msg_.actual.time_from_start;
 
         state_pub_->msg_.actual_estimated.time_from_start = state_pub_->msg_.actual.time_from_start;
@@ -808,6 +830,10 @@ namespace diff_drive_controller
 
         state_pub_->msg_.actual_estimated_side_average.time_from_start = state_pub_->msg_.actual.time_from_start;
         state_pub_->msg_.error_estimated_side_average.time_from_start = state_pub_->msg_.actual_estimated_side_average.time_from_start;
+
+        state_pub_->msg_.control_period_desired = control_period_desired_;
+        state_pub_->msg_.control_period_actual  = period.toSec();
+        state_pub_->msg_.control_period_error   = state_pub_->msg_.control_period_desired - state_pub_->msg_.control_period_actual;
 
         state_pub_->unlockAndPublish();
       }
@@ -904,6 +930,8 @@ namespace diff_drive_controller
     dynamic_params_struct_.publish_state = config.publish_state;
     dynamic_params_struct_.publish_cmd_vel_limited = config.publish_cmd_vel_limited;
 
+    dynamic_params_struct_.control_frequency_desired = config.control_frequency_desired;
+
     dynamic_params_.writeFromNonRT(dynamic_params_struct_);
 
     ROS_DEBUG_STREAM_NAMED(name_,
@@ -923,6 +951,10 @@ namespace diff_drive_controller
                           "Reconfigured Debug Publishers params. "
                           << "state: " << ( dynamic_params_struct_.publish_state ? "ON" : "OFF" ) << ", "
                           << "cmd_vel_limited: " << ( dynamic_params_struct_.publish_cmd_vel_limited ? "ON" : "OFF" ));
+
+    ROS_DEBUG_STREAM_NAMED(name_,
+                          "Reconfigured Control params. "
+                          << "desired/expected control frequency: " << dynamic_params_struct_.control_frequency_desired << "Hz");
   }
 
   bool DiffDriveController::getWheelNames(ros::NodeHandle& controller_nh,

@@ -26,3 +26,8 @@ trajectory_msgs/JointTrajectoryPoint error_side_average
 # joints, but estimated:
 trajectory_msgs/JointTrajectoryPoint actual_estimated_side_average
 trajectory_msgs/JointTrajectoryPoint error_estimated_side_average
+
+# Control period:
+float64 control_period_desired
+float64 control_period_actual
+float64 control_period_error

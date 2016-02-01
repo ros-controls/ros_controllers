@@ -131,6 +131,8 @@ namespace diff_drive_controller
     //
     // this method would be use here and to 'Compute wheels velocities' in
     // diff_drive_controller; here is displacement, there is velocity
+    //double v_l, v_r;
+    //inverseKinematics(linear, angular, v_l, v_r);
     const double v_l = (linear - angular * wheel_separation_ / 2.0) / left_wheel_radius_;
     const double v_r = (linear + angular * wheel_separation_ / 2.0) / right_wheel_radius_;
 

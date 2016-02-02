@@ -58,12 +58,16 @@ namespace diff_drive_controller
 
   Odometry::Odometry(size_t velocity_rolling_window_size)
   : timestamp_(0.0)
+  , timestamp_twist_(0.0)
   , x_(0.0)
   , y_(0.0)
   , heading_(0.0)
   , v_x_(0.0)
   , v_y_(0.0)
   , v_yaw_(0.0)
+  , d_x_(0.0)
+  , d_y_(0.0)
+  , d_yaw_(0.0)
   , wheel_separation_(0.0)
   , left_wheel_radius_(0.0)
   , right_wheel_radius_(0.0)
@@ -86,19 +90,19 @@ namespace diff_drive_controller
     minimum_twist_covariance_.setIdentity();
     minimum_twist_covariance_ *= DEFAULT_MINIMUM_TWIST_COVARIANCE;
 
-    // There's no need to initialize the twist covariance because it's updated
-    // from scratch on each cycle, but it's safer to initialize it anyway:
     twist_covariance_ = minimum_twist_covariance_;
 
     pose_covariance_.setIdentity();
     pose_covariance_ *= DEFAULT_POSE_COVARIANCE;
+
+    incremental_pose_covariance_.setZero();
   }
 
   void Odometry::init(const ros::Time& time)
   {
     // Reset accumulators and timestamp:
     resetAccumulators();
-    timestamp_ = time;
+    timestamp_ = timestamp_twist_ = time;
   }
 
   bool Odometry::updateCloseLoop(
@@ -138,6 +142,7 @@ namespace diff_drive_controller
 
     /// Compute time step:
     const double dt = (time - timestamp_).toSec();
+    timestamp_ = time;
 
     /// Update pose and twist:
     return update(v_l * dt, v_r * dt, v_l, v_r, time);
@@ -148,9 +153,6 @@ namespace diff_drive_controller
       const double v_l, const double v_r,
       const ros::Time& time)
   {
-    /// Safe current state:
-    const SE2 p0(SE2::Scalar(heading_), SE2::Point(x_, y_));
-
     /// Integrate odometry pose:
     IntegrateFunction::PoseJacobian J_pose;
     IntegrateFunction::MeasJacobian J_meas;
@@ -163,74 +165,68 @@ namespace diff_drive_controller
     pose_covariance_ = J_pose * pose_covariance_ * J_pose.transpose() +
                        J_meas * meas_covariance_ * J_meas.transpose();
 
-    /// Safe new state:
-    const SE2 p1(SE2::Scalar(heading_), SE2::Point(x_, y_));
+    /// Update incremental pose:
+    // @todo in principle there's no need to use v_l, v_r at all, but this
+    // should be decided from outside, so here we should use:
+    // updateIncrementalPose(v_l * dt, v_r * dt);
+    // which could be equivalent to dp_l, dp_r or not.
+    // Note that we need to obtain dt from the time (which it's not used now)
+    updateIncrementalPose(dp_l, dp_r);
 
-    /// Update twist:
-    return updateTwist(p0, p1, v_l, v_r, time);
+    return true;
   }
 
-  bool Odometry::updateTwist(const SE2& p0, const SE2& p1,
-      double v_l, double v_r, const ros::Time& time)
+  void Odometry::updateIncrementalPose(const double dp_l, const double dp_r)
+  {
+    /// Integrate incremental odometry pose:
+    IntegrateFunction::PoseJacobian J_pose;
+    IntegrateFunction::MeasJacobian J_meas;
+    (*integrate_fun_)(d_x_, d_y_, d_yaw_, dp_l, dp_r, J_pose, J_meas);
+
+    /// Update Measurement Covariance with the wheel joint position increments:
+    updateMeasCovariance(dp_l, dp_r);
+
+    /// Update incremental pose covariance:
+    incremental_pose_covariance_ =
+        J_pose * incremental_pose_covariance_ * J_pose.transpose() +
+        J_meas * meas_covariance_ * J_meas.transpose();
+  }
+
+  bool Odometry::updateTwist(const ros::Time& time)
   {
     /// We cannot estimate the speed with very small time intervals:
-    const double dt = (time - timestamp_).toSec();
+    const double dt = (time - timestamp_twist_).toSec();
     if (dt < 0.0001)
+    {
       return false;
+    }
 
-    timestamp_ = time;
-
-    /// Compute relative transformation:
-    const SE2 p = p0.inverse() * p1;
-
-    /// Retrieve rotation and translation:
-    /// Note that we don't use the log from SE(2) because we didn't use exp
-    /// to create p0 and p1.
-    /// So instead of:
-    ///
-    ///   const SE2::Tangent v = p.log();
-    ///
-    /// we use the following:
-    const SE2::ConstTranslationReference t = p.translation();
-
-    v_x_   = t[0];
-    v_y_   = t[1];
-    v_yaw_ = p.so2().log();
+    timestamp_twist_ = time;
 
     /// Estimate speeds using a rolling mean to filter them out:
-    v_x_acc_(v_x_/dt);
-    v_y_acc_(v_y_/dt);
-    v_yaw_acc_(v_yaw_/dt);
+    const double f = 1.0 / dt;
+
+    v_x_acc_(d_x_ * f);
+    v_y_acc_(d_y_ * f);
+    v_yaw_acc_(d_yaw_ * f);
 
     v_x_   = bacc::rolling_mean(v_x_acc_);
     v_y_   = bacc::rolling_mean(v_y_acc_);
     v_yaw_ = bacc::rolling_mean(v_yaw_acc_);
 
-    /// Integrate odometry twist:
-    /// Note that this is done this way because it isn't trivial to compute the
-    /// Jacobians for the relative transformation between p0 and p1
-    const double dp_l = v_l * dt;
-    const double dp_r = v_r * dt;
-
-    IntegrateFunction::PoseJacobian J_dummy;
-    IntegrateFunction::MeasJacobian J_meas;
-    double x = 0.0, y = 0.0, yaw = 0.0;
-    (*integrate_fun_)(x, y, yaw, dp_l, dp_r, J_dummy, J_meas);
-
-    /// Include the Jacobian of dividing by dt, which is equivalent to divide
-    /// all the elements of the other Jacobian by dt:
-    J_meas /= dt;
-
-    /// Update Measurement Covariance with the wheel joint velocites:
-    updateMeasCovariance(dp_l, dp_r);
-
     /// Update twist covariance:
-    twist_covariance_ = J_meas * meas_covariance_ * J_meas.transpose();
+    IntegrateFunction::PoseJacobian J_twist =
+       IntegrateFunction::PoseJacobian::Identity() * f;
+    twist_covariance_ = J_twist * incremental_pose_covariance_ * J_twist.transpose();
 
     /// Add minimum (diagonal) covariance to avoid ill-conditioned covariance
     /// matrices, i.e. with a very large condition number, which would make
     /// inverse or Cholesky decomposition fail on many algorithms:
     twist_covariance_ += minimum_twist_covariance_;
+
+    /// Reset incremental pose and its covariance:
+    d_x_ = d_y_ = d_yaw_ = 0.0;
+    incremental_pose_covariance_.setZero();
 
     return true;
   }

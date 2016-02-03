@@ -22,8 +22,6 @@ find_package(Boost REQUIRED
 
 find_package(Eigen REQUIRED)
 
-find_package(sophus REQUIRED)
-
 find_package(Ceres REQUIRED)
 
 add_message_files(

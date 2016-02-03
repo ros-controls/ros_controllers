@@ -44,7 +44,6 @@
 
 #include <ros/time.h>
 #include <Eigen/Core>
-#include <sophus/se2.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/rolling_mean.hpp>
@@ -65,9 +64,6 @@ namespace diff_drive_controller
   class Odometry
   {
   public:
-    /// SO(2) and SE(2) Lie Groups:
-    typedef Sophus::SE2d SE2;
-
     /// Covariance matrices:
     typedef Eigen::Matrix3d Covariance;
 

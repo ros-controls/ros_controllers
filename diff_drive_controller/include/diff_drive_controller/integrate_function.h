@@ -56,7 +56,6 @@ namespace diff_drive_controller
 
       /**
        * \brief Constructor
-       * \param [in] functor Integrate functor
        */
       IntegrateFunction()
       {}

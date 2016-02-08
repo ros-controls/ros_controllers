@@ -333,7 +333,7 @@ TEST(OdometryTest, testIntegrateMotionForwardFromInitial)
     J_twist * twist_covariance_1_corrected * J_twist.transpose();
 
   // Check new pose is equal to the expected one:
-  EXPECT_EQ(x_1, x);
+  EXPECT_NEAR(x_1, x, std::numeric_limits<double>::epsilon());
   EXPECT_EQ(y_1, y);
   EXPECT_EQ(yaw_1, yaw);
 
@@ -438,8 +438,8 @@ TEST(OdometryTest, testIntegrateMotionForwardFromNotInitial)
   // Note that at this point the pose is not computed using the (internal)
   // incremental pose, so we have an error greater than the double eps!
   EXPECT_NEAR(x_1, x, 1e-14);
-  EXPECT_NEAR(y_1, y, std::numeric_limits<double>::epsilon());
-  EXPECT_NEAR(yaw_1, yaw, 1e-14);
+  EXPECT_NEAR(y_1, y, 1e-14);
+  EXPECT_NEAR(yaw_1, yaw, 1e-13);
 
   // Check all pose and twist covariances are valid:
   testCovariance(pose_covariance_0, POSE_COVARIANCE_MAX_CONDITION_NUMBER);

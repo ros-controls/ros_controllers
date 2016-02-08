@@ -1,4 +1,6 @@
 <launch>
+  <arg name="plot" default="false"/>
+
   <!-- Load diffbot model -->
   <param name="robot_description"
          command="$(find xacro)/xacro.py '$(find diff_drive_controller)/test/diffbot.xacro'" />
@@ -17,15 +19,15 @@
         args="diffbot_controller" />
 
   <!-- rqt_plot monitoring -->
-  <!--
-  <node name="diffbot_pos_monitor"
-        pkg="rqt_plot"
-        type="rqt_plot"
-        args="/diffbot_controller/odom/pose/pose/position/x" />
+  <group if="$(arg plot)">
+    <node name="diffbot_pos_monitor"
+          pkg="rqt_plot"
+          type="rqt_plot"
+          args="/diffbot_controller/odom/pose/pose/position/x" />
 
-  <node name="diffbot_vel_monitor"
-        pkg="rqt_plot"
-        type="rqt_plot"
-        args="/diffbot_controller/odom/twist/twist/linear/x" />
-  -->
+    <node name="diffbot_vel_monitor"
+          pkg="rqt_plot"
+          type="rqt_plot"
+          args="/diffbot_controller/odom/twist/twist/linear/x /diffbot_controller/odom/twist/twist/linear/y /diffbot_controller/odom/twist/twist/angular/z" />
+  </group>
 </launch>

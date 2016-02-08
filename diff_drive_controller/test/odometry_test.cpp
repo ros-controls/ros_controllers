@@ -87,7 +87,7 @@ static void moveOdometry(diff_drive_controller::Odometry& odometry,
     right_position += right_position_increment;
 
     odometry.updateCloseLoop(left_position, right_position,
-        left_velocity, right_velocity, t);
+        left_velocity, right_velocity, control_period);
 
     t += ros::Duration(control_period);
   }

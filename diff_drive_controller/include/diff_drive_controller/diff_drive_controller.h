@@ -190,6 +190,8 @@ namespace diff_drive_controller
     typedef dynamic_reconfigure::Server<DiffDriveControllerConfig> ReconfigureServer;
     boost::shared_ptr<ReconfigureServer> cfg_server_;
 
+    static const DiffDriveControllerConfig config_default_;
+
     /// Timing related:
     boost::timer::cpu_timer cpu_timer_;
 

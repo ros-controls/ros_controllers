@@ -120,29 +120,30 @@ static bool getWheelRadius(
 
 namespace diff_drive_controller
 {
+  const DiffDriveControllerConfig DiffDriveController::config_default_ = DiffDriveControllerConfig::__getDefault__();
 
   DiffDriveController::DiffDriveController()
     : open_loop_(false)
-    , pose_from_joint_position_(true)
-    , twist_from_joint_position_(false)
+    , pose_from_joint_position_(config_default_.pose_from_joint_position)
+    , twist_from_joint_position_(config_default_.twist_from_joint_position)
     , command_struct_()
     , dynamic_params_struct_()
     , wheel_separation_(0.0)
     , wheel_radius_(0.0)
-    , wheel_separation_multiplier_(1.0)
-    , left_wheel_radius_multiplier_(1.0)
-    , right_wheel_radius_multiplier_(1.0)
-    , k_l_(0.01)
-    , k_r_(0.01)
-    , wheel_resolution_(0.0)
+    , wheel_separation_multiplier_(config_default_.wheel_separation_multiplier)
+    , left_wheel_radius_multiplier_(config_default_.left_wheel_radius_multiplier)
+    , right_wheel_radius_multiplier_(config_default_.right_wheel_radius_multiplier)
+    , k_l_(config_default_.k_l)
+    , k_r_(config_default_.k_r)
+    , wheel_resolution_(config_default_.wheel_resolution)
     , cmd_vel_timeout_(0.5)
     , base_frame_id_("base_link")
     , enable_odom_tf_(true)
     , wheel_joints_size_(0)
-    , publish_cmd_vel_limited_(false)
-    , publish_state_(false)
-    , control_frequency_desired_(0.0)
-    , control_period_desired_(0.0)
+    , publish_cmd_vel_limited_(config_default_.publish_cmd_vel_limited)
+    , publish_state_(config_default_.publish_state)
+    , control_frequency_desired_(config_default_.control_frequency_desired)
+    , control_period_desired_(1.0 / control_frequency_desired_)
   {
   }
 
@@ -277,7 +278,7 @@ namespace diff_drive_controller
 
     controller_nh.param("publish_state", publish_state_, publish_state_);
     ROS_INFO_STREAM_NAMED(name_,
-        "Publishing the joint trajectory controller state is "
+        "Publishing the controller state is "
         << (publish_state_?"enabled":"disabled"));
 
     controller_nh.param("control_frequency_desired", control_frequency_desired_, control_frequency_desired_);
@@ -370,8 +371,29 @@ namespace diff_drive_controller
 
     setOdomPubFields(root_nh, controller_nh);
 
-    // Set dynamic reconfigure server callback:
+    // Set dynamic reconfigure params defaults to the static params provided:
+    DiffDriveControllerConfig config;
+    config.pose_from_joint_position = pose_from_joint_position_;
+    config.twist_from_joint_position = twist_from_joint_position_;
+
+    config.wheel_separation_multiplier = wheel_separation_multiplier_;
+
+    config.left_wheel_radius_multiplier = left_wheel_radius_multiplier_;
+    config.right_wheel_radius_multiplier = right_wheel_radius_multiplier_;
+
+    config.k_l = k_l_;
+    config.k_r = k_r_;
+
+    config.wheel_resolution = wheel_resolution_;
+
+    config.publish_state = publish_state_;
+    config.publish_cmd_vel_limited = publish_cmd_vel_limited_;
+
+    dynamic_params_struct_.control_frequency_desired = config.control_frequency_desired;
+
+    // Set dynamic reconfigure server config and callback:
     cfg_server_.reset(new ReconfigureServer(controller_nh));
+    cfg_server_->updateConfig(config);
     cfg_server_->setCallback(
         boost::bind(&DiffDriveController::reconfigureCallback, this, _1, _2));
 

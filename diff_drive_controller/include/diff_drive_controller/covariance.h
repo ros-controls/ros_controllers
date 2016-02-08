@@ -222,21 +222,22 @@ static void msgToCovariance(
 }
 
 /**
- * \brief Check is a matrix M is symmetric, i.e. M' M = Id or low(M) = up(M)
+ * \brief Check is a matrix M is symmetric, i.e. M' M == Id or low(M) == up(M)
  * where low and up are the lower and upper triangular matrices of M
  * \param [in] M Square matrix
  * \return True if the matrix is symmetric
  */
 template <typename T, int N>
-bool isSymmetric(const Eigen::Matrix<T, N, N>& M)
+bool isSymmetric(const Eigen::Matrix<T, N, N>& M,
+    const double eps = std::numeric_limits<T>::epsilon())
 {
-  // Note that triangularView doesn't help to much to simplify the check,
-  // so we iterate on the lower and upper triangular matrixes directly:
+  // Note that triangularView doesn't help too much to simplify the check,
+  // so we iterate on the lower and upper triangular matrices directly:
   for (size_t i = 0; i < N - 1; ++i)
   {
     for (size_t j = i + 1; j < N; ++j)
     {
-      if (std::abs(M(i, j) - M(j, i)) > std::numeric_limits<T>::epsilon())
+      if (std::abs(M(i, j) - M(j, i)) > eps)
       {
         return false;
       }
@@ -339,7 +340,9 @@ T conditionNumber(const Eigen::Matrix<T, N, N>& M)
 
   const T s_min = svd.singularValues().minCoeff();
 
-  return s_min == 0 ?
+  // Note that the singular values computed with Jacobi SVD are all positive, so
+  // we don't need to use abs().
+  return s_min == T(0) ?
          std::numeric_limits<T>::infinity() :
          svd.singularValues().maxCoeff() / s_min;
 }

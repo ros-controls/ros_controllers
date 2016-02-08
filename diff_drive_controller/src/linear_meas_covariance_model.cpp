@@ -66,6 +66,8 @@ LinearMeasCovarianceModel::compute(const double dp_l, const double dp_r)
   /// Set covariance matrix (diagonal):
   meas_covariance_.diagonal() << dp_var_l + dp_var_avg,
                                  dp_var_r + dp_var_avg;
+
+  return meas_covariance_;
 }
 
 }  // namespace diff_drive_controller

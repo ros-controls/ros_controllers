@@ -629,11 +629,11 @@ namespace diff_drive_controller
     // Update odometry:
     if (open_loop_)
     {
-      odometry_.updateOpenLoop(last0_cmd_.lin, last0_cmd_.ang, time);
+      odometry_.updateOpenLoop(last0_cmd_.lin, last0_cmd_.ang, control_period);
     }
     else
     {
-      odometry_.updateCloseLoop(left_position, right_position, left_velocity, right_velocity, time);
+      odometry_.updateCloseLoop(left_position, right_position, left_velocity, right_velocity, control_period);
     }
 
     // Publish odometry message:

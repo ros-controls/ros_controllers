@@ -44,7 +44,6 @@
 
 #include <ros/time.h>
 #include <Eigen/Core>
-#include <sophus/se2.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/rolling_mean.hpp>
@@ -65,9 +64,6 @@ namespace diff_drive_controller
   class Odometry
   {
   public:
-    /// SO(2) and SE(2) Lie Groups:
-    typedef Sophus::SE2d SE2;
-
     /// Covariance matrices:
     typedef Eigen::Matrix3d Covariance;
 
@@ -104,24 +100,24 @@ namespace diff_drive_controller
      * \param[in] right_position Right wheel position [rad]
      * \param[in] left_velocity  Left  wheel velocity [rad/s]
      * \param[in] right_velocity Right wheel velocity [rad/s]
-     * \param[in] time           Current time
+     * \param[in] dt             Time step (control period) [s]
      * \return true if the odometry is actually updated
      */
     bool updateCloseLoop(
         const double left_position, const double right_position,
         const double left_velocity, const double right_velocity,
-        const ros::Time &time);
+        const double dt);
 
     /**
      * \brief Updates the odometry class with latest velocity command, i.e. in
      * open loop
      * \param[in] linear  Linear  velocity [m/s]
      * \param[in] angular Angular velocity [rad/s]
-     * \param[in] time    Current time
+     * \param[in] dt      Time step (control period) [s]
      * \return true if the odometry is actually updated
      */
     bool updateOpenLoop(const double linear, const double angular,
-        const ros::Time &time);
+        const double dt);
 
     /**
      * \brief Update the odometry twist with the (internal) incremental pose,
@@ -273,11 +269,11 @@ namespace diff_drive_controller
      * \param[in] dp_r  Right wheel position increment [rad]
      * \param[in] v_l   Left  wheel velocity [rad/s]
      * \param[in] v_r   Right wheel velocity [rad/s]
-     * \param[in] time  Current time
+     * \param[in] dt    Time step (control period) [s]
      * \return true if the odometry is actually updated
      */
     bool update(const double dp_l, const double dp_r,
-        const double v_l, const double v_r, const ros::Time& time);
+        const double v_l, const double v_r, const double dt);
 
     /**
      * \brief Updates the (internal) incremental odometry with latest left and
@@ -291,9 +287,6 @@ namespace diff_drive_controller
      * \brief Reset linear and angular accumulators
      */
     void resetAccumulators();
-
-    /// Current timestamp:
-    ros::Time timestamp_;
 
     /// Timestamp for last twist computed, ie. since when the (internal)
     /// incremental pose has been computed:

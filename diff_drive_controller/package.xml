@@ -26,7 +26,6 @@
   <build_depend>tf</build_depend>
   <build_depend>urdf</build_depend>
   <build_depend>eigen</build_depend>
-  <build_depend>sophus</build_depend>
   <build_depend>libceres-dev</build_depend>
   <build_depend>roslint</build_depend>
   <build_depend>boost</build_depend>

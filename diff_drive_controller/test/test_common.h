@@ -26,10 +26,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 /// \author Bence Magyar
+/// \author Enrique Fernandez
 
 #include <cmath>
 
-#include <gtest/gtest.h>
+#include <limits>
 
 #include <ros/ros.h>
 
@@ -45,6 +46,8 @@
 #include <Eigen/Dense>
 
 #include <std_srvs/Empty.h>
+
+#include "gtest_common.h"
 
 // Floating-point value comparison threshold
 const double EPS = 0.01;

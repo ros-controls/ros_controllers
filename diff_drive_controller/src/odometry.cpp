@@ -60,8 +60,7 @@ namespace diff_drive_controller
   const double Odometry::DEFAULT_POSE_COVARIANCE = 1e-6;
 
   Odometry::Odometry(size_t velocity_rolling_window_size)
-  : timestamp_(0.0)
-  , timestamp_twist_(0.0)
+  : timestamp_twist_(0.0)
   , x_(0.0)
   , y_(0.0)
   , heading_(0.0)
@@ -102,13 +101,13 @@ namespace diff_drive_controller
   {
     // Reset accumulators and timestamp:
     resetAccumulators();
-    timestamp_ = timestamp_twist_ = time;
+    timestamp_twist_ = time;
   }
 
   bool Odometry::updateCloseLoop(
       const double left_position, const double right_position,
       const double left_velocity, const double right_velocity,
-      const ros::Time &time)
+      const double dt)
   {
     /// Estimate wheels position increment using previous and current position:
     const double left_position_increment  = left_position  - left_position_previous_;
@@ -120,11 +119,11 @@ namespace diff_drive_controller
 
     /// Update pose and twist:
     return update(left_position_increment, right_position_increment,
-        left_velocity, right_velocity, time);
+        left_velocity, right_velocity, dt);
   }
 
   bool Odometry::updateOpenLoop(const double linear, const double angular,
-      const ros::Time& time)
+      const double dt)
   {
     /// Compute wheel velocities, i.e. Inverse Kinematics:
     // @todo we should expose a method to compute this:
@@ -140,18 +139,14 @@ namespace diff_drive_controller
     const double v_l = (linear - angular * wheel_separation_ / 2.0) / left_wheel_radius_;
     const double v_r = (linear + angular * wheel_separation_ / 2.0) / right_wheel_radius_;
 
-    /// Compute time step:
-    const double dt = (time - timestamp_).toSec();
-    timestamp_ = time;
-
     /// Update pose and twist:
-    return update(v_l * dt, v_r * dt, v_l, v_r, time);
+    return update(v_l * dt, v_r * dt, v_l, v_r, dt);
   }
 
   bool Odometry::update(
       const double dp_l, const double dp_r,
       const double v_l, const double v_r,
-      const ros::Time& time)
+      const double dt)
   {
     /// Integrate odometry pose:
     IntegrateFunction::PoseJacobian J_pose;
@@ -166,12 +161,7 @@ namespace diff_drive_controller
                        J_meas * meas_covariance  * J_meas.transpose();
 
     /// Update incremental pose:
-    // @todo in principle there's no need to use v_l, v_r at all, but this
-    // should be decided from outside, so here we should use:
-    // updateIncrementalPose(v_l * dt, v_r * dt);
-    // which could be equivalent to dp_l, dp_r or not.
-    // Note that we need to obtain dt from the time (which it's not used now)
-    updateIncrementalPose(dp_l, dp_r);
+    updateIncrementalPose(v_l * dt, v_r * dt);
 
     return true;
   }

@@ -205,6 +205,8 @@ namespace diff_drive_controller
       double k_l;
       double k_r;
 
+      double wheel_resolution;
+
       bool publish_state;
       bool publish_cmd_vel_limited;
 
@@ -216,8 +218,9 @@ namespace diff_drive_controller
         , wheel_separation_multiplier(1.0)
         , left_wheel_radius_multiplier(1.0)
         , right_wheel_radius_multiplier(1.0)
-        , k_l(1.0)
-        , k_r(1.0)
+        , k_l(0.01)
+        , k_r(0.01)
+        , wheel_resolution(0.0)
         , publish_state(false)
         , publish_cmd_vel_limited(false)
         , control_frequency_desired(0.0)
@@ -240,6 +243,8 @@ namespace diff_drive_controller
     /// Measurement Covariance Model multipliers:
     double k_l_;
     double k_r_;
+
+    double wheel_resolution_;  // [rad]
 
     /// Timeout to consider cmd_vel commands old:
     double cmd_vel_timeout_;

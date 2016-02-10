@@ -105,7 +105,7 @@ namespace diff_drive_controller
 
     if (has_acceleration_limits)
     {
-      double dv_min, dv_max, dv;
+      double dv_min, dv_max;
 
       if (v0 >= 0.0 && v >= 0.0)
       {
@@ -126,24 +126,25 @@ namespace diff_drive_controller
         {
           dv_max = v0;
           dv_min = min_deceleration * dt;
-          if (v0 + dv < 0)
+          if (v0 + dv_min < 0)
           {
             dv_min = min_acceleration * (dt - v0 / min_deceleration);
           }
         }
         // Transitioning from negative to positive velocity
-        else if (v0 < 0)
+        else // if (v0 < 0)
         {
           dv_min = v0;
           dv_max = max_deceleration * dt;
-          if (v0 + dv > 0)
+          if (v0 + dv_max > 0)
           {
             dv_max = max_acceleration * (dt - v0 / max_deceleration);
           }
         }
       }
 
-      dv = clamp(v - v0, dv_min, dv_max);
+      const double dv = clamp(v - v0, dv_min, dv_max);
+
       v = v0 + dv;
     }
 

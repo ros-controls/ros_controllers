@@ -70,6 +70,7 @@ namespace diff_drive_controller
   , d_y_(0.0)
   , d_yaw_(0.0)
   , incremental_pose_dt_(0.0)
+  , meas_covariance_model_(new LinearMeasCovarianceModel())
   , wheel_separation_(0.0)
   , left_wheel_radius_(0.0)
   , right_wheel_radius_(0.0)
@@ -79,7 +80,6 @@ namespace diff_drive_controller
   , v_x_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , v_y_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , v_yaw_acc_(RollingWindow::window_size = velocity_rolling_window_size)
-  , meas_covariance_model_(new LinearMeasCovarianceModel())
   , integrate_fun_(
       new AutoDiffIntegrateFunction<DirectKinematicsIntegrateFunctor,
                                     ExactIntegrateFunctor>(

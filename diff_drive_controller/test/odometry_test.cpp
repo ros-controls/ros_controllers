@@ -158,10 +158,6 @@ TEST(OdometryTest, testIntegrateMotionNoMoveFromInitial)
   const double y_0   = odometry.getY();
   const double yaw_0 = odometry.getHeading();
 
-  const double v_x_0   = odometry.getVx();
-  const double v_y_0   = odometry.getVy();
-  const double v_yaw_0 = odometry.getVyaw();
-
   const PoseCovariance  pose_covariance_0  = odometry.getPoseCovariance();
   const TwistCovariance twist_covariance_0 = odometry.getTwistCovariance();
 
@@ -274,10 +270,6 @@ TEST(OdometryTest, testIntegrateMotionForwardFromInitial)
   const double x_0   = odometry.getX();
   const double y_0   = odometry.getY();
   const double yaw_0 = odometry.getHeading();
-
-  const double v_x_0   = odometry.getVx();
-  const double v_y_0   = odometry.getVy();
-  const double v_yaw_0 = odometry.getVyaw();
 
   const PoseCovariance  pose_covariance_0  = odometry.getPoseCovariance();
   const TwistCovariance twist_covariance_0 = odometry.getTwistCovariance();

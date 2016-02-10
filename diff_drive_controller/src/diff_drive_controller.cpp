@@ -607,6 +607,8 @@ namespace diff_drive_controller
     }
 
     // Compute/Set control period and frequency (desired/expected or real):
+    // @todo also allow to compute the period as time - time_previous_, because
+    // they can be different
     const double control_period    = control_period_desired_    > 0.0 ? control_period_desired_    : period.toSec();
     const double control_frequency = control_frequency_desired_ > 0.0 ? control_frequency_desired_ : 1.0 / control_period;
 
@@ -667,7 +669,7 @@ namespace diff_drive_controller
       // Note that the twist must be computed at the same frequency that it gets
       // published, because otherwise the code that uses it cannot apply the
       // same period it was used to compute it.
-      odometry_.updateTwist(time);
+      odometry_.updateTwist();
 
       last_odom_publish_time_ = time;
 
@@ -973,7 +975,7 @@ namespace diff_drive_controller
     // Register starting time used to keep fixed rate
     last_odom_publish_time_ = last_odom_tf_publish_time_ = time;
 
-    odometry_.init(time);
+    odometry_.init();
   }
 
   void DiffDriveController::stopping(const ros::Time& /*time*/)

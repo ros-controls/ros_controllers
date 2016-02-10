@@ -175,7 +175,7 @@ TEST(OdometryTest, testIntegrateMotionNoMoveFromInitial)
       CONTROL_STEPS, CONTROL_PERIOD, 0.0, 0.0);
 
   // Update the twist (from the internal incremental odometry pose):
-  EXPECT_TRUE(odometry.updateTwist(t));
+  EXPECT_TRUE(odometry.updateTwist());
 
   // Retrieve new/current pose and twist state and covariance:
   const double x_1   = odometry.getX();
@@ -292,7 +292,7 @@ TEST(OdometryTest, testIntegrateMotionForwardFromInitial)
       CONTROL_STEPS, CONTROL_PERIOD, POSITION_INCREMENT, POSITION_INCREMENT);
 
   // Update the twist (from the internal incremental odometry pose):
-  EXPECT_TRUE(odometry.updateTwist(t));
+  EXPECT_TRUE(odometry.updateTwist());
 
   // Retrieve new/current pose and twist state and covariance:
   const double x_1   = odometry.getX();
@@ -374,7 +374,7 @@ TEST(OdometryTest, testIntegrateMotionForwardFromNotInitial)
       CONTROL_STEPS, CONTROL_PERIOD, POSITION_INCREMENT, 2 * POSITION_INCREMENT);
 
   // Update the twist (from the internal incremental odometry pose):
-  EXPECT_TRUE(odometry.updateTwist(t));
+  EXPECT_TRUE(odometry.updateTwist());
 
   // Save initial/current pose and twist state and covariance:
   const double x_0   = odometry.getX();
@@ -394,7 +394,7 @@ TEST(OdometryTest, testIntegrateMotionForwardFromNotInitial)
       CONTROL_STEPS, CONTROL_PERIOD, POSITION_INCREMENT, POSITION_INCREMENT);
 
   // Update the twist (from the internal incremental odometry pose):
-  EXPECT_TRUE(odometry.updateTwist(t));
+  EXPECT_TRUE(odometry.updateTwist());
 
   // Retrieve new/current pose and twist state and covariance:
   const double x_1   = odometry.getX();

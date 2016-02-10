@@ -60,8 +60,7 @@ namespace diff_drive_controller
   const double Odometry::DEFAULT_POSE_COVARIANCE = 1e-6;
 
   Odometry::Odometry(size_t velocity_rolling_window_size)
-  : timestamp_twist_(0.0)
-  , x_(0.0)
+  : x_(0.0)
   , y_(0.0)
   , heading_(0.0)
   , v_x_(0.0)
@@ -70,6 +69,7 @@ namespace diff_drive_controller
   , d_x_(0.0)
   , d_y_(0.0)
   , d_yaw_(0.0)
+  , incremental_pose_dt_(0.0)
   , wheel_separation_(0.0)
   , left_wheel_radius_(0.0)
   , right_wheel_radius_(0.0)
@@ -97,11 +97,10 @@ namespace diff_drive_controller
     incremental_pose_covariance_.setZero();
   }
 
-  void Odometry::init(const ros::Time& time)
+  void Odometry::init()
   {
-    // Reset accumulators and timestamp:
+    // Reset accumulators:
     resetAccumulators();
-    timestamp_twist_ = time;
   }
 
   bool Odometry::updateCloseLoop(
@@ -163,6 +162,8 @@ namespace diff_drive_controller
     /// Update incremental pose:
     updateIncrementalPose(v_l * dt, v_r * dt);
 
+    incremental_pose_dt_ += dt;
+
     return true;
   }
 
@@ -182,19 +183,16 @@ namespace diff_drive_controller
         J_meas * meas_covariance  * J_meas.transpose();
   }
 
-  bool Odometry::updateTwist(const ros::Time& time)
+  bool Odometry::updateTwist()
   {
     /// We cannot estimate the speed with very small time intervals:
-    const double dt = (time - timestamp_twist_).toSec();
-    if (dt < 0.0001)
+    if (incremental_pose_dt_ < 0.0001)
     {
       return false;
     }
 
-    timestamp_twist_ = time;
-
     /// Estimate speeds using a rolling mean to filter them out:
-    const double f = 1.0 / dt;
+    const double f = 1.0 / incremental_pose_dt_;
 
     v_x_acc_(d_x_ * f);
     v_y_acc_(d_y_ * f);
@@ -216,6 +214,7 @@ namespace diff_drive_controller
 
     /// Reset incremental pose and its covariance:
     d_x_ = d_y_ = d_yaw_ = 0.0;
+    incremental_pose_dt_ = 0.0;
     incremental_pose_covariance_.setZero();
 
     return true;

@@ -80,7 +80,6 @@ namespace diff_drive_controller
 
     /**
      * \brief Constructor
-     * Timestamp will get the current time value
      * Value will be set to zero
      * \param[in] velocity_rolling_window_size Rolling window size used to
      *                                         compute the velocity mean
@@ -89,9 +88,8 @@ namespace diff_drive_controller
 
     /**
      * \brief Initialize the odometry
-     * \param[in] time Current time
      */
-    void init(const ros::Time &time);
+    void init();
 
     /**
      * \brief Updates the odometry class with latest wheels position, i.e. in
@@ -123,13 +121,10 @@ namespace diff_drive_controller
      * \brief Update the odometry twist with the (internal) incremental pose,
      * since the last update/call to this method; this resets the (internal)
      * incremental pose
-     * \param[in] time Current time, used to compute the time step/increment,
-     *                 which is used to divide the (internal) incremental pose
-     *                 by dt and obtain the twist
      * \return true if twist is actually updated; it won't be updated if the
      *         time step/increment is very small, to avoid division by zero
      */
-    bool updateTwist(const ros::Time& time);
+    bool updateTwist();
 
     /**
      * \brief Heading getter
@@ -288,10 +283,6 @@ namespace diff_drive_controller
      */
     void resetAccumulators();
 
-    /// Timestamp for last twist computed, ie. since when the (internal)
-    /// incremental pose has been computed:
-    ros::Time timestamp_twist_;
-
     /// Current pose:
     double x_;        //   [m]
     double y_;        //   [m]
@@ -301,6 +292,10 @@ namespace diff_drive_controller
     double d_x_;    //   [m]
     double d_y_;    //   [m]
     double d_yaw_;  // [rad]
+
+    /// Incremental pose time interval, which accumulates the time steps
+    /// (control periods):
+    double incremental_pose_dt_;  // [s]
 
     /// Current velocity:
     double v_x_;    //   [m/s]

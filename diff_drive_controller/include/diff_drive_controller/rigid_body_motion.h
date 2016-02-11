@@ -86,12 +86,13 @@ static void integrate_motion(double& x, double &y, double &yaw,
     const double dt,
     Eigen::Matrix3d& J_pose, Eigen::Matrix3d& J_twist)
 {
+  // It'd be more efficient to duplicate the equations from the
+  // integrate_motion function w/o Jacobians, but here we prefer to avoid code
+  // redundancy because at the end this code is only used for testing:
+  integrate_motion(x, y, yaw, v_x, v_y, v_yaw, dt);
+
   const double cos_yaw = std::cos(yaw);
   const double sin_yaw = std::sin(yaw);
-
-  x   += (v_x * cos_yaw - v_y * sin_yaw) * dt;
-  y   += (v_x * sin_yaw + v_y * cos_yaw) * dt;
-  yaw += v_yaw * dt;
 
   J_pose << 1.0, 0.0, (-v_x * sin_yaw - v_y * cos_yaw) * dt,
             0.0, 1.0, ( v_x * cos_yaw - v_y * sin_yaw) * dt,

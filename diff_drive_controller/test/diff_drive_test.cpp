@@ -159,10 +159,6 @@ TEST_F(DiffDriveControllerTest, testNoMove)
   const double y_1   = odoms[1].pose.pose.position.y;
   const double yaw_1 = tf::getYaw(odoms[1].pose.pose.orientation);
 
-  const double v_x_1   = odoms[1].twist.twist.linear.x;
-  const double v_y_1   = odoms[1].twist.twist.linear.y;
-  const double v_yaw_1 = odoms[1].twist.twist.angular.z;
-
   PoseCovariance  pose_covariance_1;
   msgToCovariance(odoms[1].pose.covariance, pose_covariance_1, no_tag());
 
@@ -314,10 +310,6 @@ TEST_F(DiffDriveControllerTest, testForward)
   const double x_1   = odoms[1].pose.pose.position.x;
   const double y_1   = odoms[1].pose.pose.position.y;
   const double yaw_1 = tf::getYaw(odoms[1].pose.pose.orientation);
-
-  const double v_x_1   = odoms[1].twist.twist.linear.x;
-  const double v_y_1   = odoms[1].twist.twist.linear.y;
-  const double v_yaw_1 = odoms[1].twist.twist.angular.z;
 
   PoseCovariance  pose_covariance_1;
   msgToCovariance(odoms[1].pose.covariance, pose_covariance_1, no_tag());
@@ -478,10 +470,6 @@ TEST_F(DiffDriveControllerTest, testTurn)
   const double x_1   = odoms[1].pose.pose.position.x;
   const double y_1   = odoms[1].pose.pose.position.y;
   const double yaw_1 = tf::getYaw(odoms[1].pose.pose.orientation);
-
-  const double v_x_1   = odoms[1].twist.twist.linear.x;
-  const double v_y_1   = odoms[1].twist.twist.linear.y;
-  const double v_yaw_1 = odoms[1].twist.twist.angular.z;
 
   PoseCovariance  pose_covariance_1;
   msgToCovariance(odoms[1].pose.covariance, pose_covariance_1, no_tag());

@@ -288,6 +288,11 @@ namespace diff_drive_controller
     double y_;        //   [m]
     double heading_;  // [rad]
 
+    /// Current twist:
+    double v_x_;    //   [m/s]
+    double v_y_;    //   [m/s]
+    double v_yaw_;  // [rad/s]
+
     /// Current incremental pose:
     double d_x_;    //   [m]
     double d_y_;    //   [m]
@@ -296,11 +301,6 @@ namespace diff_drive_controller
     /// Incremental pose time interval, which accumulates the time steps
     /// (control periods):
     double incremental_pose_dt_;  // [s]
-
-    /// Current velocity:
-    double v_x_;    //   [m/s]
-    double v_y_;    //   [m/s]
-    double v_yaw_;  // [rad/s]
 
     /// Pose covariance:
     PoseCovariance pose_covariance_;

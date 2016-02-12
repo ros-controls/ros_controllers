@@ -2,8 +2,8 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.3 (2016-02-12)
+------------------
 * Add vertical scrollbar to joints list
 * Clear controllers combo on cm change
   Clear the list of running joint trajectory controllers when the

@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.3 (2016-02-12)
+------------------
 * Reduced pedantry, redundancy.
 * Added tests for the odom_frame_id parameter.
 * Parameterized diff_drive_controller's odom_frame_id

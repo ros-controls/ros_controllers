@@ -2,6 +2,21 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add vertical scrollbar to joints list
+* Clear controllers combo on cm change
+  Clear the list of running joint trajectory controllers when the
+  controller manager selection changes. This prevents potential conflicts when
+  multiple controller managers have controllers with the same names.
+* Fail gracefully if URDF is not loaded
+* Save and restore plugin settings
+* Stricter controller validation
+* Fix broken URDF joint limits parsing
+* Add controller resources query
+* Don't choke on missing URDF vel limits
+* Contributors: Adolfo Rodriguez Tsouroukdissian
+
 0.9.2 (2015-05-04)
 ------------------
 * rqt_joint_traj_controller: Add missing runtime dep

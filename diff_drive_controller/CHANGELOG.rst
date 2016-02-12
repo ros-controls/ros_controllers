@@ -2,6 +2,30 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Reduced pedantry, redundancy.
+* Added tests for the odom_frame_id parameter.
+* Parameterized diff_drive_controller's odom_frame_id
+* add check for multiple publishers on cmd_vel
+* Address -Wunused-parameter warnings
+* Limit jerk
+* Add param velocity_rolling_window_size
+* Minor fixes
+  1. Coding style
+  2. Tolerance to fall-back to Runge-Kutta 2 integration
+  3. Remove unused variables
+* Fix forward test
+  Fix the following bugs in the testForward test:
+  1. Check traveled distance in XY plane
+  2. Use expected speed variable on test check
+* Add test for NaN
+* Add test for bad URDF
+  This unit test exercises a controller load failure caused by
+  a wrong wheel geometry. The controller requires that wheels be
+  modeled by cylinders, while the bad URDF uses spheres.
+* Contributors: Adolfo Rodriguez Tsouroukdissian, Bence Magyar, Enrique Fernandez, Eric Tappan, Karsten Knese, Paul Mathieu, tappan-at-git
+
 0.9.2 (2015-05-04)
 ------------------
 * Allow the wheel separation and radius to be set from different sources

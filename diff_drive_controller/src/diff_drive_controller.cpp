@@ -372,7 +372,7 @@ namespace diff_drive_controller
     setOdomPubFields(root_nh, controller_nh);
 
     // Set dynamic reconfigure params defaults to the static params provided:
-    DiffDriveControllerConfig config;
+    DiffDriveControllerConfig config(config_default_);
     config.pose_from_joint_position = pose_from_joint_position_;
     config.twist_from_joint_position = twist_from_joint_position_;
 

@@ -441,6 +441,20 @@ update(const ros::Time& time, const ros::Duration& period)
   hw_iface_adapter_.updateCommand(time_data.uptime, time_data.period,
                                   desired_state_, state_error_);
 
+  // Set action feedback
+  if (rt_active_goal_)
+  {
+    rt_active_goal_->preallocated_feedback_->header.stamp          = time_data_.readFromRT()->time;
+    rt_active_goal_->preallocated_feedback_->desired.positions     = desired_state_.position;
+    rt_active_goal_->preallocated_feedback_->desired.velocities    = desired_state_.velocity;
+    rt_active_goal_->preallocated_feedback_->desired.accelerations = desired_state_.acceleration;
+    rt_active_goal_->preallocated_feedback_->actual.positions      = current_state_.position;
+    rt_active_goal_->preallocated_feedback_->actual.velocities     = current_state_.velocity;
+    rt_active_goal_->preallocated_feedback_->error.positions       = state_error_.position;
+    rt_active_goal_->preallocated_feedback_->error.velocities      = state_error_.velocity;
+    rt_active_goal_->setFeedback( rt_active_goal_->preallocated_feedback_ );
+  }
+
   // Publish state
   publishState(time_data.uptime);
 }
@@ -555,6 +569,7 @@ goalCB(GoalHandle gh)
   RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
   const bool update_ok = updateTrajectoryCommand(internal::share_member(gh.getGoal(), gh.getGoal()->trajectory),
                                                  rt_goal);
+  rt_goal->preallocated_feedback_->joint_names = joint_names_;
 
   if (update_ok)
   {

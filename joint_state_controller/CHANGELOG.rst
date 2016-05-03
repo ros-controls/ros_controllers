@@ -2,6 +2,9 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.10.0 (2015-11-20)
 -------------------
 * Address -Wunused-parameter warnings

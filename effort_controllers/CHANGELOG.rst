@@ -2,6 +2,11 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add antinwindup to get and setGains logic for underlying PID controller
+* Contributors: Paul Bovbel
+
 0.10.0 (2015-11-20)
 -------------------
 

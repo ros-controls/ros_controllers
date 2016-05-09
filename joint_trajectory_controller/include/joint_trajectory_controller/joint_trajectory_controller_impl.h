@@ -41,12 +41,13 @@ namespace internal
 template <class Enclosure, class Member>
 inline boost::shared_ptr<Member> share_member(boost::shared_ptr<Enclosure> enclosure, Member &member)
 {
-  actionlib::EnclosureDeleter<Enclosure> d(enclosure);
+  actionlib::EnclosureDeleter<Enclosure>
+ d(enclosure);
   boost::shared_ptr<Member> p(&member, d);
   return p;
 }
 
-std::vector<std::string> getStrings(const ros::NodeHandle& nh, const std::string& param_name)
+static inline std::vector<std::string> getStrings(const ros::NodeHandle& nh, const std::string& param_name)
 {
   using namespace XmlRpc;
   XmlRpcValue xml_array;
@@ -76,7 +77,7 @@ std::vector<std::string> getStrings(const ros::NodeHandle& nh, const std::string
   return out;
 }
 
-boost::shared_ptr<urdf::Model> getUrdf(const ros::NodeHandle& nh, const std::string& param_name)
+static inline boost::shared_ptr<urdf::Model> getUrdf(const ros::NodeHandle& nh, const std::string& param_name)
 {
   boost::shared_ptr<urdf::Model> urdf(new urdf::Model);
 
@@ -101,7 +102,7 @@ boost::shared_ptr<urdf::Model> getUrdf(const ros::NodeHandle& nh, const std::str
 }
 
 typedef boost::shared_ptr<const urdf::Joint> UrdfJointConstPtr;
-std::vector<UrdfJointConstPtr> getUrdfJoints(const urdf::Model& urdf, const std::vector<std::string>& joint_names)
+static inline std::vector<UrdfJointConstPtr> getUrdfJoints(const urdf::Model& urdf, const std::vector<std::string>& joint_names)
 {
   std::vector<UrdfJointConstPtr> out;
   for (unsigned int i = 0; i < joint_names.size(); ++i)
@@ -120,7 +121,7 @@ std::vector<UrdfJointConstPtr> getUrdfJoints(const urdf::Model& urdf, const std:
   return out;
 }
 
-std::string getLeafNamespace(const ros::NodeHandle& nh)
+static inline std::string getLeafNamespace(const ros::NodeHandle& nh)
 {
   const std::string complete_ns = nh.getNamespace();
   std::size_t id   = complete_ns.find_last_of("/");

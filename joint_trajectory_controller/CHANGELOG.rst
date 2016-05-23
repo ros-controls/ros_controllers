@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.11.1 (2016-05-23)
+-------------------
 * Write feedback for the RealtimeServerGoalHandle to publish on the non-realtime thread.
 * Contributors: Miguel Prada
 

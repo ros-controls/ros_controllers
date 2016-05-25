@@ -15,6 +15,7 @@ notifications:
       - davetcoleman@gmail.com
       - adolfo.rodriguez@intermodalics.eu
       - enrique.fernandez.perdomo@gmail.com
+      - bence.magyar.robotics@gmail.com
     on_success: change #[always|never|change] # default: change
     on_failure: change #[always|never|change] # default: always
 

@@ -67,6 +67,11 @@ install:
 before_script:
   - source /opt/ros/$ROS_DISTRO/setup.bash
   - rospack profile
+  # Use xvfb to run tests that require a GUI; see:
+  # https://docs.travis-ci.com/user/gui-and-headless-browsers/
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
 
 script:
   - cd ~/ros/ws_$REPOSITORY_NAME

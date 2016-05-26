@@ -1,48 +1,81 @@
 # Travis Continuous Integration Configuration File For ROS Control Projects
-# Author: Dave Coleman
-language:
-  - cpp
-  - python
-python:
-  - "2.7"
+# Author: Dave Coleman, Enrique Fernandez
+sudo: required
+dist: trusty
+language: generic
 compiler:
   - gcc
+env:
+  global:
+    - ROS_DISTRO=jade
+
 notifications:
   email:
     recipients:
       - davetcoleman@gmail.com
-      - adolfo.rodriguez@pal-robotics.com
+      - adolfo.rodriguez@intermodalics.eu
+      - enrique.fernandez.perdomo@gmail.com
+      - bence.magyar.robotics@gmail.com
     on_success: change #[always|never|change] # default: change
     on_failure: change #[always|never|change] # default: always
-before_install: # Use this to prepare the system to install prerequisites or dependencies
-  # Define some config vars
-  - export ROS_DISTRO=hydro
+
+before_install:
   - export CI_SOURCE_PATH=$(pwd)
   - export REPOSITORY_NAME=${PWD##*/}
   - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
-  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu precise main" > /etc/apt/sources.list.d/ros-latest.list'
+  # Add ROS repositories
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" >
+    /etc/apt/sources.list.d/ros-latest.list'
   - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
   - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python-catkin-pkg python-rosdep python-wstool ros-$ROS_DISTRO-catkin ros-$ROS_DISTRO-ros
-  # Setup rosdep
-  - sudo rosdep init
+  # Install and initialize rosdep
+  - sudo apt-get install -qq -y python-dev
+                                python-catkin-pkg
+                                python-rosdep
+                                python-wstool
+                                ros-$ROS_DISTRO-catkin
+                                ros-$ROS_DISTRO-ros
+                                python-rosinstall
+                                python-catkin-tools
+                                python-catkin-pkg
+                                python-rospkg
+                                python-vcstools
+  - sudo `which rosdep` init
   - rosdep update
-install: # Use this to install any prerequisites or dependencies necessary to run your build
+  # Use rosdep to install dependencies
+  - rosdep install -y -q --from-paths ./ --rosdistro $ROS_DISTRO
+
+install:
   # Create workspace
-  - mkdir -p ~/ros/ws_ros_controls/src
-  - cd ~/ros/ws_ros_controls/src
+  - mkdir -p ~/ros/ws_$REPOSITORY_NAME
+  - cd ~/ros/ws_$REPOSITORY_NAME
+  - catkin config --init --mkdirs
+  - cd src
   - wstool init .
   # Download non-debian stuff
   - wstool merge https://raw.github.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall
   - wstool update
-  # Delete the ros_control.rosinstall version of this repo and use the one of the branch we are testing
+  # Delete the ros_control.rosinstall version of this repo and use the one of
+  # the branch we are testing
   - rm -rf $REPOSITORY_NAME
-  - ln -s $CI_SOURCE_PATH . # Link the repo we are testing to the new workspace
-  - cd ../
+  # Link the repo we are testing to the new workspace
+  - ln -s $CI_SOURCE_PATH .
+  - cd ..
   # Install dependencies for source repos
-  - rosdep install --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
-before_script: # Use this to prepare your build for testing e.g. copy database configurations, environment variables, etc.
-  - source /opt/ros/$ROS_DISTRO/setup.bash  
-script: # All commands must exit with code 0 on success. Anything else is considered failure.
-  - catkin_make -j2
+  - rosdep install -y -q --from-paths src --ignore-src --rosdistro $ROS_DISTRO
+
+before_script:
+  - source /opt/ros/$ROS_DISTRO/setup.bash
+  - rospack profile
+
+script:
+  - cd ~/ros/ws_$REPOSITORY_NAME
+  - catkin build -j8 --no-status --summary
+  # Run tests
+  # Note that we have to run only 1 test at a time to ensure that rostest
+  # instances don't collide
+  - catkin run_tests -j1 --no-status --summary
+  # Note that catkin run_tests always returns 0, so we use catkin_test_results
+  # to check for errors; see: https://github.com/catkin/catkin_tools/issues/245
+  - catkin_test_results
 

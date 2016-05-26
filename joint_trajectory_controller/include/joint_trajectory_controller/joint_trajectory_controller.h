@@ -40,6 +40,7 @@
 // Boost
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/dynamic_bitset.hpp>
 
 // ROS
 #include <ros/node_handle.h>
@@ -166,8 +167,10 @@ private:
   typedef boost::scoped_ptr<StatePublisher>                                                   StatePublisherPtr;
 
   typedef JointTrajectorySegment<SegmentImpl> Segment;
-  typedef std::vector<Segment> Trajectory;
+  typedef std::vector<Segment> TrajectoryPerJoint;
+  typedef std::vector<TrajectoryPerJoint> Trajectory;
   typedef boost::shared_ptr<Trajectory> TrajectoryPtr;
+  typedef boost::shared_ptr<TrajectoryPerJoint> TrajectoryPerJointPtr;
   typedef realtime_tools::RealtimeBox<TrajectoryPtr> TrajectoryBox;
   typedef typename Segment::Scalar Scalar;
 
@@ -194,11 +197,11 @@ private:
   TrajectoryBox curr_trajectory_box_;
   TrajectoryPtr hold_trajectory_ptr_; ///< Last hold trajectory values.
 
-  typename Segment::State current_state_;    ///< Preallocated workspace variable.
-  typename Segment::State desired_state_;    ///< Preallocated workspace variable.
-  typename Segment::State state_error_;      ///< Preallocated workspace variable.
-  typename Segment::State hold_start_state_; ///< Preallocated workspace variable.
-  typename Segment::State hold_end_state_;   ///< Preallocated workspace variable.
+  typename Segment::State current_state_;         ///< Preallocated workspace variable.
+  typename Segment::State desired_state_;         ///< Preallocated workspace variable.
+  typename Segment::State state_error_;           ///< Preallocated workspace variable.
+  typename Segment::State desired_joint_state_;   ///< Preallocated workspace variable.
+  typename Segment::State state_joint_error_;     ///< Preallocated workspace variable.
 
   realtime_tools::RealtimeBuffer<TimeData> time_data_;
 
@@ -206,6 +209,8 @@ private:
   ros::Duration action_monitor_period_;
 
   typename Segment::Time stop_trajectory_duration_;
+  boost::dynamic_bitset<> successful_joint_traj_;
+  bool allow_partial_joints_goal_;
 
   // ROS API
   ros::NodeHandle    controller_nh_;
@@ -240,33 +245,6 @@ private:
    * \note This method is realtime-safe.
    */
   void setHoldPosition(const ros::Time& time);
-
-  /**
-   * \brief Check path tolerances.
-   *
-   * If path tolerances are violated, the currently active action goal will be aborted.
-   *
-   * \param state_error Error between the current and desired trajectory states.
-   * \param segment Currently active trajectory segment.
-   *
-   * \pre \p segment is associated to the active goal handle.
-   **/
-  void checkPathTolerances(const typename Segment::State& state_error,
-                           const Segment&                 segment);
-
-  /**
-   * \brief Check goal tolerances.
-   *
-   * If goal tolerances are fulfilled, the currently active action goal will be considered successful.
-   * If they are violated, the action goal will be aborted.
-   *
-   * \param state_error Error between the current and desired trajectory states.
-   * \param segment Currently active trajectory segment.
-   *
-   * \pre \p segment is associated to the active goal handle.
-   **/
-  void checkGoalTolerances(const typename Segment::State& state_error,
-                           const Segment&                 segment);
 
 };
 

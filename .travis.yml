@@ -44,6 +44,8 @@ before_install:
   - rosdep update
   # Use rosdep to install dependencies
   - rosdep install -y -q --from-paths ./ --rosdistro $ROS_DISTRO
+  # Install xvfb (X Virtual Framebuffer) for GUI tests
+  - sudo apt-get install -qq -y xvfb
 
 install:
   # Create workspace

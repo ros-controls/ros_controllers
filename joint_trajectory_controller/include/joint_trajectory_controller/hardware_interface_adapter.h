@@ -182,6 +182,9 @@ public:
       }
     }
 
+    // Load velocity feedforward enable state from parameter server
+    controller_nh.param("use_velocity_ff", use_velocity_ff_, false);
+
     return true;
   }
 
@@ -215,7 +218,7 @@ public:
     // Update PIDs
     for (unsigned int i = 0; i < n_joints; ++i)
     {
-      const double command = desired_state.velocity[i] + pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
+      const double command = (desired_state.velocity[i] * use_velocity_ff_) + pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
       (*joint_handles_ptr_)[i].setCommand(command);
     }
   }
@@ -223,6 +226,8 @@ public:
 private:
   typedef boost::shared_ptr<control_toolbox::Pid> PidPtr;
   std::vector<PidPtr> pids_;
+
+  bool use_velocity_ff_;
 
   std::vector<hardware_interface::JointHandle>* joint_handles_ptr_;
 };

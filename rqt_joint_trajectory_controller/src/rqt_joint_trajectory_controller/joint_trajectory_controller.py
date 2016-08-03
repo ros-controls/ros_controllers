@@ -32,7 +32,7 @@ import rospkg
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
 from python_qt_binding.QtCore import QTimer, Signal
-from python_qt_binding.QtGui import QWidget, QFormLayout
+from python_qt_binding.QtWidgets import QWidget, QFormLayout
 
 from control_msgs.msg import JointTrajectoryControllerState
 from controller_manager_msgs.utils\

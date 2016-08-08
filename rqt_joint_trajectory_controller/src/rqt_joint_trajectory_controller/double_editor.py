@@ -30,7 +30,7 @@ import rospkg
 
 from python_qt_binding import loadUi
 from python_qt_binding.QtCore import Signal
-from python_qt_binding.QtGui import QWidget
+from python_qt_binding.QtWidgets import QWidget
 
 
 class DoubleEditor(QWidget):

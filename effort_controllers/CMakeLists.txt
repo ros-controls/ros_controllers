@@ -3,6 +3,7 @@ project(effort_controllers)
 
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS
+  angles
   controller_interface
   control_msgs
   forward_command_controller
@@ -16,6 +17,7 @@ include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 # Declare catkin package
 catkin_package(
   CATKIN_DEPENDS
+    angles
     controller_interface
     control_msgs
     control_toolbox

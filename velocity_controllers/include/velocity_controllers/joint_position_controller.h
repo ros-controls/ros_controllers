@@ -174,7 +174,7 @@ public:
   double getPosition();
 
   hardware_interface::JointHandle joint_;
-  boost::shared_ptr<const urdf::Joint> joint_urdf_;
+  urdf::JointConstSharedPtr joint_urdf_;
   realtime_tools::RealtimeBuffer<Commands> command_;
   Commands command_struct_; // pre-allocated memory that is re-used to set the realtime buffer
 

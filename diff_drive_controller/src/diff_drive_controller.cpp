@@ -58,7 +58,7 @@ static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3&
  * \param link Link
  * \return true if the link is modeled as a Cylinder; false otherwise
  */
-static bool isCylinder(const boost::shared_ptr<const urdf::Link>& link)
+static bool isCylinder(const urdf::LinkConstSharedPtr& link)
 {
   if (!link)
   {
@@ -93,7 +93,7 @@ static bool isCylinder(const boost::shared_ptr<const urdf::Link>& link)
  * \param [out] wheel_radius Wheel radius [m]
  * \return true if the wheel radius was found; false otherwise
  */
-static bool getWheelRadius(const boost::shared_ptr<const urdf::Link>& wheel_link, double& wheel_radius)
+static bool getWheelRadius(const urdf::LinkConstSharedPtr& wheel_link, double& wheel_radius)
 {
   if (!isCylinder(wheel_link))
   {
@@ -464,10 +464,10 @@ namespace diff_drive_controller{
       return false;
     }
 
-    boost::shared_ptr<urdf::ModelInterface> model(urdf::parseURDF(robot_model_str));
+    urdf::ModelInterfaceSharedPtr model(urdf::parseURDF(robot_model_str));
 
-    boost::shared_ptr<const urdf::Joint> left_wheel_joint(model->getJoint(left_wheel_name));
-    boost::shared_ptr<const urdf::Joint> right_wheel_joint(model->getJoint(right_wheel_name));
+    urdf::JointConstSharedPtr left_wheel_joint(model->getJoint(left_wheel_name));
+    urdf::JointConstSharedPtr right_wheel_joint(model->getJoint(right_wheel_name));
 
     if (lookup_wheel_separation)
     {

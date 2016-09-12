@@ -2,6 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.11.2 (2016-08-16)
+-------------------
+* Changes in import of Qt modules
+* Contributors: Carlos J. Rosales Gallegos
+
 0.11.1 (2016-05-23)
 -------------------
 

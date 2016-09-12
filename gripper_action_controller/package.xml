@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>gripper_action_controller</name>
-  <version>0.11.1</version>
+  <version>0.11.2</version>
   <description>The gripper_action_controller package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 

@@ -88,6 +88,11 @@ if(CATKIN_ENABLE_TESTING)
                     test/joint_trajectory_controller.test
                     test/joint_trajectory_controller_test.cpp)
   target_link_libraries(joint_trajectory_controller_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(joint_trajectory_controller_vel_test
+                    test/joint_trajectory_controller_vel.test
+                    test/joint_trajectory_controller_test.cpp)
+  target_link_libraries(joint_trajectory_controller_vel_test ${catkin_LIBRARIES})
 endif()
 
 # Install

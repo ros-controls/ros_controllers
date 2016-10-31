@@ -89,6 +89,28 @@ struct SegmentTolerances
 };
 
 /**
+ * \brief Trajectory segment tolerances per Joint
+ */
+template<class Scalar>
+struct SegmentTolerancesPerJoint
+{
+  SegmentTolerancesPerJoint()
+    : state_tolerance(static_cast<Scalar>(0.0)),
+      goal_state_tolerance(static_cast<Scalar>(0.0)),
+      goal_time_tolerance(static_cast<Scalar>(0.0))
+  {}
+
+  /** State tolerances that appply during segment execution. */
+  StateTolerances<Scalar> state_tolerance;
+
+  /** State tolerances that apply for the goal state only.*/
+  StateTolerances<Scalar> goal_state_tolerance;
+
+  /** Extra time after the segment end time allowed to reach the goal state tolerances. */
+  Scalar goal_time_tolerance;
+};
+
+/**
  * \param state_error State error to check.
  * \param state_tolerance State tolerances to check \p state_error against.
  * \param show_errors If the joints that violate their tolerances should be output to console. NOT REALTIME if true
@@ -132,6 +154,45 @@ inline bool checkStateTolerance(const State&                                    
       }
       return false;
     }
+  }
+  return true;
+}
+
+/**
+ * \param state_error State error to check.
+ * \param state_tolerance State tolerances to check \p state_error against.
+ * \param show_errors If the joint that violate its tolerance should be output to console. NOT REALTIME if true
+ * \return True if \p state_error fulfills \p state_tolerance.
+ */
+template <class State>
+inline bool checkStateTolerancePerJoint(const State&                                   state_error,
+                                        const StateTolerances<typename State::Scalar>& state_tolerance,
+                                        bool show_errors = false)
+{
+
+  using std::abs;
+
+  const bool is_valid = !(state_tolerance.position     > 0.0 && abs(state_error.position[0])     > state_tolerance.position) &&
+                        !(state_tolerance.velocity     > 0.0 && abs(state_error.velocity[0])     > state_tolerance.velocity) &&
+                        !(state_tolerance.acceleration > 0.0 && abs(state_error.acceleration[0]) > state_tolerance.acceleration);
+
+  if (!is_valid)
+  {
+    if( show_errors )
+    {
+      ROS_ERROR_STREAM_NAMED("tolerances","Path state tolerances failed:");
+
+      if (state_tolerance.position     > 0.0 && abs(state_error.position[0])     > state_tolerance.position)
+        ROS_ERROR_STREAM_NAMED("tolerances","Position Error: " << state_error.position[0] <<
+          " Position Tolerance: " << state_tolerance.position);
+      if (state_tolerance.velocity     > 0.0 && abs(state_error.velocity[0])     > state_tolerance.velocity)
+        ROS_ERROR_STREAM_NAMED("tolerances","Velocity Error: " << state_error.velocity[0] <<
+          " Velocity Tolerance: " << state_tolerance.velocity);
+      if (state_tolerance.acceleration > 0.0 && abs(state_error.acceleration[0]) > state_tolerance.acceleration)
+        ROS_ERROR_STREAM_NAMED("tolerances","Acceleration Error: " << state_error.acceleration[0] <<
+          " Acceleration Tolerance: " << state_tolerance.acceleration);
+    }
+    return false;
   }
   return true;
 }

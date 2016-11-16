@@ -1,7 +1,7 @@
 <launch>
   <!-- Load skidsteerbot model -->
   <param name="robot_description"
-         command="$(find xacro)/xacro.py '$(find diff_drive_controller)/test/skidsteerbot.xacro'" />
+         command="$(find xacro)/xacro '$(find diff_drive_controller)/test/skidsteerbot.xacro'" />
 
   <!-- Start skidsteerbot -->
   <node name="skidsteerbot"

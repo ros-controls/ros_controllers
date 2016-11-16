@@ -4,7 +4,7 @@
 
   <!-- Override robot_description with bad urdf -->
   <param name="robot_description"
-         command="$(find xacro)/xacro.py '$(find diff_drive_controller)/test/diffbot_bad.xacro'" />
+         command="$(find xacro)/xacro '$(find diff_drive_controller)/test/diffbot_bad.xacro'" />
 
   <!-- Controller test -->
   <test test-name="diff_drive_fail_test"

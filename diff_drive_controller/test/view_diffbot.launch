@@ -4,7 +4,7 @@
 
   <!-- load robot -->
   <param name="robot_description"
-         command="$(find xacro)/xacro '$(find diff_drive_controller)/test/diffbot.xacro'" />
+         command="$(find xacro)/xacro '$(find diff_drive_controller)/test/diffbot.xacro' --inorder" />
 
   <!-- Start diffbot -->
   <node name="diffbot"

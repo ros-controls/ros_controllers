@@ -15,8 +15,6 @@ find_package(catkin
     realtime_tools
     control_msgs
     trajectory_msgs
-    controller_manager
-    xacro
 )
 
 # Declare catkin package
@@ -32,8 +30,6 @@ catkin_package(
   realtime_tools
   control_msgs
   trajectory_msgs
-  controller_manager
-  xacro
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
 )
@@ -56,6 +52,15 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 
 if(CATKIN_ENABLE_TESTING)
+
+  find_package(catkin 
+    REQUIRED COMPONENTS
+      actionlib
+      controller_manager
+      xacro
+      rqt_plot
+  )
+
   find_package(rostest REQUIRED)
 
   catkin_add_gtest(quintic_spline_segment_test test/quintic_spline_segment_test.cpp)

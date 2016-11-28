@@ -1,4 +1,4 @@
-<package>
+<package format="2">
   <name>position_controllers</name>
   <version>0.11.2</version>
   <description>position_controllers</description>
@@ -17,10 +17,8 @@
   <author>Vijay Pradeep</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>controller_interface</build_depend> 
-  <build_depend>forward_command_controller</build_depend> 
-  <run_depend>controller_interface</run_depend> 
-  <run_depend>forward_command_controller</run_depend> 
+  <depend>controller_interface</depend> 
+  <depend>forward_command_controller</depend> 
 
   <export>
     <controller_interface plugin="${prefix}/position_controllers_plugins.xml"/>

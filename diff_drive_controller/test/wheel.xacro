@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <macro name="wheel" params="name parent radius thickness *origin">
+  <xacro:macro name="wheel" params="name parent radius thickness *origin">
     <link name="${name}_link">
       <inertial>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -24,7 +24,7 @@
     <joint name="${name}_joint" type="continuous">
       <parent link="${parent}_link"/>
       <child link="${name}_link"/>
-      <insert_block name="origin"/>
+      <xacro:insert_block name="origin"/>
       <axis xyz="0 0 1"/>
     </joint>
 
@@ -39,5 +39,5 @@
     <gazebo reference="${name}_link">
       <material>Gazebo/Red</material>
     </gazebo>
-  </macro>
+  </xacro:macro>
 </robot>

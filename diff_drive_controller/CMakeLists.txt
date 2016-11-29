@@ -3,13 +3,13 @@ project(diff_drive_controller)
 
 find_package(catkin REQUIRED COMPONENTS
     controller_interface
-    urdf
+    nav_msgs
     realtime_tools
     tf
-    nav_msgs)
+    urdf
+)
 
 catkin_package(
-  INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
 )
 
@@ -30,7 +30,7 @@ install(FILES diff_drive_controller_plugins.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 if (CATKIN_ENABLE_TESTING)
-  find_package(catkin COMPONENTS rostest std_srvs controller_manager tf)
+  find_package(catkin REQUIRED COMPONENTS controller_manager rostest std_srvs tf)
   include_directories(include ${catkin_INCLUDE_DIRS})
 
   add_executable(diffbot test/diffbot.cpp)

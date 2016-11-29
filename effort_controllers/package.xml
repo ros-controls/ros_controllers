@@ -23,7 +23,6 @@
   <depend>realtime_tools</depend> 
   <depend>urdf</depend> 
   <depend>forward_command_controller</depend>
-  <depend>dynamic_reconfigure</depend>
 
   <export>
     <controller_interface plugin="${prefix}/effort_controllers_plugins.xml"/>

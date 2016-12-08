@@ -1,0 +1,26 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
+
+  <!-- Load diff drive parameter publish joint trajecotry controller state -->
+  <rosparam command="load" file="$(find diff_drive_controller)/test/diffbot_publish_state.yaml" />
+
+  <!-- Controller test -->
+  <test test-name="diff_drive_publish_state_test"
+        pkg="diff_drive_controller"
+        type="diff_drive_publish_state_test"
+        time-limit="20.0">
+    <remap from="cmd_vel" to="diffbot_controller/cmd_vel" />
+    <remap from="odom" to="diffbot_controller/odom" />
+  </test>
+
+  <!-- Plot desired vs. actual -->
+  <node pkg="rqt_plot" type="rqt_plot" name="plot_position"
+        args="diffbot_controller/state/desired/positions[0]:positions[1],diffbot_controller/state/actual/positions[0]:positions[1]"/>
+
+  <node pkg="rqt_plot" type="rqt_plot" name="plot_velocity"
+        args="diffbot_controller/state/desired/velocities[0]:velocities[1],diffbot_controller/state/actual/velocities[0]:velocities[1]"/>
+
+  <node pkg="rqt_plot" type="rqt_plot" name="plot_acceleration"
+        args="diffbot_controller/state/desired/accelerations[0]:accelerations[1],diffbot_controller/state/actual/accelerations[0]:accelerations[1]"/>
+</launch>

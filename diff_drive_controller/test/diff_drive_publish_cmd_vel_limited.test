@@ -1,0 +1,27 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
+
+  <!-- Load diff-drive limits -->
+  <rosparam command="load" file="$(find diff_drive_controller)/test/diffbot_limits.yaml" />
+
+  <!-- Load diff drive parameter publish cmd vel limited -->
+  <rosparam command="load" file="$(find diff_drive_controller)/test/diffbot_publish_cmd_vel_limited.yaml" />
+
+  <!-- Controller test -->
+  <test test-name="diff_drive_publish_cmd_vel_limited_test"
+        pkg="diff_drive_controller"
+        type="diff_drive_publish_cmd_vel_limited_test"
+        time-limit="20.0">
+    <remap from="cmd_vel" to="diffbot_controller/cmd_vel" />
+    <remap from="cmd_vel_limited" to="diffbot_controller/cmd_vel_limited" />
+    <remap from="odom" to="diffbot_controller/odom" />
+  </test>
+
+  <!-- Plot cmd_vel vs. cmd_vel_limited -->
+  <node pkg="rqt_plot" type="rqt_plot" name="plot"
+        args="diffbot_controller/cmd_vel/linear/x
+              diffbot_controller/cmd_vel/angular/z
+              diffbot_controller/cmd_vel_limited/twist/linear/x
+              diffbot_controller/cmd_vel_limited/twist/angular/z"/>
+</launch>

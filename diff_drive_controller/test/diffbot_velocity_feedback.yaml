@@ -1,0 +1,2 @@
+diffbot_controller:
+  pose_from_joint_position: false

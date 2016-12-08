@@ -1,10 +1,10 @@
 <launch>
-  <arg name="plot" default="false"/>
-
   <!-- Load common test stuff -->
-  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch">
-    <arg name="plot" default="$(arg plot)"/>
-  </include>
+  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
+
+  <!-- Load diff drive parameter velocity feedback (pose from joint position
+       feedback false) -->
+  <rosparam command="load" file="$(find diff_drive_controller)/test/diffbot_velocity_feedback.yaml" />
 
   <!-- Controller test -->
   <test test-name="diff_drive_test"

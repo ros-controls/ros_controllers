@@ -25,12 +25,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-/// \author Paul Mathieu
+/// \author Enrique Fernandez
 
 #include "test_common.h"
 
 // TEST CASES
-TEST_F(DiffDriveControllerTest, testTimeout)
+TEST_F(DiffDriveControllerTest, testInsideLimits)
 {
   // wait for ROS
   while (!isControllerAlive())
@@ -44,24 +44,72 @@ TEST_F(DiffDriveControllerTest, testTimeout)
   publish(cmd_vel);
   // give some time to the controller to react to the command
   ros::Duration(0.1).sleep();
-  // get initial odom
-  nav_msgs::Odometry old_odom = getLastOdom();
-  // send a velocity command of 1 m/s
-  cmd_vel.linear.x = 1.0;
+  // send a velocity command of 0.1 m/s and 0.1 rad/s (inside limits)
+  cmd_vel.linear.x = 0.1;
+  cmd_vel.angular.z = 0.1;
   publish(cmd_vel);
-  // wait a bit
-  ros::Duration(3.0).sleep();
+  // wait a bit (less than the cmd_vel timeout)
+  ros::Duration(1.0).sleep();
 
-  nav_msgs::Odometry new_odom = getLastOdom();
+  const geometry_msgs::TwistStamped cmd_vel_limited = getLastCmdVelLimited();
 
-  // check if the robot has stopped after 0.5s, thus covering less than 0.5s*1.0m.s-1 + some (big) tolerance
-  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 0.8);
+  // check cmd_vel limited is the same as the requested one
+  EXPECT_EQ(cmd_vel.linear.x, cmd_vel_limited.twist.linear.x);
+  EXPECT_EQ(cmd_vel.angular.z, cmd_vel_limited.twist.angular.z);
+}
+
+TEST_F(DiffDriveControllerTest, testOutsideLimits)
+{
+  // wait for ROS
+  while (!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  // give some time to the controller to react to the command
+  ros::Duration(0.1).sleep();
+  // send a velocity command of 1.5 m/s and 2.5 rad/s (outside limits)
+  cmd_vel.linear.x = 1.5;
+  cmd_vel.angular.z = 2.5;
+  publish(cmd_vel);
+  // wait a bit (less than the cmd_vel timeout)
+  ros::Duration(2.0).sleep();
+
+  const geometry_msgs::TwistStamped cmd_vel_limited = getLastCmdVelLimited();
+
+  // check cmd_vel limited is smaller than the requested one
+  EXPECT_LT(cmd_vel_limited.twist.linear.x, cmd_vel.linear.x);
+  EXPECT_LT(cmd_vel_limited.twist.angular.z, cmd_vel.angular.z);
+
+  // check cmd_vel limited is equal to the maximum allowed one (limits)
+  double max_linear_velocity = 1.0;
+  double max_angular_velocity = 2.0;
+
+  ros::param::param("/diffbot_controller/linear/x/max_velocity", max_linear_velocity, max_linear_velocity);
+  ros::param::param("/diffbot_controller/angular/z/max_velocity", max_angular_velocity, max_angular_velocity);
+
+  EXPECT_EQ(max_linear_velocity, cmd_vel_limited.twist.linear.x);
+  EXPECT_EQ(max_angular_velocity, cmd_vel_limited.twist.angular.z);
+}
+
+TEST_F(DiffDriveControllerTest, testPreserveTurningRadius)
+{
+  // @todo
+}
+
+TEST_F(DiffDriveControllerTest, testOutsideJointLimits)
+{
+  // @todo
 }
 
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "diff_drive_test");
+  ros::init(argc, argv, "diff_drive_publish_cmd_vel_limited_test");
 
   ros::AsyncSpinner spinner(1);
   spinner.start();

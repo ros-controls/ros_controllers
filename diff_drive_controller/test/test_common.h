@@ -23,21 +23,31 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 /// \author Bence Magyar
+/// \author Enrique Fernandez
 
 #include <cmath>
 
-#include <gtest/gtest.h>
+#include <limits>
 
 #include <ros/ros.h>
 
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/tf.h>
+#include <control_toolbox/pid.h>
+#include <angles/angles.h>
+
+#include <diff_drive_controller/odometry.h>
+#include <diff_drive_controller/DiffDriveControllerState.h>
+
+#include <Eigen/Dense>
 
 #include <std_srvs/Empty.h>
+
+#include "gtest_common.h"
 
 // Floating-point value comparison threshold
 const double EPS = 0.01;
@@ -54,6 +64,10 @@ public:
   DiffDriveControllerTest()
   : cmd_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100))
   , odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
+  , cmd_vel_limited_sub(nh.subscribe("cmd_vel_limited", 100, &DiffDriveControllerTest::cmdVelLimitedCallback, this))
+  , state_sub(nh.subscribe("state", 100, &DiffDriveControllerTest::diffDriveControllerStateCallback, this))
+  , last_odoms(2)
+  , last_states(3)
   , start_srv(nh.serviceClient<std_srvs::Empty>("start"))
   , stop_srv(nh.serviceClient<std_srvs::Empty>("stop"))
   {
@@ -62,32 +76,113 @@ public:
   ~DiffDriveControllerTest()
   {
     odom_sub.shutdown();
+    cmd_vel_limited_sub.shutdown();
+    state_sub.shutdown();
   }
 
-  nav_msgs::Odometry getLastOdom(){ return last_odom; }
+  nav_msgs::Odometry getLastOdom(){ return last_odoms[0]; }
+  std::vector<nav_msgs::Odometry> getLastOdoms(){ return last_odoms; }
+  geometry_msgs::TwistStamped getLastCmdVelLimited(){ return last_cmd_vel_limited; }
+  diff_drive_controller::DiffDriveControllerState getLastState(){ return last_states[0]; }
+  std::vector<diff_drive_controller::DiffDriveControllerState> getLastStates(){ return last_states; }
   void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
   bool isControllerAlive(){ return (odom_sub.getNumPublishers() > 0) && (cmd_pub.getNumSubscribers() > 0); }
 
   void start(){ std_srvs::Empty srv; start_srv.call(srv); }
   void stop(){ std_srvs::Empty srv; stop_srv.call(srv); }
 
+  void goToYaw(double target,
+      double tolerance = ORIENTATION_TOLERANCE,
+      double control_frequency = 10.0)
+  {
+    // Setup PID controller with gains: K_p, K_i, K_d, i_max, i_min
+    control_toolbox::Pid pid(1.0, 0.1, 0.0, 1.0, -1.0);
+
+    // Control loop:
+    ros::Rate r(control_frequency);
+    const ros::Duration dt = r.expectedCycleTime();
+    while (true)
+    {
+      // Retrieve current state:
+      const nav_msgs::Odometry odom = getLastOdom();
+      const double yaw = tf::getYaw(odom.pose.pose.orientation);
+
+      // Compute error wrt target:
+      const double error = angles::shortest_angular_distance(yaw, target);
+
+      // Exit when target reach up to some tolerance:
+      if (error < tolerance)
+      {
+        break;
+      }
+
+      // Command new velocity control signal using the PID controller:
+      geometry_msgs::Twist cmd_vel;
+      cmd_vel.angular.z = pid.computeCommand(error, dt);
+      publish(cmd_vel);
+
+      r.sleep();
+    }
+
+    // Zero out (stop) velocity control signal:
+    geometry_msgs::Twist cmd_vel;
+    cmd_vel.angular.z = 0.0;
+    publish(cmd_vel);
+  }
+
 private:
   ros::NodeHandle nh;
   ros::Publisher cmd_pub;
   ros::Subscriber odom_sub;
-  nav_msgs::Odometry last_odom;
+  ros::Subscriber cmd_vel_limited_sub;
+  ros::Subscriber state_sub;
+  std::vector<nav_msgs::Odometry> last_odoms;
+  geometry_msgs::TwistStamped last_cmd_vel_limited;
+  std::vector<diff_drive_controller::DiffDriveControllerState> last_states;
 
   ros::ServiceClient start_srv;
   ros::ServiceClient stop_srv;
 
   void odomCallback(const nav_msgs::Odometry& odom)
   {
-    ROS_INFO_STREAM("Callback reveived: pos.x: " << odom.pose.pose.position.x
+    ROS_INFO_STREAM("Odometry callback reveived (" << odom.header.seq
+                     << "): pos.x: " << odom.pose.pose.position.x
                      << ", orient.z: " << odom.pose.pose.orientation.z
                      << ", lin_est: " << odom.twist.twist.linear.x
                      << ", ang_est: " << odom.twist.twist.angular.z);
-    last_odom = odom;
+
+    if (last_odoms[0].header.seq > 0)
+    {
+      EXPECT_EQ(last_odoms[0].header.seq + 1, odom.header.seq);
+    }
+
+    last_odoms[1] = last_odoms[0];
+    last_odoms[0] = odom;
   }
+
+  void cmdVelLimitedCallback(const geometry_msgs::TwistStamped& twist)
+  {
+    ROS_INFO_STREAM("Twist callback reveived: linear: " << twist.twist.linear.x
+                     << ", angular: " << twist.twist.angular.z);
+
+    last_cmd_vel_limited = twist;
+  }
+
+  void diffDriveControllerStateCallback(const diff_drive_controller::DiffDriveControllerState& msg)
+  {
+    ROS_INFO_STREAM("Joint trajectory controller state callback reveived("
+                    << msg.header.seq << ")");
+
+    if (last_states[0].header.seq > 0)
+    {
+      EXPECT_EQ(last_states[0].header.seq + 1, msg.header.seq);
+    }
+
+    last_states[2] = last_states[1];
+    last_states[1] = last_states[0];
+    last_states[0] = msg;
+  }
+
 };
 
 inline tf::Quaternion tfQuatFromGeomQuat(const geometry_msgs::Quaternion& quat)
@@ -95,3 +190,17 @@ inline tf::Quaternion tfQuatFromGeomQuat(const geometry_msgs::Quaternion& quat)
   return tf::Quaternion(quat.x, quat.y, quat.z, quat.w);
 }
 
+void propagate(double& x, double& y, double& yaw,
+    double v_x, double v_y, double v_yaw, double dt)
+{
+  const double sin_yaw = std::sin(yaw);
+  const double cos_yaw = std::cos(yaw);
+
+  // (x, y) = (x, y) + R(yaw) * (v_x, v_y) * dt
+  x += (v_x * cos_yaw - v_y * sin_yaw) * dt;
+  y += (v_x * sin_yaw + v_y * cos_yaw) * dt;
+
+  // yaw = yaw + v_yaw * dt (normalized)
+  yaw += v_yaw * dt;
+  yaw = angles::normalize_angle(yaw);
+}

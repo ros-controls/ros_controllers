@@ -23,38 +23,39 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
-// NOTE: The contents of this file have been taken largely from the ros_control wiki tutorials
+/// \author Enrique Fernandez
 
-// ROS
-#include <ros/ros.h>
+#include <diff_drive_controller/covariance.h>
 
-// ros_control
-#include <controller_manager/controller_manager.h>
+#include <gtest/gtest.h>
 
-#include "diffbot.h"
+#include <Eigen/Dense>
 
-int main(int argc, char **argv)
+template <typename T, int N>
+void testCovariance(const Eigen::Matrix<T, N, N>& covariance,
+    const double max_condition_number = 1e3)
 {
-  ros::init(argc, argv, "skidsteerbot");
-  ros::NodeHandle nh;
+  using namespace diff_drive_controller;
 
-  Diffbot<6> robot;
-  ROS_WARN_STREAM("period: " << robot.getPeriod().toSec());
-  controller_manager::ControllerManager cm(&robot, nh);
+  static const Eigen::IOFormat HeavyFmt(
+      Eigen::FullPrecision, 0, ", ", ";\n", "[", "]", "[", "]");
 
-  ros::Rate rate(1.0 / robot.getPeriod().toSec());
-  ros::AsyncSpinner spinner(1);
-  spinner.start();
-  while (ros::ok())
-  {
-    robot.read();
-    cm.update(robot.getTime(), robot.getPeriod());
-    robot.write();
-    rate.sleep();
-  }
-  spinner.stop();
+  typedef Eigen::SelfAdjointEigenSolver< Eigen::Matrix<T, N, N> > EigenSolver;
 
-  return 0;
+  EigenSolver eigensolver(covariance);
+
+  EXPECT_TRUE(eigensolver.info() == Eigen::Success)
+    << "Covariance =\n" << covariance.format(HeavyFmt);
+
+  EXPECT_TRUE(isSymmetric(covariance))
+    << "Covariance =\n" << covariance.format(HeavyFmt);
+  EXPECT_TRUE(isPositiveDefinite(covariance, no_tag()))
+    << "Covariance =\n" << covariance.format(HeavyFmt) << "\n"
+    << "Eigenvalues = " << eigensolver.eigenvalues().transpose().format(HeavyFmt);
+  EXPECT_LT(conditionNumber(covariance), max_condition_number)
+    << "Covariance =\n" << covariance.format(HeavyFmt) << "\n"
+    << "Condition number = " << conditionNumber(covariance) << "\n"
+    << "Eigenvalues = " << eigensolver.eigenvalues().transpose().format(HeavyFmt);
 }

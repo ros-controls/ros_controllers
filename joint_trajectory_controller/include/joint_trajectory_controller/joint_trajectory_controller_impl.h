@@ -508,9 +508,8 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   // Hold current position if trajectory is empty
   if (msg->points.empty())
   {
-    setHoldPosition(time_data->uptime);
-    ROS_DEBUG_NAMED(name_, "Empty trajectory command, stopping.");
-    return true;
+    ROS_WARN_NAMED(name_, "Empty trajectory command, skipping.");
+    return false;
   }
 
   // Trajectory initialization options
@@ -687,7 +686,7 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
     response_point.velocity[i]     = state.velocity[0];
     response_point.acceleration[i] = state.acceleration[0];
   }
-  
+
   // Populate response
   resp.name         = joint_names_;
   resp.position     = response_point.position;

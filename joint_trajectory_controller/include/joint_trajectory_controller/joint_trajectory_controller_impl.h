@@ -159,12 +159,16 @@ template <class SegmentImpl, class HardwareInterface>
 inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 trajectoryCommandCB(const JointTrajectoryConstPtr& msg)
 {
-  const bool update_ok = updateTrajectoryCommand(msg, RealtimeGoalHandlePtr());
-  if (update_ok || (msg && msg->points.empty()))
+  if (msg && msg->points.empty())
   {
     ROS_DEBUG_NAMED(name_, "Empty trajectory command, stopping.");
     setHoldPosition(time_data_.readFromRT()->uptime);
     preemptActiveGoal();
+  }
+  else
+  {  
+    const bool update_ok = updateTrajectoryCommand(msg, RealtimeGoalHandlePtr());
+    if (update_ok) {preemptActiveGoal();}
   }
 }
 

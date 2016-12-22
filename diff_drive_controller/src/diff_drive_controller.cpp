@@ -82,7 +82,41 @@ static bool isCylinder(const urdf::LinkConstSharedPtr& link)
 
   if (link->collision->geometry->type != urdf::Geometry::CYLINDER)
   {
-    ROS_ERROR_STREAM("Link " << link->name << " does not have cylinder geometry");
+    ROS_DEBUG_STREAM("Link " << link->name << " does not have cylinder geometry");
+    return false;
+  }
+
+  return true;
+}
+
+/*
+ * \brief Check if the link is modeled as a sphere
+ * \param link Link
+ * \return true if the link is modeled as a Sphere; false otherwise
+ */
+static bool isSphere(const boost::shared_ptr<const urdf::Link>& link)
+{
+  if (!link)
+  {
+    ROS_ERROR("Link == NULL.");
+    return false;
+  }
+
+  if (!link->collision)
+  {
+    ROS_ERROR_STREAM("Link " << link->name << " does not have collision description. Add collision description for link to urdf.");
+    return false;
+  }
+
+  if (!link->collision->geometry)
+  {
+    ROS_ERROR_STREAM("Link " << link->name << " does not have collision geometry description. Add collision geometry description for link to urdf.");
+    return false;
+  }
+
+  if (link->collision->geometry->type != urdf::Geometry::SPHERE)
+  {
+    ROS_DEBUG_STREAM("Link " << link->name << " does not have sphere geometry");
     return false;
   }
 
@@ -97,14 +131,19 @@ static bool isCylinder(const urdf::LinkConstSharedPtr& link)
  */
 static bool getWheelRadius(const urdf::LinkConstSharedPtr& wheel_link, double& wheel_radius)
 {
-  if (!isCylinder(wheel_link))
+  if (isCylinder(wheel_link))
   {
-    ROS_ERROR_STREAM("Wheel link " << wheel_link->name << " is NOT modeled as a cylinder!");
-    return false;
+    wheel_radius = (static_cast<urdf::Cylinder*>(wheel_link->collision->geometry.get()))->radius;
+    return true;
   }
-
-  wheel_radius = (static_cast<urdf::Cylinder*>(wheel_link->collision->geometry.get()))->radius;
-  return true;
+  else if (isSphere(wheel_link))
+  {
+    wheel_radius = (static_cast<urdf::Sphere*>(wheel_link->collision->geometry.get()))->radius;
+    return true;
+  }
+  
+  ROS_ERROR_STREAM("Wheel link " << wheel_link->name << " is NOT modeled as a cylinder or sphere!");
+  return false;
 }
 
 namespace diff_drive_controller{

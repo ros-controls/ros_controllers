@@ -101,6 +101,7 @@ namespace diff_drive_controller{
     /// Odometry related:
     ros::Duration publish_period_;
     ros::Time last_state_publish_time_;
+    int seq_;
     bool open_loop_;
 
     /// Hardware handles:

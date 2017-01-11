@@ -150,6 +150,7 @@ public:
 
 private:
   int loop_count_;
+  int seq_;
   control_toolbox::Pid pid_controller_;           /**< Internal PID controller. */
 
   //friend class JointVelocityControllerNode; // what is this for??

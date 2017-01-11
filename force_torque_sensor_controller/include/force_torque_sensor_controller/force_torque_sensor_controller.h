@@ -57,6 +57,7 @@ private:
   typedef boost::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::WrenchStamped> > RtPublisherPtr;
   std::vector<RtPublisherPtr> realtime_pubs_;
   std::vector<ros::Time> last_publish_times_;
+  std::vector<int> seq_;
   double publish_rate_;
 };
 

@@ -92,6 +92,7 @@ private:
   std::vector<hardware_interface::JointStateHandle> joint_state_;
   boost::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::JointState> > realtime_pub_;
   ros::Time last_publish_time_;
+  int seq_;
   double publish_rate_;
   unsigned int num_hw_joints_; ///< Number of joints present in the JointStateInterface, excluding extra joints
 

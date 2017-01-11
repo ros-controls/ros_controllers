@@ -162,6 +162,8 @@ void JointPositionController::starting(const ros::Time& time)
   command_.initRT(command_struct_);
 
   pid_controller_.reset();
+
+  seq_ = 0;
 }
 
 void JointPositionController::update(const ros::Time& time, const ros::Duration& period)
@@ -222,7 +224,9 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   {
     if(controller_state_publisher_ && controller_state_publisher_->trylock())
     {
+      seq_ += seq_;
       controller_state_publisher_->msg_.header.stamp = time;
+      controller_state_publisher_->msg_.header.seq = seq_;
       controller_state_publisher_->msg_.set_point = command_position;
       controller_state_publisher_->msg_.process_value = current_position;
       controller_state_publisher_->msg_.process_value_dot = joint_.getVelocity();

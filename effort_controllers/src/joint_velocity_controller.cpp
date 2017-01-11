@@ -128,6 +128,7 @@ void JointVelocityController::starting(const ros::Time& time)
 {
   command_ = 0.0;
   pid_controller_.reset();
+  seq_ = 0;
 }
 
 void JointVelocityController::update(const ros::Time& time, const ros::Duration& period)
@@ -145,7 +146,9 @@ void JointVelocityController::update(const ros::Time& time, const ros::Duration&
   {
     if(controller_state_publisher_ && controller_state_publisher_->trylock())
     {
+      seq_ += seq_;
       controller_state_publisher_->msg_.header.stamp = time;
+      controller_state_publisher_->msg_.header.seq = seq_;
       controller_state_publisher_->msg_.set_point = command_;
       controller_state_publisher_->msg_.process_value = joint_.getVelocity();
       controller_state_publisher_->msg_.error = error;

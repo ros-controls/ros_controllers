@@ -40,6 +40,7 @@
  Desc: Velocity-based position controller using basic PID loop
 */
 
+#include <string>
 #include <velocity_controllers/joint_position_controller.h>
 #include <angles/angles.h>
 #include <pluginlib/class_list_macros.h>
@@ -81,7 +82,9 @@ bool JointPositionController::init(hardware_interface::VelocityJointInterface *r
 
   // Get URDF info about joint
   urdf::Model urdf;
-  if (!urdf.initParam("robot_description"))
+  std::string rob_descr = n.getNamespace();
+  rob_descr = rob_descr.erase(rob_descr.find_last_of('/') + 1) + "robot_description";
+  if (!urdf.initParam(rob_descr.c_str()))
   {
     ROS_ERROR("Failed to parse urdf file");
     return false;

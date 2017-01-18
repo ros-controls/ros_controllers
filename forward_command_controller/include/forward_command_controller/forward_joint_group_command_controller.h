@@ -106,7 +106,7 @@ public:
 
     commands_buffer_.writeFromNonRT(std::vector<double>(n_joints_, 0.0));
 
-    sub_command_ = n.subscribe<std_msgs::Float64MultiArray>("command", 1, &ForwardJointGroupCommandController::commandCB, this);
+    initCommandSub(n);
     return true;
   }
 
@@ -123,9 +123,13 @@ public:
   realtime_tools::RealtimeBuffer<std::vector<double> > commands_buffer_;
   unsigned int n_joints_;
 
-private:
+protected:
   ros::Subscriber sub_command_;
-  void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg) 
+  virtual void initCommandSub(ros::NodeHandle &n)
+  {
+    sub_command_ = n.subscribe<std_msgs::Float64MultiArray>("command", 1, &ForwardJointGroupCommandController::commandCB, this);
+  }
+  virtual void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg)
   {
     if(msg->data.size()!=n_joints_)
     { 

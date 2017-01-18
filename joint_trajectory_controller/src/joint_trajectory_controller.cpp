@@ -44,6 +44,17 @@ namespace position_controllers
           JointTrajectoryController;
 }
 
+namespace velocity_controllers
+{
+  /**
+   * \brief Joint trajectory controller that represents trajectory segments as <b>quintic splines</b> and sends
+   * commands to a \b velocity interface.
+   */
+  typedef joint_trajectory_controller::JointTrajectoryController<trajectory_interface::QuinticSplineSegment<double>,
+                                                                 hardware_interface::VelocityJointInterface>
+          JointTrajectoryController;
+}
+
 namespace effort_controllers
 {
   /**
@@ -56,4 +67,5 @@ namespace effort_controllers
 }
 
 PLUGINLIB_EXPORT_CLASS(position_controllers::JointTrajectoryController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(velocity_controllers::JointTrajectoryController, controller_interface::ControllerBase)
 PLUGINLIB_EXPORT_CLASS(effort_controllers::JointTrajectoryController,   controller_interface::ControllerBase)

@@ -42,6 +42,8 @@
 
 #include <urdf_parser/urdf_parser.h>
 
+#include <urdf/urdfdom_compatibility.h>
+
 #include <boost/assign.hpp>
 
 #include <diff_drive_controller/diff_drive_controller.h>

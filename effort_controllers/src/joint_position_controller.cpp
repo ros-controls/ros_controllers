@@ -80,7 +80,7 @@ bool JointPositionController::init(hardware_interface::EffortJointInterface *rob
 
   // Get URDF info about joint
   urdf::Model urdf;
-  if (!urdf.initParam("robot_description"))
+  if (!urdf.initParamWithNodeHandle("robot_description", n))
   {
     ROS_ERROR("Failed to parse urdf file");
     return false;

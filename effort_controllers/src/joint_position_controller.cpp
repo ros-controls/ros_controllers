@@ -80,7 +80,11 @@ bool JointPositionController::init(hardware_interface::EffortJointInterface *rob
 
   // Get URDF info about joint
   urdf::Model urdf;
-  if (!urdf.initParam("robot_description"))
+  std::string robot_namespace = n.getNamespace();
+  // The robot namespace in this context is ns + joint_name so we remove the joint name.
+  robot_namespace.erase(robot_namespace.end()-joint_name.length(), robot_namespace.end());
+  ROS_DEBUG("Namespace: %s", robot_namespace.c_str());
+  if (!urdf.initParam(robot_namespace + "robot_description"))
   {
     ROS_ERROR("Failed to parse urdf file");
     return false;

@@ -113,7 +113,20 @@ std::vector<UrdfJointConstPtr> getUrdfJoints(const urdf::Model& urdf, const std:
     }
     else
     {
-      ROS_ERROR_STREAM("Could not find joint '" << joint_names[i] << "' in URDF model.");
+      std::ostringstream joints_oss;
+      std::vector<boost::shared_ptr<urdf::Link> > links;
+      urdf.getLinks(links);
+      for(std::vector<boost::shared_ptr<urdf::Link> >::const_iterator link_it = links.begin();
+          link_it != links.end();
+          ++link_it)
+      {
+        if((*link_it)->parent_joint) {
+          joints_oss << " - \"" << (*link_it)->parent_joint->name << "\"\n";
+        }
+      }
+      ROS_ERROR_STREAM(
+          "Could not find joint '" << joint_names[i] << "' in URDF model.\n"
+          << "Available joints include: \n" << joints_oss.str());
       return std::vector<UrdfJointConstPtr>();
     }
   }
@@ -283,7 +296,8 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   const unsigned int n_joints = joint_names_.size();
 
   // URDF joints
-  boost::shared_ptr<urdf::Model> urdf = getUrdf(root_nh, "robot_description");
+  controller_nh_.param<std::string>("robot_description_param", urdf_param_, "robot_description");
+  boost::shared_ptr<urdf::Model> urdf = getUrdf(root_nh, urdf_param_);
   if (!urdf) {return false;}
 
   std::vector<UrdfJointConstPtr> urdf_joints = getUrdfJoints(*urdf, joint_names_);

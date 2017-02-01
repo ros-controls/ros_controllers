@@ -178,6 +178,7 @@ private:
   std::string               name_;               ///< Controller name.
   std::vector<JointHandle>  joints_;             ///< Handles to controlled joints.
   std::vector<bool>         angle_wraparound_;   ///< Whether controlled joints wrap around or not.
+  std::string               urdf_param_;         ///< ROS parameter name for retrieving URDF (default "robot_description")
   std::vector<std::string>  joint_names_;        ///< Controlled joint names.
   SegmentTolerances<Scalar> default_tolerances_; ///< Default trajectory segment tolerances.
   HwIfaceAdapter            hw_iface_adapter_;   ///< Adapts desired trajectory state to HW interface.

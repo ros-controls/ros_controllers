@@ -50,9 +50,7 @@ add_library(${PROJECT_NAME} src/joint_trajectory_controller.cpp
 
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
-
 if(CATKIN_ENABLE_TESTING)
-
   find_package(catkin 
     REQUIRED COMPONENTS
       actionlib

@@ -21,16 +21,14 @@
 
   <depend>actionlib</depend>
   <depend>angles</depend>
-  <depend>roscpp</depend>
-  <depend>urdf</depend>
-
+  <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
   <depend>controller_interface</depend>
   <depend>hardware_interface</depend>
   <depend>realtime_tools</depend>
-
-  <depend>control_msgs</depend>
+  <depend>roscpp</depend>
   <depend>trajectory_msgs</depend>
+  <depend>urdf</depend>
 
   <test_depend>rostest</test_depend>
   <test_depend>controller_manager</test_depend>

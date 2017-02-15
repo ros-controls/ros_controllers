@@ -6,8 +6,8 @@ find_package(catkin REQUIRED COMPONENTS
   angles
   controller_interface
   control_msgs
-  forward_command_controller
   control_toolbox
+  forward_command_controller
   realtime_tools
   urdf
 )
@@ -21,9 +21,9 @@ catkin_package(
     controller_interface
     control_msgs
     control_toolbox
+    forward_command_controller
     realtime_tools
     urdf
-    forward_command_controller
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
   )

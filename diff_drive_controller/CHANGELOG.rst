@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.12.0 (2017-02-15)
+-------------------
 * Fix most catkin lint issues
 * Change for format2
 * Add Enrique and Bence to maintainers

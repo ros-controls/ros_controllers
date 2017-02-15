@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.12.0 (2017-02-15)
+-------------------
 * Fix missing controller_manager include
 * Ordered dependencies & cleanup
 * Change for format2

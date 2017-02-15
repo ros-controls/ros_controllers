@@ -2,8 +2,8 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.12.0 (2017-02-15)
+-------------------
 * Change for format2
 * Add Enrique and Bence to maintainers
 * Replace boost::shared_ptr<urdf::XY> with urdf::XYConstSharedPtr when exists

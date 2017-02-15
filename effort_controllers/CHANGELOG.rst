@@ -2,8 +2,8 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.12.0 (2017-02-15)
+-------------------
 * Fix most catkin lint issues
 * Remove unused dependency
 * Change for format2

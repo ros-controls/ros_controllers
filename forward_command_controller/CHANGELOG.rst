@@ -2,6 +2,12 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Change for format2
+* Add Enrique and Bence to maintainers
+* Contributors: Bence Magyar
+
 0.11.2 (2016-08-16)
 -------------------
 

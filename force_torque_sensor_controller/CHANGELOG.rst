@@ -2,6 +2,14 @@
 Changelog for package force_torque_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix most catkin lint issues
+* Sort dependencies
+* Change for format2
+* Add Enrique and Bence to maintainers
+* Contributors: Bence Magyar
+
 0.11.2 (2016-08-16)
 -------------------
 

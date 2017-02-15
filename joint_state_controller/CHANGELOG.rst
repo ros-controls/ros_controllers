@@ -2,6 +2,11 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add Enrique and Bence to maintainers
+* Contributors: Bence Magyar
+
 0.11.2 (2016-08-16)
 -------------------
 

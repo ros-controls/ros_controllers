@@ -2,6 +2,15 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix most catkin lint issues
+* Remove unused dependency
+* Change for format2
+* Add Enrique and Bence to maintainers
+* Replace boost::shared_ptr<urdf::XY> with urdf::XYConstSharedPtr when exists
+* Contributors: Bence Magyar
+
 0.11.2 (2016-08-16)
 -------------------
 * Included angles in dependencies

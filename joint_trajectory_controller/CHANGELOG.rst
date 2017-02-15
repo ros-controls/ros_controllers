@@ -2,6 +2,22 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix missing controller_manager include
+* Ordered dependencies & cleanup
+* Change for format2
+* Add Enrique and Bence to maintainers
+* Add test that sends trajectory entirely in past
+* Use xacro instead of xacro.py
+* urdf::Model typedefs had to be added to a different repo first
+* Updated copyright info
+* jtc: Enable sending trajectories with a partial set of joints
+* Replace boost::shared_ptr<urdf::XY> with urdf::XYConstSharedPtr when exists
+* Infrastructure for testing the velocity_controllers::JointTrajectoryController.
+* jtc: Enable sending trajectories with a partial set of joints
+* Contributors: Beatriz Leon, Bence Magyar, Miguel Prada
+
 0.11.2 (2016-08-16)
 -------------------
 

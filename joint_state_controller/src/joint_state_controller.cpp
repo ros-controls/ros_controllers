@@ -85,7 +85,7 @@ namespace joint_state_controller
       if (realtime_pub_->trylock()){
         // we're actually publishing, so increment time
         last_publish_time_ = last_publish_time_ + ros::Duration(1.0/publish_rate_);
-        seq_ += seq_;
+        seq_ += 1;
 
         // populate joint state message:
         // - fill only joints that are present in the JointStateInterface, i.e. indices [0, num_hw_joints_)

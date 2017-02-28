@@ -279,7 +279,7 @@ namespace diff_drive_controller{
     if (last_state_publish_time_ + publish_period_ < time)
     {
       last_state_publish_time_ += publish_period_;
-      seq_ += seq_;
+      seq_ += 1;
       // Compute and store orientation info
       const geometry_msgs::Quaternion orientation(
             tf::createQuaternionMsgFromYaw(odometry_.getHeading()));

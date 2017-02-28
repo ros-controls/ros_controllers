@@ -84,7 +84,7 @@ namespace imu_sensor_controller
         if (realtime_pubs_[i]->trylock()){
           // we're actually publishing, so increment time
           last_publish_times_[i] = last_publish_times_[i] + ros::Duration(1.0/publish_rate_);
-          seq_[i] += seq_[i];
+          seq_[i] += 1;
 
           // populate message
           realtime_pubs_[i]->msg_.header.stamp = time;

@@ -54,33 +54,33 @@ JointPositionController::~JointPositionController()
   sub_command_.shutdown();
 }
 
-bool JointPositionController::init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n)
+bool JointPositionController::init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &root_nh, ros::NodeHandle &c_nh)
 {
   // Get joint name from parameter server
   std::string joint_name;
-  if (!n.getParam("joint", joint_name)) 
+  if (!c_nh.getParam("joint", joint_name))
   {
-    ROS_ERROR("No joint given (namespace: %s)", n.getNamespace().c_str());
+    ROS_ERROR("No joint given (namespace: %s)", c_nh.getNamespace().c_str());
     return false;
   }
 
   // Load PID Controller using gains set on parameter server
-  if (!pid_controller_.init(ros::NodeHandle(n, "pid")))
+  if (!pid_controller_.init(ros::NodeHandle(c_nh, "pid")))
     return false;
 
   // Start realtime state publisher
   controller_state_publisher_.reset(
-    new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(n, "state", 1));
+    new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(c_nh, "state", 1));
 
   // Start command subscriber
-  sub_command_ = n.subscribe<std_msgs::Float64>("command", 1, &JointPositionController::setCommandCB, this);
+  sub_command_ = c_nh.subscribe<std_msgs::Float64>("command", 1, &JointPositionController::setCommandCB, this);
 
   // Get joint handle from hardware interface
   joint_ = robot->getHandle(joint_name);
 
   // Get URDF info about joint
   urdf::Model urdf;
-  if (!urdf.initParam("robot_description"))
+  if (!urdf.initParam(root_nh.getNamespace() + "/robot_description"))
   {
     ROS_ERROR("Failed to parse urdf file");
     return false;

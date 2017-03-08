@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
+  INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
 )
 
@@ -19,6 +20,9 @@ include_directories(
 
 add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+
+install(DIRECTORY include/${PROJECT_NAME}/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

@@ -62,7 +62,6 @@ else()
       control_msgs
       trajectory_msgs
       controller_manager
-      xacro
   )
 
   # Declare catkin package
@@ -79,7 +78,6 @@ else()
     control_msgs
     trajectory_msgs
     controller_manager
-    xacro
     INCLUDE_DIRS include
     LIBRARIES ${PROJECT_NAME}
   )

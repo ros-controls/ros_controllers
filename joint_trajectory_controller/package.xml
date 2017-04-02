@@ -31,7 +31,6 @@
 
   <build_depend>rostest</build_depend>            <!--Tests-only!-->
   <build_depend>controller_manager</build_depend> <!--Tests-only!-->
-  <build_depend>xacro</build_depend>              <!--Tests-only!-->
 
 
   <run_depend>actionlib</run_depend>
@@ -49,7 +48,6 @@
 
   <run_depend>rostest</run_depend>            <!--Tests-only!-->
   <run_depend>controller_manager</run_depend> <!--Tests-only!-->
-  <run_depend>xacro</run_depend>              <!--Tests-only!-->
   <run_depend>rqt_plot</run_depend>           <!--Tests-only!-->
 
   <export>

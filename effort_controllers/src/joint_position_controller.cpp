@@ -181,12 +181,25 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   // Compute position error
   if (joint_urdf_->type == urdf::Joint::REVOLUTE)
   {
-   angles::shortest_angular_distance_with_limits(
-      current_position,
-      command_position,
-      joint_urdf_->limits->lower,
-      joint_urdf_->limits->upper,
-      error);
+    if (joint_urdf_->limits->lower >= -M_PI &&
+        joint_urdf_->limits->upper <=  M_PI) {
+      // this path only works when the joint travel is
+      // within [-pi,pi]
+      angles::shortest_angular_distance_with_limits(
+        current_position,
+        command_position,
+        joint_urdf_->limits->lower,
+        joint_urdf_->limits->upper,
+        error);
+    } else {
+      // apply limits and compute error without trying to unwrap
+      double clamped_command = command_position;
+      if (clamped_command > joint_urdf_->limits->upper)
+        clamped_command = joint_urdf_->limits->upper;
+      else if (clamped_command < joint_urdf_->limits->lower)
+        clamped_command = joint_urdf_->limits->lower;
+      error = clamped_command - current_position;
+    }
   }
   else if (joint_urdf_->type == urdf::Joint::CONTINUOUS)
   {

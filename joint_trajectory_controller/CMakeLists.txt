@@ -56,7 +56,6 @@ if(CATKIN_ENABLE_TESTING)
       actionlib
       controller_manager
       xacro
-      rqt_plot
   )
 
   find_package(rostest REQUIRED)

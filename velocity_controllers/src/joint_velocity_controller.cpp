@@ -37,4 +37,11 @@
 #include <velocity_controllers/joint_velocity_controller.h>
 #include <pluginlib/class_list_macros.h>
 
+
+template <class T>
+void forward_command_controller::ForwardCommandController<T>::get_process_value(double &process_value)
+{
+        process_value = joint_.getVelocity();
+}
+
 PLUGINLIB_EXPORT_CLASS(velocity_controllers::JointVelocityController,controller_interface::ControllerBase)

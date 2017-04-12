@@ -10,13 +10,15 @@ if(USE_ROSBUILD)
 else()
 
   # Load catkin and all dependencies required for this package
-  find_package(catkin REQUIRED COMPONENTS controller_interface hardware_interface std_msgs)
+  find_package(catkin REQUIRED COMPONENTS controller_interface hardware_interface std_msgs control_msgs realtime_tools)
 
   # Declare catkin package
   catkin_package(
-    CATKIN_DEPENDS controller_interface hardware_interface std_msgs
+    CATKIN_DEPENDS controller_interface hardware_interface std_msgs control_msgs realtime_tools
     INCLUDE_DIRS include
     )
+  
+  include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
   # Install
   install(DIRECTORY include/${PROJECT_NAME}/

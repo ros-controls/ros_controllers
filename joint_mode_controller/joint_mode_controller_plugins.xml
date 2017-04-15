@@ -1,0 +1,11 @@
+<library path="lib/libjoint_mode_controller">
+
+  <class name="joint_mode_controller/JointModeController" 
+	 type="joint_mode_controller::JointModeController" 
+	 base_class_type="controller_interface::ControllerBase">
+    <description>
+      Controller to allow joint controllers to easily switch modes between position, velocity, and effort-based control
+    </description>
+  </class>
+
+</library>

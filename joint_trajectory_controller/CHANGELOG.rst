@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove rqt_plot test_depend & make plots optional
+* Contributors: Bence Magyar
+
 0.12.1 (2017-03-08)
 -------------------
 

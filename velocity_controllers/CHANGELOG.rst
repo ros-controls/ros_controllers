@@ -2,6 +2,11 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Supply NodeHandle to urdf::Model. Closes `#244 <https://github.com/ros-controls/ros_controllers/issues/244>`_
+* Contributors: Piyush Khandelwal
+
 0.12.2 (2017-04-21)
 -------------------
 

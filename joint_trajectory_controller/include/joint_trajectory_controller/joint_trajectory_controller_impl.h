@@ -159,8 +159,17 @@ template <class SegmentImpl, class HardwareInterface>
 inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 trajectoryCommandCB(const JointTrajectoryConstPtr& msg)
 {
-  const bool update_ok = updateTrajectoryCommand(msg, RealtimeGoalHandlePtr());
-  if (update_ok) {preemptActiveGoal();}
+  if (msg && msg->points.empty())
+  {
+    ROS_DEBUG_NAMED(name_, "Empty trajectory command, stopping.");
+    setHoldPosition(time_data_.readFromRT()->uptime);
+    preemptActiveGoal();
+  }
+  else
+  {  
+    const bool update_ok = updateTrajectoryCommand(msg, RealtimeGoalHandlePtr());
+    if (update_ok) {preemptActiveGoal();}
+  }
 }
 
 template <class SegmentImpl, class HardwareInterface>
@@ -496,6 +505,12 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
     return false;
   }
 
+  if (msg->points.empty())
+  {
+    ROS_WARN_NAMED(name_, "Empty trajectory command, skipping.");
+    return false;
+  }
+
   // Time data
   TimeData* time_data = time_data_.readFromRT(); // TODO: Grrr, we need a lock-free data structure here!
 
@@ -504,14 +519,6 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
 
   // Uptime of the next update
   ros::Time next_update_uptime = time_data->uptime + time_data->period;
-
-  // Hold current position if trajectory is empty
-  if (msg->points.empty())
-  {
-    setHoldPosition(time_data->uptime);
-    ROS_DEBUG_NAMED(name_, "Empty trajectory command, stopping.");
-    return true;
-  }
 
   // Trajectory initialization options
   TrajectoryPtr curr_traj_ptr;
@@ -687,7 +694,7 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
     response_point.velocity[i]     = state.velocity[0];
     response_point.acceleration[i] = state.acceleration[0];
   }
-  
+
   // Populate response
   resp.name         = joint_names_;
   resp.position     = response_point.position;

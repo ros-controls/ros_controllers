@@ -160,6 +160,7 @@ namespace diff_drive_controller{
     , base_frame_id_("base_link")
     , enable_odom_tf_(true)
     , wheel_joints_size_(0)
+    , publish_cmd_(false)
   {
   }
 
@@ -250,6 +251,9 @@ namespace diff_drive_controller{
     controller_nh.param("angular/z/max_jerk"               , limiter_ang_.max_jerk               ,  limiter_ang_.max_jerk              );
     controller_nh.param("angular/z/min_jerk"               , limiter_ang_.min_jerk               , -limiter_ang_.max_jerk              );
 
+    // Publish limited velocity:
+    controller_nh.param("publish_cmd", publish_cmd_, publish_cmd_);
+
     // If either parameter is not available, we need to look up the value in the URDF
     bool lookup_wheel_separation = !controller_nh.getParam("wheel_separation", wheel_separation_);
     bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius_);
@@ -273,6 +277,8 @@ namespace diff_drive_controller{
                           << ", wheel radius " << wr);
 
     setOdomPubFields(root_nh, controller_nh);
+
+    cmd_vel_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped>(controller_nh, "cmd_vel_out", 100));
 
     // Get the joint object to use in the realtime loop
     for (int i = 0; i < wheel_joints_size_; ++i)
@@ -369,6 +375,15 @@ namespace diff_drive_controller{
 
     last1_cmd_ = last0_cmd_;
     last0_cmd_ = curr_cmd;
+
+    // Publish limited velocity:
+    if (publish_cmd_ && cmd_vel_pub_->trylock())
+    {
+      cmd_vel_pub_->msg_.header.stamp = time;
+      cmd_vel_pub_->msg_.twist.linear.x = curr_cmd.lin;
+      cmd_vel_pub_->msg_.twist.angular.z = curr_cmd.ang;
+      cmd_vel_pub_->unlockAndPublish();
+    }
 
     // Apply multipliers:
     const double ws = wheel_separation_multiplier_ * wheel_separation_;

@@ -1,48 +1,29 @@
-# Travis Continuous Integration Configuration File For ROS Control Projects
-# Author: Dave Coleman
-sudo: required
-dist: trusty
-language: generic
-python:
-  - "2.7"
+# This config file for Travis CI utilizes ros-industrial/industrial_ci package.
+# For more info for the package, see https://github.com/ros-industrial/industrial_ci/blob/master/README.rst
+sudo: required 
+dist: trusty 
+services:
+  - docker
+language: generic 
 compiler:
   - gcc
 notifications:
   email:
+    on_success: change
+    on_failure: change
     recipients:
       - davetcoleman@gmail.com
       - adolfo.rodriguez@pal-robotics.com
-    on_success: change #[always|never|change] # default: change
-    on_failure: change #[always|never|change] # default: always
-before_install: # Use this to prepare the system to install prerequisites or dependencies
-  # Define some config vars
-  - export ROS_DISTRO=indigo
-  - export CI_SOURCE_PATH=$(pwd)
-  - export REPOSITORY_NAME=${PWD##*/}
-  - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
-  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
-  - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq -y python-catkin-pkg python-rosdep python-wstool ros-$ROS_DISTRO-catkin ros-$ROS_DISTRO-ros
-  # Setup rosdep
-  - sudo rosdep init
-  - rosdep update
-install: # Use this to install any prerequisites or dependencies necessary to run your build
-  # Create workspace
-  - mkdir -p ~/ros/ws_ros_controls/src
-  - cd ~/ros/ws_ros_controls/src
-  - wstool init .
-  # Download non-debian stuff
-  - wstool merge https://raw.github.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall
-  - wstool update
-  # Delete the ros_control.rosinstall version of this repo and use the one of the branch we are testing
-  - rm -rf $REPOSITORY_NAME
-  - ln -s $CI_SOURCE_PATH . # Link the repo we are testing to the new workspace
-  - cd ../
-  # Install dependencies for source repos
-  - rosdep install --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
-before_script: # Use this to prepare your build for testing e.g. copy database configurations, environment variables, etc.
-  - source /opt/ros/$ROS_DISTRO/setup.bash  
-script: # All commands must exit with code 0 on success. Anything else is considered failure.
-  - catkin_make -j2
-
+env:
+  global:
+    - CATKIN_PARALLEL_TEST_JOBS=-p1
+    - ROS_PARALLEL_TEST_JOBS=-j1
+  matrix:
+    - ROS_DISTRO="indigo"  ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu
+    - ROS_DISTRO="indigo"  ROS_REPOSITORY_PATH=http://packages.ros.org/ros-shadow-fixed/ubuntu
+    - ROS_DISTRO="indigo"  UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall
+install:
+  - git clone https://github.com/ros-industrial/industrial_ci.git .ci_config
+script:
+  - source .ci_config/travis.sh 
+##  - source ./travis.sh  # Enable this when you have a package-local script 

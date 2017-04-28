@@ -278,7 +278,10 @@ namespace diff_drive_controller{
 
     setOdomPubFields(root_nh, controller_nh);
 
-    cmd_vel_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped>(controller_nh, "cmd_vel_out", 100));
+    if (publish_cmd_)
+    {
+      cmd_vel_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped>(controller_nh, "cmd_vel_out", 100));
+    }
 
     // Get the joint object to use in the realtime loop
     for (int i = 0; i < wheel_joints_size_; ++i)
@@ -377,7 +380,7 @@ namespace diff_drive_controller{
     last0_cmd_ = curr_cmd;
 
     // Publish limited velocity:
-    if (publish_cmd_ && cmd_vel_pub_->trylock())
+    if (publish_cmd_ && cmd_vel_pub_ && cmd_vel_pub_->trylock())
     {
       cmd_vel_pub_->msg_.header.stamp = time;
       cmd_vel_pub_->msg_.twist.linear.x = curr_cmd.lin;

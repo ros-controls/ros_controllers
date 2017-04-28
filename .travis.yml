@@ -12,8 +12,9 @@ notifications:
     on_success: change
     on_failure: change
     recipients:
-      - davetcoleman@gmail.com
-      - adolfo.rodriguez@pal-robotics.com
+      - enrique.fernandez.perdomo@gmail.com
+      - bence.magyar.robotics@gmail.com
+      - gennaro.raiola@gmail.com
 env:
   global:
     - CATKIN_PARALLEL_TEST_JOBS=-p1

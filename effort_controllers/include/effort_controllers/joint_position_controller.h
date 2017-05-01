@@ -98,14 +98,17 @@ public:
    *
    * \param robot The specific hardware interface used by this controller.
    *
-   * \param n A NodeHandle in the namespace from which the controller
+   * \param root_nh A NodeHandle in the root of the controller manager namespace.
+   * This is where the ROS interfaces are setup (publishers, subscribers, services).
+   *
+   * \param c_nh A NodeHandle in the namespace from which the controller
    * should read its configuration, and where it should set up its ROS
    * interface.
    *
    * \returns True if initialization was successful and the controller
    * is ready to be started.
-   */  
-  bool init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n);
+   */
+  bool init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &root_nh, ros::NodeHandle &c_nh);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)

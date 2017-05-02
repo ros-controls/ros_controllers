@@ -248,7 +248,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
   ASSERT_TRUE(initState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
-  // Invalid size
+  // Invalid size (No partial joints goals allowed)
   {
     trajectory_msgs::JointTrajectoryPoint point;
     point.positions.resize(1, 0.0);

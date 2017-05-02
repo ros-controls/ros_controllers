@@ -180,60 +180,6 @@ preemptActiveGoal()
 }
 
 template <class SegmentImpl, class HardwareInterface>
-inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-checkPathTolerances(const typename Segment::State& state_error,
-                    const Segment&                 segment)
-{
-  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
-  const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
-  if (!checkStateTolerance(state_error, tolerances.state_tolerance))
-  {
-    rt_segment_goal->preallocated_result_->error_code =
-    control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
-    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
-    rt_active_goal_.reset();
-  }
-}
-
-template <class SegmentImpl, class HardwareInterface>
-inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-checkGoalTolerances(const typename Segment::State& state_error,
-                    const Segment&                 segment)
-{
-  // Controller uptime
-  const ros::Time uptime = time_data_.readFromRT()->uptime;
-
-  // Checks that we have ended inside the goal tolerances
-  const RealtimeGoalHandlePtr rt_segment_goal = segment.getGoalHandle();
-  const SegmentTolerances<Scalar>& tolerances = segment.getTolerances();
-  const bool inside_goal_tolerances = checkStateTolerance(state_error, tolerances.goal_state_tolerance);
-
-  if (inside_goal_tolerances)
-  {
-    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
-    rt_segment_goal->setSucceeded(rt_segment_goal->preallocated_result_);
-    rt_active_goal_.reset();
-  }
-  else if (uptime.toSec() < segment.endTime() + tolerances.goal_time_tolerance)
-  {
-    // Still have some time left to meet the goal state tolerances
-  }
-  else
-  {
-    if (verbose_)
-    {
-      ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed");
-      // Check the tolerances one more time to output the errors that occures
-      checkStateTolerance(state_error, tolerances.goal_state_tolerance, true);
-    }
-
-    rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
-    rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
-    rt_active_goal_.reset();
-  }
-}
-
-template <class SegmentImpl, class HardwareInterface>
 JointTrajectoryController<SegmentImpl, HardwareInterface>::
 JointTrajectoryController()
   : verbose_(false), // Set to true during debugging
@@ -276,6 +222,13 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
     }
   }
   ROS_DEBUG_STREAM_NAMED(name_, "Stop trajectory has a duration of " << stop_trajectory_duration_ << "s.");
+
+  // Checking if partial trajectories are allowed
+  controller_nh_.param<bool>("allow_partial_joints_goal", allow_partial_joints_goal_, false);
+  if (allow_partial_joints_goal_)
+  {
+    ROS_DEBUG_NAMED(name_, "Goals with partial set of joints are allowed");
+  }
 
   // List of controlled joints
   joint_names_ = getStrings(controller_nh_, "joints");
@@ -344,14 +297,26 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
                                                          this);
 
   // Preeallocate resources
-  current_state_    = typename Segment::State(n_joints);
-  desired_state_    = typename Segment::State(n_joints);
-  state_error_      = typename Segment::State(n_joints);
-  hold_start_state_ = typename Segment::State(n_joints);
-  hold_end_state_   = typename Segment::State(n_joints);
+  current_state_       = typename Segment::State(n_joints);
+  desired_state_       = typename Segment::State(n_joints);
+  state_error_         = typename Segment::State(n_joints);
+  desired_joint_state_ = typename Segment::State(1);
+  state_joint_error_   = typename Segment::State(1);
 
-  Segment hold_segment(0.0, current_state_, 0.0, current_state_);
-  hold_trajectory_ptr_->resize(1, hold_segment);
+  successful_joint_traj_ = boost::dynamic_bitset<>(joints_.size());
+
+  // Initialize trajectory with all joints
+  typename Segment::State current_joint_state_ = typename Segment::State(1);
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+	  current_joint_state_.position[0]= current_state_.position[i];
+	  current_joint_state_.velocity[0]= current_state_.velocity[i];
+	  Segment hold_segment(0.0, current_joint_state_, 0.0, current_joint_state_);
+
+	  TrajectoryPerJoint joint_segment;
+	  joint_segment.resize(1, hold_segment);
+	  hold_trajectory_ptr_->push_back(joint_segment);
+  }
 
   {
     state_publisher_->lock();
@@ -393,16 +358,6 @@ update(const ros::Time& time, const ros::Duration& period)
   // fetch the currently followed trajectory, it has been updated by the non-rt thread with something that starts in the
   // next control cycle, leaving the current cycle without a valid trajectory.
 
-  // Update desired state: sample trajectory at current time
-  typename Trajectory::const_iterator segment_it = sample(curr_traj, time_data.uptime.toSec(), desired_state_);
-  if (curr_traj.end() == segment_it)
-  {
-    // Non-realtime safe, but should never happen under normal operation
-    ROS_ERROR_NAMED(name_,
-                    "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
-    return;
-  }
-
   // Update current state and state error
   for (unsigned int i = 0; i < joints_.size(); ++i)
   {
@@ -410,31 +365,95 @@ update(const ros::Time& time, const ros::Duration& period)
     current_state_.velocity[i] = joints_[i].getVelocity();
     // There's no acceleration data available in a joint handle
 
-    state_error_.position[i] = desired_state_.position[i] - current_state_.position[i];
-    state_error_.velocity[i] = desired_state_.velocity[i] - current_state_.velocity[i];
+    typename TrajectoryPerJoint::const_iterator segment_it = sample(curr_traj[i], time_data.uptime.toSec(), desired_joint_state_);
+    if (curr_traj[i].end() == segment_it)
+    {
+      // Non-realtime safe, but should never happen under normal operation
+      ROS_ERROR_NAMED(name_,
+                      "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
+      return;
+    }
+    desired_state_.position[i] = desired_joint_state_.position[0];
+    desired_state_.velocity[i] = desired_joint_state_.velocity[0];
+    desired_state_.acceleration[i] = 0.0;
+
+    state_joint_error_.position[0] = desired_joint_state_.position[0] - current_state_.position[i];
+    state_joint_error_.velocity[0] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
+    state_joint_error_.acceleration[0] = 0.0;
+
+    state_error_.position[i] = desired_joint_state_.position[0] - current_state_.position[i];
+    state_error_.velocity[i] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
     state_error_.acceleration[i] = 0.0;
+
+    //Check tolerances
+    const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
+    if (rt_segment_goal && rt_segment_goal == rt_active_goal_)
+    {
+      // Check tolerances
+      if (time_data.uptime.toSec() < segment_it->endTime())
+      {
+        // Currently executing a segment: check path tolerances
+        const SegmentTolerancesPerJoint<Scalar>& joint_tolerances = segment_it->getTolerances();
+        if (!checkStateTolerancePerJoint(state_joint_error_, joint_tolerances.state_tolerance))
+        {
+          if (verbose_)
+          {
+            ROS_ERROR_STREAM_NAMED(name_,"Path tolerances failed for joint: " << joint_names_[i]);
+            checkStateTolerancePerJoint(state_joint_error_, joint_tolerances.state_tolerance, true);
+          }
+          rt_segment_goal->preallocated_result_->error_code =
+          control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
+          rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
+          rt_active_goal_.reset();
+          successful_joint_traj_.reset();
+        }
+      }
+      else if (segment_it == --curr_traj[i].end())
+      {
+        if (verbose_)
+          ROS_DEBUG_STREAM_THROTTLE_NAMED(1,name_,"Finished executing last segment, checking goal tolerances");
+
+        // Controller uptime
+        const ros::Time uptime = time_data_.readFromRT()->uptime;
+
+        // Checks that we have ended inside the goal tolerances
+        const SegmentTolerancesPerJoint<Scalar>& tolerances = segment_it->getTolerances();
+        const bool inside_goal_tolerances = checkStateTolerancePerJoint(state_joint_error_, tolerances.goal_state_tolerance);
+
+        if (inside_goal_tolerances)
+        {
+          successful_joint_traj_[i] = 1;
+        }
+        else if (uptime.toSec() < segment_it->endTime() + tolerances.goal_time_tolerance)
+        {
+          // Still have some time left to meet the goal state tolerances
+        }
+        else
+        {
+          if (verbose_)
+          {
+            ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed for joint: "<< joint_names_[i]);
+            // Check the tolerances one more time to output the errors that occurs
+            checkStateTolerancePerJoint(state_joint_error_, tolerances.goal_state_tolerance, true);
+          }
+
+          rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
+          rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
+          rt_active_goal_.reset();
+          successful_joint_traj_.reset();
+        }
+      }
+    }
   }
 
-  // Check tolerances if segment corresponds to currently active action goal
-  const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
-  if (rt_segment_goal && rt_segment_goal == rt_active_goal_)
+  //If there is an active goal and all segments finished successfully then set goal as succeeded
+  RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
+  if (current_active_goal and successful_joint_traj_.count() == joints_.size())
   {
-    // Check tolerances
-    if (time_data.uptime.toSec() < segment_it->endTime())
-    {
-      // Currently executing a segment: check path tolerances
-      checkPathTolerances(state_error_,
-                          *segment_it);
-    }
-    else if (segment_it == --curr_traj.end())
-    {
-      if (verbose_)
-        ROS_DEBUG_STREAM_THROTTLE_NAMED(1,name_,"Finished executing last segement, checking goal tolerances");
-
-      // Finished executing the LAST segment: check goal tolerances
-      checkGoalTolerances(state_error_,
-                           *segment_it);
-    }
+    current_active_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
+    current_active_goal->setSucceeded(current_active_goal->preallocated_result_);
+    rt_active_goal_.reset();
+    successful_joint_traj_.reset();
   }
 
   // Hardware interface adapter: Generate and send commands
@@ -486,12 +505,13 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   curr_trajectory_box_.get(curr_traj_ptr);
 
   Options options;
-  options.other_time_base    = &next_update_uptime;
-  options.current_trajectory = curr_traj_ptr.get();
-  options.joint_names        = &joint_names_;
-  options.angle_wraparound   = &angle_wraparound_;
-  options.rt_goal_handle     = gh;
-  options.default_tolerances = &default_tolerances_;
+  options.other_time_base           = &next_update_uptime;
+  options.current_trajectory        = curr_traj_ptr.get();
+  options.joint_names               = &joint_names_;
+  options.angle_wraparound          = &angle_wraparound_;
+  options.rt_goal_handle            = gh;
+  options.default_tolerances        = &default_tolerances_;
+  options.allow_partial_joints_goal = allow_partial_joints_goal_;
 
   // Update currently executing trajectory
   try
@@ -526,7 +546,7 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 goalCB(GoalHandle gh)
 {
-  ROS_DEBUG_STREAM_NAMED(name_,"Recieved new action goal");
+  ROS_DEBUG_STREAM_NAMED(name_,"Received new action goal");
 
   // Precondition: Running controller
   if (!this->isRunning())
@@ -538,11 +558,24 @@ goalCB(GoalHandle gh)
     return;
   }
 
-  // Goal should specify all controller joints (they can be ordered differently). Reject if this is not the case
-  using internal::permutation;
-  std::vector<unsigned int> permutation_vector = permutation(joint_names_, gh.getGoal()->trajectory.joint_names);
+  // If partial joints goals are not allowed, goal should specify all controller joints
+  if (!allow_partial_joints_goal_)
+  {
+    if (gh.getGoal()->trajectory.joint_names.size() != joint_names_.size())
+    {
+      ROS_ERROR_NAMED(name_, "Joints on incoming goal don't match the controller joints.");
+      control_msgs::FollowJointTrajectoryResult result;
+      result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS;
+      gh.setRejected(result);
+      return;
+    }
+  }
 
-  if (permutation_vector.empty())
+  // Goal should specify valid controller joints (they can be ordered differently). Reject if this is not the case
+  using internal::mapping;
+  std::vector<unsigned int> mapping_vector = mapping(gh.getGoal()->trajectory.joint_names, joint_names_);
+
+  if (mapping_vector.empty())
   {
     ROS_ERROR_NAMED(name_, "Joints on incoming goal don't match the controller joints.");
     control_msgs::FollowJointTrajectoryResult result;
@@ -624,19 +657,28 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
   curr_trajectory_box_.get(curr_traj_ptr);
   Trajectory& curr_traj = *curr_traj_ptr;
 
-  typename Segment::State state;
-  typename Trajectory::const_iterator segment_it = sample(curr_traj, sample_time.toSec(), state);
-  if (curr_traj.end() == segment_it)
-  {
-    ROS_ERROR_STREAM_NAMED(name_, "Requested sample time preceeds trajectory start time.");
-    return false;
-  }
+  typename Segment::State response_point = typename Segment::State(joint_names_.size());
 
+  for (unsigned int i = 0; i < joints_.size(); ++i)
+  {
+    typename Segment::State state;
+    typename TrajectoryPerJoint::const_iterator segment_it = sample(curr_traj[i], sample_time.toSec(), state);
+    if (curr_traj[i].end() == segment_it)
+    {
+      ROS_ERROR_STREAM_NAMED(name_, "Requested sample time precedes trajectory start time.");
+      return false;
+    }
+
+    response_point.position[i]     = state.position[0];
+    response_point.velocity[i]     = state.velocity[0];
+    response_point.acceleration[i] = state.acceleration[0];
+  }
+  
   // Populate response
   resp.name         = joint_names_;
-  resp.position     = state.position;
-  resp.velocity     = state.velocity;
-  resp.acceleration = state.acceleration;
+  resp.position     = response_point.position;
+  resp.velocity     = response_point.velocity;
+  resp.acceleration = response_point.acceleration;
 
   return true;
 }
@@ -676,7 +718,10 @@ setHoldPosition(const ros::Time& time)
   // - Create segment that goes from current state to above zero velocity state, in the desired time
   // NOTE: The symmetry assumption from the second point above might not hold for all possible segment types
 
-  assert(1 == hold_trajectory_ptr_->size());
+  assert(joint_names_.size() == hold_trajectory_ptr_->size());
+
+  typename Segment::State hold_start_state_ = typename Segment::State(1);
+  typename Segment::State hold_end_state_ = typename Segment::State(1);
 
   const typename Segment::Time start_time  = time.toSec();
   const typename Segment::Time end_time    = time.toSec() + stop_trajectory_duration_;
@@ -686,24 +731,24 @@ setHoldPosition(const ros::Time& time)
   const unsigned int n_joints = joints_.size();
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-    hold_start_state_.position[i]     =  joints_[i].getPosition();
-    hold_start_state_.velocity[i]     =  joints_[i].getVelocity();
-    hold_start_state_.acceleration[i] =  0.0;
+    hold_start_state_.position[0]     =  joints_[i].getPosition();
+    hold_start_state_.velocity[0]     =  joints_[i].getVelocity();
+    hold_start_state_.acceleration[0] =  0.0;
 
-    hold_end_state_.position[i]       =  joints_[i].getPosition();
-    hold_end_state_.velocity[i]       = -joints_[i].getVelocity();
-    hold_end_state_.acceleration[i]   =  0.0;
+    hold_end_state_.position[0]       =  joints_[i].getPosition();
+    hold_end_state_.velocity[0]       = -joints_[i].getVelocity();
+    hold_end_state_.acceleration[0]   =  0.0;
+
+    (*hold_trajectory_ptr_)[i].front().init(start_time,  hold_start_state_,
+                                                             end_time_2x, hold_end_state_);
+
+    // Sample segment at its midpoint, that should have zero velocity
+    (*hold_trajectory_ptr_)[i].front().sample(end_time, hold_end_state_);
+
+    // Now create segment that goes from current state to one with zero end velocity
+    (*hold_trajectory_ptr_)[i].front().init(start_time, hold_start_state_,
+                                                             end_time,   hold_end_state_);
   }
-  hold_trajectory_ptr_->front().init(start_time,  hold_start_state_,
-                                     end_time_2x, hold_end_state_);
-
-  // Sample segment at its midpoint, that should have zero velocity
-  hold_trajectory_ptr_->front().sample(end_time, hold_end_state_);
-
-  // Now create segment that goes from current state to one with zero end velocity
-  hold_trajectory_ptr_->front().init(start_time, hold_start_state_,
-                                     end_time,   hold_end_state_);
-
   curr_trajectory_box_.set(hold_trajectory_ptr_);
 }
 

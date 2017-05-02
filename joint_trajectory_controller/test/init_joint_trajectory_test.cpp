@@ -45,61 +45,73 @@ using std::string;
 const double EPS = 1e-9;
 
 typedef JointTrajectorySegment<trajectory_interface::QuinticSplineSegment<double> > Segment;
-typedef vector<Segment>                Trajectory;
+typedef vector<Segment> TrajectoryPerJoint;
+typedef vector<TrajectoryPerJoint> Trajectory;
 
-TEST(PermutationTest, Permutation)
+TEST(MappingTest, Mapping)
 {
   vector<string> t1(4);
-  t1[0] = "A";
-  t1[1] = "B";
-  t1[2] = "C";
-  t1[3] = "D";
+  t1[0] = "B";
+  t1[1] = "D";
+  t1[2] = "A";
+  t1[3] = "C";
 
   vector<string> t2(4);
-  t2[0] = "B";
-  t2[1] = "D";
-  t2[2] = "A";
-  t2[3] = "C";
+  t2[0] = "A";
+  t2[1] = "B";
+  t2[2] = "C";
+  t2[3] = "D";
 
-  typedef vector<unsigned int> PermutationType;
-  PermutationType ground_truth(4);
+  typedef vector<unsigned int> MappingType;
+  MappingType ground_truth(4);
   ground_truth[0] = 2;
   ground_truth[1] = 0;
   ground_truth[2] = 3;
   ground_truth[3] = 1;
 
-  // Mismatching sizes: Return empty permutation vector
+  // Mismatching sizes (t2 smaller than t1): Return empty mapping vector
   {
     vector<string> t2_bad(1,"A");
-    PermutationType perm = internal::permutation(t1, t2_bad);
-    EXPECT_TRUE(perm.empty());
+    MappingType mapping = internal::mapping(t1, t2_bad);
+    EXPECT_TRUE(mapping.empty());
   }
 
-  // Mismatching contents: Return empty permutation vector
+  // Mismatching contents: Return empty mapping vector
   {
     vector<string> t2_bad(3,"A");
-    PermutationType perm = internal::permutation(t1, t2_bad);
-    EXPECT_TRUE(perm.empty());
+    MappingType mapping = internal::mapping(t1, t2_bad);
+    EXPECT_TRUE(mapping.empty());
   }
 
   // Valid parameters
   {
-    PermutationType perm = internal::permutation(t1, t2);
-    EXPECT_EQ(ground_truth.size(), perm.size());
-    EXPECT_EQ(ground_truth[0], perm[0]);
-    EXPECT_EQ(ground_truth[1], perm[1]);
-    EXPECT_EQ(ground_truth[2], perm[2]);
-    EXPECT_EQ(ground_truth[3], perm[3]);
+    MappingType mapping = internal::mapping(t1, t2);
+    EXPECT_EQ(ground_truth.size(), mapping.size());
+    EXPECT_EQ(ground_truth[3], mapping[0]);
+    EXPECT_EQ(ground_truth[2], mapping[1]);
+    EXPECT_EQ(ground_truth[1], mapping[2]);
+    EXPECT_EQ(ground_truth[0], mapping[3]);
   }
 
-  // Valid parameters, inverse parameter order yields inverse permutation vector
+  // Valid parameters, inverse parameter order yields inverse mapping vector
   {
-    PermutationType perm = internal::permutation(t2, t1);
-    EXPECT_EQ(ground_truth.size(), perm.size());
-    EXPECT_EQ(ground_truth[3], perm[0]);
-    EXPECT_EQ(ground_truth[2], perm[1]);
-    EXPECT_EQ(ground_truth[1], perm[2]);
-    EXPECT_EQ(ground_truth[0], perm[3]);
+    MappingType mapping = internal::mapping(t2, t1);
+    EXPECT_EQ(ground_truth.size(), mapping.size());
+    EXPECT_EQ(ground_truth[0], mapping[0]);
+    EXPECT_EQ(ground_truth[1], mapping[1]);
+    EXPECT_EQ(ground_truth[2], mapping[2]);
+    EXPECT_EQ(ground_truth[3], mapping[3]);
+  }
+
+  // Valid parameters, partial trajectory
+  {
+    vector<string> t1_partial(2);
+    t1_partial[0] = "B";
+    t1_partial[1] = "D";
+    MappingType mapping = internal::mapping(t1_partial, t2);
+    EXPECT_EQ(t1_partial.size(), mapping.size());
+    EXPECT_EQ(1, mapping[0]);
+    EXPECT_EQ(3, mapping[1]);
   }
 }
 
@@ -140,11 +152,15 @@ public:
     state[1].velocity.push_back(1.0);
     state[1].acceleration.push_back(1.0);
 
-    curr_traj.push_back(Segment(0.0, state[0],
+    TrajectoryPerJoint joint_segment;
+
+    joint_segment.push_back(Segment(0.0, state[0],
                                 1.0, state[1]));
 
-    curr_traj.push_back(Segment(3.0,  state[1],
+    joint_segment.push_back(Segment(3.0,  state[1],
                                 10.0, state[0])); // This is just junk that should be discarded in the tests
+
+    curr_traj.push_back(joint_segment);
   }
 
 protected:
@@ -182,14 +198,14 @@ TEST_F(InitTrajectoryTest, InitLogic)
   {
     const ros::Time time = msg_start_time;
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
-    EXPECT_EQ(points.size() - 1, trajectory.size());
+    EXPECT_EQ(points.size() - 1, trajectory[0].size());
   }
 
   // First point: Return partial trajectory (last segment)
   {
     const ros::Time time = msg_start_time + msg_points.begin()->time_from_start;
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
-    EXPECT_EQ(points.size() - 2, trajectory.size());
+    EXPECT_EQ(points.size() - 2, trajectory[0].size());
   }
 
   // Between the first and second points: Return partial trajectory (last segment)
@@ -197,7 +213,7 @@ TEST_F(InitTrajectoryTest, InitLogic)
     const ros::Time time = msg_start_time +
     ros::Duration((msg_points.begin()->time_from_start + (++msg_points.begin())->time_from_start).toSec() / 2.0);
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
-    EXPECT_EQ(msg_points.size() - 2, trajectory.size());
+    EXPECT_EQ(msg_points.size() - 2, trajectory[0].size());
   }
 
   // Second point: Return empty trajectory
@@ -249,23 +265,23 @@ TEST_F(InitTrajectoryTest, InitLogicCombine)
 
   // Before first point, starting the current trajectory: Return 4 segments: Last of current + bridge + full message
   {
-    const ros::Time time(curr_traj[0].startTime());
+    const ros::Time time(curr_traj[0][0].startTime());
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
-    EXPECT_EQ(points.size() + 1, trajectory.size());
+    EXPECT_EQ(points.size() + 1, trajectory[0].size());
   }
 
   // Before first point: Return 4 segments: Last of current + bridge + full message
   {
     const ros::Time time = msg_start_time;
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
-    EXPECT_EQ(points.size() + 1, trajectory.size());
+    EXPECT_EQ(points.size() + 1, trajectory[0].size());
   }
 
   // First point: Return partial trajectory, 3 segments: Last of current + bridge + last of message
   {
     const ros::Time time = msg_start_time + msg_points.begin()->time_from_start;
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
-    EXPECT_EQ(points.size(), trajectory.size());
+    EXPECT_EQ(points.size(), trajectory[0].size());
   }
 
   // Between the first and second points: Same as before
@@ -273,14 +289,14 @@ TEST_F(InitTrajectoryTest, InitLogicCombine)
     const ros::Time time = msg_start_time +
     ros::Duration((msg_points.begin()->time_from_start + (++msg_points.begin())->time_from_start).toSec() / 2.0);
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
-    EXPECT_EQ(msg_points.size(), trajectory.size());
+    EXPECT_EQ(msg_points.size(), trajectory[0].size());
   }
 
   // Second point: Return partial trajectory, 2 segments: Last of current + bridge (only one point of message made it)
   {
     const ros::Time time = msg_start_time + (++msg_points.begin())->time_from_start;
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
-    EXPECT_EQ(msg_points.size() - 1, trajectory.size());
+    EXPECT_EQ(msg_points.size() - 1, trajectory[0].size());
   }
 
   // Between the second and third points: Same as before
@@ -288,7 +304,7 @@ TEST_F(InitTrajectoryTest, InitLogicCombine)
     const ros::Time time = msg_start_time +
     ros::Duration(((++msg_points.begin())->time_from_start + (--msg_points.end())->time_from_start).toSec() / 2.0);
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
-    EXPECT_EQ(msg_points.size() - 1, trajectory.size());
+    EXPECT_EQ(msg_points.size() - 1, trajectory[0].size());
   }
 
   // Last point: Return empty trajectory
@@ -314,12 +330,12 @@ TEST_F(InitTrajectoryTest, InitValues)
   // Input time is before first point: Return full trajectory (2 segments)
   const ros::Time time = msg_start_time;
   Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time);
-  ASSERT_EQ(points.size() - 1, trajectory.size());
+  ASSERT_EQ(points.size() - 1, trajectory[0].size());
 
   // Check all segment start/end times and states
-  for (unsigned int i = 0; i < trajectory.size(); ++i)
+  for (unsigned int i = 0; i < trajectory[0].size(); ++i)
   {
-    const Segment& segment = trajectory[i];
+    const Segment& segment = trajectory[0][i];
     const JointTrajectoryPoint& p_start = msg_points[i];
     const JointTrajectoryPoint& p_end   = msg_points[i + 1];
 
@@ -354,17 +370,17 @@ TEST_F(InitTrajectoryTest, InitValues)
 TEST_F(InitTrajectoryTest, InitValuesCombine)
 {
   // Before first point: Return 4 segments: Last of current + bridge + full message
-  const ros::Time time(curr_traj[0].startTime());
+  const ros::Time time(curr_traj[0][0].startTime());
   InitJointTrajectoryOptions<Trajectory> options;
   options.current_trajectory = &curr_traj;
 
   Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
-  ASSERT_EQ(points.size() + 1, trajectory.size());
+  ASSERT_EQ(points.size() + 1, trajectory[0].size());
 
   // Check current trajectory segment start/end times and states (only one)
   {
-    const Segment& ref_segment = curr_traj[0];
-    const Segment& segment     = trajectory[0];
+    const Segment& ref_segment = curr_traj[0][0];
+    const Segment& segment     = trajectory[0][0];
 
     // Check start/end times
     {
@@ -395,8 +411,8 @@ TEST_F(InitTrajectoryTest, InitValuesCombine)
 
   // Check bridge trajectory segment start/end times and states (only one)
   {
-    const Segment& ref_segment = curr_traj[0];
-    const Segment& segment     = trajectory[1];
+    const Segment& ref_segment = curr_traj[0][0];
+    const Segment& segment     = trajectory[0][1];
 
     const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
 
@@ -433,12 +449,12 @@ TEST_F(InitTrajectoryTest, InitValuesCombine)
   }
 
   // Check all segment start/end times and states (2 segments)
-  for (unsigned int traj_it = 2, msg_it = 0; traj_it < trajectory.size(); ++traj_it, ++msg_it)
+  for (unsigned int traj_it = 2, msg_it = 0; traj_it < trajectory[0].size(); ++traj_it, ++msg_it)
   {
     const ros::Time msg_start_time = trajectory_msg.header.stamp;
     const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
 
-    const Segment& segment = trajectory[traj_it];
+    const Segment& segment = trajectory[0][traj_it];
     const JointTrajectoryPoint& p_start = msg_points[msg_it];
     const JointTrajectoryPoint& p_end   = msg_points[msg_it + 1];
 
@@ -470,7 +486,7 @@ TEST_F(InitTrajectoryTest, InitValuesCombine)
   }
 }
 
-TEST_F(InitTrajectoryTest, JointPermutation)
+TEST_F(InitTrajectoryTest, JointMapping)
 {
   // Add an extra joint to the trajectory message created in the fixture
   trajectory_msg.points[0].positions.push_back(-2.0);
@@ -492,11 +508,13 @@ TEST_F(InitTrajectoryTest, JointPermutation)
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp);
 
     // Check position values only
-    const Segment& segment = trajectory[0];
+    const Segment& segment_foo_joint = trajectory[0][0];
+    const Segment& segment_bar_joint = trajectory[1][0];
     typename Segment::State state;
-    segment.sample(segment.startTime(), state);
+    segment_foo_joint.sample(segment_foo_joint.startTime(), state);
     EXPECT_EQ(trajectory_msg.points[0].positions[0],  state.position[0]);
-    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state.position[1]);
+    segment_bar_joint.sample(segment_bar_joint.startTime(), state);
+    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state.position[0]);
   }
 
   // Reference joint names vector that reverses joint order
@@ -510,13 +528,17 @@ TEST_F(InitTrajectoryTest, JointPermutation)
     Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, trajectory_msg.header.stamp, options);
 
     // Check position values only
-    const Segment& segment = trajectory[0];
-    typename Segment::State state;
-    segment.sample(segment.startTime(), state);
-    EXPECT_NE(trajectory_msg.points[0].positions[0],  state.position[0]);
-    EXPECT_NE(trajectory_msg.points[0].positions[1],  state.position[1]);
-    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state.position[1]);
-    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state.position[0]);
+    const Segment& segment_bar_joint = trajectory[0][0];
+    const Segment& segment_foo_joint = trajectory[1][0];
+
+    typename Segment::State state_foo_joint;
+    typename Segment::State state_bar_joint;
+    segment_foo_joint.sample(segment_foo_joint.startTime(), state_foo_joint);
+    segment_bar_joint.sample(segment_bar_joint.startTime(), state_bar_joint);
+    EXPECT_NE(trajectory_msg.points[0].positions[0],  state_bar_joint.position[0]);
+    EXPECT_NE(trajectory_msg.points[0].positions[1],  state_foo_joint.position[0]);
+    EXPECT_EQ(trajectory_msg.points[0].positions[0],  state_foo_joint.position[0]);
+    EXPECT_EQ(trajectory_msg.points[0].positions[1],  state_bar_joint.position[0]);
   }
 
   // Reference joint names size mismatch
@@ -553,19 +575,19 @@ TEST_F(InitTrajectoryTest, WrappingSpec)
   }
 
   // Before first point: Return 4 segments: Last of current + bridge + full message
-  const ros::Time time(curr_traj[0].startTime());
+  const ros::Time time(curr_traj[0][0].startTime());
   std::vector<bool> angle_wraparound(1, true);
   InitJointTrajectoryOptions<Trajectory> options;
   options.current_trajectory = &curr_traj;
   options.angle_wraparound      = &angle_wraparound;
 
   Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
-  ASSERT_EQ(points.size() + 1, trajectory.size());
+  ASSERT_EQ(points.size() + 1, trajectory[0].size());
 
   // Check current trajectory segment start/end times and states (only one)
   {
-    const Segment& ref_segment = curr_traj[0];
-    const Segment& segment     = trajectory[0];
+    const Segment& ref_segment = curr_traj[0][0];
+    const Segment& segment     = trajectory[0][0];
 
     // Check start/end times
     {
@@ -596,8 +618,8 @@ TEST_F(InitTrajectoryTest, WrappingSpec)
 
   // Check bridge trajectory segment start/end times and states (only one)
   {
-    const Segment& ref_segment = curr_traj[0];
-    const Segment& segment     = trajectory[1];
+    const Segment& ref_segment = curr_traj[0][0];
+    const Segment& segment     = trajectory[0][1];
 
     const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
 
@@ -634,12 +656,12 @@ TEST_F(InitTrajectoryTest, WrappingSpec)
   }
 
   // Check all segment start/end times and states (2 segments)
-  for (unsigned int traj_it = 2, msg_it = 0; traj_it < trajectory.size(); ++traj_it, ++msg_it)
+  for (unsigned int traj_it = 2, msg_it = 0; traj_it < trajectory[0].size(); ++traj_it, ++msg_it)
   {
     const ros::Time msg_start_time = trajectory_msg.header.stamp;
     const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
 
-    const Segment& segment = trajectory[traj_it];
+    const Segment& segment = trajectory[0][traj_it];
     const JointTrajectoryPoint& p_start = msg_points[msg_it];
     const JointTrajectoryPoint& p_end   = msg_points[msg_it + 1];
 
@@ -696,18 +718,18 @@ TEST_F(InitTrajectoryTest, IgnoreWrappingSpec)
   }
 
   // Before first point: Return 2 segments: Full message
-  const ros::Time time(curr_traj[0].startTime());
+  const ros::Time time(curr_traj[0][0].startTime());
   std::vector<bool> angle_wraparound(1, true);
   InitJointTrajectoryOptions<Trajectory> options;
   options.angle_wraparound = &angle_wraparound;
 
   Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
-  ASSERT_EQ(points.size() - 1, trajectory.size());
+  ASSERT_EQ(points.size() - 1, trajectory[0].size());
 
   // Check all segment start/end times and states (2 segments)
-  for (unsigned int i = 0; i < trajectory.size(); ++i)
+  for (unsigned int i = 0; i < trajectory[0].size(); ++i)
   {
-    const Segment& segment = trajectory[i];
+    const Segment& segment = trajectory[0][i];
     const JointTrajectoryPoint& p_start = msg_points[i];
     const JointTrajectoryPoint& p_end   = msg_points[i + 1];
 
@@ -751,21 +773,21 @@ TEST_F(InitTrajectoryTest, GoalHandleTest)
   RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
 
   // Before first point: Return 4 segments: Last of current + bridge + full message
-  const ros::Time time(curr_traj[0].startTime());
+  const ros::Time time(curr_traj[0][0].startTime());
   InitJointTrajectoryOptions<Trajectory> options;
   options.current_trajectory = &curr_traj;
   options.rt_goal_handle     = rt_goal;
 
   Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
-  ASSERT_EQ(points.size() + 1, trajectory.size());
+  ASSERT_EQ(points.size() + 1, trajectory[0].size());
 
   // Segment of current trajectory preserves existing null goal handle
-  ASSERT_FALSE(trajectory[0].getGoalHandle());
+  ASSERT_FALSE(trajectory[0][0].getGoalHandle());
 
   // All further segments should be associated to the new goal handle
-  for (unsigned int i = 1; i < trajectory.size(); ++i) // NOTE: Start index != 0
+  for (unsigned int i = 1; i < trajectory[0].size(); ++i) // NOTE: Start index != 0
   {
-    ASSERT_EQ(rt_goal, trajectory[i].getGoalHandle());
+    ASSERT_EQ(rt_goal, trajectory[0][i].getGoalHandle());
   }
 }
 
@@ -783,12 +805,12 @@ TEST_F(InitTrajectoryTest, OtherTimeBase)
   // Before first point: Return 4 segments: Last of current + bridge + full message
   const ros::Time time = msg_start_time;
   Trajectory trajectory = initJointTrajectory<Trajectory>(trajectory_msg, time, options);
-  ASSERT_EQ(points.size() + 1, trajectory.size());
+  ASSERT_EQ(points.size() + 1, trajectory[0].size());
 
   // Check current trajectory segment start/end times (only one). Time offset does NOT apply
   {
-    const Segment& ref_segment = curr_traj[0];
-    const Segment& segment     = trajectory[0];
+    const Segment& ref_segment = curr_traj[0][0];
+    const Segment& segment     = trajectory[0][0];
 
     // Check start/end times
     {
@@ -799,7 +821,7 @@ TEST_F(InitTrajectoryTest, OtherTimeBase)
 
   // Check bridge trajectory segment start/end times and states (only one). Time offset applies to end state only
   {
-    const Segment& segment = trajectory[1];
+    const Segment& segment = trajectory[0][1];
 
     const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
 
@@ -817,12 +839,12 @@ TEST_F(InitTrajectoryTest, OtherTimeBase)
   }
 
   // Check all segment start/end times and states (2 segments). Time offset does apply
-  for (unsigned int traj_it = 2, msg_it = 0; traj_it < trajectory.size(); ++traj_it, ++msg_it)
+  for (unsigned int traj_it = 2, msg_it = 0; traj_it < trajectory[0].size(); ++traj_it, ++msg_it)
   {
     const ros::Time msg_start_time = trajectory_msg.header.stamp;
     const vector<JointTrajectoryPoint>& msg_points = trajectory_msg.points;
 
-    const Segment& segment = trajectory[traj_it];
+    const Segment& segment = trajectory[0][traj_it];
     const JointTrajectoryPoint& p_start = msg_points[msg_it];
     const JointTrajectoryPoint& p_end   = msg_points[msg_it + 1];
 

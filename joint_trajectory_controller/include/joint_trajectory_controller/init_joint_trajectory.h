@@ -57,19 +57,19 @@ namespace joint_trajectory_controller
 namespace internal
 {
 /**
- * \return The permutation vector between two containers.
- * If \p t1 is <tt>"{A, B, C, D}"</tt> and \p t2 is <tt>"{B, D, A, C}"</tt>, the associated permutation vector is
- * <tt>"{2, 0, 3, 1}"</tt>.
+ * \return The map between \p t1 indices (implicitly encoded in return vector indices) to \t2 indices.
+ * If \p t1 is <tt>"{C, B}"</tt> and \p t2 is <tt>"{A, B, C, D}"</tt>, the associated mapping vector is
+ * <tt>"{2, 1}"</tt>.
  */
 template <class T>
-inline std::vector<unsigned int> permutation(const T& t1, const T& t2)
+inline std::vector<unsigned int> mapping(const T& t1, const T& t2)
 {
   typedef unsigned int SizeType;
+  
+  // t1 must be a subset of t2
+  if (t1.size() > t2.size()) {return std::vector<SizeType>();}
 
-  // Arguments must have the same size
-  if (t1.size() != t2.size()) {return std::vector<SizeType>();}
-
-  std::vector<SizeType> permutation_vector(t1.size()); // Return value
+  std::vector<SizeType> mapping_vector(t1.size()); // Return value
   for (typename T::const_iterator t1_it = t1.begin(); t1_it != t1.end(); ++t1_it)
   {
     typename T::const_iterator t2_it = std::find(t2.begin(), t2.end(), *t1_it);
@@ -78,10 +78,10 @@ inline std::vector<unsigned int> permutation(const T& t1, const T& t2)
     {
       const SizeType t1_dist = std::distance(t1.begin(), t1_it);
       const SizeType t2_dist = std::distance(t2.begin(), t2_it);
-      permutation_vector[t1_dist] = t2_dist;
+      mapping_vector[t1_dist] = t2_dist;
     }
   }
-  return permutation_vector;
+  return mapping_vector;
 }
 
 } // namespace
@@ -95,7 +95,9 @@ struct InitJointTrajectoryOptions
 {
   typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
-  typedef typename Trajectory::value_type::Scalar                                             Scalar;
+  typedef typename Trajectory::value_type                                                     TrajectoryPerJoint;
+  typedef typename TrajectoryPerJoint::value_type                                             Segment;
+  typedef typename Segment::Scalar                                                            Scalar;
 
   InitJointTrajectoryOptions()
     : current_trajectory(0),
@@ -103,7 +105,8 @@ struct InitJointTrajectoryOptions
       angle_wraparound(0),
       rt_goal_handle(),
       default_tolerances(0),
-      other_time_base(0)
+      other_time_base(0),
+      allow_partial_joints_goal(false)
   {}
 
   Trajectory*                current_trajectory;
@@ -112,6 +115,13 @@ struct InitJointTrajectoryOptions
   RealtimeGoalHandlePtr      rt_goal_handle;
   SegmentTolerances<Scalar>* default_tolerances;
   ros::Time*                 other_time_base;
+  bool                       allow_partial_joints_goal;
+};
+
+template <class Trajectory>
+bool isNotEmpty(typename Trajectory::value_type trajPerJoint)
+{
+  return !trajPerJoint.empty();
 };
 
 /**
@@ -164,7 +174,6 @@ struct InitJointTrajectoryOptions
  * Segment(const ros::Time&                             traj_start_time,
  *         const trajectory_msgs::JointTrajectoryPoint& start_point,
  *         const trajectory_msgs::JointTrajectoryPoint& end_point,
- *         const std::vector<unsigned int>&             permutation,
  *         const std::vector<Scalar>&                   position_offset)
  * \endcode
  * The following function must also be defined to properly handle continuous joints:
@@ -184,8 +193,10 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
                                const InitJointTrajectoryOptions<Trajectory>& options =
                                InitJointTrajectoryOptions<Trajectory>())
 {
-  typedef typename Trajectory::value_type Segment;
+  typedef typename Trajectory::value_type TrajectoryPerJoint;
+  typedef typename TrajectoryPerJoint::value_type Segment;
   typedef typename Segment::Scalar Scalar;
+  typedef typename TrajectoryPerJoint::const_iterator TrajIter;
 
   const unsigned int n_joints = msg.joint_names.size();
 
@@ -239,13 +250,35 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     o_msg_start_time = msg_start_time;
   }
 
-  // Permutation vector mapping the expected joint order to the message joint order
-  // If unspecified, a trivial map (no permutation) is computed
   const std::vector<std::string> joint_names = has_joint_names ? *(options.joint_names) : msg.joint_names;
 
-  std::vector<unsigned int> permutation_vector = internal::permutation(joint_names, msg.joint_names);
+  if (has_angle_wraparound)
+  {
+    // Preconditions
+    const unsigned int n_angle_wraparound = options.angle_wraparound->size();
+    if (n_angle_wraparound != joint_names.size())
+    {
+      ROS_ERROR("Cannot create trajectory from message. "
+                "Vector specifying whether joints wrap around has an invalid size.");
+      return Trajectory();
+    }
+  }
 
-  if (permutation_vector.empty())
+  // If partial joints goals are not allowed, goal should specify all controller joints
+  if (!options.allow_partial_joints_goal)
+  {
+    if (msg.joint_names.size() != joint_names.size())
+    {
+      ROS_ERROR("Cannot create trajectory from message. It does not contain the expected joints.");
+      return Trajectory();
+    }
+  }
+
+  // Mapping vector contains the map between the message joint order and the expected joint order
+  // If unspecified, a trivial map is computed
+  std::vector<unsigned int> mapping_vector = internal::mapping(msg.joint_names,joint_names);
+
+  if (mapping_vector.empty())
   {
     ROS_ERROR("Cannot create trajectory from message. It does not contain the expected joints.");
     return Trajectory();
@@ -264,17 +297,17 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   // This point is used later on in this function, but is computed here, in advance because if the trajectory message
   // contains a trajectory in the past, we can quickly return without spending additional computational resources
   std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator
-  it = findPoint(msg, time); // Points to last point occurring before current time (NOTE: Using time, not o_time)
-  if (it == msg.points.end())
+  msg_it = findPoint(msg, time); // Points to last point occurring before current time (NOTE: Using time, not o_time)
+  if (msg_it == msg.points.end())
   {
-    it = msg.points.begin();  // Entire trajectory is after current time
+    msg_it = msg.points.begin();  // Entire trajectory is after current time
   }
   else
   {
-    ++it;                     // Points to first point after current time OR sequence end
-    if (it == msg.points.end())
+    ++msg_it;                     // Points to first point after current time OR sequence end
+    if (msg_it == msg.points.end())
     {
-      ros::Duration last_point_dur = time - (msg_start_time + (--it)->time_from_start);
+      ros::Duration last_point_dur = time - (msg_start_time + (--msg_it)->time_from_start);
       ROS_WARN_STREAM("Dropping all " << msg.points.size() <<
                       " trajectory point(s), as they occur before the current time.\n" <<
                       "Last point is " << std::fixed << std::setprecision(3) << last_point_dur.toSec() <<
@@ -283,8 +316,8 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     }
     else
     {
-      ros::Duration next_point_dur = msg_start_time + it->time_from_start - time;
-      ROS_WARN_STREAM("Dropping first " << std::distance(msg.points.begin(), it) <<
+      ros::Duration next_point_dur = msg_start_time + msg_it->time_from_start - time;
+      ROS_WARN_STREAM("Dropping first " << std::distance(msg.points.begin(), msg_it) <<
                       " trajectory point(s) out of " << msg.points.size() <<
                       ", as they occur before the current time.\n" <<
                       "First valid point will be reached in " << std::fixed << std::setprecision(3) <<
@@ -295,93 +328,158 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   // Initialize result trajectory: combination of:
   // - Useful segments of currently followed trajectory
   // - Useful segments of new trajectory (contained in ROS message)
-  Trajectory result_traj; // Currently empty
+  Trajectory result_traj;
 
-  // Initialize offsets due to wrapping joints to zero
-  std::vector<Scalar> position_offset(n_joints, 0.0);
-
-  // Bridge current trajectory to new one
+  // Set active goal to segments after current time
   if (has_current_trajectory)
   {
-    const Trajectory& curr_traj = *(options.current_trajectory);
+    result_traj = *(options.current_trajectory);
 
-    // Get the last time and state that will be executed from the current trajectory
-    const typename Segment::Time last_curr_time = std::max(o_msg_start_time.toSec(), o_time.toSec()); // Important!
-    typename Segment::State last_curr_state;
-    sample(curr_traj, last_curr_time, last_curr_state);
-
-    // Get the first time and state that will be executed from the new trajectory
-    const typename Segment::Time first_new_time = o_msg_start_time.toSec() + (it->time_from_start).toSec();
-    typename Segment::State first_new_state(*it, permutation_vector); // Here offsets are not yet applied
-
-    // Compute offsets due to wrapping joints
-    if (has_angle_wraparound)
+    //Iterate to all segments after current time to set the new goal handler
+    for (unsigned int joint_id=0; joint_id < joint_names.size();joint_id++)
     {
-      position_offset = wraparoundOffset(last_curr_state.position,
-                                         first_new_state.position,
-                                         *(options.angle_wraparound));
-      if (position_offset.empty())
+      const TrajectoryPerJoint& curr_joint_traj = result_traj[joint_id];
+      TrajIter active_seg = findSegment(curr_joint_traj, o_time.toSec());   // Currently active segment
+
+      while (std::distance(active_seg, curr_joint_traj.end())>=1)
       {
-        ROS_ERROR("Cannot create trajectory from message. "
-                  "Vector specifying whether joints wrap around has an invalid size.");
-        return Trajectory();
+        (result_traj[joint_id])[std::distance(curr_joint_traj.begin(),active_seg)].setGoalHandle(options.rt_goal_handle);
+        ++active_seg;
       }
     }
+  }
+  else
+    result_traj.resize(joint_names.size());
 
-    // Apply offset to first state that will be executed from the new trajectory
-    first_new_state = typename Segment::State(*it, permutation_vector, position_offset); // Now offsets are applied
+  //Iterate through the joints that are in the message, in the order of the mapping vector
+  //for (unsigned int joint_id=0; joint_id < joint_names.size();joint_id++)
+  for (unsigned int msg_joint_it=0; msg_joint_it < mapping_vector.size();msg_joint_it++)
+  {
+    std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator it = msg_it;
+    if (!isValid(*it, it->positions.size()))
+      throw(std::invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
 
-    // Add useful segments of current trajectory to result
+    TrajectoryPerJoint result_traj_per_joint; // Currently empty
+    unsigned int joint_id = mapping_vector[msg_joint_it];
+
+    // Initialize offsets due to wrapping joints to zero
+    std::vector<Scalar> position_offset(1, 0.0);
+
+    //Initialize segment tolerance per joint
+    SegmentTolerancesPerJoint<Scalar> tolerances_per_joint;
+    tolerances_per_joint.state_tolerance = tolerances.state_tolerance[joint_id];
+    tolerances_per_joint.goal_state_tolerance = tolerances.goal_state_tolerance[joint_id];
+    tolerances_per_joint.goal_time_tolerance = tolerances.goal_time_tolerance;
+
+    // Bridge current trajectory to new one
+    if (has_current_trajectory)
     {
-      typedef typename Trajectory::const_iterator TrajIter;
-      TrajIter first = findSegment(curr_traj, o_time.toSec());   // Currently active segment
-      TrajIter last  = findSegment(curr_traj, last_curr_time); // Segment active when new trajectory starts
-      if (first == curr_traj.end() || last == curr_traj.end())
+      const TrajectoryPerJoint& curr_joint_traj = (*options.current_trajectory)[joint_id];
+
+      // Get the last time and state that will be executed from the current trajectory
+      const typename Segment::Time last_curr_time = std::max(o_msg_start_time.toSec(), o_time.toSec()); // Important!
+      typename Segment::State last_curr_state;
+      sample(curr_joint_traj, last_curr_time, last_curr_state);
+
+      // Get the first time and state that will be executed from the new trajectory
+      trajectory_msgs::JointTrajectoryPoint point_per_joint;
+      if (!it->positions.empty())     {point_per_joint.positions.resize(1, it->positions[msg_joint_it]);}
+      if (!it->velocities.empty())    {point_per_joint.velocities.resize(1, it->velocities[msg_joint_it]);}
+      if (!it->accelerations.empty()) {point_per_joint.accelerations.resize(1, it->accelerations[msg_joint_it]);}
+      point_per_joint.time_from_start = it->time_from_start;
+
+      const typename Segment::Time first_new_time = o_msg_start_time.toSec() + (it->time_from_start).toSec();
+      typename Segment::State first_new_state(point_per_joint); // Here offsets are not yet applied
+
+      // Compute offsets due to wrapping joints
+      if (has_angle_wraparound)
       {
-        ROS_ERROR("Unexpected error: Could not find segments in current trajectory. Please contact the package maintainer.");
-        return Trajectory();
+        position_offset[0] = wraparoundJointOffset(last_curr_state.position[0],
+                                                first_new_state.position[0],
+                                                (*options.angle_wraparound)[joint_id]);
       }
-      result_traj.insert(result_traj.begin(), first, ++last); // Range [first,last) will still be executed
+
+      // Apply offset to first state that will be executed from the new trajectory
+      first_new_state = typename Segment::State(point_per_joint, position_offset); // Now offsets are applied
+
+      // Add useful segments of current trajectory to result
+      {
+        TrajIter first = findSegment(curr_joint_traj, o_time.toSec());   // Currently active segment
+        TrajIter last  = findSegment(curr_joint_traj, last_curr_time); // Segment active when new trajectory starts
+        if (first == curr_joint_traj.end() || last == curr_joint_traj.end())
+        {
+          ROS_ERROR("Unexpected error: Could not find segments in current trajectory. Please contact the package maintainer.");
+          return Trajectory();
+        }
+        result_traj_per_joint.insert(result_traj_per_joint.begin(), first, ++last); // Range [first,last) will still be executed
+      }
+
+      // Add segment bridging current and new trajectories to result
+      Segment bridge_seg(last_curr_time, last_curr_state,
+                         first_new_time, first_new_state);
+      bridge_seg.setGoalHandle(options.rt_goal_handle);
+      if (has_rt_goal_handle) {bridge_seg.setTolerances(tolerances_per_joint);}
+      result_traj_per_joint.push_back(bridge_seg);
     }
 
-    // Add segment bridging current and new trajectories to result
-    Segment bridge_seg(last_curr_time, last_curr_state,
-                       first_new_time, first_new_state);
-    bridge_seg.setGoalHandle(options.rt_goal_handle);
-    if (has_rt_goal_handle) {bridge_seg.setTolerances(tolerances);}
-    result_traj.push_back(bridge_seg);
+    // Constants used in log statement at the end
+    const unsigned int num_old_segments = result_traj_per_joint.size() -1;
+    const unsigned int num_new_segments = std::distance(it, msg.points.end()) -1;
+
+    // Add useful segments of new trajectory to result
+    // - Construct all trajectory segments occurring after current time
+    // - As long as there remain two trajectory points we can construct the next trajectory segment
+    while (std::distance(it, msg.points.end()) >= 2)
+    {
+      std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator next_it = it; ++next_it;
+
+      trajectory_msgs::JointTrajectoryPoint it_point_per_joint, next_it_point_per_joint;
+
+      if (!isValid(*it, it->positions.size()))
+            throw(std::invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
+      if (!it->positions.empty())     {it_point_per_joint.positions.resize(1, it->positions[msg_joint_it]);}
+      if (!it->velocities.empty())    {it_point_per_joint.velocities.resize(1, it->velocities[msg_joint_it]);}
+      if (!it->accelerations.empty()) {it_point_per_joint.accelerations.resize(1, it->accelerations[msg_joint_it]);}
+      it_point_per_joint.time_from_start = it->time_from_start;
+
+      if (!isValid(*next_it, next_it->positions.size()))
+            throw(std::invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
+      if (!next_it->positions.empty()) {next_it_point_per_joint.positions.resize(1, next_it->positions[msg_joint_it]);}
+      if (!next_it->velocities.empty()) {next_it_point_per_joint.velocities.resize(1, next_it->velocities[msg_joint_it]);}
+      if (!next_it->accelerations.empty()) {next_it_point_per_joint.accelerations.resize(1, next_it->accelerations[msg_joint_it]);}
+      next_it_point_per_joint.time_from_start = next_it->time_from_start;
+
+      Segment segment(o_msg_start_time, it_point_per_joint, next_it_point_per_joint, position_offset);
+      segment.setGoalHandle(options.rt_goal_handle);
+      if (has_rt_goal_handle) {segment.setTolerances(tolerances_per_joint);}
+      result_traj_per_joint.push_back(segment);
+      ++it;
+    }
+
+    // Useful debug info
+    std::stringstream log_str;
+    log_str << "Trajectory of joint " << joint_names[joint_id] << "has " << result_traj_per_joint.size() << " segments";
+    if (has_current_trajectory)
+    {
+      log_str << ":";
+      log_str << "\n- " << num_old_segments << " segment(s) will still be executed from previous trajectory.";
+      log_str << "\n- 1 segment added for transitioning between the current trajectory and first point of the input message.";
+      if (num_new_segments > 0) {log_str << "\n- " << num_new_segments << " new segments (" << (num_new_segments + 1) <<
+                                 " points) taken from the input trajectory.";}
+    }
+    else {log_str << ".";}
+    ROS_DEBUG_STREAM(log_str.str());
+
+    if (result_traj_per_joint.size() > 0)
+      result_traj[joint_id] = result_traj_per_joint;
   }
 
-  // Constants used in log statement at the end
-  const unsigned int num_old_segments = result_traj.size() -1;
-  const unsigned int num_new_segments = std::distance(it, msg.points.end()) -1;
-
-  // Add useful segments of new trajectory to result
-  // - Construct all trajectory segments occurring after current time
-  // - As long as there remain two trajectory points we can construct the next trajectory segment
-  while (std::distance(it, msg.points.end()) >= 2)
+  // If the trajectory for all joints is empty, empty the trajectory vector
+  typename Trajectory::const_iterator trajIter = std::find_if (result_traj.begin(), result_traj.end(), isNotEmpty<Trajectory>);
+  if (trajIter == result_traj.end())
   {
-    std::vector<trajectory_msgs::JointTrajectoryPoint>::const_iterator next_it = it; ++next_it;
-    Segment segment(o_msg_start_time, *it, *next_it, permutation_vector, position_offset);
-    segment.setGoalHandle(options.rt_goal_handle);
-    if (has_rt_goal_handle) {segment.setTolerances(tolerances);}
-    result_traj.push_back(segment);
-    ++it;
+    result_traj.clear();
   }
-
-  // Useful debug info
-  std::stringstream log_str;
-  log_str << "Trajectory has " << result_traj.size() << " segments";
-  if (has_current_trajectory)
-  {
-    log_str << ":";
-    log_str << "\n- " << num_old_segments << " segment(s) will still be executed from previous trajectory.";
-    log_str << "\n- 1 segment added for transitioning between the current trajectory and first point of the input message.";
-    if (num_new_segments > 0) {log_str << "\n- " << num_new_segments << " new segments (" << (num_new_segments + 1) <<
-                               " points) taken from the input trajectory.";}
-  }
-  else {log_str << ".";}
-  ROS_DEBUG_STREAM(log_str.str());
 
   return result_traj;
 }

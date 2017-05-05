@@ -244,7 +244,7 @@ private:
    * current position and zero velocity.
    * \note This method is realtime-safe.
    */
-  void setHoldPosition(const ros::Time& time);
+  void setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh=RealtimeGoalHandlePtr());
 
 };
 

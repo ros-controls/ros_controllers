@@ -731,6 +731,95 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTraj)
   }
 }
 
+TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
+{
+  ASSERT_TRUE(initState());
+  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+
+  // Go to home configuration, we need known initial conditions
+  traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_home_goal);
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+
+  // Start state
+  StateConstPtr start_state = getState();
+
+  // Send trajectory
+  traj.header.stamp = ros::Time(0); // Start immediately
+  traj_pub.publish(traj);
+  ros::Duration wait_duration = traj.points.front().time_from_start;
+  wait_duration.sleep(); // Wait until ~first waypoint
+
+  // Send an empty trajectory goal that preempts the previous one and stops the robot where it is
+  ActionGoal empty_goal;
+  empty_goal.trajectory.joint_names = traj.joint_names;
+  action_client->sendGoal(empty_goal);
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  ros::Duration(2.0).sleep(); // Stopping takes some time
+
+  // Check that we're not on the start state
+  StateConstPtr state1 = getState();
+  EXPECT_LT(traj.points.front().positions[0] * 0.9,
+            std::abs(start_state->desired.positions[0] - state1->desired.positions[0]));
+
+  // Check that we're not moving
+  ros::Duration(0.5).sleep(); // Wait
+  StateConstPtr state2 = getState();
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+    EXPECT_NEAR(state1->desired.positions[i],     state2->desired.positions[i],     EPS);
+    EXPECT_NEAR(state1->desired.velocities[i],    state2->desired.velocities[i],    EPS);
+    EXPECT_NEAR(state1->desired.accelerations[i], state2->desired.accelerations[i], EPS);
+  }
+}
+
+TEST_F(JointTrajectoryControllerTest, emptyActionCancelsActionTraj)
+{
+  ASSERT_TRUE(initState());
+  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+
+  // Go to home configuration, we need known initial conditions
+  traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_home_goal);
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+
+  // Start state
+  StateConstPtr start_state = getState();
+
+  // Send trajectory
+  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_goal);
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  ros::Duration wait_duration = traj.points.front().time_from_start;
+  wait_duration.sleep(); // Wait until ~first waypoint
+
+  // Send an empty trajectory goal that preempts the previous one and stops the robot where it is
+  ActionGoal empty_goal;
+  empty_goal.trajectory.joint_names = traj.joint_names;
+  action_client2->sendGoal(empty_goal);
+  ASSERT_TRUE(waitForState(action_client,  SimpleClientGoalState::PREEMPTED, short_timeout));
+  ASSERT_TRUE(waitForState(action_client2, SimpleClientGoalState::ACTIVE, short_timeout));
+  ros::Duration(2.0).sleep(); // Stopping takes some time
+
+  // Check that we're not on the start state
+  StateConstPtr state1 = getState();
+  EXPECT_LT(traj.points.front().positions[0] * 0.9,
+            std::abs(start_state->desired.positions[0] - state1->desired.positions[0]));
+
+  // Check that we're not moving
+  ros::Duration(0.5).sleep(); // Wait
+  StateConstPtr state2 = getState();
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+    EXPECT_NEAR(state1->desired.positions[i],     state2->desired.positions[i],     EPS);
+    EXPECT_NEAR(state1->desired.velocities[i],    state2->desired.velocities[i],    EPS);
+    EXPECT_NEAR(state1->desired.accelerations[i], state2->desired.accelerations[i], EPS);
+  }
+
+  // Check that new action succeeds after being accepted
+  ASSERT_TRUE(waitForState(action_client2, SimpleClientGoalState::SUCCEEDED, short_timeout));
+}
+
 TEST_F(JointTrajectoryControllerTest, cancelActionGoal)
 {
   ASSERT_TRUE(action_client->waitForServer(long_timeout));

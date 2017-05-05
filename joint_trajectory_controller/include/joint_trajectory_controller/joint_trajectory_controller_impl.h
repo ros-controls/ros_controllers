@@ -508,7 +508,7 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   // Hold current position if trajectory is empty
   if (msg->points.empty())
   {
-    setHoldPosition(time_data->uptime);
+    setHoldPosition(time_data->uptime, gh);
     ROS_DEBUG_NAMED(name_, "Empty trajectory command, stopping.");
     return true;
   }
@@ -724,7 +724,7 @@ publishState(const ros::Time& time)
 
 template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-setHoldPosition(const ros::Time& time)
+setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
 {
   // Settle position in a fixed time. We do the following:
   // - Create segment that goes from current (pos,vel) to (pos,-vel) in 2x the desired stop time
@@ -762,6 +762,9 @@ setHoldPosition(const ros::Time& time)
     // Now create segment that goes from current state to one with zero end velocity
     (*hold_trajectory_ptr_)[i].front().init(start_time, hold_start_state_,
                                                              end_time,   hold_end_state_);
+
+    // Set goal handle for the segment
+    (*hold_trajectory_ptr_)[i].front().setGoalHandle(gh);
   }
   curr_trajectory_box_.set(hold_trajectory_ptr_);
 }

@@ -18,3 +18,56 @@
 # See issue https://github.com/ros-controls/ros_control/issues/101#issuecomment-21781620
 # and issue http://answers.gazebosim.org/question/4134/installing-gazebo-19-on-ros-groovy/?answer=4138#post-id-4138
 manifest.xml
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Eclipse gitignore
+*.pydevproject
+.metadata
+.gradle
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+
+# Eclipse Core
+.project
+
+# CDT-specific
+.cproject

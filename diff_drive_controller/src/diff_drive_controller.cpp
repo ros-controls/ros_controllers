@@ -277,10 +277,11 @@ namespace diff_drive_controller{
       odometry_.update(left_pos, right_pos, time);
     }
 
-    // Publish odometry message
+    // Publish odometry messages
     if (last_state_publish_time_ + publish_period_ < time)
     {
       last_state_publish_time_ += publish_period_;
+      seq_ += 1;
       // Compute and store orientation info
       const geometry_msgs::Quaternion orientation(
             tf::createQuaternionMsgFromYaw(odometry_.getHeading()));
@@ -289,6 +290,7 @@ namespace diff_drive_controller{
       if (odom_pub_->trylock())
       {
         odom_pub_->msg_.header.stamp = time;
+        odom_pub_->msg_.header.seq = seq_;
         odom_pub_->msg_.pose.pose.position.x = odometry_.getX();
         odom_pub_->msg_.pose.pose.position.y = odometry_.getY();
         odom_pub_->msg_.pose.pose.orientation = orientation;
@@ -302,6 +304,7 @@ namespace diff_drive_controller{
       {
         geometry_msgs::TransformStamped& odom_frame = tf_odom_pub_->msg_.transforms[0];
         odom_frame.header.stamp = time;
+        odom_frame.header.seq = seq_;
         odom_frame.transform.translation.x = odometry_.getX();
         odom_frame.transform.translation.y = odometry_.getY();
         odom_frame.transform.rotation = orientation;
@@ -352,6 +355,7 @@ namespace diff_drive_controller{
 
     // Register starting time used to keep fixed rate
     last_state_publish_time_ = time;
+    seq_ = 0;
 
     odometry_.init(time);
   }

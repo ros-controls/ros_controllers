@@ -60,14 +60,16 @@ namespace imu_sensor_controller
 
     // Last published times
     last_publish_times_.resize(sensor_names.size());
+    seq_.resize(sensor_names.size());
     return true;
   }
 
   void ImuSensorController::starting(const ros::Time& time)
   {
-    // initialize time
+    // initialize time and sequence
     for (unsigned i=0; i<last_publish_times_.size(); i++){
       last_publish_times_[i] = time;
+      seq_[i] = 0;
     }
   }
 
@@ -82,9 +84,11 @@ namespace imu_sensor_controller
         if (realtime_pubs_[i]->trylock()){
           // we're actually publishing, so increment time
           last_publish_times_[i] = last_publish_times_[i] + ros::Duration(1.0/publish_rate_);
+          seq_[i] += 1;
 
           // populate message
           realtime_pubs_[i]->msg_.header.stamp = time;
+          realtime_pubs_[i]->msg_.header.seq = seq_[i];
           realtime_pubs_[i]->msg_.header.frame_id = sensors_[i].getFrameId();
 
           // Orientation

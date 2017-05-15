@@ -87,6 +87,14 @@ TEST(WraparoundOffsetTest, WrappingPositions)
       EXPECT_NEAR(two_pi, wraparound_offset1, EPS);
       EXPECT_NEAR(0.0, wraparound_offset2, EPS);
     }
+
+    // Special case, from M_PI/2 to -M_PI
+    double wraparound_offset1 = wraparoundJointOffset(M_PI/2, -M_PI, true);
+    EXPECT_NEAR(two_pi, wraparound_offset1, EPS);
+    // From -M_PI to M_PI/2
+    wraparound_offset1 = wraparoundJointOffset(-M_PI, M_PI/2, true);
+    EXPECT_NEAR(-two_pi, wraparound_offset1, EPS);
+
   }
 
   // Both wrapping joints

@@ -56,11 +56,11 @@ static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3&
 }
 
 /*
- * \brief Check if the link is modeled as a cylinder
- * \param link Link
- * \return true if the link is modeled as a Cylinder; false otherwise
- */
-static bool isCylinder(const urdf::LinkConstSharedPtr& link)
+* \brief Check that a link exists and has a geometry collision.
+* \param link The link
+* \return true if the link has a collision element with geometry 
+*/
+static bool hasCollisionGeometry(const urdf::LinkConstSharedPtr& link)
 {
   if (!link)
   {
@@ -77,6 +77,20 @@ static bool isCylinder(const urdf::LinkConstSharedPtr& link)
   if (!link->collision->geometry)
   {
     ROS_ERROR_STREAM("Link " << link->name << " does not have collision geometry description. Add collision geometry description for link to urdf.");
+    return false;
+  }
+  return true;
+}
+
+/*
+ * \brief Check if the link is modeled as a cylinder
+ * \param link Link
+ * \return true if the link is modeled as a Cylinder; false otherwise
+ */
+static bool isCylinder(const urdf::LinkConstSharedPtr& link)
+{
+  if (!hasCollisionGeometry(link))
+  {
     return false;
   }
 
@@ -96,21 +110,8 @@ static bool isCylinder(const urdf::LinkConstSharedPtr& link)
  */
 static bool isSphere(const urdf::LinkConstSharedPtr& link)
 {
-  if (!link)
+  if (!hasCollisionGeometry(link))
   {
-    ROS_ERROR("Link == NULL.");
-    return false;
-  }
-
-  if (!link->collision)
-  {
-    ROS_ERROR_STREAM("Link " << link->name << " does not have collision description. Add collision description for link to urdf.");
-    return false;
-  }
-
-  if (!link->collision->geometry)
-  {
-    ROS_ERROR_STREAM("Link " << link->name << " does not have collision geometry description. Add collision geometry description for link to urdf.");
     return false;
   }
 

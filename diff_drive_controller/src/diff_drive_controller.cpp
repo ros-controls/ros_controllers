@@ -94,7 +94,7 @@ static bool isCylinder(const urdf::LinkConstSharedPtr& link)
  * \param link Link
  * \return true if the link is modeled as a Sphere; false otherwise
  */
-static bool isSphere(const boost::shared_ptr<const urdf::Link>& link)
+static bool isSphere(const urdf::LinkConstSharedPtr& link)
 {
   if (!link)
   {

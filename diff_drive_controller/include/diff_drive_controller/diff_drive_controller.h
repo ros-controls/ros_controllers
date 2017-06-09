@@ -57,7 +57,7 @@ namespace diff_drive_controller{
    *  - the wheels are identical in radius
    * Additional assumptions to not duplicate information readily available in the URDF:
    *  - the wheels have the same parent frame
-   *  - a wheel collision geometry is a cylinder in the urdf
+   *  - a wheel collision geometry is a cylinder or sphere in the urdf
    *  - a wheel joint frame center's vertical projection on the floor must lie within the contact patch
    */
   class DiffDriveController

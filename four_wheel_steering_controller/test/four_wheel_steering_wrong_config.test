@@ -1,0 +1,16 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find four_wheel_steering_controller)/test/launch/four_wheel_steering_common.launch" />
+
+  <!-- Override with wrong controller configuration -->
+  <rosparam command="load" file="$(find four_wheel_steering_controller)/test/config/four_wheel_steering_wrong_config.yaml" />
+
+  <!-- Controller test -->
+  <test test-name="four_wheel_steering_wrong_config_test"
+        pkg="four_wheel_steering_controller"
+        type="four_wheel_steering_wrong_config_test"
+        time-limit="10.0">
+    <remap from="cmd_vel" to="four_wheel_steering_controller/cmd_vel" />
+    <remap from="odom" to="four_wheel_steering_controller/odom" />
+  </test>
+</launch>

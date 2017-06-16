@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="wheel_steered">
+
+  <xacro:property name="steering_link_y" value="0.05" />
+  <xacro:property name="steering_link_xz" value="0.1" />
+  <xacro:property name="steering_link_mass" value="5.0" />
+
+  <xacro:include filename="$(find four_wheel_steering_controller)/test/urdf/wheel.xacro" />
+
+  <xacro:macro name="wheel_steered" params="wheel_prefix parent_link wheel_origin_y left_right *joint_origin ">
+    <link name="${wheel_prefix}_steering">
+      <visual>
+        <origin xyz="0 ${-wheel_origin_y} 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.05 ${steering_link_y} 0.05"/>
+        </geometry>
+        <material name="blue">
+          <color rgba="0.2 0.2 0.6 1"/>
+        </material>
+      </visual>
+      <inertial>
+        <mass value="${steering_link_mass}" />
+        <origin xyz="0 ${-wheel_origin_y} 0" />
+        <!--<inertia ixx="1.0" ixy="0" ixz="0"
+                 iyy="1.0" iyz="0"
+                 izz="1.0"/>-->
+        <inertia  ixx="${steering_link_mass/12.0 * (steering_link_y*steering_link_y + steering_link_xz*steering_link_xz)}" ixy="0" ixz="0"
+                  iyy="${steering_link_mass/12.0 * (steering_link_xz*steering_link_xz + steering_link_xz*steering_link_xz)}" iyz="0"
+                  izz="${steering_link_mass/12.0 * (steering_link_y*steering_link_y + steering_link_xz*steering_link_xz)}" />
+      </inertial>
+    </link>
+
+    <joint name="${wheel_prefix}_steering_joint" type="revolute">
+      <limit lower="${-M_PI/6}" upper="${M_PI/6}" effort="1000.0" velocity="2.0"/>
+      <axis xyz="0 0 1"/>
+      <parent link="${parent_link}"/>
+      <child link="${wheel_prefix}_steering"/>
+      <xacro:insert_block name="joint_origin"/>
+      <dynamics damping="0.7"/>
+    </joint>
+
+    <transmission name="${wheel_prefix}_steering_trans" type="SimpleTransmission">
+      <type>transmission_interface/SimpleTransmission</type>
+      <actuator name="${wheel_prefix}_steering_motor">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+      <joint name="${wheel_prefix}_steering_joint">
+        <hardwareInterface>PositionJointInterface</hardwareInterface>
+      </joint>
+    </transmission>
+
+    <xacro:wheel wheel_prefix="${wheel_prefix}" parent_link="${wheel_prefix}_steering" left_right="${left_right}">
+      <origin xyz="0 ${wheel_origin_y} 0" rpy="0 0 0" />
+    </xacro:wheel>
+  </xacro:macro>
+
+</robot>
+

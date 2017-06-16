@@ -1,0 +1,38 @@
+<launch>
+  <!-- Start gazebo world -->
+  <!--<include file="$(find gazebo_ros)/launch/empty_world.launch"/>-->
+  <!-- OR -->
+  <!-- Start four_wheel_steering -->
+  <node name="four_wheel_steering"
+      pkg="four_wheel_steering_controller"
+      type="four_wheel_steering" output="screen"/>
+
+  <!-- load robot -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro --inorder '$(find four_wheel_steering_controller)/test/urdf/four_wheel_steering.urdf.xacro'" />
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+  <!-- Load controller config -->
+  <rosparam command="load" file="$(find four_wheel_steering_controller)/test/config/four_wheel_steering_controller_4ws_cmd.yaml" />
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_four_wheel_steering" pkg="gazebo_ros" type="spawn_model"
+        args="-urdf -param robot_description -model four_wheel_steering -z 0.5" respawn="false" output="screen" />
+
+  <!-- Spawn controller -->
+  <node name="controller_spawner"
+        pkg="controller_manager" type="spawner" output="screen"
+        args="robot_joint_publisher four_wheel_steering_controller --shutdown-timeout 3"/>
+
+  <node pkg="joy" type="joy_node" name="joy_node">
+    <param name="dev" value="/dev/input/js0" />
+  </node>
+
+  <node pkg="teleop_twist_joy" type="teleop_node" name="teleop_twist_joy">
+    <remap from="cmd_vel" to="/four_wheel_steering_controller/cmd_vel"/>
+  </node>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find four_wheel_steering_controller)/test/config/view_odom.rviz"/>
+</launch>
+

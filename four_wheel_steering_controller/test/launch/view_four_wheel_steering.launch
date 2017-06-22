@@ -32,7 +32,5 @@
   <node pkg="teleop_twist_joy" type="teleop_node" name="teleop_twist_joy">
     <remap from="cmd_vel" to="/four_wheel_steering_controller/cmd_vel"/>
   </node>
-
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find four_wheel_steering_controller)/test/config/view_odom.rviz"/>
 </launch>
 

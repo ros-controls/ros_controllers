@@ -36,9 +36,6 @@ install(TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   )
 
-catkin_install_python(PROGRAMS scripts/teleop_four_wheel_steering_joy.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
 install(FILES four_wheel_steering_controller_plugins.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 

@@ -451,6 +451,11 @@ namespace diff_drive_controller{
         return;
       }
 
+      if(std::isnan(command.angular.z) || std::isnan(command.linear.x))
+      {
+        ROS_WARN("Received NaN in geometry_msgs::Twist. Ignoring command.");
+        return;
+      }
       command_struct_.ang   = command.angular.z;
       command_struct_.lin   = command.linear.x;
       command_struct_.stamp = ros::Time::now();

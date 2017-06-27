@@ -376,11 +376,11 @@ update(const ros::Time& time, const ros::Duration& period)
     desired_state_.velocity[i] = desired_joint_state_.velocity[0];
     desired_state_.acceleration[i] = 0.0;
 
-    state_joint_error_.position[0] = desired_joint_state_.position[0] - current_state_.position[i];
+    state_joint_error_.position[0] = angles::shortest_angular_distance(current_state_.position[i],desired_joint_state_.position[0]);
     state_joint_error_.velocity[0] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
     state_joint_error_.acceleration[0] = 0.0;
 
-    state_error_.position[i] = desired_joint_state_.position[0] - current_state_.position[i];
+    state_error_.position[i] = angles::shortest_angular_distance(current_state_.position[i],desired_joint_state_.position[0]);
     state_error_.velocity[i] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
     state_error_.acceleration[i] = 0.0;
 

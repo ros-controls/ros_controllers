@@ -1,0 +1,18 @@
+rrbot_wrapping_controller:
+  type: "velocity_controllers/JointTrajectoryController"
+  joints:
+    - joint1
+    - joint2
+
+  constraints:
+    goal_time: 0.5
+    joint1:
+      goal:       0.01
+      trajectory: 0.05
+    joint2:
+      goal:       0.01
+      trajectory: 0.05
+
+  gains:  # Required because we're controlling a velocity interface
+    joint1: {p: 2.5, i: 0.0, d: 0.0, i_clamp: 1.0}
+    joint2: {p: 2.5, i: 0.0, d: 0.0, i_clamp: 1.0}

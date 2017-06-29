@@ -220,26 +220,26 @@ namespace four_wheel_steering_controller{
     controller_nh.param("angular/z/min_acceleration"       , limiter_ang_.min_acceleration       , -limiter_ang_.max_acceleration      );
 
     // If either parameter is not available, we need to look up the value in the URDF
-    bool lookup_track = !controller_nh.getParam("track", track_);
-    bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius_);
-    bool lookup_wheel_base = !controller_nh.getParam("wheel_base", wheel_base_);
+    bool lookup_track = !root_nh.getParam("track", track_);
+    bool lookup_wheel_radius = !root_nh.getParam("wheel_radius", wheel_radius_);
+    bool lookup_wheel_base = !root_nh.getParam("wheel_base", wheel_base_);
 
     urdf_geometry_parser::UrdfGeometryParser uvk(root_nh, base_frame_id_);
     if(lookup_track)
       if(!uvk.getDistanceBetweenJoints(front_steering_names[0], front_steering_names[1], track_))
         return false;
       else
-        controller_nh.setParam("track",track_);
+        root_nh.setParam("track",track_);
     if(lookup_wheel_radius)
       if(!uvk.getJointRadius(front_wheel_names[0], wheel_radius_))
         return false;
       else
-        controller_nh.setParam("wheel_radius",wheel_radius_);
+        root_nh.setParam("wheel_radius",wheel_radius_);
     if(lookup_wheel_base)
       if(!uvk.getDistanceBetweenJoints(front_wheel_names[0], rear_wheel_names[0], wheel_base_))
         return false;
       else
-        controller_nh.setParam("wheel_base",wheel_base_);
+        root_nh.setParam("wheel_base",wheel_base_);
 
     // Regardless of how we got the separation and radius, use them
     // to set the odometry parameters

@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.4 (2017-07-01)
+------------------
 *  Fix for issue `#275 <https://github.com/ros-controls/roscontrollers/issues/275>`_ (State error calculation not accounting for wrapping joint positions)
 * Contributors: bponsler
 

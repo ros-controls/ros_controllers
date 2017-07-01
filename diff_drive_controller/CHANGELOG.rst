@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.9.4 (2017-07-01)
+------------------
 * Publish executed velocity if publish_cmd
 * Contributors: Bence Magyar, Jeremie Deray
 

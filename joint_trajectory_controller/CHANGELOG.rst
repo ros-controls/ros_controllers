@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+*  Fix for issue `#275 <https://github.com/ros-controls/roscontrollers/issues/275>`_ (State error calculation not accounting for wrapping joint positions)
+* Contributors: bponsler
+
 0.9.3 (2016-02-12)
 ------------------
 * Add joint limits spec to rrbot test robot

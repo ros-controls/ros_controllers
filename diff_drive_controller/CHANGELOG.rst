@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Publish executed velocity if publish_cmd
+* Contributors: Bence Magyar, Jeremie Deray
+
 0.9.3 (2016-02-12)
 ------------------
 * Reduced pedantry, redundancy.

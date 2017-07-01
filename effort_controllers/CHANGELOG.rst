@@ -2,6 +2,11 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Included angles in dependencies
+* Contributors: Mr-Yellow
+
 0.9.3 (2016-02-12)
 ------------------
 

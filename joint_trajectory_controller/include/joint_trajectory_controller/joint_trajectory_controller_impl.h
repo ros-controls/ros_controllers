@@ -139,6 +139,15 @@ starting(const ros::Time& time)
   time_data.uptime = ros::Time(0.0);
   time_data_.initRT(time_data);
 
+  // Update current state and state error
+  for (unsigned int i = 0; i < joints_.size(); ++i)
+  {
+    current_state_.position[i] = joints_[i].getPosition();
+    current_state_.velocity[i] = joints_[i].getVelocity();
+  }
+
+  desired_state_ = current_state_;
+
   // Hold current position
   setHoldPosition(time_data.uptime);
 
@@ -147,6 +156,7 @@ starting(const ros::Time& time)
 
   // Hardware interface adapter
   hw_iface_adapter_.starting(time_data.uptime);
+
 }
 
 template <class SegmentImpl, class HardwareInterface>

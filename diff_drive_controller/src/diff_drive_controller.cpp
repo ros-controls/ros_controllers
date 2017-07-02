@@ -109,6 +109,7 @@ namespace diff_drive_controller{
 
   DiffDriveController::DiffDriveController()
     : open_loop_(false)
+    , estimate_velocity_from_position_(true)
     , command_struct_()
     , wheel_separation_(0.0)
     , wheel_radius_(0.0)
@@ -163,6 +164,9 @@ namespace diff_drive_controller{
     publish_period_ = ros::Duration(1.0 / publish_rate);
 
     controller_nh.param("open_loop", open_loop_, open_loop_);
+    controller_nh.param("estimate_velocity_from_position", estimate_velocity_from_position_, estimate_velocity_from_position_);
+    ROS_INFO_STREAM_COND_NAMED(estimate_velocity_from_position_, name_, "Velocity will be estimated from position.");
+    ROS_INFO_STREAM_COND_NAMED(!estimate_velocity_from_position_, name_, "Velocity will not be estimated from position.");
 
     controller_nh.param("wheel_separation_multiplier", wheel_separation_multiplier_, wheel_separation_multiplier_);
     ROS_INFO_STREAM_NAMED(name_, "Wheel separation will be multiplied by "
@@ -274,8 +278,11 @@ namespace diff_drive_controller{
     }
     else
     {
+      bool trust_velocity = !estimate_velocity_from_position_;
       double left_pos  = 0.0;
       double right_pos = 0.0;
+      double left_vel  = 0.0;
+      double right_vel = 0.0;
       for (size_t i = 0; i < wheel_joints_size_; ++i)
       {
         const double lp = left_wheel_joints_[i].getPosition();
@@ -285,12 +292,34 @@ namespace diff_drive_controller{
 
         left_pos  += lp;
         right_pos += rp;
+
+        if (!trust_velocity)
+          continue;
+        const double lv = left_wheel_joints_[i].getVelocity();
+        const double rv = right_wheel_joints_[i].getVelocity();
+        if (std::isnan(lv) || std::isnan(rv))
+        {
+          trust_velocity = false;
+          continue;
+        }
+
+        left_vel  += lv;
+        right_vel += rv;
       }
       left_pos  /= wheel_joints_size_;
       right_pos /= wheel_joints_size_;
 
       // Estimate linear and angular velocity using joint information
-      odometry_.update(left_pos, right_pos, time);
+      if (!trust_velocity)
+      {
+        odometry_.update(left_pos, right_pos, time);
+      }
+      else
+      {
+        left_vel  /= wheel_joints_size_;
+        right_vel /= wheel_joints_size_;
+        odometry_.update(left_pos, right_pos, left_vel, right_vel, time);
+      }
     }
 
     // Publish odometry message

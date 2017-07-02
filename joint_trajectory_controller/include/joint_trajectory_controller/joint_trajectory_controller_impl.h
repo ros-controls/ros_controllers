@@ -139,6 +139,15 @@ starting(const ros::Time& time)
   time_data.uptime = ros::Time(0.0);
   time_data_.initRT(time_data);
 
+  // Update current state and state error
+  for (unsigned int i = 0; i < joints_.size(); ++i)
+  {
+    current_state_.position[i] = joints_[i].getPosition();
+    current_state_.velocity[i] = joints_[i].getVelocity();
+  }
+
+  desired_state_ = current_state_;
+
   // Hold current position
   setHoldPosition(time_data.uptime);
 
@@ -147,6 +156,7 @@ starting(const ros::Time& time)
 
   // Hardware interface adapter
   hw_iface_adapter_.starting(time_data.uptime);
+
 }
 
 template <class SegmentImpl, class HardwareInterface>
@@ -686,12 +696,12 @@ setHoldPosition(const ros::Time& time)
   const unsigned int n_joints = joints_.size();
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-    hold_start_state_.position[i]     =  joints_[i].getPosition();
-    hold_start_state_.velocity[i]     =  joints_[i].getVelocity();
+    hold_start_state_.position[i] = desired_state_.position[i];
+    hold_start_state_.velocity[i] = desired_state_.velocity[i];
     hold_start_state_.acceleration[i] =  0.0;
 
-    hold_end_state_.position[i]       =  joints_[i].getPosition();
-    hold_end_state_.velocity[i]       = -joints_[i].getVelocity();
+    hold_end_state_.position[i] = desired_state_.position[i];
+    hold_end_state_.velocity[i] = -desired_state_.velocity[i];
     hold_end_state_.acceleration[i]   =  0.0;
   }
   hold_trajectory_ptr_->front().init(start_time,  hold_start_state_,

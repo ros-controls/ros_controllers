@@ -79,7 +79,7 @@ public:
  *   joints:
  *     - head_1_joint
  *     - head_2_joint
- *   
+ *
  *   constraints:
  *     goal_time: 0.6
  *     stopped_velocity_tolerance: 0.02
@@ -213,7 +213,14 @@ public:
     // Update PIDs
     for (unsigned int i = 0; i < n_joints; ++i)
     {
-      const double command = pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
+      // Compute error feedback WITH velocity feed-forward term
+      // The upside of this approach is that if the robot has a velocity controller with good tracking,
+      // the feed-forward component will be realized with high accuracy. In such a case, and in the absence of important
+      // external disturbances, the feedback term should be doing very little
+      const double feed_fwd_vel = desired_state.velocity[i];
+      const double feedback_vel = pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
+      const double command = feed_fwd_vel + feedback_vel;
+
       (*joint_handles_ptr_)[i].setCommand(command);
     }
   }

@@ -33,7 +33,7 @@
 
 #include <ros/ros.h>
 
-#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/tf.h>
 
@@ -54,6 +54,7 @@ public:
   DiffDriveControllerTest()
   : cmd_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100))
   , odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
+  , vel_out_sub(nh.subscribe("cmd_vel_out", 100, &DiffDriveControllerTest::cmdVelOutCallback, this))
   , start_srv(nh.serviceClient<std_srvs::Empty>("start"))
   , stop_srv(nh.serviceClient<std_srvs::Empty>("stop"))
   {
@@ -65,8 +66,10 @@ public:
   }
 
   nav_msgs::Odometry getLastOdom(){ return last_odom; }
+  geometry_msgs::TwistStamped getLastCmdVelOut(){ return last_cmd_vel_out; }
   void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
   bool isControllerAlive(){ return (odom_sub.getNumPublishers() > 0) && (cmd_pub.getNumSubscribers() > 0); }
+  bool isPublishingCmdVelOut(){ return (vel_out_sub.getNumPublishers() > 0); }
 
   void start(){ std_srvs::Empty srv; start_srv.call(srv); }
   void stop(){ std_srvs::Empty srv; stop_srv.call(srv); }
@@ -75,18 +78,27 @@ private:
   ros::NodeHandle nh;
   ros::Publisher cmd_pub;
   ros::Subscriber odom_sub;
+  ros::Subscriber vel_out_sub;
   nav_msgs::Odometry last_odom;
+  geometry_msgs::TwistStamped last_cmd_vel_out;
 
   ros::ServiceClient start_srv;
   ros::ServiceClient stop_srv;
 
   void odomCallback(const nav_msgs::Odometry& odom)
   {
-    ROS_INFO_STREAM("Callback reveived: pos.x: " << odom.pose.pose.position.x
+    ROS_INFO_STREAM("Callback received: pos.x: " << odom.pose.pose.position.x
                      << ", orient.z: " << odom.pose.pose.orientation.z
                      << ", lin_est: " << odom.twist.twist.linear.x
                      << ", ang_est: " << odom.twist.twist.angular.z);
     last_odom = odom;
+  }
+
+  void cmdVelOutCallback(const geometry_msgs::TwistStamped& cmd_vel_out)
+  {
+    ROS_INFO_STREAM("Callback received: lin: " << cmd_vel_out.twist.linear.x
+                     << ", ang: " << cmd_vel_out.twist.angular.z);
+    last_cmd_vel_out = cmd_vel_out;
   }
 };
 

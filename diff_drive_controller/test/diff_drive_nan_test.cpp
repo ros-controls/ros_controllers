@@ -78,6 +78,39 @@ TEST_F(DiffDriveControllerTest, testNaN)
   EXPECT_NE(std::isnan(odom.pose.pose.orientation.w), true);
 }
 
+TEST_F(DiffDriveControllerTest, testNaNCmd)
+{
+  // wait for ROS
+  while(!isControllerAlive())
+  {
+    ros::Duration(0.1).sleep();
+  }
+  // zero everything before test
+  geometry_msgs::Twist cmd_vel;
+  cmd_vel.linear.x = 0.0;
+  cmd_vel.angular.z = 0.0;
+  publish(cmd_vel);
+  ros::Duration(0.1).sleep();
+
+  // send NaN
+  for(int i=0; i<100;++i)
+  {
+    geometry_msgs::Twist cmd_vel;
+    cmd_vel.linear.x = NAN;
+    cmd_vel.angular.z = 0.0;
+    publish(cmd_vel);
+    nav_msgs::Odometry odom = getLastOdom();
+    ROS_INFO_STREAM("odom.twist.twist.linear.x "<<odom.twist.twist.linear.x);
+    ros::Duration(0.1).sleep();
+  }
+
+  nav_msgs::Odometry odom = getLastOdom();
+  ROS_INFO_STREAM("odom.twist.twist.linear.x "<<odom.twist.twist.linear.x);
+  EXPECT_EQ(odom.twist.twist.linear.x, 0.0);
+  EXPECT_EQ(odom.pose.pose.position.x, 0.0);
+  EXPECT_EQ(odom.pose.pose.position.y, 0.0);
+}
+
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);

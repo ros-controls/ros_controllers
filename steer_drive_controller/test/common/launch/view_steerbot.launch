@@ -1,0 +1,32 @@
+<launch>
+  <!-- start world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch"/>
+
+  <!-- load robot -->
+  <param name="robot_description"
+      command="$(find xacro)/xacro '$(find steer_drive_controller)/test/common/urdf/steerbot.xacro' --inorder" />
+
+  <!-- Load controller config -->
+  <rosparam command="load" file="$(find steer_drive_controller)/test/common/config/steerbot_controllers.yaml" />
+
+  <!-- Load steerbot config -->
+  <rosparam command="load" file="$(find steer_drive_controller)/test/common/config/steerbot_hw_sim.yaml" />
+
+  <!-- Start steerbot -->
+  <node name="steer_drive_controller_steerbot"
+        pkg="steer_drive_controller"
+        type="steer_drive_controller_steerbot"/>
+
+  <!-- Spawn controller -->
+  <node name="controller_spawner"
+        pkg="controller_manager" type="spawner" output="screen"
+        args="steerbot_controller" />
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+	args="-urdf -model steerbot -param robot_description -z 0.5"/>
+
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+  <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find steer_drive_controller)/test/common/rviz/display.rviz"/>
+</launch>

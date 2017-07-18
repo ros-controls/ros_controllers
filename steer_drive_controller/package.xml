@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>steer_drive_controller</name>
+  <version>0.1.0</version>
+  <description>Controller for a steer drive mobile base.</description>
+  <maintainer email="p595201m@mail.kyutech.jp">Masaru Morita</maintainer>
+
+  <license>BSD</license>
+
+  <url type="bugtracker">https://github.com/CIR-KIT/steer_drive_ros/issues</url>
+  <url type="repository">https://github.com/CIR-KIT/steer_drive_ros.git</url>
+  <author email="cirkit.infomation@gmail.com">CIR-KIT</author>
+  <author email="p595201m@mail.kyutech.jp">Masaru Morita</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>angles</depend>
+  <depend>controller_interface</depend>
+  <depend>control_toolbox</depend>
+  <depend>gazebo_ros_control</depend>
+  <depend>hardware_interface</depend>
+  <depend>joint_limits_interface</depend>
+  <depend>nav_msgs</depend>
+  <depend>realtime_tools</depend>
+  <depend>roscpp</depend>
+  <depend>tf</depend>
+  <depend>urdf</depend>
+
+  <build_depend>gazebo</build_depend>
+
+  <!--Tests-->
+  <build_depend>rostest</build_depend>
+
+  <test_depend>controller_manager</test_depend>
+  <test_depend>rostest</test_depend>
+  <test_depend>rosunit</test_depend>
+  <test_depend>std_srvs</test_depend>
+  <test_depend>xacro</test_depend>
+
+  <export>
+    <controller_interface plugin="${prefix}/steer_drive_controller_plugins.xml"/>
+  </export>
+</package>

@@ -1,0 +1,206 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="steer_radius" value="0.05" /> <!-- Link 1 -->
+  <xacro:property name="steer_thickness" value="0.02" /> <!-- Link 1 -->
+  <xacro:property name="steer_effort"   value="10.0"/>
+  <xacro:property name="steer_velocity" value="5.0"/>
+
+  <xacro:macro name="front_steer" params="name parent radius thickness length width axel_offset steer_height *origin">
+    <link name="${name}_steer_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1"/>
+        <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${steer_radius}" length="${steer_thickness}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${steer_radius}" length="${steer_thickness}"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${name}_steer_joint" type="revolute">
+      <parent link="${parent}_link"/>
+      <child link="${name}_steer_link"/>
+      <origin xyz="${length/2-axel_offset} 0 ${steer_height}" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+      <limit effort="${steer_effort}"
+             lower="${-180.0 * deg_to_rad}" upper="${180.0 * deg_to_rad}"
+             velocity="${steer_velocity}"/>
+     </joint>
+
+    <gazebo reference="${name}_steer_link">
+      <material>Gazebo/Yellow</material>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="front_wheel_lr" params="name parent radius thickness length width axel_offset right_left steer_height *origin">
+    <link name="${name}_steer_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1"/>
+        <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${steer_radius}" length="${steer_thickness}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${steer_radius}" length="${steer_thickness}"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${name}_steer_joint" type="revolute">
+      <parent link="${parent}_link"/>
+      <child link="${name}_steer_link"/>
+      <origin xyz="${length/2-axel_offset} ${right_left*(width/2+axel_offset)} ${steer_height}" rpy="0 0 0"/>
+      <!--xacro:insert_block name="origin"/-->
+      <axis xyz="0 0 1"/>
+      <limit effort="${steer_effort}"
+             lower="${-180.0 * deg_to_rad}" upper="${180.0 * deg_to_rad}"
+             velocity="${steer_velocity}"/>
+     </joint>
+
+    <link name="${name}_wheel_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1"/>
+        <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${thickness}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${thickness}"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${name}_wheel_joint" type="continuous">
+      <parent link="${name}_steer_link"/>
+      <child link="${name}_wheel_link"/>
+      <origin xyz="0 0 ${-steer_height}" rpy="${-90 * deg_to_rad} 0 0"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+
+    <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${name}_steer_joint_trans" type="SimpleTransmission">
+      <actuator name="${name}_steer_joint_motor"/>
+      <joint name="${name}_steer_joint"/>
+      <mechanicalReduction>1</mechanicalReduction>
+      <motorTorqueConstant>1</motorTorqueConstant>
+    </transmission>
+    <transmission name="${name}_wheel_joint_trans" type="SimpleTransmission">
+      <actuator name="${name}_wheel_joint_motor"/>
+      <joint name="${name}_wheel_joint"/>
+      <mechanicalReduction>1</mechanicalReduction>
+      <motorTorqueConstant>1</motorTorqueConstant>
+    </transmission>
+
+    <gazebo reference="${name}_steer_link">
+      <material>Gazebo/Blue</material>
+    </gazebo>
+    <gazebo reference="${name}_wheel_link">
+      <material>Gazebo/Red</material>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="rear_wheel" params="name parent radius thickness *origin">
+    <link name="${name}_wheel_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1"/>
+        <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${thickness}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${thickness}"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${name}_wheel_joint" type="continuous">
+      <parent link="${parent}_link"/>
+      <child link="${name}_wheel_link"/>
+      <xacro:insert_block name="origin"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+
+    <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${name}_wheel_joint_trans" type="SimpleTransmission">
+      <actuator name="${name}_wheel_joint_motor"/>
+      <joint name="${name}_wheel_joint"/>
+      <mechanicalReduction>1</mechanicalReduction>
+      <motorTorqueConstant>1</motorTorqueConstant>
+    </transmission>
+
+    <gazebo reference="${name}_wheel_link">
+      <material>Gazebo/Yellow</material>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:macro name="rear_wheel_lr" params="name parent radius thickness *origin">
+    <link name="${name}_wheel_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1"/>
+        <inertia ixx="0.2" ixy="0" ixz="0" iyy="0.2" iyz="0" izz="0.2"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${thickness}"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${thickness}"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${name}_wheel_joint" type="continuous">
+      <parent link="${parent}_link"/>
+      <child link="${name}_wheel_link"/>
+      <xacro:insert_block name="origin"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+
+    <!-- Transmission is important to link the joints and the controller -->
+    <transmission name="${name}_wheel_joint_trans" type="SimpleTransmission">
+      <actuator name="${name}_wheel_joint_motor"/>
+      <joint name="${name}_wheel_joint"/>
+      <mechanicalReduction>1</mechanicalReduction>
+      <motorTorqueConstant>1</motorTorqueConstant>
+    </transmission>
+
+    <gazebo reference="${name}_wheel_link">
+      <material>Gazebo/Red</material>
+    </gazebo>
+  </xacro:macro>
+</robot>

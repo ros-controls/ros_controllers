@@ -1,0 +1,9 @@
+steerbot_hw_sim:
+  rear_wheel  : 'rear_wheel_joint'
+  front_steer : 'front_steer_joint'
+
+  rear_wheels: ['rear_right_wheel_joint', 'rear_left_wheel_joint']
+  front_wheels: ['front_right_wheel_joint', 'front_left_wheel_joint']
+  front_steers: ['front_right_steer_joint', 'front_left_steer_joint']
+
+  wheel_separation_h : 0.20

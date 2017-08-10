@@ -142,6 +142,9 @@ namespace diff_drive_controller{
     /// Timeout to consider cmd_vel commands old:
     double cmd_vel_timeout_;
 
+    /// Whether to allow multiple publishers on cmd_vel topic or not:
+    bool allow_multiple_cmd_vel_publishers_;
+
     /// Frame to use for the robot base:
     std::string base_frame_id_;
 

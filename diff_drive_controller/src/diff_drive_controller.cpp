@@ -157,6 +157,7 @@ namespace diff_drive_controller{
     , wheel_separation_multiplier_(1.0)
     , wheel_radius_multiplier_(1.0)
     , cmd_vel_timeout_(0.5)
+    , allow_multiple_cmd_vel_publishers_(true)
     , base_frame_id_("base_link")
     , odom_frame_id_("odom")
     , enable_odom_tf_(true)
@@ -224,6 +225,10 @@ namespace diff_drive_controller{
     controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
     ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "
                           << cmd_vel_timeout_ << "s.");
+
+    controller_nh.param("allow_multiple_cmd_vel_publishers", allow_multiple_cmd_vel_publishers_, allow_multiple_cmd_vel_publishers_);
+    ROS_INFO_STREAM_NAMED(name_, "Allow mutiple cmd_vel publishers is "
+                          << (allow_multiple_cmd_vel_publishers_?"enabled":"disabled"));
 
     controller_nh.param("base_frame_id", base_frame_id_, base_frame_id_);
     ROS_INFO_STREAM_NAMED(name_, "Base frame_id set to " << base_frame_id_);
@@ -437,6 +442,15 @@ namespace diff_drive_controller{
   {
     if (isRunning())
     {
+      // check that we don't have multiple publishers on the command topic
+      if (!allow_multiple_cmd_vel_publishers_ && sub_command_.getNumPublishers() > 1)
+      {
+        ROS_ERROR_STREAM_THROTTLE_NAMED(1.0, name_, "Detected " << sub_command_.getNumPublishers()
+            << " publishers. Only 1 publisher is allowed. Going to brake.");
+        brake();
+        return;
+      }
+
       command_struct_.ang   = command.angular.z;
       command_struct_.lin   = command.linear.x;
       command_struct_.stamp = ros::Time::now();

@@ -183,7 +183,17 @@ JointTrajectoryController<SegmentImpl, HardwareInterface>::
 JointTrajectoryController()
   : verbose_(false), // Set to true during debugging
     hold_trajectory_ptr_(new Trajectory)
-{}
+{
+  // The verbose parameter is for advanced use as it breaks real-time safety
+  // by enabling ROS logging services
+  if (verbose_)
+  {
+    ROS_WARN_STREAM(
+        "The joint_trajectory_controller verbose flag is enabled. "
+        << "This flag breaks real-time safety and should only be "
+        << "used for debugging");
+  }
+}
 
 template <class SegmentImpl, class HardwareInterface>
 bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInterface* hw,

@@ -1,0 +1,23 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
+
+  <!-- Override robot_description with sphere wheel urdf -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro '$(find diff_drive_controller)/test/diffbot_sphere_wheels.xacro' --inorder" />
+  <!-- Set allow_multiple_publishers to false -->
+  <param name="diffbot_controller/allow_multiple_cmd_vel_publishers" value="false"/>
+
+  <node name="cmd_vel_publisher" pkg="rostopic" type="rostopic" args="pub -r 2 /diffbot_controller/cmd_vel geometry_msgs/Twist '{linear: {x: 1.0}}'" />
+  
+  <node name="cmd_vel_publisher2" pkg="rostopic" type="rostopic" args="pub -r 2 /diffbot_controller/cmd_vel geometry_msgs/Twist '{linear: {x: 2.0}}'" />
+
+  <!-- Controller test -->
+  <test test-name="diff_drive_allow_multiple_cmd_vel_publishers_param_test"
+        pkg="diff_drive_controller"
+        type="diff_drive_multiple_cmd_vel_publishers_test"
+        time-limit="80.0">
+    <remap from="cmd_vel" to="diffbot_controller/cmd_vel" />
+    <remap from="odom" to="diffbot_controller/odom" />
+  </test>
+</launch>

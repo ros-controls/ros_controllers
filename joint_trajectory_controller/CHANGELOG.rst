@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.13.0 (2017-08-10)
+-------------------
 * Make rqt_plot optional
 * Added tests for issue `#275 <https://github.com/ros-controls/ros_controllers/issues/275>`_
 * Address Issue  `#275 <https://github.com/ros-controls/ros_controllers/issues/275>`_ for kinetic

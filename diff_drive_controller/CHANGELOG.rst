@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.13.0 (2017-08-10)
+-------------------
 * Add test for allow_multiple_cmd_vel_publishers param
 * add check for multiple publishers on cmd_vel
 * Added tests for the odom_frame_id parameter.

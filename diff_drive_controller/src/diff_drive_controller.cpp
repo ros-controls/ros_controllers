@@ -234,6 +234,24 @@ namespace diff_drive_controller{
       return false;
     }
 
+    // Export parameters to param server if not available
+    if (lookup_wheel_separation)
+    {
+      controller_nh.setParam("wheel_separation", wheel_separation_);
+    }
+    if (lookup_wheel_radius)
+    {
+      controller_nh.setParam("wheel_radius", wheel_radius_);
+    }
+    if (!controller_nh.hasParam("wheel_separation_multiplier"))
+    {
+      controller_nh.setParam("wheel_separation_multiplier", wheel_separation_multiplier_);
+    }
+    if (!controller_nh.hasParam("wheel_radius_multiplier"))
+    {
+      controller_nh.setParam("wheel_radius_multiplier", wheel_radius_multiplier_);
+    }
+
     // Regardless of how we got the separation and radius, use them
     // to set the odometry parameters
     const double ws = wheel_separation_multiplier_ * wheel_separation_;

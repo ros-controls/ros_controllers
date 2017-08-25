@@ -41,6 +41,7 @@
 
 #include <control_toolbox/pid.h>
 #include <hardware_interface/joint_command_interface.h>
+#include <hardware_interface/posvel_command_interface.h>
 #include <hardware_interface/posvelacc_command_interface.h>
 
 /**
@@ -320,6 +321,42 @@ private:
   std::vector<hardware_interface::JointHandle>* joint_handles_ptr_;
 };
 
+/**
+ * \brief Adapter for a pos-vel hardware interface. Forwards desired positions with velcities as commands.
+ */
+template <class State>
+class HardwareInterfaceAdapter<hardware_interface::PosVelJointInterface, State>
+{
+public:
+  HardwareInterfaceAdapter() : joint_handles_ptr_(0) {}
+
+  bool init(std::vector<hardware_interface::PosVelJointHandle>& joint_handles, ros::NodeHandle& controller_nh)
+  {
+    // Store pointer to joint handles
+    joint_handles_ptr_ = &joint_handles;
+
+    return true;
+  }
+
+  void starting(const ros::Time& time) {}
+  void stopping(const ros::Time& time) {}
+
+  void updateCommand(const ros::Time&     /*time*/,
+                     const ros::Duration& /*period*/,
+                     const State&         desired_state,
+                     const State&         /*state_error*/)
+  {
+    // Forward desired position to command
+    const unsigned int n_joints = joint_handles_ptr_->size();
+    for (unsigned int i = 0; i < n_joints; ++i)
+    {
+      (*joint_handles_ptr_)[i].setCommand(desired_state.position[i], desired_state.velocity[i]);
+    }
+  }
+
+private:
+  std::vector<hardware_interface::PosVelJointHandle>* joint_handles_ptr_;
+};
 
 /**
  * \brief Adapter for a spline-controlled hardware interface. Forwards desired positions as commands.

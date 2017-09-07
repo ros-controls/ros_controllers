@@ -3,10 +3,6 @@ project(four_wheel_steering_controller)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-#Add custom (non compiling) targets so launch scripts and python files show up in QT Creator's project view.
-file(GLOB_RECURSE EXTRA_FILES */*)
-add_custom_target(${PROJECT_NAME}_OTHER_FILES ALL WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} SOURCES ${EXTRA_FILES})
-
 set(${PROJECT_NAME}_CATKIN_DEPS
     controller_interface
     nav_msgs

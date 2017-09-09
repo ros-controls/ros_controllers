@@ -2,17 +2,17 @@ cmake_minimum_required(VERSION 2.8.3)
 project(steer_drive_controller)
 
 find_package(catkin REQUIRED COMPONENTS
-  controller_interface
-  urdf
-  realtime_tools
-  tf
-  nav_msgs
-  roscpp
   angles
   control_toolbox
+  controller_interface
   gazebo_ros_control
   hardware_interface
   joint_limits_interface
+  nav_msgs
+  realtime_tools
+  roscpp
+  tf
+  urdf
 )
 
 find_package(gazebo REQUIRED)
@@ -21,12 +21,12 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
-  roscpp
   angles
   control_toolbox
   gazebo_ros_control
   hardware_interface
   joint_limits_interface
+  roscpp
 )
 
 include_directories(

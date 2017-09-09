@@ -7,9 +7,8 @@
 
   <license>BSD</license>
 
-  <url type="bugtracker">https://github.com/CIR-KIT/steer_drive_ros/issues</url>
-  <url type="repository">https://github.com/CIR-KIT/steer_drive_ros.git</url>
-  <author email="cirkit.infomation@gmail.com">CIR-KIT</author>
+  <url type="bugtracker">https://github.com/ros-controls/ros_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros_controllers/steer_drive_controller</url>
   <author email="p595201m@mail.kyutech.jp">Masaru Morita</author>
 
   <buildtool_depend>catkin</buildtool_depend>

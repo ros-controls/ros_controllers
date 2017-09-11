@@ -138,6 +138,13 @@ starting(const ros::Time& time)
   time_data.uptime = ros::Time(0.0);
   time_data_.initRT(time_data);
 
+  // Initialize the desired_state with the current state on startup
+  for (unsigned int i = 0; i < joints_.size(); ++i)
+  {
+    desired_state_.position[i] = joints_[i].getPosition();
+    desired_state_.velocity[i] = joints_[i].getVelocity();
+  }
+
   // Hold current position
   setHoldPosition(time_data.uptime);
 
@@ -755,12 +762,14 @@ setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
   const unsigned int n_joints = joints_.size();
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-    hold_start_state_.position[0]     =  joints_[i].getPosition();
-    hold_start_state_.velocity[0]     =  joints_[i].getVelocity();
+    // If there is a time delay in the system it is better to use calculate the hold trajectory starting from the
+    // desired position. Otherwise there would be a jerk in the motion.
+    hold_start_state_.position[0]     =  desired_state_.position[i];
+    hold_start_state_.velocity[0]     =  desired_state_.velocity[i];
     hold_start_state_.acceleration[0] =  0.0;
 
-    hold_end_state_.position[0]       =  joints_[i].getPosition();
-    hold_end_state_.velocity[0]       = -joints_[i].getVelocity();
+    hold_end_state_.position[0]       =  desired_state_.position[i];
+    hold_end_state_.velocity[0]       = -desired_state_.velocity[i];
     hold_end_state_.acceleration[0]   =  0.0;
 
     (*hold_trajectory_ptr_)[i].front().init(start_time,  hold_start_state_,

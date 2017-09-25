@@ -144,6 +144,9 @@ namespace four_wheel_steering_controller{
 
     /// Wheel separation (or track), distance between left and right wheels (from the midpoint of the wheel width):
     double track_;
+    /// Distance between a wheel joint (from the midpoint of the wheel width) and the associated steering joint:
+    /// We consider that the distance is the same for every wheel
+    double wheel_steering_y_offset_;
 
     /// Wheel radius (assuming it's the same for the left and right wheels):
     double wheel_radius_;

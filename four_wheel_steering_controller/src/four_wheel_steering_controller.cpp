@@ -48,6 +48,7 @@ namespace four_wheel_steering_controller{
     , command_struct_()
     , command_struct_four_wheel_steering_()
     , track_(0.0)
+    , wheel_steering_y_offset_(0.0)
     , wheel_radius_(0.0)
     , wheel_base_(0.0)
     , cmd_vel_timeout_(0.5)
@@ -226,15 +227,22 @@ namespace four_wheel_steering_controller{
 
     urdf_geometry_parser::UrdfGeometryParser uvk(root_nh, base_frame_id_);
     if(lookup_track)
-      if(!uvk.getDistanceBetweenJoints(front_steering_names[0], front_steering_names[1], track_))
+      if(!uvk.getDistanceBetweenJoints(front_wheel_names[0], front_wheel_names[1], track_))
         return false;
       else
         controller_nh.setParam("track",track_);
+
+    if(!uvk.getDistanceBetweenJoints(front_steering_names[0], front_wheel_names[0], wheel_steering_y_offset_))
+      return false;
+    else
+      controller_nh.setParam("wheel_steering_y_offset",wheel_steering_y_offset_);
+
     if(lookup_wheel_radius)
       if(!uvk.getJointRadius(front_wheel_names[0], wheel_radius_))
         return false;
       else
         controller_nh.setParam("wheel_radius",wheel_radius_);
+
     if(lookup_wheel_base)
       if(!uvk.getDistanceBetweenJoints(front_wheel_names[0], rear_wheel_names[0], wheel_base_))
         return false;
@@ -248,9 +256,10 @@ namespace four_wheel_steering_controller{
     const double wb = wheel_base_;
     odometry_.setWheelParams(ws, wr, wb);
     ROS_INFO_STREAM_NAMED(name_,
-                          "Odometry params : wheel separation " << ws
+                          "Odometry params : track " << ws
                           << ", wheel radius " << wr
-                          << ", wheel base " << wb);
+                          << ", wheel base " << wb
+                          << ", wheel steering offset " << wheel_steering_y_offset_);
 
     setOdomPubFields(root_nh, controller_nh);
 
@@ -408,38 +417,45 @@ namespace four_wheel_steering_controller{
     last0_cmd_ = curr_cmd;
 
     const double angular_speed = odometry_.getAngular();
+    const double steering_track = track_-2*wheel_steering_y_offset_;
 
     ROS_DEBUG_STREAM("angular_speed "<<angular_speed<<" curr_cmd.lin "<<curr_cmd.lin<< " wheel_radius_ "<<wheel_radius_);
     double vel_left_front = 0, vel_right_front = 0;
     double vel_left_rear = 0, vel_right_rear = 0;
     double front_left_steering = 0, front_right_steering = 0;
     double rear_left_steering = 0, rear_right_steering = 0;
+
     if(enable_twist_cmd_ == true)
     {
       // Compute wheels velocities:
       if(fabs(curr_cmd.lin) > 0.001)
       {
-        vel_left_front  = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin - curr_cmd.ang*track_/2,2)
-                                                                           +pow(wheel_base_*curr_cmd.ang/2.0,2)))/wheel_radius_;
-        vel_right_front = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin + curr_cmd.ang*track_/2,2)
-                                                                           +pow(wheel_base_*curr_cmd.ang/2.0,2)))/wheel_radius_;
-        vel_left_rear = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin - curr_cmd.ang*track_/2,2)
-                                                                         +pow(wheel_base_*curr_cmd.ang/2.0,2)))/wheel_radius_;
-        vel_right_rear = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin + curr_cmd.ang*track_/2,2)
-                                                                          +pow(wheel_base_*curr_cmd.ang/2.0,2)))/wheel_radius_;
+        double vel_steering_offset = (curr_cmd.ang*wheel_steering_y_offset_)/wheel_radius_;
+        vel_left_front  = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin - curr_cmd.ang*steering_track/2,2)
+                                                                           +pow(wheel_base_*curr_cmd.ang/2.0,2)))/wheel_radius_
+                                                        - vel_steering_offset;
+        vel_right_front = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin + curr_cmd.ang*steering_track/2,2)
+                                                                           +pow(wheel_base_*curr_cmd.ang/2.0,2)))/wheel_radius_
+                                                        + vel_steering_offset;
+        vel_left_rear = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin - curr_cmd.ang*steering_track/2,2)
+                                                                         +pow(wheel_base_*curr_cmd.ang/2.0,2)))/wheel_radius_
+                                                      - vel_steering_offset;
+        vel_right_rear = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin + curr_cmd.ang*steering_track/2,2)
+                                                                          +pow(wheel_base_*curr_cmd.ang/2.0,2)))/wheel_radius_
+                                                       + vel_steering_offset;
       }
 
       // Compute steering angles
       if(fabs(2.0*curr_cmd.lin) > fabs(curr_cmd.ang*track_))
       {
         front_left_steering = atan(curr_cmd.ang*wheel_base_ /
-                                    (2.0*curr_cmd.lin - curr_cmd.ang*track_));
+                                    (2.0*curr_cmd.lin - curr_cmd.ang*steering_track));
         front_right_steering = atan(curr_cmd.ang*wheel_base_ /
-                                     (2.0*curr_cmd.lin + curr_cmd.ang*track_));
+                                     (2.0*curr_cmd.lin + curr_cmd.ang*steering_track));
         rear_left_steering = -atan(curr_cmd.ang*wheel_base_ /
-                                    (2.0*curr_cmd.lin - curr_cmd.ang*track_));
+                                    (2.0*curr_cmd.lin - curr_cmd.ang*steering_track));
         rear_right_steering = -atan(curr_cmd.ang*wheel_base_ /
-                                     (2.0*curr_cmd.lin + curr_cmd.ang*track_));
+                                     (2.0*curr_cmd.lin + curr_cmd.ang*steering_track));
       }
       else if(fabs(curr_cmd.lin) > 0.001)
       {
@@ -457,10 +473,10 @@ namespace four_wheel_steering_controller{
       double steering_diff =  track_*(tan(curr_cmd.front_steering) - tan(curr_cmd.rear_steering))/2.0;
       if(fabs(wheel_base_ - fabs(steering_diff)) > 0.001)
       {
-        front_left_steering = wheel_base_*curr_cmd.front_steering/(wheel_base_-steering_diff);
-        front_right_steering = wheel_base_*curr_cmd.front_steering/(wheel_base_+steering_diff);
-        rear_left_steering = wheel_base_*curr_cmd.rear_steering/(wheel_base_-steering_diff);
-        rear_right_steering = wheel_base_*curr_cmd.rear_steering/(wheel_base_+steering_diff);
+        front_left_steering = atan(wheel_base_*tan(curr_cmd.front_steering)/(wheel_base_-steering_diff));
+        front_right_steering = atan(wheel_base_*tan(curr_cmd.front_steering)/(wheel_base_+steering_diff));
+        rear_left_steering = atan(wheel_base_*tan(curr_cmd.rear_steering)/(wheel_base_-steering_diff));
+        rear_right_steering = atan(wheel_base_*tan(curr_cmd.rear_steering)/(wheel_base_+steering_diff));
       }
 
       // Compute wheels velocities:
@@ -483,15 +499,20 @@ namespace four_wheel_steering_controller{
         }
 
         double angular_speed_cmd = curr_cmd.lin * (tan(curr_cmd.front_steering)-tan(curr_cmd.rear_steering))/wheel_base_;
+        double vel_steering_offset = (angular_speed_cmd*wheel_steering_y_offset_)/wheel_radius_;
 
-        vel_left_front  = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin - angular_speed_cmd*track_/2,2)
-                                                                           +pow(l_front*angular_speed_cmd,2)))/wheel_radius_;
-        vel_right_front = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin + angular_speed_cmd*track_/2,2)
-                                                                           +pow(wheel_base_*angular_speed_cmd/2.0,2)))/wheel_radius_;
-        vel_left_rear = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin - angular_speed_cmd*track_/2,2)
-                                                                         +pow(wheel_base_*angular_speed_cmd/2.0,2)))/wheel_radius_;
-        vel_right_rear = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin + angular_speed_cmd*track_/2,2)
-                                                                          +pow(wheel_base_*angular_speed_cmd/2.0,2)))/wheel_radius_;
+        vel_left_front  = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin - angular_speed_cmd*steering_track/2,2)
+                                                                           +pow(l_front*angular_speed_cmd,2)))/wheel_radius_
+                                                      - vel_steering_offset;
+        vel_right_front = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin + angular_speed_cmd*steering_track/2,2)
+                                                                           +pow(l_front*angular_speed_cmd,2)))/wheel_radius_
+                                                      + vel_steering_offset;
+        vel_left_rear = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin - angular_speed_cmd*steering_track/2,2)
+                                                                         +pow(l_rear*angular_speed_cmd,2)))/wheel_radius_
+                                                    - vel_steering_offset;
+        vel_right_rear = copysign(1.0, curr_cmd.lin) * sqrt((pow(curr_cmd.lin + angular_speed_cmd*steering_track/2,2)
+                                                                          +pow(l_rear*angular_speed_cmd,2)))/wheel_radius_
+                                                     + vel_steering_offset;
       }
     }
 

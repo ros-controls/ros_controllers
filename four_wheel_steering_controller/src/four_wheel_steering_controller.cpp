@@ -251,14 +251,11 @@ namespace four_wheel_steering_controller{
 
     // Regardless of how we got the separation and radius, use them
     // to set the odometry parameters
-    const double ws = track_;
-    const double wr = wheel_radius_;
-    const double wb = wheel_base_;
-    odometry_.setWheelParams(ws, wr, wb);
+    odometry_.setWheelParams(track_-2*wheel_steering_y_offset_, wheel_radius_, wheel_base_);
     ROS_INFO_STREAM_NAMED(name_,
-                          "Odometry params : track " << ws
-                          << ", wheel radius " << wr
-                          << ", wheel base " << wb
+                          "Odometry params : track " << track_
+                          << ", wheel radius " << wheel_radius_
+                          << ", wheel base " << wheel_base_
                           << ", wheel steering offset " << wheel_steering_y_offset_);
 
     setOdomPubFields(root_nh, controller_nh);
@@ -446,7 +443,7 @@ namespace four_wheel_steering_controller{
       }
 
       // Compute steering angles
-      if(fabs(2.0*curr_cmd.lin) > fabs(curr_cmd.ang*track_))
+      if(fabs(2.0*curr_cmd.lin) > fabs(curr_cmd.ang*steering_track))
       {
         front_left_steering = atan(curr_cmd.ang*wheel_base_ /
                                     (2.0*curr_cmd.lin - curr_cmd.ang*steering_track));
@@ -470,7 +467,7 @@ namespace four_wheel_steering_controller{
       curr_cmd.front_steering = clamp(curr_cmd.front_steering, -M_PI_2, M_PI_2);
       curr_cmd.rear_steering = clamp(curr_cmd.rear_steering, -M_PI_2, M_PI_2);
       // Compute steering angles
-      double steering_diff =  track_*(tan(curr_cmd.front_steering) - tan(curr_cmd.rear_steering))/2.0;
+      double steering_diff =  steering_track*(tan(curr_cmd.front_steering) - tan(curr_cmd.rear_steering))/2.0;
       if(fabs(wheel_base_ - fabs(steering_diff)) > 0.001)
       {
         front_left_steering = atan(wheel_base_*tan(curr_cmd.front_steering)/(wheel_base_-steering_diff));
@@ -487,14 +484,14 @@ namespace four_wheel_steering_controller{
         double l_front = 0;
         if(fabs(tan(front_left_steering) - tan(front_right_steering)) > 0.01)
         {
-          l_front = tan(front_right_steering) * tan(front_left_steering) * track_
+          l_front = tan(front_right_steering) * tan(front_left_steering) * steering_track
               / (tan(front_left_steering) - tan(front_right_steering));
         }
         // distance between the projection of the CIR on the wheelbase and the rear axle
         double l_rear = 0;
         if(fabs(tan(rear_left_steering) - tan(rear_right_steering)) > 0.01)
         {
-          l_rear = tan(rear_right_steering) * tan(rear_left_steering) * track_
+          l_rear = tan(rear_right_steering) * tan(rear_left_steering) * steering_track
               / (tan(rear_left_steering) - tan(rear_right_steering));
         }
 

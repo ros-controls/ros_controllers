@@ -158,11 +158,12 @@ namespace four_wheel_steering_controller
 
     /**
      * \brief Sets the wheel parameters: radius and separation
-     * \param track Seperation between left and right wheels [m]
-     * \param wheel_radius     Wheel radius [m]
-     * \param wheel_base       Wheel base [m]
+     * \param steering_track          Seperation between left and right steering joints [m]
+     * \param wheel_steering_y_offset Offest between the steering and wheel joints [m]
+     * \param wheel_radius            Wheel radius [m]
+     * \param wheel_base              Wheel base [m]
      */
-    void setWheelParams(double track, double wheel_radius, double wheel_base);
+    void setWheelParams(double steering_track, double wheel_steering_y_offset, double wheel_radius, double wheel_base);
 
     /**
      * \brief Velocity rolling window size setter
@@ -216,7 +217,8 @@ namespace four_wheel_steering_controller
     double angular_; // [rad/s]
 
     /// Wheel kinematic parameters [m]:
-    double track_;
+    double steering_track_;
+    double wheel_steering_y_offset_;
     double wheel_radius_;
     double wheel_base_;
 

@@ -251,7 +251,7 @@ namespace four_wheel_steering_controller{
 
     // Regardless of how we got the separation and radius, use them
     // to set the odometry parameters
-    odometry_.setWheelParams(track_-2*wheel_steering_y_offset_, wheel_radius_, wheel_base_);
+    odometry_.setWheelParams(track_-2*wheel_steering_y_offset_, wheel_steering_y_offset_, wheel_radius_, wheel_base_);
     ROS_INFO_STREAM_NAMED(name_,
                           "Odometry params : track " << track_
                           << ", wheel radius " << wheel_radius_

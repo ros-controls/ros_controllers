@@ -35,6 +35,7 @@
 #include <four_wheel_steering_controller/odometry.h>
 
 #include <boost/bind.hpp>
+#include <ros/ros.h>
 
 namespace four_wheel_steering_controller
 {
@@ -50,7 +51,8 @@ namespace four_wheel_steering_controller
   , linear_x_(0.0)
   , linear_y_(0.0)
   , angular_(0.0)
-  , track_(0.0)
+  , steering_track_(0.0)
+  , wheel_steering_y_offset_(0.0)
   , wheel_radius_(0.0)
   , wheel_base_(0.0)
   , wheel_old_pos_(0.0)
@@ -72,14 +74,27 @@ namespace four_wheel_steering_controller
                         const double &rl_speed, const double &rr_speed,
                         double front_steering, double rear_steering, const ros::Time &time)
   {
-//    const double front_tmp = cos(front_steering)*(tan(front_steering)-tan(rear_steering))/wheel_base_;
-//    const double front_linear_speed = wheel_radius_ * copysign(1.0, fl_speed+fr_speed)*
-//        sqrt((pow(fl_speed,2)+pow(fr_speed,2))/(2+pow(track_*front_tmp,2)/2.0));
+    const double front_tmp = cos(front_steering)*(tan(front_steering)-tan(rear_steering))/wheel_base_;
+    const double front_left_tmp = front_tmp/sqrt(1-steering_track_*front_tmp*cos(front_steering)
+                                               +pow(steering_track_*front_tmp/2,2));
+    const double front_right_tmp = front_tmp/sqrt(1+steering_track_*front_tmp*cos(front_steering)
+                                                +pow(steering_track_*front_tmp/2,2));
+    const double fl_speed_tmp = fl_speed * (1/(1-wheel_steering_y_offset_*front_left_tmp));
+    const double fr_speed_tmp = fr_speed * (1/(1-wheel_steering_y_offset_*front_right_tmp));
+    const double front_linear_speed = wheel_radius_ * copysign(1.0, fl_speed_tmp+fr_speed_tmp)*
+        sqrt((pow(fl_speed,2)+pow(fr_speed,2))/(2+pow(steering_track_*front_tmp,2)/2.0));
 
     const double rear_tmp = cos(rear_steering)*(tan(front_steering)-tan(rear_steering))/wheel_base_;
-    const double rear_linear_speed = wheel_radius_ * copysign(1.0, rl_speed+rr_speed)*
-        sqrt((pow(rl_speed,2)+pow(rr_speed,2))/(2+pow(track_*rear_tmp,2)/2.0));
+    const double rear_left_tmp = rear_tmp/sqrt(1-steering_track_*rear_tmp*cos(rear_steering)
+                                               +pow(steering_track_*rear_tmp/2,2));
+    const double rear_right_tmp = rear_tmp/sqrt(1+steering_track_*rear_tmp*cos(rear_steering)
+                                                +pow(steering_track_*rear_tmp/2,2));
+    const double rl_speed_tmp = rl_speed * (1/(1-wheel_steering_y_offset_*rear_left_tmp));
+    const double rr_speed_tmp = rr_speed * (1/(1-wheel_steering_y_offset_*rear_right_tmp));
+    const double rear_linear_speed = wheel_radius_ * copysign(1.0, rl_speed_tmp+rr_speed_tmp)*
+        sqrt((pow(rl_speed_tmp,2)+pow(rr_speed_tmp,2))/(2+pow(steering_track_*rear_tmp,2)/2.0));
 
+    //ROS_INFO_STREAM("front_angular_speed "<<front_linear_speed*front_tmp<<"rear_angular_speed "<<rear_linear_speed*rear_tmp);
     angular_ = rear_linear_speed*rear_tmp;
 
     linear_x_ = rear_linear_speed*cos(rear_steering);
@@ -108,9 +123,10 @@ namespace four_wheel_steering_controller
     integrateExact(linear * dt, angular * dt);
   }
 
-  void Odometry::setWheelParams(double track, double wheel_radius, double wheel_base)
+  void Odometry::setWheelParams(double steering_track, double wheel_steering_y_offset, double wheel_radius, double wheel_base)
   {
-    track_ = track;
+    steering_track_   = steering_track;
+    wheel_steering_y_offset_ = wheel_steering_y_offset;
     wheel_radius_     = wheel_radius;
     wheel_base_       = wheel_base;
   }

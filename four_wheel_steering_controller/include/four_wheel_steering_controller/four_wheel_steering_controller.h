@@ -118,23 +118,35 @@ namespace four_wheel_steering_controller{
     std::vector<hardware_interface::JointHandle> rear_steering_joints_;
 
     /// Velocity command related:
-    struct Commands
+    struct Command
     {
-      double lin;
-      double ang;
-      double front_steering;
-      double rear_steering;
       ros::Time stamp;
 
-      Commands() : lin(0.0), ang(0.0), front_steering(0.0), rear_steering(0.0), stamp(0.0) {}
+      Command() : stamp(0.0) {}
     };
-    realtime_tools::RealtimeBuffer<Commands> command_;
-    Commands command_struct_;
+    struct CommandTwist : Command
+    {
+      double lin_x;
+      double lin_y;
+      double ang;
+
+      CommandTwist() : lin_x(0.0), lin_y(0.0), ang(0.0) {}
+    };
+    struct Command4ws : Command
+    {
+      double lin;
+      double front_steering;
+      double rear_steering;
+
+      Command4ws() : lin(0.0), front_steering(0.0), rear_steering(0.0) {}
+    };
+    realtime_tools::RealtimeBuffer<CommandTwist> command_twist_;
+    CommandTwist command_struct_twist_;
     ros::Subscriber sub_command_;
 
     /// FourWheelSteering command related:
-    realtime_tools::RealtimeBuffer<Commands> command_four_wheel_steering_;
-    Commands command_struct_four_wheel_steering_;
+    realtime_tools::RealtimeBuffer<Command4ws> command_four_wheel_steering_;
+    Command4ws command_struct_four_wheel_steering_;
     ros::Subscriber sub_command_four_wheel_steering_;
 
     /// Odometry related:
@@ -167,8 +179,8 @@ namespace four_wheel_steering_controller{
     bool enable_twist_cmd_;
 
     /// Speed limiters:
-    Commands last1_cmd_;
-    Commands last0_cmd_;
+    CommandTwist last1_cmd_;
+    CommandTwist last0_cmd_;
     SpeedLimiter limiter_lin_;
     SpeedLimiter limiter_ang_;
 

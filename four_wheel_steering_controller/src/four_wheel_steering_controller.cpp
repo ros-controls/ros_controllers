@@ -202,9 +202,6 @@ namespace four_wheel_steering_controller{
     controller_nh.param("enable_odom_tf", enable_odom_tf_, enable_odom_tf_);
     ROS_INFO_STREAM_NAMED(name_, "Publishing to tf is " << (enable_odom_tf_?"enabled":"disabled"));
 
-    controller_nh.param("enable_twist_cmd", enable_twist_cmd_, enable_twist_cmd_);
-    ROS_INFO_STREAM_NAMED(name_, "Twist cmd is " << (enable_twist_cmd_?"enabled":"disabled")<<" (default is four_wheel_steering)");
-
     // Velocity and acceleration limits:
     controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
     controller_nh.param("linear/x/has_acceleration_limits", limiter_lin_.has_acceleration_limits, limiter_lin_.has_acceleration_limits);
@@ -280,10 +277,8 @@ namespace four_wheel_steering_controller{
       rear_steering_joints_[i] = hw_pos->getHandle(rear_steering_names[i]);  // throws on failure
     }
 
-    if(enable_twist_cmd_ == true)
-      sub_command_ = controller_nh.subscribe("cmd_vel", 1, &FourWheelSteeringController::cmdVelCallback, this);
-    else
-      sub_command_four_wheel_steering_ = controller_nh.subscribe("cmd_four_wheel_steering", 1, &FourWheelSteeringController::cmdFourWheelSteeringCallback, this);
+    sub_command_ = controller_nh.subscribe("cmd_vel", 1, &FourWheelSteeringController::cmdVelCallback, this);
+    sub_command_four_wheel_steering_ = controller_nh.subscribe("cmd_four_wheel_steering", 1, &FourWheelSteeringController::cmdFourWheelSteeringCallback, this);
 
     return true;
   }

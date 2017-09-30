@@ -192,6 +192,12 @@ checkPathTolerances(const typename Segment::State& state_error,
     control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
     rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
     rt_active_goal_.reset();
+    
+    // Controller uptime
+    const ros::Time uptime = time_data_.readFromRT()->uptime;
+    
+    // Enter hold current position mode
+    setHoldPosition(uptime);
   }
 }
 
@@ -230,6 +236,9 @@ checkGoalTolerances(const typename Segment::State& state_error,
     rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
     rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
     rt_active_goal_.reset();
+
+    // Enter hold current position mode
+    setHoldPosition(uptime);
   }
 }
 

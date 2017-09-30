@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <controller_interface/controller_base.h>
+#include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
 
@@ -58,31 +58,21 @@ namespace four_wheel_steering_controller{
    *  - a wheel joint frame center's vertical projection on the floor must lie within the contact patch
    */
   class FourWheelSteeringController
-      : public controller_interface::ControllerBase
+      : public controller_interface::MultiInterfaceController<hardware_interface::VelocityJointInterface,
+                                                              hardware_interface::PositionJointInterface>
   {
   public:
     FourWheelSteeringController();
 
     /**
      * \brief Initialize controller
-     * \param hw            Velocity joint interface for the wheels
+     * \param robot_hw      Velocity and position joint interface for the wheels
      * \param root_nh       Node handle at root namespace
      * \param controller_nh Node handle inside the controller namespace
      */
-    virtual bool initRequest(hardware_interface::RobotHW *const robot_hw,
-              ros::NodeHandle& root_nh,
-              ros::NodeHandle &controller_nh,
-              ClaimedResources& claimed_resources);
-    /// Get the name of this controller's hardware interface type
-    std::string getHardwareInterfaceType() const
-    {
-      return "";
-    }
-
-    bool init(hardware_interface::PositionJointInterface* hw_pos,
-                                     hardware_interface::VelocityJointInterface* hw_vel,
-                                     ros::NodeHandle& root_nh,
-                                     ros::NodeHandle &controller_nh);
+    bool init(hardware_interface::RobotHW* robot_hw,
+               ros::NodeHandle& root_nh,
+               ros::NodeHandle &controller_nh);
 
     /**
      * \brief Updates controller, i.e. computes the odometry and sets the new velocity commands

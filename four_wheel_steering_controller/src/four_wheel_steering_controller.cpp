@@ -58,64 +58,9 @@ namespace four_wheel_steering_controller{
   {
   }
 
-  bool FourWheelSteeringController::initRequest(hardware_interface::RobotHW *const robot_hw,
-                         ros::NodeHandle& root_nh,
-                         ros::NodeHandle& ctrlr_nh,
-                         ClaimedResources &claimed_resources)
-  {
-    if (state_ != CONSTRUCTED)
-    {
-      ROS_ERROR("The four_wheel_steering controller could not be created.");
-      return false;
-    }
-
-    hardware_interface::PositionJointInterface *const pos_joint_hw = robot_hw->get<hardware_interface::PositionJointInterface>();
-    hardware_interface::VelocityJointInterface *const vel_joint_hw = robot_hw->get<hardware_interface::VelocityJointInterface>();
-
-    if (pos_joint_hw == NULL)
-    {
-      ROS_ERROR("This controller requires a hardware interface of type '%s'."
-                " Make sure this is registered in the hardware_interface::RobotHW class.",
-                hardware_interface::internal::demangledTypeName<hardware_interface::PositionJointInterface>().c_str());
-      return false;
-    }
-    else if (vel_joint_hw == NULL)
-    {
-      ROS_ERROR("This controller requires a hardware interface of type '%s'."
-                " Make sure this is registered in the hardware_interface::RobotHW class.",
-                hardware_interface::internal::demangledTypeName<hardware_interface::PositionJointInterface>().c_str());
-      return false;
-    }
-
-    pos_joint_hw->clearClaims();
-    vel_joint_hw->clearClaims();
-    if(init(pos_joint_hw, vel_joint_hw, root_nh, ctrlr_nh) == false)
-    {
-      ROS_ERROR("Failed to initialize the controller");
-      return false;
-    }
-
-    claimed_resources.clear();
-
-    hardware_interface::InterfaceResources iface_res_pos(hardware_interface::internal::demangledTypeName<hardware_interface::PositionJointInterface>(),
-                                                         pos_joint_hw->getClaims());
-    claimed_resources.push_back(iface_res_pos);
-    pos_joint_hw->clearClaims();
-
-
-    hardware_interface::InterfaceResources iface_res_vel(hardware_interface::internal::demangledTypeName<hardware_interface::VelocityJointInterface>(),
-                                                         vel_joint_hw->getClaims());
-    claimed_resources.push_back(iface_res_vel);
-    vel_joint_hw->clearClaims();
-
-    state_ = INITIALIZED;
-    return true;
-  }
-
-  bool FourWheelSteeringController::init(hardware_interface::PositionJointInterface* hw_pos,
-                                 hardware_interface::VelocityJointInterface* hw_vel,
-                                 ros::NodeHandle& root_nh,
-                                 ros::NodeHandle &controller_nh)
+  bool FourWheelSteeringController::init(hardware_interface::RobotHW *robot_hw,
+                                         ros::NodeHandle& root_nh,
+                                         ros::NodeHandle &controller_nh)
   {
     const std::string complete_ns = controller_nh.getNamespace();
     std::size_t id = complete_ns.find_last_of("/");
@@ -257,14 +202,18 @@ namespace four_wheel_steering_controller{
 
     setOdomPubFields(root_nh, controller_nh);
 
+
+    hardware_interface::VelocityJointInterface *const vel_joint_hw = robot_hw->get<hardware_interface::VelocityJointInterface>();
+    hardware_interface::PositionJointInterface *const pos_joint_hw = robot_hw->get<hardware_interface::PositionJointInterface>();
+
     // Get the joint object to use in the realtime loop
     for (int i = 0; i < front_wheel_joints_.size(); ++i)
     {
       ROS_INFO_STREAM_NAMED(name_,
                             "Adding left wheel with joint name: " << front_wheel_names[i]
                             << " and right wheel with joint name: " << rear_wheel_names[i]);
-      front_wheel_joints_[i] = hw_vel->getHandle(front_wheel_names[i]);  // throws on failure
-      rear_wheel_joints_[i] = hw_vel->getHandle(rear_wheel_names[i]);  // throws on failure
+      front_wheel_joints_[i] = vel_joint_hw->getHandle(front_wheel_names[i]);  // throws on failure
+      rear_wheel_joints_[i] = vel_joint_hw->getHandle(rear_wheel_names[i]);  // throws on failure
     }
 
     // Get the steering joint object to use in the realtime loop
@@ -273,8 +222,8 @@ namespace four_wheel_steering_controller{
       ROS_INFO_STREAM_NAMED(name_,
                             "Adding left steering with joint name: " << front_steering_names[i]
                             << " and right steering with joint name: " << rear_steering_names[i]);
-      front_steering_joints_[i] = hw_pos->getHandle(front_steering_names[i]);  // throws on failure
-      rear_steering_joints_[i] = hw_pos->getHandle(rear_steering_names[i]);  // throws on failure
+      front_steering_joints_[i] = pos_joint_hw->getHandle(front_steering_names[i]);  // throws on failure
+      rear_steering_joints_[i] = pos_joint_hw->getHandle(rear_steering_names[i]);  // throws on failure
     }
 
     sub_command_ = controller_nh.subscribe("cmd_vel", 1, &FourWheelSteeringController::cmdVelCallback, this);

@@ -193,11 +193,16 @@ checkPathTolerances(const typename Segment::State& state_error,
     rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
     rt_active_goal_.reset();
     
+    // Sleep until the goal is aborted
+    ros::Duration action_monitor_period_2x=action_monitor_period_.operator *(2);
+    action_monitor_period_2x.sleep();
+
     // Controller uptime
     const ros::Time uptime = time_data_.readFromRT()->uptime;
     
     // Enter hold current position mode
     setHoldPosition(uptime);
+    ROS_WARN_NAMED(name_, "Stopping current movement because path tolerances are violated.");
   }
 }
 
@@ -237,8 +242,13 @@ checkGoalTolerances(const typename Segment::State& state_error,
     rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
     rt_active_goal_.reset();
 
+    // Sleep until the goal is aborted
+    ros::Duration action_monitor_period_2x=action_monitor_period_.operator *(2);
+    action_monitor_period_2x.sleep();
+
     // Enter hold current position mode
     setHoldPosition(uptime);
+    ROS_WARN_NAMED(name_, "Stopping current movement because goal tolerances are violated.");
   }
 }
 

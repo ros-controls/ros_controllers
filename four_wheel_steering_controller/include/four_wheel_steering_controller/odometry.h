@@ -85,14 +85,6 @@ namespace four_wheel_steering_controller
                 double front_steering, double rear_steering, const ros::Time &time);
 
     /**
-     * \brief Updates the odometry class with latest velocity command
-     * \param linear  Linear velocity [m/s]
-     * \param angular Angular velocity [rad/s]
-     * \param time    Current time
-     */
-    void updateOpenLoop(double linear, double angular, const ros::Time &time);
-
-    /**
      * \brief heading getter
      * \return heading [rad]
      */
@@ -157,6 +149,42 @@ namespace four_wheel_steering_controller
     }
 
     /**
+     * \brief linear acceleration getter
+     * \return linear acceleration [m/s²]
+     */
+    double getLinearAcceleration() const
+    {
+      return bacc::rolling_mean(linear_accel_acc_);
+    }
+
+    /**
+     * \brief linear jerk getter
+     * \return linear jerk [m/s³]
+     */
+    double getLinearJerk() const
+    {
+      return bacc::rolling_mean(linear_jerk_acc_);
+    }
+
+    /**
+     * \brief front steering velocity getter
+     * \return front_steer_vel [m/s³]
+     */
+    double getFrontSteerVel() const
+    {
+      return bacc::rolling_mean(front_steer_vel_acc_);
+    }
+
+    /**
+     * \brief rear steering velocity getter
+     * \return rear_steer_vel [m/s³]
+     */
+    double getRearSteerVel() const
+    {
+      return bacc::rolling_mean(rear_steer_vel_acc_);
+    }
+
+    /**
      * \brief Sets the wheel parameters: radius and separation
      * \param steering_track          Seperation between left and right steering joints [m]
      * \param wheel_steering_y_offset Offest between the steering and wheel joints [m]
@@ -205,7 +233,7 @@ namespace four_wheel_steering_controller
     void resetAccumulators();
 
     /// Current timestamp:
-    ros::Time timestamp_, last_update_timestamp_;
+    ros::Time last_update_timestamp_;
 
     /// Current pose:
     double x_;        //   [m]
@@ -227,8 +255,10 @@ namespace four_wheel_steering_controller
 
     /// Rolling mean accumulators for the linar and angular velocities:
     size_t velocity_rolling_window_size_;
-    RollingMeanAcc linear_acc_;
-    RollingMeanAcc angular_acc_;
+    RollingMeanAcc linear_accel_acc_;
+    RollingMeanAcc linear_jerk_acc_;
+    RollingMeanAcc front_steer_vel_acc_;
+    RollingMeanAcc rear_steer_vel_acc_;
   };
 }
 

@@ -44,8 +44,7 @@
 namespace four_wheel_steering_controller{
 
   FourWheelSteeringController::FourWheelSteeringController()
-    : open_loop_(false)
-    , command_struct_twist_()
+    : command_struct_twist_()
     , command_struct_four_wheel_steering_()
     , track_(0.0)
     , wheel_steering_y_offset_(0.0)
@@ -256,45 +255,38 @@ namespace four_wheel_steering_controller{
   void FourWheelSteeringController::updateOdometry(const ros::Time& time)
   {
     // COMPUTE AND PUBLISH ODOMETRY
-    if (open_loop_)
-    {
-      odometry_.updateOpenLoop(last0_cmd_.lin_x, last0_cmd_.ang, time);
-    }
-    else
-    {
-      const double fl_speed = front_wheel_joints_[0].getVelocity();
-      const double fr_speed = front_wheel_joints_[1].getVelocity();
-      const double rl_speed = rear_wheel_joints_[0].getVelocity();
-      const double rr_speed = rear_wheel_joints_[1].getVelocity();
-      if (std::isnan(fl_speed) || std::isnan(fr_speed)
-          || std::isnan(rl_speed) || std::isnan(rr_speed))
-        return;
+    const double fl_speed = front_wheel_joints_[0].getVelocity();
+    const double fr_speed = front_wheel_joints_[1].getVelocity();
+    const double rl_speed = rear_wheel_joints_[0].getVelocity();
+    const double rr_speed = rear_wheel_joints_[1].getVelocity();
+    if (std::isnan(fl_speed) || std::isnan(fr_speed)
+        || std::isnan(rl_speed) || std::isnan(rr_speed))
+      return;
 
-      const double fl_steering = front_steering_joints_[0].getPosition();
-      const double fr_steering = front_steering_joints_[1].getPosition();
-      const double rl_steering = rear_steering_joints_[0].getPosition();
-      const double rr_steering = rear_steering_joints_[1].getPosition();
-      if (std::isnan(fl_steering) || std::isnan(fr_steering)
-          || std::isnan(rl_steering) || std::isnan(rr_steering))
-        return;
-      double front_steering_pos = 0.0;
-      if(fabs(fl_steering) > 0.001 || fabs(fr_steering) > 0.001)
-      {
-        front_steering_pos = atan(2*tan(fl_steering)*tan(fr_steering)/
-                                        (tan(fl_steering) + tan(fr_steering)));
-      }
-      double rear_steering_pos = 0.0;
-      if(fabs(rl_steering) > 0.001 || fabs(rr_steering) > 0.001)
-      {
-        rear_steering_pos = atan(2*tan(rl_steering)*tan(rr_steering)/
-                                       (tan(rl_steering) + tan(rr_steering)));
-      }
-
-      ROS_DEBUG_STREAM_THROTTLE(1, "rl_steering "<<rl_steering<<" rr_steering "<<rr_steering<<" rear_steering_pos "<<rear_steering_pos);
-      // Estimate linear and angular velocity using joint information
-      odometry_.update(fl_speed, fr_speed, rl_speed, rr_speed,
-                       front_steering_pos, rear_steering_pos, time);
+    const double fl_steering = front_steering_joints_[0].getPosition();
+    const double fr_steering = front_steering_joints_[1].getPosition();
+    const double rl_steering = rear_steering_joints_[0].getPosition();
+    const double rr_steering = rear_steering_joints_[1].getPosition();
+    if (std::isnan(fl_steering) || std::isnan(fr_steering)
+        || std::isnan(rl_steering) || std::isnan(rr_steering))
+      return;
+    double front_steering_pos = 0.0;
+    if(fabs(fl_steering) > 0.001 || fabs(fr_steering) > 0.001)
+    {
+      front_steering_pos = atan(2*tan(fl_steering)*tan(fr_steering)/
+                                      (tan(fl_steering) + tan(fr_steering)));
     }
+    double rear_steering_pos = 0.0;
+    if(fabs(rl_steering) > 0.001 || fabs(rr_steering) > 0.001)
+    {
+      rear_steering_pos = atan(2*tan(rl_steering)*tan(rr_steering)/
+                                     (tan(rl_steering) + tan(rr_steering)));
+    }
+
+    ROS_DEBUG_STREAM_THROTTLE(1, "rl_steering "<<rl_steering<<" rr_steering "<<rr_steering<<" rear_steering_pos "<<rear_steering_pos);
+    // Estimate linear and angular velocity using joint information
+    odometry_.update(fl_speed, fr_speed, rl_speed, rr_speed,
+                     front_steering_pos, rear_steering_pos, time);
 
     // Publish odometry message
     if (last_state_publish_time_ + publish_period_ < time)
@@ -315,6 +307,18 @@ namespace four_wheel_steering_controller{
         odom_pub_->msg_.twist.twist.linear.y  = odometry_.getLinearY();
         odom_pub_->msg_.twist.twist.angular.z = odometry_.getAngular();
         odom_pub_->unlockAndPublish();
+      }
+      if (odom_4ws_pub_->trylock())
+      {
+        odom_4ws_pub_->msg_.header.stamp = time;
+        odom_4ws_pub_->msg_.data.speed = odometry_.getLinear();
+        odom_4ws_pub_->msg_.data.acceleration = odometry_.getLinearAcceleration();
+        odom_4ws_pub_->msg_.data.jerk = odometry_.getLinearJerk();
+        odom_4ws_pub_->msg_.data.front_steering_angle = front_steering_pos;
+        odom_4ws_pub_->msg_.data.front_steering_angle_velocity = odometry_.getFrontSteerVel();
+        odom_4ws_pub_->msg_.data.rear_steering_angle = rear_steering_pos;
+        odom_4ws_pub_->msg_.data.rear_steering_angle_velocity = odometry_.getRearSteerVel();
+        odom_4ws_pub_->unlockAndPublish();
       }
 
       // Publish tf /odom frame
@@ -658,6 +662,10 @@ namespace four_wheel_steering_controller{
         (0)  (0)  (0)  (static_cast<double>(twist_cov_list[3])) (0)  (0)
         (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[4])) (0)
         (0)  (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
+
+    odom_4ws_pub_.reset(new realtime_tools::RealtimePublisher<four_wheel_steering_msgs::FourWheelSteeringStamped>(controller_nh, "odom_steer", 100));
+    odom_4ws_pub_->msg_.header.frame_id = "odom";
+
     tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
     tf_odom_pub_->msg_.transforms.resize(1);
     tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;

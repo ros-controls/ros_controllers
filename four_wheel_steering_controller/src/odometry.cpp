@@ -41,8 +41,7 @@ namespace four_wheel_steering_controller
   namespace bacc = boost::accumulators;
 
   Odometry::Odometry(size_t velocity_rolling_window_size)
-  : timestamp_(0.0)
-  , last_update_timestamp_(0.0)
+  : last_update_timestamp_(0.0)
   , x_(0.0)
   , y_(0.0)
   , heading_(0.0)
@@ -56,8 +55,10 @@ namespace four_wheel_steering_controller
   , wheel_base_(0.0)
   , wheel_old_pos_(0.0)
   , velocity_rolling_window_size_(velocity_rolling_window_size)
-  , linear_acc_(RollingWindow::window_size = velocity_rolling_window_size)
-  , angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , linear_accel_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , linear_jerk_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , front_steer_vel_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , rear_steer_vel_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   {
   }
 
@@ -65,9 +66,8 @@ namespace four_wheel_steering_controller
   {
     // Reset accumulators and timestamp:
     resetAccumulators();
-    timestamp_ = time;
+    last_update_timestamp_ = time;
   }
-
 
   bool Odometry::update(const double &fl_speed, const double &fr_speed,
                         const double &rl_speed, const double &rr_speed,
@@ -102,23 +102,21 @@ namespace four_wheel_steering_controller
 
     /// Compute x, y and heading using velocity
     const double dt = (time - last_update_timestamp_).toSec();
+    if (dt < 0.0001)
+      return false; // Interval too small to integrate with
+
     last_update_timestamp_ = time;
     /// Integrate odometry:
     integrateXY(linear_x_*dt, linear_y_*dt, angular_*dt);
 
+    const double linear_accel = linear_/dt;
+    linear_accel_acc_(linear_accel);
+    linear_jerk_acc_(linear_accel/dt);
+
+    front_steer_vel_acc_(front_steering/dt);
+    rear_steer_vel_acc_(rear_steering/dt);
+
     return true;
-  }
-
-  void Odometry::updateOpenLoop(double linear, double angular, const ros::Time &time)
-  {
-    /// Save last linear and angular velocity:
-    linear_ = linear;
-    angular_ = angular;
-
-    /// Integrate odometry:
-    const double dt = (time - timestamp_).toSec();
-    timestamp_ = time;
-    integrateExact(linear * dt, angular * dt);
   }
 
   void Odometry::setWheelParams(double steering_track, double wheel_steering_y_offset, double wheel_radius, double wheel_base)
@@ -173,8 +171,10 @@ namespace four_wheel_steering_controller
 
   void Odometry::resetAccumulators()
   {
-    linear_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-    angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    linear_accel_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    linear_jerk_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    front_steer_vel_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    rear_steer_vel_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
   }
 
 } // namespace four_wheel_steering_controller

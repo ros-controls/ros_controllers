@@ -37,7 +37,7 @@
 #include <pluginlib/class_list_macros.h>
 
 #include <nav_msgs/Odometry.h>
-#include <four_wheel_steering_msgs/FourWheelSteering.h>
+#include <four_wheel_steering_msgs/FourWheelSteeringStamped.h>
 #include <tf/tfMessage.h>
 
 #include <realtime_tools/realtime_buffer.h>
@@ -139,6 +139,7 @@ namespace four_wheel_steering_controller{
 
     /// Odometry related:
     boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
+    boost::shared_ptr<realtime_tools::RealtimePublisher<four_wheel_steering_msgs::FourWheelSteeringStamped> > odom_4ws_pub_;
     boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
     Odometry odometry_;
 

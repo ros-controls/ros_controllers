@@ -18,5 +18,3 @@ four_wheel_steering_controller:
   # Odometry fused with IMU is published by robot_localization, so
   # no need to publish a TF based on encoders alone.
   enable_odom_tf: true
-
-  enable_twist_cmd: false

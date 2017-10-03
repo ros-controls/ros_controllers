@@ -16,8 +16,6 @@ four_wheel_steering_controller:
   # no need to publish a TF based on encoders alone.
   enable_odom_tf: true
 
-  enable_twist_cmd: true
-
   #wheel_separation: 1.23
   #wheel_radius: 0.28
   #wheel_base: 1.22

@@ -162,6 +162,7 @@ private:
   typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
   typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
+  typedef control_msgs::FollowJointTrajectoryActionResult::ConstPtr                           ActionResultConstPtr;
   typedef realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>     StatePublisher;
   typedef boost::scoped_ptr<StatePublisher>                                                   StatePublisherPtr;
 
@@ -210,6 +211,7 @@ private:
   // ROS API
   ros::NodeHandle    controller_nh_;
   ros::Subscriber    trajectory_command_sub_;
+  ros::Subscriber    action_result_sub_;
   ActionServerPtr    action_server_;
   ros::ServiceServer query_state_service_;
   StatePublisherPtr  state_publisher_;
@@ -219,6 +221,7 @@ private:
 
   bool updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh);
   void trajectoryCommandCB(const JointTrajectoryConstPtr& msg);
+  void actionResultCB(const ActionResultConstPtr& msg);
   void goalCB(GoalHandle gh);
   void cancelCB(GoalHandle gh);
   void preemptActiveGoal();

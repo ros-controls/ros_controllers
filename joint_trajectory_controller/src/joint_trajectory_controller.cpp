@@ -81,7 +81,7 @@ namespace pos_vel_acc_controllers
 {
   /**
    * \brief Joint trajectory controller that represents trajectory segments as <b>quintic splines</b> and sends
-   * commands to an \b effort interface.
+   * commands to a \b pos_vel_acc interface.
    */
   typedef joint_trajectory_controller::JointTrajectoryController<trajectory_interface::QuinticSplineSegment<double>,
                                                                  hardware_interface::PosVelAccJointInterface>

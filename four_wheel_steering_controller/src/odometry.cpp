@@ -109,13 +109,14 @@ namespace four_wheel_steering_controller
     /// Integrate odometry:
     integrateXY(linear_x_*dt, linear_y_*dt, angular_*dt);
 
-    const double linear_accel = linear_/dt;
-    linear_accel_acc_(linear_accel);
-    linear_jerk_acc_(linear_accel/dt);
-
-    front_steer_vel_acc_(front_steering/dt);
-    rear_steer_vel_acc_(rear_steering/dt);
-
+    linear_accel_acc_((linear_vel_prev_ - linear_)/dt);
+    linear_vel_prev_ = linear_;
+    linear_jerk_acc_((linear_accel_prev_ - bacc::rolling_mean(linear_accel_acc_))/dt);
+    linear_accel_prev_ = bacc::rolling_mean(linear_accel_acc_);
+    front_steer_vel_acc_((front_steer_vel_prev_ - front_steering)/dt);
+    front_steer_vel_prev_ = front_steering;
+    rear_steer_vel_acc_((rear_steer_vel_prev_ - rear_steering)/dt);
+    rear_steer_vel_prev_ = rear_steering;
     return true;
   }
 

@@ -259,6 +259,8 @@ namespace four_wheel_steering_controller
     RollingMeanAcc linear_jerk_acc_;
     RollingMeanAcc front_steer_vel_acc_;
     RollingMeanAcc rear_steer_vel_acc_;
+    double linear_vel_prev_, linear_accel_prev_;
+    double front_steer_vel_prev_, rear_steer_vel_prev_;
   };
 }
 

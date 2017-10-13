@@ -30,6 +30,7 @@
 // ROS
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/Bool.h>
 
 // ros_control
 #include <controller_manager/controller_manager.h>
@@ -48,7 +49,9 @@ public:
     vel_[0] = 0.0; vel_[1] = 0.0;
     eff_[0] = 0.0; eff_[1] = 0.0;
     pos_cmd_[0] = 0.0; pos_cmd_[1] = 0.0;
+    pos_lastcmd_[0] = 0.0; pos_lastcmd_[1] = 0.0;
     vel_cmd_[0] = 0.0; vel_cmd_[1] = 0.0;
+    vel_lastcmd_[0] = 0.0; vel_lastcmd_[1] = 0.0;
 
     // Connect and register the joint state interface
     hardware_interface::JointStateHandle state_handle_1("joint1", &pos_[0], &vel_[0], &eff_[0]);
@@ -80,6 +83,10 @@ public:
     // Smoothing subscriber
     smoothing_sub_ = ros::NodeHandle().subscribe("smoothing", 1, &RRbot::smoothingCB, this);
     smoothing_.initRT(0.0);
+
+    // Delay subscriber: delay==0 yields direct control, one cycle delay otherwise
+    delay_sub_ = ros::NodeHandle().subscribe("delay", 1, &RRbot::delayCB, this);
+    delay_.initRT(false);
   }
 
   ros::Time getTime() const {return ros::Time::now();}
@@ -90,14 +97,26 @@ public:
   void write()
   {
     const double smoothing = *(smoothing_.readFromRT());
+    const bool delay = *(delay_.readFromRT());
+
     for (unsigned int i = 0; i < 2; ++i)
     {
+      if(delay != 0)
+      {
+        std::swap(pos_cmd_[i], pos_lastcmd_[i]);
+        std::swap(vel_cmd_[i], vel_lastcmd_[i]);
+      }
+      else
+      {
+        pos_lastcmd_[i] = pos_cmd_[i];
+        vel_lastcmd_[i] = vel_cmd_[i];
+      }
+
       if(active_interface_[i] == "hardware_interface::PositionJointInterface")
       {
-        vel_[i] = (pos_cmd_[i] - pos_[i]) / getPeriod().toSec();
-
         const double next_pos = smoothing * pos_[i] +  (1.0 - smoothing) * pos_cmd_[i];
-        pos_[i] = next_pos;        
+        vel_[i] = (next_pos - pos_[i]) / getPeriod().toSec();
+        pos_[i] = next_pos;
       }
       else if(active_interface_[i] == "hardware_interface::VelocityJointInterface")
       {
@@ -146,6 +165,8 @@ private:
   hardware_interface::VelocityJointInterface jnt_vel_interface_;
   double pos_cmd_[2];
   double vel_cmd_[2];
+  double pos_lastcmd_[2];
+  double vel_lastcmd_[2];
   double pos_[2];
   double vel_[2];
   double eff_[2];
@@ -155,8 +176,11 @@ private:
 
   realtime_tools::RealtimeBuffer<double> smoothing_;
   void smoothingCB(const std_msgs::Float64& smoothing) {smoothing_.writeFromNonRT(smoothing.data);}
-
   ros::Subscriber smoothing_sub_;
+
+  realtime_tools::RealtimeBuffer<bool> delay_;
+  void delayCB(const std_msgs::Bool& delay) {delay_.writeFromNonRT(delay.data);}
+  ros::Subscriber delay_sub_;
 };
 
 int main(int argc, char **argv)

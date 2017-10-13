@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
@@ -39,6 +40,7 @@
 #include <actionlib/client/simple_action_client.h>
 
 #include <std_msgs/Float64.h>
+#include <std_msgs/Bool.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <control_msgs/JointTrajectoryControllerState.h>
 #include <control_msgs/QueryTrajectoryState.h>
@@ -61,6 +63,9 @@ public:
     joint_names.resize(n_joints);
     joint_names[0] = "joint1";
     joint_names[1] = "joint2";
+
+    controller_min_actual_velocity.resize(n_joints);
+    controller_max_actual_velocity.resize(n_joints);
 
     trajectory_msgs::JointTrajectoryPoint point;
     point.positions.resize(n_joints, 0.0);
@@ -95,6 +100,9 @@ public:
 
     // Smoothing publisher (determines how well the robot follows a trajectory)
     smoothing_pub = ros::NodeHandle().advertise<std_msgs::Float64>("smoothing", 1);
+
+    // Delay publisher (allows to simulate a delay of one cycle in the hardware interface)
+    delay_pub = ros::NodeHandle().advertise<std_msgs::Bool>("delay", 1);
 
     // Trajectory publisher
     traj_pub = nh.advertise<trajectory_msgs::JointTrajectory>("command", 1);
@@ -141,6 +149,7 @@ protected:
   ros::Duration long_timeout;
 
   ros::Publisher     smoothing_pub;
+  ros::Publisher     delay_pub;
   ros::Publisher     traj_pub;
   ros::Subscriber    state_sub;
   ros::ServiceClient query_state_service;
@@ -149,11 +158,20 @@ protected:
 
 
   StateConstPtr controller_state;
+  std::vector<double> controller_min_actual_velocity;
+  std::vector<double> controller_max_actual_velocity;
 
   void stateCB(const StateConstPtr& state)
   {
     boost::mutex::scoped_lock lock(mutex);
     controller_state = state;
+
+    std::transform(controller_min_actual_velocity.begin(), controller_min_actual_velocity.end(),
+                   state->actual.velocities.begin(), controller_min_actual_velocity.begin(),
+                   std::min<double>);
+    std::transform(controller_max_actual_velocity.begin(), controller_max_actual_velocity.end(),
+                   state->actual.velocities.begin(), controller_max_actual_velocity.begin(),
+                   std::max<double>);
   }
 
   StateConstPtr getState()
@@ -175,6 +193,28 @@ protected:
       ros::Duration(0.1).sleep();
     }
     return init_ok;
+  }
+
+  std::vector<double> getMinActualVelocity()
+  {
+    boost::mutex::scoped_lock lock(mutex);
+    return controller_min_actual_velocity;
+  }
+
+  std::vector<double> getMaxActualVelocity()
+  {
+    boost::mutex::scoped_lock lock(mutex);
+    return controller_max_actual_velocity;
+  }
+
+  void resetActualVelocityObserver()
+  {
+    boost::mutex::scoped_lock lock(mutex);
+    for(size_t i = 0; i < controller_min_actual_velocity.size(); ++i)
+    {
+      controller_min_actual_velocity[i] = std::numeric_limits<double>::infinity();
+      controller_max_actual_velocity[i] = -std::numeric_limits<double>::infinity();
+    }
   }
 
   static bool waitForState(const ActionClientPtr& action_client,
@@ -728,6 +768,52 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTraj)
     EXPECT_NEAR(state1->desired.positions[i],     state2->desired.positions[i],     EPS);
     EXPECT_NEAR(state1->desired.velocities[i],    state2->desired.velocities[i],    EPS);
     EXPECT_NEAR(state1->desired.accelerations[i], state2->desired.accelerations[i], EPS);
+  }
+}
+
+TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelay)
+{
+  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+
+  // Go to home configuration, we need known initial conditions
+  traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_home_goal);
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+
+  // Make robot respond with a delay
+  {
+    std_msgs::Bool delay;
+    delay.data = true;
+    delay_pub.publish(delay);
+    ros::Duration(0.5).sleep();
+  }
+  resetActualVelocityObserver();
+
+  // Send trajectory
+  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_goal);
+  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+
+  ros::Duration wait_duration = traj.points.front().time_from_start * 0.5;
+  wait_duration.sleep(); // Wait until half of first segment
+
+  ActionGoal empty_goal;
+  empty_goal.trajectory.joint_names = joint_names;
+  action_client->sendGoal(empty_goal);
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+
+  std::vector<double> minVelocity = getMinActualVelocity();
+  for(size_t i = 0; i < minVelocity.size(); ++i)
+  {
+    EXPECT_GE(minVelocity[i], 0.);
+  }
+
+  // Restore perfect control
+  {
+    std_msgs::Bool delay;
+    delay.data = false;
+    delay_pub.publish(delay);
+    ros::Duration(0.5).sleep();
   }
 }
 

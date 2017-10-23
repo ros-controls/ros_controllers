@@ -85,7 +85,7 @@ private:
   int loop_count_; // used to throttle state publish
   std::vector<control_toolbox::Pid> pid_controllers_;       /**< Internal PID controllers. */
 
-  std::vector<boost::shared_ptr<const urdf::Joint> > joint_urdfs_;
+  std::vector<urdf::JointConstSharedPtr> joint_urdfs_;
 
   boost::scoped_ptr<
     realtime_tools::RealtimePublisher<

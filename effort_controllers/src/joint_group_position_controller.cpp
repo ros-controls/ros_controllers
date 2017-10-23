@@ -96,7 +96,7 @@ namespace effort_controllers
         return false;
       }
 
-      boost::shared_ptr<const urdf::Joint> joint_urdf = urdf.getJoint(joint_names_[i]);
+      urdf::JointConstSharedPtr joint_urdf = urdf.getJoint(joint_names_[i]);
       if (!joint_urdf)
       {
         ROS_ERROR("Could not find joint '%s' in urdf", joint_names_[i].c_str());

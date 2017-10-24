@@ -124,8 +124,6 @@ namespace effort_controllers
     for(unsigned int i=0; i<n_joints_; i++)
     {
         double command_position = commands[i];
-//        double command_velocity = commands[i].velocity_;
-//        bool has_velocity_ =  commands[i].has_velocity_;
 
         double error; //, vel_error;
         double commanded_effort;
@@ -154,24 +152,10 @@ namespace effort_controllers
         {
           error = command_position - current_position;
         }
-/*
-        // Decide which of the two PID computeCommand() methods to call
-        if (has_velocity_)
-        {
-          // Compute velocity error if a non-zero velocity command was given
-          vel_error = command_velocity - joint_.getVelocity();
 
-          // Set the PID error and compute the PID command with nonuniform
-          // time step size. This also allows the user to pass in a precomputed derivative error.
-          commanded_effort = pid_controller_.computeCommand(error, vel_error, period);
-        }
-        else
-        {
-*/
-          // Set the PID error and compute the PID command with nonuniform
-          // time step size.
-          commanded_effort = pid_controllers_[i].computeCommand(error, period);
-//        }
+        // Set the PID error and compute the PID command with nonuniform
+        // time step size.
+        commanded_effort = pid_controllers_[i].computeCommand(error, period);
 
         joints_[i].setCommand(commanded_effort);
     }

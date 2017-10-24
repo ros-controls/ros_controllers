@@ -92,6 +92,7 @@ private:
       control_msgs::JointControllerState> > controller_state_publisher_ ;
 
   void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg);
+  void enforceJointLimits(double &command, unsigned int index);
 }; // class
 
 } // namespace

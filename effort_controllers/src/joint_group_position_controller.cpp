@@ -130,9 +130,8 @@ namespace effort_controllers
 
         double current_position = joints_[i].getPosition();
 
-//TODO not sure if needed
         // Make sure joint is within limits if applicable
-        //enforceJointLimits(command_position);
+        enforceJointLimits(command_position, i);
 
         // Compute position error
         if (joint_urdfs_[i]->type == urdf::Joint::REVOLUTE)
@@ -197,22 +196,21 @@ namespace effort_controllers
     commands_buffer_.writeFromNonRT(msg->data);
   }
 
-  //TODO not sure if will need this
-//  void JointGroupPositionController::enforceJointLimits(double &command)
-//  {
-//    // Check that this joint has applicable limits
-//    if (joint_urdf_->type == urdf::Joint::REVOLUTE || joint_urdf_->type == urdf::Joint::PRISMATIC)
-//    {
-//      if( command > joint_urdf_->limits->upper ) // above upper limnit
-//      {
-//        command = joint_urdf_->limits->upper;
-//      }
-//      else if( command < joint_urdf_->limits->lower ) // below lower limit
-//      {
-//        command = joint_urdf_->limits->lower;
-//      }
-//    }
-
+  void JointGroupPositionController::enforceJointLimits(double &command, unsigned int index)
+  {
+    // Check that this joint has applicable limits
+    if (joint_urdfs_[index]->type == urdf::Joint::REVOLUTE || joint_urdfs_[index]->type == urdf::Joint::PRISMATIC)
+    {
+      if( command > joint_urdfs_[index]->limits->upper ) // above upper limnit
+      {
+        command = joint_urdfs_[index]->limits->upper;
+      }
+      else if( command < joint_urdfs_[index]->limits->lower ) // below lower limit
+      {
+        command = joint_urdfs_[index]->limits->lower;
+      }
+    }
+  }
 
 } // namespace
 

@@ -158,32 +158,6 @@ namespace effort_controllers
 
         joints_[i].setCommand(commanded_effort);
     }
-
-    /*
-    // publish state
-    if (loop_count_ % 10 == 0)
-    {
-      if(controller_state_publisher_ && controller_state_publisher_->trylock())
-      {
-        controller_state_publisher_->msg_.header.stamp = time;
-        controller_state_publisher_->msg_.set_point = command_position;
-        controller_state_publisher_->msg_.process_value = current_position;
-        controller_state_publisher_->msg_.process_value_dot = joint_.getVelocity();
-        controller_state_publisher_->msg_.error = error;
-        controller_state_publisher_->msg_.time_step = period.toSec();
-        controller_state_publisher_->msg_.command = commanded_effort;
-
-        double dummy;
-        getGains(controller_state_publisher_->msg_.p,
-          controller_state_publisher_->msg_.i,
-          controller_state_publisher_->msg_.d,
-          controller_state_publisher_->msg_.i_clamp,
-          dummy);
-        controller_state_publisher_->unlockAndPublish();
-      }
-    }
-    loop_count_++;
-    */
   }
 
   void JointGroupPositionController::commandCB(const std_msgs::Float64MultiArrayConstPtr& msg)

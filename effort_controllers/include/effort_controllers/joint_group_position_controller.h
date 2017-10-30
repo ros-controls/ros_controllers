@@ -82,14 +82,9 @@ public:
 private:
   ros::Subscriber sub_command_;
 
-  int loop_count_; // used to throttle state publish
   std::vector<control_toolbox::Pid> pid_controllers_;       /**< Internal PID controllers. */
 
   std::vector<urdf::JointConstSharedPtr> joint_urdfs_;
-
-  boost::scoped_ptr<
-    realtime_tools::RealtimePublisher<
-      control_msgs::JointControllerState> > controller_state_publisher_ ;
 
   void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg);
   void enforceJointLimits(double &command, unsigned int index);

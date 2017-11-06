@@ -2,6 +2,17 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Linted pos_vel joint_trajectory_controllers
+* Added posvel joint_trajectory_controller
+  Added a simple posvel joint_trajectory_controller that forwards
+  the desired state at the current point in time of the trajectory
+  to the joint.
+* Add support for an joint interfaces are not inherited from JointHandle.
+  Add JointTrajectoryController specification for SplineJointInterface.
+* Contributors: Gennaro Raiola, Igorec, Zach Anderson
+
 0.13.0 (2017-08-10)
 -------------------
 * Make rqt_plot optional

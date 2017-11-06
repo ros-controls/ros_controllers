@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.13.1 (2017-11-06)
+-------------------
 * Linted pos_vel joint_trajectory_controllers
 * Added posvel joint_trajectory_controller
   Added a simple posvel joint_trajectory_controller that forwards

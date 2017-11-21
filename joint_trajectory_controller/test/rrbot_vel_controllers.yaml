@@ -17,4 +17,6 @@ rrbot_controller:
     joint1: {p: 1.0,  i: 0.0, d: 0.0, i_clamp: 1}
     joint2: {p: 1.0,  i: 0.0, d: 0.0, i_clamp: 1}
 
-  use_velocity_ff: true
+  velocity_ff:
+    joint1: 1.0
+    joint2: 1.0

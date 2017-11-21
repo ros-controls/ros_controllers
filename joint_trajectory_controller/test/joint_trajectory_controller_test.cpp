@@ -1006,7 +1006,8 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
   ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
 
   // Disable velocity feedforward
-  ros::param::set("/rrbot_controller/use_velocity_ff", false);
+  ros::param::set("/rrbot_controller/velocity_ff/joint1", 0.0);
+  ros::param::set("/rrbot_controller/velocity_ff/joint2", 0.0);
   ASSERT_TRUE(reloadController("rrbot_controller"));
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
@@ -1020,7 +1021,8 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
   EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED);
 
   // Re-enable velocity feedforward
-  ros::param::set("/rrbot_controller/use_velocity_ff", true);
+  ros::param::set("/rrbot_controller/velocity_ff/joint1", 1.0);
+  ros::param::set("/rrbot_controller/velocity_ff/joint2", 1.0);
   ASSERT_TRUE(reloadController("rrbot_controller"));
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 }

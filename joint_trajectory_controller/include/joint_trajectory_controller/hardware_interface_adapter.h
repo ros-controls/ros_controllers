@@ -81,7 +81,7 @@ public:
  *   joints:
  *     - head_1_joint
  *     - head_2_joint
- *   
+ *
  *   constraints:
  *     goal_time: 0.6
  *     stopped_velocity_tolerance: 0.02
@@ -182,8 +182,12 @@ public:
       }
     }
 
-    // Load velocity feedforward enable state from parameter server
-    controller_nh.param("use_velocity_ff", use_velocity_ff_, false);
+    // Load velocity feedforward gains from parameter server
+    velocity_ff_.resize(joint_handles.size());
+    for (unsigned int i = 0; i < velocity_ff_.size(); ++i)
+    {
+      controller_nh.param(std::string("velocity_ff/") + joint_handles[i].getName(), velocity_ff_[i], 0.0);
+    }
 
     return true;
   }
@@ -218,7 +222,7 @@ public:
     // Update PIDs
     for (unsigned int i = 0; i < n_joints; ++i)
     {
-      const double command = (desired_state.velocity[i] * use_velocity_ff_) + pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
+      const double command = (desired_state.velocity[i] * velocity_ff_[i]) + pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
       (*joint_handles_ptr_)[i].setCommand(command);
     }
   }
@@ -227,7 +231,7 @@ private:
   typedef boost::shared_ptr<control_toolbox::Pid> PidPtr;
   std::vector<PidPtr> pids_;
 
-  bool use_velocity_ff_;
+  std::vector<double> velocity_ff_;
 
   std::vector<hardware_interface::JointHandle>* joint_handles_ptr_;
 };
@@ -282,6 +286,13 @@ public:
       }
     }
 
+    // Load velocity feedforward gains from parameter server
+    velocity_ff_.resize(joint_handles.size());
+    for (unsigned int i = 0; i < velocity_ff_.size(); ++i)
+    {
+      controller_nh.param(std::string("velocity_ff/") + joint_handles[i].getName(), velocity_ff_[i], 0.0);
+    }
+
     return true;
   }
 
@@ -301,7 +312,7 @@ public:
 
   void updateCommand(const ros::Time&     /*time*/,
                      const ros::Duration& period,
-                     const State&         /*desired_state*/,
+                     const State&         desired_state,
                      const State&         state_error)
   {
     const unsigned int n_joints = joint_handles_ptr_->size();
@@ -314,7 +325,7 @@ public:
     // Update PIDs
     for (unsigned int i = 0; i < n_joints; ++i)
     {
-      const double command = pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
+      const double command = (desired_state.velocity[i] * velocity_ff_[i]) + pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
       (*joint_handles_ptr_)[i].setCommand(command);
     }
   }
@@ -322,6 +333,8 @@ public:
 private:
   typedef boost::shared_ptr<control_toolbox::Pid> PidPtr;
   std::vector<PidPtr> pids_;
+
+  std::vector<double> velocity_ff_;
 
   std::vector<hardware_interface::JointHandle>* joint_handles_ptr_;
 };

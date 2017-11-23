@@ -1,7 +1,7 @@
 ros_controllers
 ===============
 
-See [ros_control documentation](http://ros.org/wiki/ros_control) on ros.org
+See [ros_control](http://wiki.ros.org/ros_control) and [ros_controllers](http://wiki.ros.org/ros_controllers) documentation on ros.org
 
 ### Build Status
 

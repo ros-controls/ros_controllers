@@ -1,0 +1,41 @@
+<launch>
+  <!-- Load four_wheel_steering model -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro --inorder '$(find four_wheel_steering_controller)/test/urdf/four_wheel_steering.urdf.xacro'" />
+
+  <!-- Start four_wheel_steering -->
+  <node name="four_wheel_steering"
+      pkg="four_wheel_steering_controller"
+      type="four_wheel_steering" output="screen"/>
+
+  <!-- Load controller config -->
+  <rosparam command="load" file="$(find four_wheel_steering_controller)/test/config/four_wheel_steering_controller_twist_cmd.yaml" />
+
+  <!-- Spawn controller -->
+  <node name="controller_spawner"
+        pkg="controller_manager" type="spawner" output="screen"
+        args="four_wheel_steering_controller --shutdown-timeout 5" />
+
+  <!-- rqt_plot monitoring -->
+
+  <!--<node name="four_wheel_steering_cmd_monitor"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/four_wheel_steering_controller/cmd_vel/linear" />
+  <node name="four_wheel_steering_4ws_cmd_monitor"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/four_wheel_steering_controller/cmd_four_wheel_steering" />-->
+  <!--<node name="four_wheel_steering_pos_monitor"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/four_wheel_steering_controller/odom/pose/pose/position/x" />
+
+  <node name="four_wheel_steering_vel_monitor"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/four_wheel_steering_controller/odom/twist/twist/linear/x" />-->
+
+  <!--<node name="rviz" pkg="rviz" type="rviz" args="-d $(find four_wheel_steering_controller)/test/config/view_odom.rviz"/>-->
+
+</launch>

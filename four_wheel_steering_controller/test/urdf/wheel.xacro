@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="wheel">
+
+  <!--<xacro:property name="M_PI" default="3.14159"/>-->
+  <!-- Wheel Properties -->
+  <xacro:property name="wheel_length" value="0.1" />
+  <xacro:property name="wheel_radius" value="0.28" />
+  <xacro:property name="mass_wheel" value="5.0" />
+
+  <xacro:macro name="wheel" params="wheel_prefix parent_link left_right *joint_origin">
+    <gazebo reference="${wheel_prefix}_wheel_link">
+      <material>Gazebo/Black</material>
+    </gazebo>
+		<link name="${wheel_prefix}_wheel_link">
+			<inertial>
+        <mass value="${mass_wheel}" />
+        <origin xyz="0 0 0" rpy="${M_PI/2}  0 0" />
+        <!--<inertia ixx="1.0" ixy="0" ixz="0"
+                 iyy="1.0" iyz="0"
+                 izz="1.0"/>-->
+        <inertia  ixx="${mass_wheel/4.0*(wheel_radius*wheel_radius+wheel_length*wheel_length/3.0)}" ixy="0" ixz="0"
+                  iyy="${mass_wheel*wheel_radius*wheel_radius/2.0}" iyz="0"
+                  izz="${mass_wheel/4.0*(wheel_radius*wheel_radius+wheel_length*wheel_length/3.0)}" />
+      </inertial>
+			<visual>
+        <origin xyz="0 0 0" rpy="${left_right * M_PI/2}  0 0" />
+				<geometry>
+          <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+				</geometry>
+        <material name="black">
+          <color rgba="0 0 0 1"/>
+        </material>
+			</visual>
+			<collision>
+				<origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+				<geometry>
+					<cylinder length="${wheel_length}" radius="${wheel_radius}" />
+				</geometry>
+			</collision>
+		</link>
+
+		<gazebo reference="${wheel_prefix}_wheel_link">
+			<mu1 value="1.0"/>
+			<mu2 value="1.0"/>
+			<kp value="10000000.0" />
+			<kd value="1.0" />
+			<fdir1 value="1 0 0"/>
+		</gazebo>
+
+		<joint name="${wheel_prefix}_wheel" type="continuous">
+      <parent link="${parent_link}"/>
+			<child link="${wheel_prefix}_wheel_link"/>
+      <xacro:insert_block name="joint_origin"/>
+			<axis xyz="0 1 0" rpy="0 0 0" />
+		</joint>
+
+		<transmission name="${wheel_prefix}_wheel_trans" type="SimpleTransmission">
+			<type>transmission_interface/SimpleTransmission</type>
+			<actuator name="${wheel_prefix}_wheel_motor">
+				<mechanicalReduction>1</mechanicalReduction>
+			</actuator>
+			<joint name="${wheel_prefix}_wheel">
+				<hardwareInterface>VelocityJointInterface</hardwareInterface>
+			</joint>
+		</transmission>
+
+	</xacro:macro>
+</robot>

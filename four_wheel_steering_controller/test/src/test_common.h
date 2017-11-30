@@ -46,7 +46,7 @@ const double POSITION_TOLERANCE = 0.01; // 1 cm-s precision
 const double VELOCITY_TOLERANCE = 0.02; // 2 cm-s-1 precision
 const double JERK_LINEAR_VELOCITY_TOLERANCE = 0.10; // 10 cm-s-1 precision
 const double JERK_ANGULAR_VELOCITY_TOLERANCE = 0.05; // 3 deg-s-1 precision
-const double ORIENTATION_TOLERANCE = 0.03; // 0.57 degree precision
+const double ORIENTATION_TOLERANCE = 0.08; // 4.58 degree precision
 
 class FourWheelSteeringControllerTest : public ::testing::Test
 {

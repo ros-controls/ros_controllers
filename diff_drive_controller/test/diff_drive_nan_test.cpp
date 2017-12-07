@@ -99,8 +99,8 @@ TEST_F(DiffDriveControllerTest, testNaNCmd)
     cmd_vel.linear.x = NAN;
     cmd_vel.angular.z = 0.0;
     publish(cmd_vel);
-    nav_msgs::Odometry odom = getLastOdom();
-    ROS_INFO_STREAM("odom.twist.twist.linear.x "<<odom.twist.twist.linear.x);
+    geometry_msgs::TwistStamped odom_msg = getLastCmdVelOut();
+    ROS_INFO_STREAM("cmd_vel_out.twist.linear.x "<<odom_msg.twist.linear.x);
     ros::Duration(0.1).sleep();
   }
 
@@ -109,6 +109,10 @@ TEST_F(DiffDriveControllerTest, testNaNCmd)
   EXPECT_EQ(odom.twist.twist.linear.x, 0.0);
   EXPECT_EQ(odom.pose.pose.position.x, 0.0);
   EXPECT_EQ(odom.pose.pose.position.y, 0.0);
+
+  geometry_msgs::TwistStamped odom_msg = getLastCmdVelOut();
+
+  EXPECT_EQ(fabs(odom_msg.twist.linear.x), 0);
 }
 
 int main(int argc, char** argv)

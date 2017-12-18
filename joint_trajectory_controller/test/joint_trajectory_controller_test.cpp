@@ -983,7 +983,7 @@ TEST_F(JointTrajectoryControllerTest, ignorePartiallyOldActionTraj)
 // Velocity FF parameter ///////////////////////////////////////////////////////////////////////////////////////////////
 // This test will only be built and run for the VelocityJointInterface-based version of the JointTrajectoryController
 
-#ifdef TEST_VELOCITY_FF
+#if TEST_VELOCITY_FF
 
 TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
 {

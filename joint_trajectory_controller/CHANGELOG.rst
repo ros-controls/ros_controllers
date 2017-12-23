@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.13.2 (2017-12-23)
+-------------------
 * Changend the implementation of joint_trajectory_controller to enable the forwarding of the acceleration values from the trajectory
 * Contributors: Bence Magyar, Mart Moerdijk
 

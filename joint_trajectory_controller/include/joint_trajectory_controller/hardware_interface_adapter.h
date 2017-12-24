@@ -81,7 +81,7 @@ public:
  *   joints:
  *     - head_1_joint
  *     - head_2_joint
- *   
+ *
  *   constraints:
  *     goal_time: 0.6
  *     stopped_velocity_tolerance: 0.02
@@ -133,33 +133,19 @@ private:
 };
 
 /**
- * \brief Adapter for an velocity-controlled hardware interface. Maps position and velocity errors to velocity commands
- * through a velocity PID loop.
+ * \brief Helper base class template for closed loop HardwareInterfaceAdapter implementations.
  *
- * The following is an example configuration of a controller that uses this adapter. Notice the \p gains entry:
- * \code
- * head_controller:
- *   type: "velocity_controllers/JointTrajectoryController"
- *   joints:
- *     - head_1_joint
- *     - head_2_joint
- *   gains:
- *     head_1_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
- *     head_2_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
- *   constraints:
- *     goal_time: 0.6
- *     stopped_velocity_tolerance: 0.02
- *     head_1_joint: {trajectory: 0.05, goal: 0.02}
- *     head_2_joint: {trajectory: 0.05, goal: 0.02}
- *   stop_trajectory_duration: 0.5
- *   state_publish_rate:  25
- * \endcode
+ * Adapters leveraging (specializing) this class will generate a command given the desired state and state error using a
+ * velocity feedforward term plus a corrective PID term.
+ *
+ * Use one of the available template specializations of this class (or create your own) to adapt the
+ * JointTrajectoryController to a specidfic hardware interface.
  */
 template <class State>
-class HardwareInterfaceAdapter<hardware_interface::VelocityJointInterface, State>
+class ClosedLoopHardwareInterfaceAdapter
 {
 public:
-  HardwareInterfaceAdapter() : joint_handles_ptr_(0) {}
+  ClosedLoopHardwareInterfaceAdapter() : joint_handles_ptr_(0) {}
 
   bool init(std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& controller_nh)
   {
@@ -182,6 +168,13 @@ public:
       }
     }
 
+    // Load velocity feedforward gains from parameter server
+    velocity_ff_.resize(joint_handles.size());
+    for (unsigned int i = 0; i < velocity_ff_.size(); ++i)
+    {
+      controller_nh.param(std::string("velocity_ff/") + joint_handles[i].getName(), velocity_ff_[i], 0.0);
+    }
+
     return true;
   }
 
@@ -189,7 +182,7 @@ public:
   {
     if (!joint_handles_ptr_) {return;}
 
-    // Reset PIDs, zero velocity commands
+    // Reset PIDs, zero commands
     for (unsigned int i = 0; i < pids_.size(); ++i)
     {
       pids_[i]->reset();
@@ -197,11 +190,11 @@ public:
     }
   }
 
-  void stopping(const ros::Time& time) {}
+  void stopping(const ros::Time& /*time*/) {}
 
   void updateCommand(const ros::Time&     /*time*/,
                      const ros::Duration& period,
-                     const State&         /*desired_state*/,
+                     const State&         desired_state,
                      const State&         state_error)
   {
     const unsigned int n_joints = joint_handles_ptr_->size();
@@ -215,7 +208,7 @@ public:
     // Update PIDs
     for (unsigned int i = 0; i < n_joints; ++i)
     {
-      const double command = pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
+      const double command = (desired_state.velocity[i] * velocity_ff_[i]) + pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
       (*joint_handles_ptr_)[i].setCommand(command);
     }
   }
@@ -224,23 +217,29 @@ private:
   typedef boost::shared_ptr<control_toolbox::Pid> PidPtr;
   std::vector<PidPtr> pids_;
 
+  std::vector<double> velocity_ff_;
+
   std::vector<hardware_interface::JointHandle>* joint_handles_ptr_;
 };
 
 /**
- * \brief Adapter for an effort-controlled hardware interface. Maps position and velocity errors to effort commands
- * through a position PID loop.
+ * \brief Adapter for an velocity-controlled hardware interface. Maps position and velocity errors to velocity commands
+ * through a velocity PID loop.
  *
- * The following is an example configuration of a controller that uses this adapter. Notice the \p gains entry:
+ * The following is an example configuration of a controller that uses this adapter. Notice the \p gains and \p velocity_ff
+ * entries:
  * \code
  * head_controller:
- *   type: "effort_controllers/JointTrajectoryController"
+ *   type: "velocity_controllers/JointTrajectoryController"
  *   joints:
  *     - head_1_joint
  *     - head_2_joint
  *   gains:
  *     head_1_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
  *     head_2_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
+ *   velocity_ff:
+ *     head_1_joint: 1.0
+ *     head_2_joint: 1.0
  *   constraints:
  *     goal_time: 0.6
  *     stopped_velocity_tolerance: 0.02
@@ -251,75 +250,39 @@ private:
  * \endcode
  */
 template <class State>
-class HardwareInterfaceAdapter<hardware_interface::EffortJointInterface, State>
-{
-public:
-  HardwareInterfaceAdapter() : joint_handles_ptr_(0) {}
+class HardwareInterfaceAdapter<hardware_interface::VelocityJointInterface, State> : public ClosedLoopHardwareInterfaceAdapter<State>
+{};
 
-  bool init(std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& controller_nh)
-  {
-    // Store pointer to joint handles
-    joint_handles_ptr_ = &joint_handles;
-
-    // Initialize PIDs
-    pids_.resize(joint_handles.size());
-    for (unsigned int i = 0; i < pids_.size(); ++i)
-    {
-      // Node handle to PID gains
-      ros::NodeHandle joint_nh(controller_nh, std::string("gains/") + joint_handles[i].getName());
-
-      // Init PID gains from ROS parameter server
-      pids_[i].reset(new control_toolbox::Pid());
-      if (!pids_[i]->init(joint_nh))
-      {
-        ROS_WARN_STREAM("Failed to initialize PID gains from ROS parameter server.");
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  void starting(const ros::Time& /*time*/)
-  {
-    if (!joint_handles_ptr_) {return;}
-
-    // Reset PIDs, zero effort commands
-    for (unsigned int i = 0; i < pids_.size(); ++i)
-    {
-      pids_[i]->reset();
-      (*joint_handles_ptr_)[i].setCommand(0.0);
-    }
-  }
-
-  void stopping(const ros::Time& /*time*/) {}
-
-  void updateCommand(const ros::Time&     /*time*/,
-                     const ros::Duration& period,
-                     const State&         /*desired_state*/,
-                     const State&         state_error)
-  {
-    const unsigned int n_joints = joint_handles_ptr_->size();
-
-    // Preconditions
-    if (!joint_handles_ptr_) {return;}
-    assert(n_joints == state_error.position.size());
-    assert(n_joints == state_error.velocity.size());
-
-    // Update PIDs
-    for (unsigned int i = 0; i < n_joints; ++i)
-    {
-      const double command = pids_[i]->computeCommand(state_error.position[i], state_error.velocity[i], period);
-      (*joint_handles_ptr_)[i].setCommand(command);
-    }
-  }
-
-private:
-  typedef boost::shared_ptr<control_toolbox::Pid> PidPtr;
-  std::vector<PidPtr> pids_;
-
-  std::vector<hardware_interface::JointHandle>* joint_handles_ptr_;
-};
+/**
+ * \brief Adapter for an effort-controlled hardware interface. Maps position and velocity errors to effort commands
+ * through a position PID loop.
+ *
+ * The following is an example configuration of a controller that uses this adapter. Notice the \p gains and \p velocity_ff
+ * entries:
+ * \code
+ * head_controller:
+ *   type: "effort_controllers/JointTrajectoryController"
+ *   joints:
+ *     - head_1_joint
+ *     - head_2_joint
+ *   gains:
+ *     head_1_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
+ *     head_2_joint: {p: 200, d: 1, i: 5, i_clamp: 1}
+ *   velocity_ff:
+ *     head_1_joint: 1.0
+ *     head_2_joint: 1.0
+ *   constraints:
+ *     goal_time: 0.6
+ *     stopped_velocity_tolerance: 0.02
+ *     head_1_joint: {trajectory: 0.05, goal: 0.02}
+ *     head_2_joint: {trajectory: 0.05, goal: 0.02}
+ *   stop_trajectory_duration: 0.5
+ *   state_publish_rate:  25
+ * \endcode
+ */
+template <class State>
+class HardwareInterfaceAdapter<hardware_interface::EffortJointInterface, State> : public ClosedLoopHardwareInterfaceAdapter<State>
+{};
 
 /**
  * \brief Adapter for a pos-vel hardware interface. Forwards desired positions with velcities as commands.

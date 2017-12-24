@@ -43,6 +43,10 @@
 #include <control_msgs/JointTrajectoryControllerState.h>
 #include <control_msgs/QueryTrajectoryState.h>
 
+#include <controller_manager_msgs/LoadController.h>
+#include <controller_manager_msgs/UnloadController.h>
+#include <controller_manager_msgs/SwitchController.h>
+
 // Floating-point value comparison threshold
 const double EPS = 0.01;
 
@@ -108,6 +112,11 @@ public:
     // Query state service client
     query_state_service = nh.serviceClient<control_msgs::QueryTrajectoryState>("query_state");
 
+    // Controller management services
+    load_controller_service = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
+    unload_controller_service = nh.serviceClient<controller_manager_msgs::UnloadController>("/controller_manager/unload_controller");
+    switch_controller_service = nh.serviceClient<controller_manager_msgs::SwitchController>("/controller_manager/switch_controller");
+
     // Action client
     const std::string action_server_name = nh.getNamespace() + "/follow_joint_trajectory";
     action_client.reset(new ActionClient(action_server_name));
@@ -144,6 +153,9 @@ protected:
   ros::Publisher     traj_pub;
   ros::Subscriber    state_sub;
   ros::ServiceClient query_state_service;
+  ros::ServiceClient load_controller_service;
+  ros::ServiceClient unload_controller_service;
+  ros::ServiceClient switch_controller_service;
   ActionClientPtr    action_client;
   ActionClientPtr    action_client2;
 
@@ -191,6 +203,31 @@ protected:
       ros::Duration(0.01).sleep();
     }
     return true;
+  }
+
+  bool reloadController(const std::string& name)
+  {
+    controller_manager_msgs::SwitchController stop_controller;
+    stop_controller.request.stop_controllers.push_back(name);
+    stop_controller.request.strictness = stop_controller.request.STRICT;
+    if(!switch_controller_service.call(stop_controller)) return false;
+    if(!stop_controller.response.ok) return false;
+
+    controller_manager_msgs::UnloadController unload_controller;
+    unload_controller.request.name = name;
+    if(!unload_controller_service.call(unload_controller)) return false;
+    if(!unload_controller.response.ok) return false;
+
+    controller_manager_msgs::LoadController load_controller;
+    load_controller.request.name = name;
+    if(!load_controller_service.call(load_controller)) return false;
+    if(!load_controller.response.ok) return false;
+
+    controller_manager_msgs::SwitchController start_controller;
+    start_controller.request.start_controllers.push_back(name);
+    start_controller.request.strictness = start_controller.request.STRICT;
+    if(!switch_controller_service.call(start_controller)) return false;
+    if(!start_controller.response.ok) return false;
   }
 };
 
@@ -942,6 +979,58 @@ TEST_F(JointTrajectoryControllerTest, ignorePartiallyOldActionTraj)
     EXPECT_NEAR(traj.points.back().accelerations[i], state->desired.accelerations[i], EPS);
   }
 }
+
+// Velocity FF parameter ///////////////////////////////////////////////////////////////////////////////////////////////
+// This test will only be built and run for the VelocityJointInterface-based version of the JointTrajectoryController
+
+#if TEST_VELOCITY_FF
+
+TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
+{
+  ASSERT_TRUE(initState());
+  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+
+  // Go to home configuration, we need known initial conditions
+  traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_home_goal);
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+
+  // Send trajectory
+  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_goal);
+  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+
+  // Wait until done
+  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+
+  // Go to home configuration, we need known initial conditions
+  traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_home_goal);
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+
+  // Disable velocity feedforward
+  ros::param::set("/rrbot_controller/velocity_ff/joint1", 0.0);
+  ros::param::set("/rrbot_controller/velocity_ff/joint2", 0.0);
+  ASSERT_TRUE(reloadController("rrbot_controller"));
+  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+
+  // Send trajectory
+  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_goal);
+  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+
+  // Wait until done
+  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ABORTED, long_timeout));
+  EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED);
+
+  // Re-enable velocity feedforward
+  ros::param::set("/rrbot_controller/velocity_ff/joint1", 1.0);
+  ros::param::set("/rrbot_controller/velocity_ff/joint2", 1.0);
+  ASSERT_TRUE(reloadController("rrbot_controller"));
+  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+}
+
+#endif // TEST_VELOCITY_FF
 
 // Tolerance checking //////////////////////////////////////////////////////////////////////////////////////////////////
 

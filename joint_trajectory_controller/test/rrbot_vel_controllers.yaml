@@ -14,5 +14,9 @@ rrbot_controller:
       trajectory: 0.05
 
   gains:
-    joint1: {p: 60.0,  i: 0.0, d: 0.0, i_clamp: 1}
-    joint2: {p: 60.0,  i: 0.0, d: 0.0, i_clamp: 1}
+    joint1: {p: 1.0,  i: 0.0, d: 0.0, i_clamp: 1}
+    joint2: {p: 1.0,  i: 0.0, d: 0.0, i_clamp: 1}
+
+  velocity_ff:
+    joint1: 1.0
+    joint2: 1.0

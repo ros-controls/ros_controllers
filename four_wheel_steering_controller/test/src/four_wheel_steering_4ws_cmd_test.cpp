@@ -21,8 +21,9 @@ TEST_F(FourWheelSteeringControllerTest, testForward)
   // send a velocity command of 0.1 m/s
   cmd_vel.speed = 0.1;
   publish_4ws(cmd_vel);
-  // wait for 10s
-  ros::Duration(10.0).sleep();
+  // wait for Xs
+  double travel_time = 5.0;
+  ros::Duration(travel_time).sleep();
 
   nav_msgs::Odometry new_odom = getLastOdom();
 
@@ -30,7 +31,7 @@ TEST_F(FourWheelSteeringControllerTest, testForward)
   const double dx = new_odom.pose.pose.position.x - old_odom.pose.pose.position.x;
   const double dy = new_odom.pose.pose.position.y - old_odom.pose.pose.position.y;
   const double dz = new_odom.pose.pose.position.z - old_odom.pose.pose.position.z;
-  EXPECT_NEAR(sqrt(dx*dx + dy*dy), 1.0, POSITION_TOLERANCE);
+  EXPECT_NEAR(sqrt(dx*dx + dy*dy), cmd_vel.speed*travel_time, POSITION_TOLERANCE);
   EXPECT_LT(fabs(dz), EPS);
 
   // convert to rpy and test that way
@@ -71,8 +72,8 @@ TEST_F(FourWheelSteeringControllerTest, testCrab)
   cmd_vel.front_steering_angle = M_PI/8.0;
   cmd_vel.rear_steering_angle = cmd_vel.front_steering_angle;
   publish_4ws(cmd_vel);
-  // wait for 10s
-  double travel_time = 8.0;
+  // wait for Xs
+  double travel_time = 5.0;
   ros::Duration(travel_time).sleep();
 
   nav_msgs::Odometry new_odom = getLastOdom();

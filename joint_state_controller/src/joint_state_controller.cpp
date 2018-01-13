@@ -53,8 +53,14 @@ namespace joint_state_controller
       return false;
     }
 
+    std::string pub_namespace;
+    if (controller_nh.getParam("namespace", pub_namespace))
+    {
+        ROS_DEBUG("Publishing joint states under namespace '%s'", pub_namespace.c_str());
+    }
+
     // realtime publisher
-    realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(root_nh, "joint_states", 4));
+    realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(root_nh, pub_namespace + "/joint_states", 4));
 
     // get joints and allocate message
     for (unsigned i=0; i<num_hw_joints_; i++){

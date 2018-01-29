@@ -41,6 +41,8 @@
 
 #include <diff_drive_controller/odometry.h>
 
+#include <Eigen/Core>
+
 #include <boost/bind.hpp>
 
 namespace diff_drive_controller
@@ -52,15 +54,17 @@ namespace diff_drive_controller
   , x_(0.0)
   , y_(0.0)
   , heading_(0.0)
-  , linear_(0.0)
-  , angular_(0.0)
+  , v_x_(0.0)
+  , v_y_(0.0)
+  , v_yaw_(0.0)
   , wheel_separation_(0.0)
   , wheel_radius_(0.0)
   , left_wheel_old_pos_(0.0)
   , right_wheel_old_pos_(0.0)
   , velocity_rolling_window_size_(velocity_rolling_window_size)
-  , linear_acc_(RollingWindow::window_size = velocity_rolling_window_size)
-  , angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , v_x_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , v_y_acc_(RollingWindow::window_size = velocity_rolling_window_size)
+  , v_yaw_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , integrate_fun_(boost::bind(&Odometry::integrateExact, this, _1, _2))
   {
   }
@@ -90,9 +94,36 @@ namespace diff_drive_controller
     const double linear  = (right_wheel_est_vel + left_wheel_est_vel) * 0.5 ;
     const double angular = (right_wheel_est_vel - left_wheel_est_vel) / wheel_separation_;
 
+    /// Safe current state:
+    const SE2 p0(SE2::Scalar(heading_), SE2::Point(x_, y_));
+
     /// Integrate odometry:
     integrate_fun_(linear, angular);
 
+    /// Update twist:
+    const SE2 p1(SE2::Scalar(heading_), SE2::Point(x_, y_));
+
+    return updateTwist(p0, p1, time);
+  }
+
+  bool Odometry::updateOpenLoop(double linear, double angular, const ros::Time &time)
+  {
+    /// Safe current state:
+    const SE2 p0(SE2::Scalar(heading_), SE2::Point(x_, y_));
+
+    /// Integrate odometry:
+    const double dt = (time - timestamp_).toSec();
+    timestamp_ = time;
+    integrate_fun_(linear * dt, angular * dt);
+
+    /// Update twist:
+    const SE2 p1(SE2::Scalar(heading_), SE2::Point(x_, y_));
+
+    return updateTwist(p0, p1, time);
+  }
+
+  bool Odometry::updateTwist(const SE2& p0, const SE2& p1, const ros::Time& time)
+  {
     /// We cannot estimate the speed with very small time intervals:
     const double dt = (time - timestamp_).toSec();
     if (dt < 0.0001)
@@ -100,26 +131,33 @@ namespace diff_drive_controller
 
     timestamp_ = time;
 
-    /// Estimate speeds using a rolling mean to filter them out:
-    linear_acc_(linear/dt);
-    angular_acc_(angular/dt);
+    /// Compute relative transformation:
+    const SE2 p = p0.inverse() * p1;
 
-    linear_ = bacc::rolling_mean(linear_acc_);
-    angular_ = bacc::rolling_mean(angular_acc_);
+    /// Retrieve rotation and translation:
+    /// Note that we don't use the log from SE(2) because we didn't use exp
+    /// to create p0 and p1.
+    /// So instead of:
+    ///
+    ///   const SE2::Tangent v = p.log();
+    ///
+    /// we use the following:
+    const SE2::ConstTranslationReference t = p.translation();
+
+    v_x_   = t[0];
+    v_y_   = t[1];
+    v_yaw_ = p.so2().log();
+
+    /// Estimate speeds using a rolling mean to filter them out:
+    v_x_acc_(v_x_/dt);
+    v_y_acc_(v_y_/dt);
+    v_yaw_acc_(v_yaw_/dt);
+
+    v_x_   = bacc::rolling_mean(v_x_acc_);
+    v_y_   = bacc::rolling_mean(v_y_acc_);
+    v_yaw_ = bacc::rolling_mean(v_yaw_acc_);
 
     return true;
-  }
-
-  void Odometry::updateOpenLoop(double linear, double angular, const ros::Time &time)
-  {
-    /// Save last linear and angular velocity:
-    linear_ = linear;
-    angular_ = angular;
-
-    /// Integrate odometry:
-    const double dt = (time - timestamp_).toSec();
-    timestamp_ = time;
-    integrate_fun_(linear * dt, angular * dt);
   }
 
   void Odometry::setWheelParams(double wheel_separation, double wheel_radius)
@@ -167,8 +205,9 @@ namespace diff_drive_controller
 
   void Odometry::resetAccumulators()
   {
-    linear_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
-    angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    v_x_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    v_y_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    v_yaw_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
   }
 
 } // namespace diff_drive_controller

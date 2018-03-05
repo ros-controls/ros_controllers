@@ -87,6 +87,10 @@ public:
     // Delay subscriber: delay==0 yields direct control, one cycle delay otherwise
     delay_sub_ = ros::NodeHandle().subscribe("delay", 1, &RRbot::delayCB, this);
     delay_.initRT(false);
+
+    // Upper bound subscriber: set positions greater than this value are clipped
+    upper_bound_sub_ = ros::NodeHandle().subscribe("upper_bound", 1, &RRbot::upper_boundCB, this);
+    upper_bound_.initRT(std::numeric_limits<double>::infinity());
   }
 
   ros::Time getTime() const {return ros::Time::now();}
@@ -98,9 +102,11 @@ public:
   {
     const double smoothing = *(smoothing_.readFromRT());
     const bool delay = *(delay_.readFromRT());
+    const double upper_bound = *(upper_bound_.readFromRT());
 
     for (unsigned int i = 0; i < 2; ++i)
     {
+      // if delay is true, use position from previous cycle
       if(delay != 0)
       {
         std::swap(pos_cmd_[i], pos_lastcmd_[i]);
@@ -122,6 +128,13 @@ public:
       {
         vel_[i] = (1.0 - smoothing) * vel_cmd_[i];
         pos_[i] = pos_[i] + vel_[i] * getPeriod().toSec();
+      }
+
+      // clip position at upper bound
+      if(pos_[i] > upper_bound)
+      {
+        pos_[i] = upper_bound;
+        vel_[i] = 0.0;
       }
     }
   }
@@ -181,6 +194,10 @@ private:
   realtime_tools::RealtimeBuffer<bool> delay_;
   void delayCB(const std_msgs::Bool& delay) {delay_.writeFromNonRT(delay.data);}
   ros::Subscriber delay_sub_;
+
+  realtime_tools::RealtimeBuffer<double> upper_bound_;
+  void upper_boundCB(const std_msgs::Float64& upper_bound) {upper_bound_.writeFromNonRT(upper_bound.data);}
+  ros::Subscriber upper_bound_sub_;
 };
 
 int main(int argc, char **argv)

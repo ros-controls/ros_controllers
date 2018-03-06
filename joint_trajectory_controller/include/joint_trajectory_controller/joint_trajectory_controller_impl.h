@@ -748,6 +748,7 @@ setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
   typename Segment::State hold_start_state_ = typename Segment::State(1);
   typename Segment::State hold_end_state_ = typename Segment::State(1);
   const unsigned int n_joints = joints_.size();
+  const typename Segment::Time start_time  = time.toSec();
 
   if(stop_trajectory_duration_ == 0.0)
   {
@@ -757,8 +758,8 @@ setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
       hold_start_state_.position[0]     =  joints_[i].getPosition();
       hold_start_state_.velocity[0]     =  0.0;
       hold_start_state_.acceleration[0] =  0.0;
-      (*hold_trajectory_ptr_)[i].front().init(time.toSec(),  hold_start_state_,
-                                                           time.toSec(), hold_start_state_);
+      (*hold_trajectory_ptr_)[i].front().init(start_time,  hold_start_state_,
+                                              start_time, hold_start_state_);
       // Set goal handle for the segment
       (*hold_trajectory_ptr_)[i].front().setGoalHandle(gh);
     }
@@ -771,7 +772,6 @@ setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
     // - Create segment that goes from current state to above zero velocity state, in the desired time
     // NOTE: The symmetry assumption from the second point above might not hold for all possible segment types
 
-    const typename Segment::Time start_time  = time.toSec();
     const typename Segment::Time end_time    = time.toSec() + stop_trajectory_duration_;
     const typename Segment::Time end_time_2x = time.toSec() + 2.0 * stop_trajectory_duration_;
 

@@ -762,7 +762,6 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTraj)
   trajectory_msgs::JointTrajectory traj_empty;
   traj_pub.publish(traj_empty);
   ASSERT_TRUE(waitForState(action_client,  SimpleClientGoalState::PREEMPTED, short_timeout));
-  ros::Duration(2.0).sleep(); // Stopping takes some time
 
   // Check that we're not on the start state
   StateConstPtr state1 = getState();
@@ -812,7 +811,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelay)
     ActionGoal empty_goal;
     empty_goal.trajectory.joint_names = joint_names;
     action_client->sendGoal(empty_goal);
-    ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+    ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, short_timeout));
 
     // Velocity should be continuous so all axes >= 0
     std::vector<double> minVelocity = getMinActualVelocity();
@@ -868,7 +867,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
   ActionGoal empty_goal;
   empty_goal.trajectory.joint_names = joint_names;
   action_client->sendGoal(empty_goal);
-  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, short_timeout));
 
   StateConstPtr state1 = getState();
 
@@ -921,7 +920,7 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
   empty_goal.trajectory.joint_names = traj.joint_names;
   action_client->sendGoal(empty_goal);
   ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
-  ros::Duration(2.0).sleep(); // Stopping takes some time
+  ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, short_timeout));
 
   // Check that we're not on the start state
   StateConstPtr state1 = getState();
@@ -965,7 +964,7 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsActionTraj)
   action_client2->sendGoal(empty_goal);
   ASSERT_TRUE(waitForState(action_client,  SimpleClientGoalState::PREEMPTED, short_timeout));
   ASSERT_TRUE(waitForState(action_client2, SimpleClientGoalState::ACTIVE, short_timeout));
-  ros::Duration(2.0).sleep(); // Stopping takes some time
+  ASSERT_TRUE(waitForState(action_client2, SimpleClientGoalState::SUCCEEDED, short_timeout));
 
   // Check that we're not on the start state
   StateConstPtr state1 = getState();

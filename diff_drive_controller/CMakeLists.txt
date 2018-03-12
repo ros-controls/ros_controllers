@@ -66,6 +66,7 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_timeout_test.cpp)
   target_link_libraries(diff_drive_timeout_test ${catkin_LIBRARIES})
   add_rostest(test/diff_drive_multipliers.test)
+  add_rostest(test/diff_drive_left_right_multipliers.test)
   add_rostest_gtest(diff_drive_fail_test
     test/diff_drive_wrong.test
     test/diff_drive_fail_test.cpp)

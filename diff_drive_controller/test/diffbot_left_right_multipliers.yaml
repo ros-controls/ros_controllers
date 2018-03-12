@@ -1,0 +1,4 @@
+diffbot_controller:
+  wheel_separation_multiplier: 2.3
+  left_wheel_radius_multiplier: 1.4
+  right_wheel_radius_multiplier: 1.4

@@ -103,4 +103,8 @@ if (CATKIN_ENABLE_TESTING)
   add_rostest(test/diff_drive_radius_param_fail.test)
   add_rostest(test/diff_drive_separation_param.test)
   add_rostest(test/diff_drive_bad_urdf.test)
+  add_rostest_gtest(diff_drive_dyn_reconf_test
+    test/diff_drive_dyn_reconf.test
+    test/diff_drive_dyn_reconf_test.cpp)
+  target_link_libraries(diff_drive_dyn_reconf_test ${catkin_LIBRARIES})
 endif()

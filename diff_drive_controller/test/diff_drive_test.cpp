@@ -34,10 +34,8 @@
 TEST_F(DiffDriveControllerTest, testForward)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
+  waitForController();
+
   // zero everything before test
   geometry_msgs::Twist cmd_vel;
   cmd_vel.linear.x = 0.0;
@@ -54,11 +52,15 @@ TEST_F(DiffDriveControllerTest, testForward)
 
   nav_msgs::Odometry new_odom = getLastOdom();
 
+  const ros::Duration actual_elapsed_time = new_odom.header.stamp - old_odom.header.stamp;
+
+  const double expected_distance = cmd_vel.linear.x * actual_elapsed_time.toSec();
+
   // check if the robot traveled 1 meter in XY plane, changes in z should be ~~0
   const double dx = new_odom.pose.pose.position.x - old_odom.pose.pose.position.x;
   const double dy = new_odom.pose.pose.position.y - old_odom.pose.pose.position.y;
   const double dz = new_odom.pose.pose.position.z - old_odom.pose.pose.position.z;
-  EXPECT_NEAR(sqrt(dx*dx + dy*dy), 1.0, POSITION_TOLERANCE);
+  EXPECT_NEAR(sqrt(dx*dx + dy*dy), expected_distance, POSITION_TOLERANCE);
   EXPECT_LT(fabs(dz), EPS);
 
   // convert to rpy and test that way
@@ -81,10 +83,8 @@ TEST_F(DiffDriveControllerTest, testForward)
 TEST_F(DiffDriveControllerTest, testTurn)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
+  waitForController();
+
   // zero everything before test
   geometry_msgs::Twist cmd_vel;
   cmd_vel.linear.x = 0.0;
@@ -106,6 +106,9 @@ TEST_F(DiffDriveControllerTest, testTurn)
   EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), EPS);
   EXPECT_LT(fabs(new_odom.pose.pose.position.z - old_odom.pose.pose.position.z), EPS);
 
+  const ros::Duration actual_elapsed_time = new_odom.header.stamp - old_odom.header.stamp;
+  const double expected_rotation = cmd_vel.angular.z * actual_elapsed_time.toSec();
+
   // convert to rpy and test that way
   double roll_old, pitch_old, yaw_old;
   double roll_new, pitch_new, yaw_new;
@@ -113,7 +116,7 @@ TEST_F(DiffDriveControllerTest, testTurn)
   tf::Matrix3x3(tfQuatFromGeomQuat(new_odom.pose.pose.orientation)).getRPY(roll_new, pitch_new, yaw_new);
   EXPECT_LT(fabs(roll_new - roll_old), EPS);
   EXPECT_LT(fabs(pitch_new - pitch_old), EPS);
-  EXPECT_NEAR(fabs(yaw_new - yaw_old), M_PI, ORIENTATION_TOLERANCE);
+  EXPECT_NEAR(fabs(yaw_new - yaw_old), expected_rotation, ORIENTATION_TOLERANCE);
 
   EXPECT_LT(fabs(new_odom.twist.twist.linear.x), EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.linear.y), EPS);
@@ -127,10 +130,8 @@ TEST_F(DiffDriveControllerTest, testTurn)
 TEST_F(DiffDriveControllerTest, testOdomFrame)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
+  waitForController();
+
   // set up tf listener
   tf::TransformListener listener;
   ros::Duration(2.0).sleep();

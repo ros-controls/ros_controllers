@@ -293,7 +293,7 @@ namespace diff_drive_controller{
     }
 
     // Get the joint object to use in the realtime loop
-    for (int i = 0; i < wheel_joints_size_; ++i)
+    for (size_t i = 0; i < wheel_joints_size_; ++i)
     {
       ROS_INFO_STREAM_NAMED(name_,
                             "Adding left wheel with joint name: " << left_wheel_names[i]

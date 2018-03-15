@@ -53,7 +53,8 @@ class FourWheelSteeringControllerTest : public ::testing::Test
 public:
 
   FourWheelSteeringControllerTest()
-  : cmd_twist_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100))
+  : received_first_odom(false)
+  , cmd_twist_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100))
   , cmd_4ws_pub(nh.advertise<four_wheel_steering_msgs::FourWheelSteering>("cmd_four_wheel_steering", 100))
   , odom_sub(nh.subscribe("odom", 100, &FourWheelSteeringControllerTest::odomCallback, this))
   , start_srv(nh.serviceClient<std_srvs::Empty>("start"))
@@ -75,13 +76,38 @@ public:
   {
     cmd_4ws_pub.publish(cmd_vel);
   }
-  bool isControllerAlive(){ return (odom_sub.getNumPublishers() > 0)
+  bool isControllerAlive()const{ return (odom_sub.getNumPublishers() > 0)
         && ((cmd_twist_pub.getNumSubscribers() > 0) || (cmd_4ws_pub.getNumSubscribers() > 0)); }
+
+  bool hasReceivedFirstOdom()const{ return received_first_odom; }
 
   void start(){ std_srvs::Empty srv; start_srv.call(srv); }
   void stop(){ std_srvs::Empty srv; stop_srv.call(srv); }
 
+  void waitForController() const
+  {
+    while(!isControllerAlive() && ros::ok())
+    {
+      ROS_DEBUG_STREAM_THROTTLE(0.5, "Waiting for controller.");
+      ros::Duration(0.1).sleep();
+    }
+    if (!ros::ok())
+      FAIL() << "Something went wrong while executing test.";
+  }
+
+  void waitForOdomMsgs() const
+  {
+    while(!hasReceivedFirstOdom() && ros::ok())
+    {
+      ROS_DEBUG_STREAM_THROTTLE(0.5, "Waiting for odom messages to be published.");
+      ros::Duration(0.01).sleep();
+    }
+    if (!ros::ok())
+      FAIL() << "Something went wrong while executing test.";
+  }
+
 private:
+  bool received_first_odom;
   ros::NodeHandle nh;
   ros::Publisher cmd_twist_pub, cmd_4ws_pub;
   ros::Subscriber odom_sub;
@@ -97,6 +123,7 @@ private:
                      << ", lin_est: " << odom.twist.twist.linear.x
                      << ", ang_est: " << odom.twist.twist.angular.z);
     last_odom = odom;
+    received_first_odom = true;
   }
 };
 

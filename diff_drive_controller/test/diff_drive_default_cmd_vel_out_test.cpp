@@ -33,10 +33,11 @@
 TEST_F(DiffDriveControllerTest, testDefaultCmdVelOutTopic)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
+  waitForController();
+  // msgs are published in the same loop
+  // thus if odom is published cmd_vel_out
+  // should be as well (if enabled)
+  waitForOdomMsgs();
 
   EXPECT_FALSE(isPublishingCmdVelOut());
 

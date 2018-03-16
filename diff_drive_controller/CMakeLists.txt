@@ -3,6 +3,7 @@ project(diff_drive_controller)
 
 find_package(catkin REQUIRED COMPONENTS
     controller_interface
+    control_msgs
     dynamic_reconfigure
     nav_msgs
     realtime_tools

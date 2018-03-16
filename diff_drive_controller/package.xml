@@ -16,6 +16,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>controller_interface</depend>
+  <depend>control_msgs</depend>
   <depend>dynamic_reconfigure</depend>
   <depend>nav_msgs</depend>
   <depend>realtime_tools</depend>

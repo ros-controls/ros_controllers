@@ -43,6 +43,7 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/tfMessage.h>
+#include <control_msgs/JointTrajectoryControllerState.h>
 
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
@@ -108,6 +109,17 @@ namespace diff_drive_controller{
     std::vector<hardware_interface::JointHandle> left_wheel_joints_;
     std::vector<hardware_interface::JointHandle> right_wheel_joints_;
 
+    // Previous time
+    ros::Time time_previous_;
+
+    /// Previous velocities from the encoders:
+    std::vector<double> vel_left_previous_;
+    std::vector<double> vel_right_previous_;
+
+    /// Previous velocities from the encoders:
+    double vel_left_desired_previous_;
+    double vel_right_desired_previous_;
+
     /// Velocity command related:
     struct Commands
     {
@@ -128,6 +140,9 @@ namespace diff_drive_controller{
     boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
     boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
     Odometry odometry_;
+
+    /// Joint Trajectory Controller State
+    boost::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState> > joint_trajectory_controller_state_pub_;
 
     /// Wheel separation, wrt the midpoint of the wheel width:
     double wheel_separation_;
@@ -165,6 +180,9 @@ namespace diff_drive_controller{
 
     /// Publish limited velocity:
     bool publish_cmd_;
+
+    /// Publish wheel data:
+    bool publish_joint_trajectory_controller_state_;
 
   private:
     /**

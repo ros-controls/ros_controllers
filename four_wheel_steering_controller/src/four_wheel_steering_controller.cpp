@@ -206,7 +206,7 @@ namespace four_wheel_steering_controller{
     hardware_interface::PositionJointInterface *const pos_joint_hw = robot_hw->get<hardware_interface::PositionJointInterface>();
 
     // Get the joint object to use in the realtime loop
-    for (int i = 0; i < front_wheel_joints_.size(); ++i)
+    for (size_t i = 0; i < front_wheel_joints_.size(); ++i)
     {
       ROS_INFO_STREAM_NAMED(name_,
                             "Adding left wheel with joint name: " << front_wheel_names[i]
@@ -216,7 +216,7 @@ namespace four_wheel_steering_controller{
     }
 
     // Get the steering joint object to use in the realtime loop
-    for (int i = 0; i < front_steering_joints_.size(); ++i)
+    for (size_t i = 0; i < front_steering_joints_.size(); ++i)
     {
       ROS_INFO_STREAM_NAMED(name_,
                             "Adding left steering with joint name: " << front_steering_names[i]

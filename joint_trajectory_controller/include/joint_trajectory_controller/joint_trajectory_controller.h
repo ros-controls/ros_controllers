@@ -208,7 +208,7 @@ private:
   ros::Duration state_publisher_period_;
   ros::Duration action_monitor_period_;
 
-  typename Segment::Time stop_trajectory_duration_;
+  typename Segment::Time stop_trajectory_duration_;  ///< Duration for stop ramp. If zero, the controller stops at the actual position.
   boost::dynamic_bitset<> successful_joint_traj_;
   bool allow_partial_joints_goal_;
 
@@ -240,8 +240,9 @@ private:
   /**
    * \brief Hold the current position.
    *
-   * Substitutes the current trajectory with a single-segment one going from the current position and velocity to the
-   * current position and zero velocity.
+   * Substitutes the current trajectory with a single-segment one going from the current position and velocity to
+   * zero velocity.
+   * \see parameter stop_trajectory_duration
    * \note This method is realtime-safe.
    */
   void setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh=RealtimeGoalHandlePtr());

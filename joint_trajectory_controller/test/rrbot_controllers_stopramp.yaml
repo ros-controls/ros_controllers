@@ -12,5 +12,5 @@ rrbot_controller:
     joint2:
       goal:       0.01
       trajectory: 0.05
-  stop_trajectory_duration: 0.0
+  stop_trajectory_duration: 0.1
   state_publish_rate: 100

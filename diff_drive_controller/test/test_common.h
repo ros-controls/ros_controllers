@@ -35,6 +35,7 @@
 
 #include <geometry_msgs/TwistStamped.h>
 #include <nav_msgs/Odometry.h>
+#include <control_msgs/JointTrajectoryControllerState.h>
 #include <tf/tf.h>
 
 #include <std_srvs/Empty.h>
@@ -55,6 +56,7 @@ public:
   : cmd_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100))
   , odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
   , vel_out_sub(nh.subscribe("cmd_vel_out", 100, &DiffDriveControllerTest::cmdVelOutCallback, this))
+  , joint_traj_controller_state_sub(nh.subscribe("joint_trajectory_controller_state", 100, &DiffDriveControllerTest::jointTrajectoryControllerStateCallback, this))
   , start_srv(nh.serviceClient<std_srvs::Empty>("start"))
   , stop_srv(nh.serviceClient<std_srvs::Empty>("stop"))
   {
@@ -63,13 +65,16 @@ public:
   ~DiffDriveControllerTest()
   {
     odom_sub.shutdown();
+    joint_traj_controller_state_sub.shutdown();
   }
 
   nav_msgs::Odometry getLastOdom(){ return last_odom; }
   geometry_msgs::TwistStamped getLastCmdVelOut(){ return last_cmd_vel_out; }
+  control_msgs::JointTrajectoryControllerState getLastJointTrajectoryControllerState(){ return last_joint_traj_controller_state; }
   void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
   bool isControllerAlive(){ return (odom_sub.getNumPublishers() > 0) && (cmd_pub.getNumSubscribers() > 0); }
   bool isPublishingCmdVelOut(){ return (vel_out_sub.getNumPublishers() > 0); }
+  bool isPublishingJointTrajectoryControllerState(){ return (joint_traj_controller_state_sub.getNumPublishers() > 0); }
 
   void start(){ std_srvs::Empty srv; start_srv.call(srv); }
   void stop(){ std_srvs::Empty srv; stop_srv.call(srv); }
@@ -81,6 +86,8 @@ private:
   ros::Subscriber vel_out_sub;
   nav_msgs::Odometry last_odom;
   geometry_msgs::TwistStamped last_cmd_vel_out;
+  ros::Subscriber joint_traj_controller_state_sub;
+  control_msgs::JointTrajectoryControllerState last_joint_traj_controller_state;
 
   ros::ServiceClient start_srv;
   ros::ServiceClient stop_srv;
@@ -92,6 +99,15 @@ private:
                      << ", lin_est: " << odom.twist.twist.linear.x
                      << ", ang_est: " << odom.twist.twist.angular.z);
     last_odom = odom;
+  }
+
+  void jointTrajectoryControllerStateCallback(const control_msgs::JointTrajectoryControllerState& joint_traj_controller_state)
+  {
+    ROS_INFO_STREAM("Joint trajectory controller state callback.");
+    ROS_DEBUG_STREAM("Joint trajectory controller state callback received:\n" <<
+                     joint_traj_controller_state);
+
+    last_joint_traj_controller_state = joint_traj_controller_state;
   }
 
   void cmdVelOutCallback(const geometry_msgs::TwistStamped& cmd_vel_out)

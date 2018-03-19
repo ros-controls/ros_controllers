@@ -33,11 +33,9 @@
 TEST_F(DiffDriveControllerTest, breakWithMultiplePublishers)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
- 
+  waitForController();
+  waitForOdomMsgs();
+
   nav_msgs::Odometry old_odom = getLastOdom();
   //TODO: we should be programatically publish from 2 different nodes
   // not the current hacky solution with the launch files

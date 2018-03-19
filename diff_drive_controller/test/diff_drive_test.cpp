@@ -124,7 +124,7 @@ TEST_F(DiffDriveControllerTest, testTurn)
 
   EXPECT_LT(fabs(new_odom.twist.twist.angular.x), EPS);
   EXPECT_LT(fabs(new_odom.twist.twist.angular.y), EPS);
-  EXPECT_NEAR(fabs(new_odom.twist.twist.angular.z), M_PI/10.0, EPS);
+  EXPECT_NEAR(fabs(new_odom.twist.twist.angular.z), expected_rotation/actual_elapsed_time.toSec(), EPS);
 }
 
 TEST_F(DiffDriveControllerTest, testOdomFrame)

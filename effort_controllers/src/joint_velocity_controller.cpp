@@ -34,7 +34,7 @@
  *********************************************************************/
 
 #include <effort_controllers/joint_velocity_controller.h>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 
 
 namespace effort_controllers {

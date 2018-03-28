@@ -141,7 +141,7 @@ namespace diff_drive_controller
 
     /**
      * \brief Sets the wheel parameters: radius and separation
-     * \param wheel_separation   Seperation between left and right wheels [m]
+     * \param wheel_separation   Separation between left and right wheels [m]
      * \param left_wheel_radius  Left wheel radius [m]
      * \param right_wheel_radius Right wheel radius [m]
      */

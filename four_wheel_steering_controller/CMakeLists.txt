@@ -36,7 +36,7 @@ install(FILES four_wheel_steering_controller_plugins.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 if(CATKIN_ENABLE_TESTING)
-  find_package(catkin REQUIRED COMPONENTS rostest std_srvs controller_manager tf)
+  find_package(catkin REQUIRED COMPONENTS rosgraph_msgs rostest std_srvs controller_manager tf)
 
   add_executable(four_wheel_steering test/src/four_wheel_steering.cpp)
   target_link_libraries(four_wheel_steering ${catkin_LIBRARIES})

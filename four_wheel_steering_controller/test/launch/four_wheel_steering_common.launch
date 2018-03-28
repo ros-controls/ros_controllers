@@ -1,4 +1,7 @@
 <launch>
+  <!-- Use simulation time -->
+  <rosparam param="use_sim_time">True</rosparam>
+
   <!-- Load four_wheel_steering model -->
   <param name="robot_description"
          command="$(find xacro)/xacro --inorder '$(find four_wheel_steering_controller)/test/urdf/four_wheel_steering.urdf.xacro'" />

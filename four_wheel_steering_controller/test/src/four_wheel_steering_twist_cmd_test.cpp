@@ -5,10 +5,8 @@
 TEST_F(FourWheelSteeringControllerTest, testForward)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
+  waitForController();
+
   // zero everything before test
   geometry_msgs::Twist cmd_vel;
   cmd_vel.linear.x = 0.0;
@@ -26,11 +24,15 @@ TEST_F(FourWheelSteeringControllerTest, testForward)
 
   nav_msgs::Odometry new_odom = getLastOdom();
 
+  const ros::Duration actual_elapsed_time = new_odom.header.stamp - old_odom.header.stamp;
+
+  const double expected_distance = cmd_vel.linear.x * actual_elapsed_time.toSec();
+
   // check if the robot traveled 1 meter in XY plane, changes in z should be ~~0
   const double dx = new_odom.pose.pose.position.x - old_odom.pose.pose.position.x;
   const double dy = new_odom.pose.pose.position.y - old_odom.pose.pose.position.y;
   const double dz = new_odom.pose.pose.position.z - old_odom.pose.pose.position.z;
-  EXPECT_NEAR(sqrt(dx*dx + dy*dy), cmd_vel.linear.x*travel_time, POSITION_TOLERANCE);
+  EXPECT_NEAR(sqrt(dx*dx + dy*dy), expected_distance, POSITION_TOLERANCE);
   EXPECT_LT(fabs(dz), EPS);
 
   // convert to rpy and test that way
@@ -53,10 +55,8 @@ TEST_F(FourWheelSteeringControllerTest, testForward)
 TEST_F(FourWheelSteeringControllerTest, testTurn)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
+  waitForController();
+
   // zero everything before test
   geometry_msgs::Twist cmd_vel;
   cmd_vel.linear.x = 0.0;
@@ -102,10 +102,8 @@ TEST_F(FourWheelSteeringControllerTest, testTurn)
 TEST_F(FourWheelSteeringControllerTest, testOdomFrame)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
+  waitForController();
+
   // set up tf listener
   tf::TransformListener listener;
   ros::Duration(2.0).sleep();

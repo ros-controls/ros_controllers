@@ -41,6 +41,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/dynamic_bitset.hpp>
+#include <boost/thread/mutex.hpp>
 
 // ROS
 #include <ros/node_handle.h>
@@ -187,6 +188,7 @@ private:
 
   RealtimeGoalHandlePtr     rt_active_goal_;     ///< Currently active action goal, if any.
 
+  boost::mutex rt_active_goal_mutex_;             ///< mutex rt_active_goal_ between main loop and other threads
   /**
    * Thread-safe container with a smart pointer to trajectory currently being followed.
    * Can be either a hold trajectory or a trajectory received from a ROS message.

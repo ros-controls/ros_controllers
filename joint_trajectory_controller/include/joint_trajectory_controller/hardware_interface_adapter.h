@@ -125,7 +125,10 @@ public:
   {
     // Forward desired position to command
     const unsigned int n_joints = joint_handles_ptr_->size();
-    for (unsigned int i = 0; i < n_joints; ++i) {(*joint_handles_ptr_)[i].setCommand(desired_state.position[i]);}
+    for (unsigned int i = 0; i < n_joints; ++i)
+    {
+        (*joint_handles_ptr_)[i].setCommand(desired_state.position[i]);
+    }
   }
 
 private:

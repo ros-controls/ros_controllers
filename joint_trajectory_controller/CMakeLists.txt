@@ -46,7 +46,7 @@ add_library(${PROJECT_NAME} src/joint_trajectory_controller.cpp
                             include/joint_trajectory_controller/tolerances.h
                             include/trajectory_interface/trajectory_interface.h
                             include/trajectory_interface/quintic_spline_segment.h
-                            include/trajectory_interface/pos_vel_acc_state.h)
+                            include/trajectory_interface/pos_vel_acc_eff_state.h)
 
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 

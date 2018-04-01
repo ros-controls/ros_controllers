@@ -384,6 +384,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       // Get the first time and state that will be executed from the new trajectory
       trajectory_msgs::JointTrajectoryPoint point_per_joint;
       if (!it->positions.empty())     {point_per_joint.positions.resize(1, it->positions[msg_joint_it]);}
+      if (!it->effort.empty())     {point_per_joint.effort.resize(1, it->effort[msg_joint_it]);}
       if (!it->velocities.empty())    {point_per_joint.velocities.resize(1, it->velocities[msg_joint_it]);}
       if (!it->accelerations.empty()) {point_per_joint.accelerations.resize(1, it->accelerations[msg_joint_it]);}
       point_per_joint.time_from_start = it->time_from_start;
@@ -438,6 +439,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       if (!isValid(*it, it->positions.size()))
             throw(std::invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
       if (!it->positions.empty())     {it_point_per_joint.positions.resize(1, it->positions[msg_joint_it]);}
+      if (!it->effort.empty())     {it_point_per_joint.effort.resize(1, it->effort[msg_joint_it]);}
       if (!it->velocities.empty())    {it_point_per_joint.velocities.resize(1, it->velocities[msg_joint_it]);}
       if (!it->accelerations.empty()) {it_point_per_joint.accelerations.resize(1, it->accelerations[msg_joint_it]);}
       it_point_per_joint.time_from_start = it->time_from_start;
@@ -445,6 +447,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       if (!isValid(*next_it, next_it->positions.size()))
             throw(std::invalid_argument("Size mismatch in trajectory point position, velocity or acceleration data."));
       if (!next_it->positions.empty()) {next_it_point_per_joint.positions.resize(1, next_it->positions[msg_joint_it]);}
+      if (!next_it->effort.empty()) {next_it_point_per_joint.effort.resize(1, next_it->effort[msg_joint_it]);}
       if (!next_it->velocities.empty()) {next_it_point_per_joint.velocities.resize(1, next_it->velocities[msg_joint_it]);}
       if (!next_it->accelerations.empty()) {next_it_point_per_joint.accelerations.resize(1, next_it->accelerations[msg_joint_it]);}
       next_it_point_per_joint.time_from_start = next_it->time_from_start;

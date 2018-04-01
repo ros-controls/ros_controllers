@@ -143,6 +143,7 @@ starting(const ros::Time& time)
   {
     desired_state_.position[i] = joints_[i].getPosition();
     desired_state_.velocity[i] = joints_[i].getVelocity();
+    desired_state_.effort[i] = joints_[i].getEffort();
   }
 
   // Hold current position
@@ -327,6 +328,7 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   {
 	  current_joint_state_.position[0]= current_state_.position[i];
 	  current_joint_state_.velocity[0]= current_state_.velocity[i];
+          current_joint_state_.effort[0] = current_state_.effort[i];
 	  Segment hold_segment(0.0, current_joint_state_, 0.0, current_joint_state_);
 
 	  TrajectoryPerJoint joint_segment;
@@ -340,10 +342,13 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
     state_publisher_->msg_.desired.positions.resize(n_joints);
     state_publisher_->msg_.desired.velocities.resize(n_joints);
     state_publisher_->msg_.desired.accelerations.resize(n_joints);
+    state_publisher_->msg_.desired.effort.resize(n_joints);
     state_publisher_->msg_.actual.positions.resize(n_joints);
     state_publisher_->msg_.actual.velocities.resize(n_joints);
+    state_publisher_->msg_.actual.effort.resize(n_joints);
     state_publisher_->msg_.error.positions.resize(n_joints);
     state_publisher_->msg_.error.velocities.resize(n_joints);
+    state_publisher_->msg_.error.effort.resize(n_joints);
     state_publisher_->unlock();
   }
 
@@ -378,10 +383,12 @@ update(const ros::Time& time, const ros::Duration& period)
   for (unsigned int i = 0; i < joints_.size(); ++i)
   {
     current_state_.position[i] = joints_[i].getPosition();
+    current_state_.effort[i] = joints_[i].getEffort();
     current_state_.velocity[i] = joints_[i].getVelocity();
     // There's no acceleration data available in a joint handle
 
     typename TrajectoryPerJoint::const_iterator segment_it = sample(curr_traj[i], time_data.uptime.toSec(), desired_joint_state_);
+
     if (curr_traj[i].end() == segment_it)
     {
       // Non-realtime safe, but should never happen under normal operation
@@ -392,13 +399,16 @@ update(const ros::Time& time, const ros::Duration& period)
     desired_state_.position[i] = desired_joint_state_.position[0];
     desired_state_.velocity[i] = desired_joint_state_.velocity[0];
     desired_state_.acceleration[i] = desired_joint_state_.acceleration[0]; ;
+    desired_state_.effort[i] = desired_joint_state_.effort[0]; ;
 
     state_joint_error_.position[0] = angles::shortest_angular_distance(current_state_.position[i],desired_joint_state_.position[0]);
     state_joint_error_.velocity[0] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
+    state_joint_error_.effort[0] = desired_joint_state_.effort[0] - current_state_.effort[i];
     state_joint_error_.acceleration[0] = 0.0;
 
     state_error_.position[i] = angles::shortest_angular_distance(current_state_.position[i],desired_joint_state_.position[0]);
     state_error_.velocity[i] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
+    state_error_.effort[i] = desired_joint_state_.effort[0] - current_state_.effort[i];
     state_error_.acceleration[i] = 0.0;
 
     //Check tolerances
@@ -481,11 +491,14 @@ update(const ros::Time& time, const ros::Duration& period)
   {
     rt_active_goal_->preallocated_feedback_->header.stamp          = time_data_.readFromRT()->time;
     rt_active_goal_->preallocated_feedback_->desired.positions     = desired_state_.position;
+    rt_active_goal_->preallocated_feedback_->desired.effort     = desired_state_.effort;
     rt_active_goal_->preallocated_feedback_->desired.velocities    = desired_state_.velocity;
     rt_active_goal_->preallocated_feedback_->desired.accelerations = desired_state_.acceleration;
     rt_active_goal_->preallocated_feedback_->actual.positions      = current_state_.position;
+    rt_active_goal_->preallocated_feedback_->actual.effort      = current_state_.effort;
     rt_active_goal_->preallocated_feedback_->actual.velocities     = current_state_.velocity;
     rt_active_goal_->preallocated_feedback_->error.positions       = state_error_.position;
+    rt_active_goal_->preallocated_feedback_->error.effort       = state_error_.effort;
     rt_active_goal_->preallocated_feedback_->error.velocities      = state_error_.velocity;
     rt_active_goal_->setFeedback( rt_active_goal_->preallocated_feedback_ );
   }
@@ -701,6 +714,7 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
     }
 
     response_point.position[i]     = state.position[0];
+    response_point.effort[i]     = state.effort[0];
     response_point.velocity[i]     = state.velocity[0];
     response_point.acceleration[i] = state.acceleration[0];
   }
@@ -727,11 +741,14 @@ publishState(const ros::Time& time)
 
       state_publisher_->msg_.header.stamp          = time_data_.readFromRT()->time;
       state_publisher_->msg_.desired.positions     = desired_state_.position;
+      state_publisher_->msg_.desired.effort     = desired_state_.effort;
       state_publisher_->msg_.desired.velocities    = desired_state_.velocity;
       state_publisher_->msg_.desired.accelerations = desired_state_.acceleration;
       state_publisher_->msg_.actual.positions      = current_state_.position;
+      state_publisher_->msg_.actual.effort      = current_state_.effort;
       state_publisher_->msg_.actual.velocities     = current_state_.velocity;
       state_publisher_->msg_.error.positions       = state_error_.position;
+      state_publisher_->msg_.error.effort       = state_error_.effort;
       state_publisher_->msg_.error.velocities      = state_error_.velocity;
 
       state_publisher_->unlockAndPublish();
@@ -756,6 +773,7 @@ setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
     for (unsigned int i = 0; i < n_joints; ++i)
     {
       hold_start_state_.position[0]     =  joints_[i].getPosition();
+      hold_start_state_.effort[0]     =  joints_[i].getEffort();
       hold_start_state_.velocity[0]     =  0.0;
       hold_start_state_.acceleration[0] =  0.0;
       (*hold_trajectory_ptr_)[i].front().init(start_time,  hold_start_state_,
@@ -781,10 +799,12 @@ setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
       // If there is a time delay in the system it is better to calculate the hold trajectory starting from the
       // desired position. Otherwise there would be a jerk in the motion.
       hold_start_state_.position[0]     =  desired_state_.position[i];
+      hold_start_state_.effort[0]     =  desired_state_.effort[i];
       hold_start_state_.velocity[0]     =  desired_state_.velocity[i];
       hold_start_state_.acceleration[0] =  0.0;
 
       hold_end_state_.position[0]       =  desired_state_.position[i];
+      hold_end_state_.effort[0]       =  desired_state_.effort[i];
       hold_end_state_.velocity[0]       = -desired_state_.velocity[i];
       hold_end_state_.acceleration[0]   =  0.0;
 

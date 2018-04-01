@@ -85,6 +85,9 @@ inline bool isValid(const trajectory_msgs::JointTrajectoryPoint& point, const un
   if (!point.positions.empty()     && point.positions.size()     != joint_dim) {return false;}
   if (!point.velocities.empty()    && point.velocities.size()    != joint_dim) {return false;}
   if (!point.accelerations.empty() && point.accelerations.size() != joint_dim) {return false;}
+
+  if (!point.positions.empty() && !point.effort.empty() && point.effort.size() != joint_dim) {return false;}
+
   return true;
 }
 

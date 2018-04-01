@@ -29,8 +29,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef TRAJECTORY_INTERFACE_POS_VEL_ACC_STATE_H
-#define TRAJECTORY_INTERFACE_POS_VEL_ACC_STATE_H
+#ifndef TRAJECTORY_INTERFACE_POS_VEL_ACC_EFF_STATE_H
+#define TRAJECTORY_INTERFACE_POS_VEL_ACC_EFF_STATE_H
 
 #include <vector>
 
@@ -41,11 +41,11 @@ namespace trajectory_interface
  * \brief Multi-dof trajectory state containing position, velocity and acceleration data.
  */
 template <class ScalarType>
-struct PosVelAccState
+struct PosVelAccEffState
 {
   typedef ScalarType Scalar;
 
-  PosVelAccState() {}
+  PosVelAccEffState() {}
 
    /**
     * \brief Resource-preallocating constructor.
@@ -61,15 +61,17 @@ struct PosVelAccState
     * zero_pos.position.resize(2);
     * \endcode
     */
-  PosVelAccState(const typename std::vector<Scalar>::size_type size)
+  PosVelAccEffState(const typename std::vector<Scalar>::size_type size)
     : position(    std::vector<Scalar>(size, static_cast<Scalar>(0))),
       velocity(    std::vector<Scalar>(size, static_cast<Scalar>(0))),
-      acceleration(std::vector<Scalar>(size, static_cast<Scalar>(0)))
+      acceleration(std::vector<Scalar>(size, static_cast<Scalar>(0))),
+      effort(std::vector<Scalar>(size, static_cast<Scalar>(0)))
   {}
 
   std::vector<Scalar> position;
   std::vector<Scalar> velocity;
   std::vector<Scalar> acceleration;
+  std::vector<Scalar> effort;
 };
 
 } // namespace

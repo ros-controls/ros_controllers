@@ -118,6 +118,7 @@ public:
       if (!point.positions.empty())     {this->position.resize(joint_dim);}
       if (!point.velocities.empty())    {this->velocity.resize(joint_dim);}
       if (!point.accelerations.empty()) {this->acceleration.resize(joint_dim);}
+      if (!point.effort.empty()) {this->effort.resize(joint_dim);}
 
       for (unsigned int i = 0; i < joint_dim; ++i)
       {
@@ -125,6 +126,7 @@ public:
         const Scalar offset = position_offset.empty() ? 0.0 : position_offset[i];
 
         if (!point.positions.empty())     {this->position[i]     = point.positions[i] + offset;}
+        if (!point.effort.empty())        {this->effort[i]     = point.effort[i];}
         if (!point.velocities.empty())    {this->velocity[i]     = point.velocities[i];}
         if (!point.accelerations.empty()) {this->acceleration[i] = point.accelerations[i];}
       }

@@ -477,17 +477,17 @@ update(const ros::Time& time, const ros::Duration& period)
                                   desired_state_, state_error_);
 
   // Set action feedback
-  if (rt_active_goal_)
+  if (current_active_goal)
   {
-    rt_active_goal_->preallocated_feedback_->header.stamp          = time_data_.readFromRT()->time;
-    rt_active_goal_->preallocated_feedback_->desired.positions     = desired_state_.position;
-    rt_active_goal_->preallocated_feedback_->desired.velocities    = desired_state_.velocity;
-    rt_active_goal_->preallocated_feedback_->desired.accelerations = desired_state_.acceleration;
-    rt_active_goal_->preallocated_feedback_->actual.positions      = current_state_.position;
-    rt_active_goal_->preallocated_feedback_->actual.velocities     = current_state_.velocity;
-    rt_active_goal_->preallocated_feedback_->error.positions       = state_error_.position;
-    rt_active_goal_->preallocated_feedback_->error.velocities      = state_error_.velocity;
-    rt_active_goal_->setFeedback( rt_active_goal_->preallocated_feedback_ );
+    current_active_goal->preallocated_feedback_->header.stamp          = time_data_.readFromRT()->time;
+    current_active_goal->preallocated_feedback_->desired.positions     = desired_state_.position;
+    current_active_goal->preallocated_feedback_->desired.velocities    = desired_state_.velocity;
+    current_active_goal->preallocated_feedback_->desired.accelerations = desired_state_.acceleration;
+    current_active_goal->preallocated_feedback_->actual.positions      = current_state_.position;
+    current_active_goal->preallocated_feedback_->actual.velocities     = current_state_.velocity;
+    current_active_goal->preallocated_feedback_->error.positions       = state_error_.position;
+    current_active_goal->preallocated_feedback_->error.velocities      = state_error_.velocity;
+    current_active_goal->setFeedback( current_active_goal->preallocated_feedback_ );
   }
 
   // Publish state

@@ -468,6 +468,7 @@ update(const ros::Time& time, const ros::Duration& period)
   {
     current_active_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
     current_active_goal->setSucceeded(current_active_goal->preallocated_result_);
+    current_active_goal.reset(); // do not publish feedback  
     rt_active_goal_.reset();
     successful_joint_traj_.reset();
   }

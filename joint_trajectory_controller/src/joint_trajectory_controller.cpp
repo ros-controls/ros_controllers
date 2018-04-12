@@ -27,7 +27,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 // Pluginlib
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 
 // Project
 #include <trajectory_interface/quintic_spline_segment.h>

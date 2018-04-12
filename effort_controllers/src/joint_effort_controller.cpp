@@ -35,7 +35,7 @@
  *********************************************************************/
 
 #include <effort_controllers/joint_effort_controller.h>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 
 template <class T>
 void forward_command_controller::ForwardCommandController<T>::starting(const ros::Time& time)

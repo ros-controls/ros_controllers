@@ -28,7 +28,7 @@
 /// \author Sachin Chitta
 
 // Pluginlib
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 
 // Project
 #include <gripper_action_controller/gripper_action_controller.h>

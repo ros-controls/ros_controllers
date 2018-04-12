@@ -38,7 +38,7 @@
 
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <dynamic_reconfigure/server.h>
 
 #include <geometry_msgs/TwistStamped.h>

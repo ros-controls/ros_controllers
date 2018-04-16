@@ -3,11 +3,14 @@ project(diff_drive_controller)
 
 find_package(catkin REQUIRED COMPONENTS
     controller_interface
+    dynamic_reconfigure
     nav_msgs
     realtime_tools
     tf
     urdf
 )
+
+generate_dynamic_reconfigure_options(cfg/DiffDriveController.cfg)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -24,6 +27,7 @@ include_directories(SYSTEM
 
 add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
@@ -103,4 +107,8 @@ if (CATKIN_ENABLE_TESTING)
   add_rostest(test/diff_drive_radius_param_fail.test)
   add_rostest(test/diff_drive_separation_param.test)
   add_rostest(test/diff_drive_bad_urdf.test)
+  add_rostest_gtest(diff_drive_dyn_reconf_test
+    test/diff_drive_dyn_reconf.test
+    test/diff_drive_dyn_reconf_test.cpp)
+  target_link_libraries(diff_drive_dyn_reconf_test ${catkin_LIBRARIES})
 endif()

@@ -322,11 +322,45 @@ namespace diff_drive_controller{
 
     sub_command_ = controller_nh.subscribe("cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
 
+    // Initialize dynamic parameters
+    DynamicParams dynamic_params;
+    dynamic_params.left_wheel_radius_multiplier  = left_wheel_radius_multiplier_;
+    dynamic_params.right_wheel_radius_multiplier = right_wheel_radius_multiplier_;
+    dynamic_params.wheel_separation_multiplier   = wheel_separation_multiplier_;
+
+    dynamic_params.publish_rate = publish_rate;
+    dynamic_params.enable_odom_tf = enable_odom_tf_;
+
+    dynamic_params_.writeFromNonRT(dynamic_params);
+
+    // Initialize dynamic_reconfigure server
+    DiffDriveControllerConfig config;
+    config.left_wheel_radius_multiplier  = left_wheel_radius_multiplier_;
+    config.right_wheel_radius_multiplier = right_wheel_radius_multiplier_;
+    config.wheel_separation_multiplier   = wheel_separation_multiplier_;
+
+    config.publish_rate = publish_rate;
+    config.enable_odom_tf = enable_odom_tf_;
+
+    dyn_reconf_server_ = boost::make_shared<ReconfigureServer>(controller_nh);
+    dyn_reconf_server_->updateConfig(config);
+    dyn_reconf_server_->setCallback(boost::bind(&DiffDriveController::reconfCallback, this, _1, _2));
+
     return true;
   }
 
   void DiffDriveController::update(const ros::Time& time, const ros::Duration& period)
   {
+    // update parameter from dynamic reconf
+    updateDynamicParams();
+
+    // Apply (possibly new) multipliers:
+    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
+    const double lwr = left_wheel_radius_multiplier_  * wheel_radius_;
+    const double rwr = right_wheel_radius_multiplier_ * wheel_radius_;
+
+    odometry_.setWheelParams(ws, lwr, rwr);
+
     // COMPUTE AND PUBLISH ODOMETRY
     if (open_loop_)
     {
@@ -414,11 +448,6 @@ namespace diff_drive_controller{
       cmd_vel_pub_->msg_.twist.angular.z = curr_cmd.ang;
       cmd_vel_pub_->unlockAndPublish();
     }
-
-    // Apply multipliers:
-    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
-    const double lwr = left_wheel_radius_multiplier_  * wheel_radius_;
-    const double rwr = right_wheel_radius_multiplier_ * wheel_radius_;
 
     // Compute wheels velocities:
     const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/lwr;
@@ -653,6 +682,35 @@ namespace diff_drive_controller{
     tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;
     tf_odom_pub_->msg_.transforms[0].child_frame_id = base_frame_id_;
     tf_odom_pub_->msg_.transforms[0].header.frame_id = odom_frame_id_;
+  }
+
+  void DiffDriveController::reconfCallback(DiffDriveControllerConfig& config, uint32_t /*level*/)
+  {
+    DynamicParams dynamic_params;
+    dynamic_params.left_wheel_radius_multiplier  = config.left_wheel_radius_multiplier;
+    dynamic_params.right_wheel_radius_multiplier = config.right_wheel_radius_multiplier;
+    dynamic_params.wheel_separation_multiplier   = config.wheel_separation_multiplier;
+
+    dynamic_params.publish_rate = config.publish_rate;
+
+    dynamic_params.enable_odom_tf = config.enable_odom_tf;
+
+    dynamic_params_.writeFromNonRT(dynamic_params);
+
+    ROS_INFO_STREAM_NAMED(name_, "Dynamic Reconfigure:\n" << dynamic_params);
+  }
+
+  void DiffDriveController::updateDynamicParams()
+  {
+    // Retreive dynamic params:
+    const DynamicParams dynamic_params = *(dynamic_params_.readFromRT());
+
+    left_wheel_radius_multiplier_  = dynamic_params.left_wheel_radius_multiplier;
+    right_wheel_radius_multiplier_ = dynamic_params.right_wheel_radius_multiplier;
+    wheel_separation_multiplier_   = dynamic_params.wheel_separation_multiplier;
+
+    publish_period_ = ros::Duration(1.0 / dynamic_params.publish_rate);
+    enable_odom_tf_ = dynamic_params.enable_odom_tf;
   }
 
 } // namespace diff_drive_controller

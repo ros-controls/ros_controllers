@@ -146,7 +146,7 @@ public:
   void update(const ros::Time& time, const ros::Duration& period);
   /*\}*/
 
-private:
+protected:
 
   struct TimeData
   {
@@ -222,13 +222,13 @@ private:
   ros::Timer         goal_handle_timer_;
   ros::Time          last_state_publish_time_;
 
-  bool updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh);
-  void trajectoryCommandCB(const JointTrajectoryConstPtr& msg);
-  void goalCB(GoalHandle gh);
-  void cancelCB(GoalHandle gh);
-  void preemptActiveGoal();
-  bool queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
-                         control_msgs::QueryTrajectoryState::Response& resp);
+  virtual bool updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh);
+  virtual void trajectoryCommandCB(const JointTrajectoryConstPtr& msg);
+  virtual void goalCB(GoalHandle gh);
+  virtual void cancelCB(GoalHandle gh);
+  virtual void preemptActiveGoal();
+  virtual bool queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
+                                 control_msgs::QueryTrajectoryState::Response& resp);
 
   /**
    * \brief Publish current controller state at a throttled frequency.

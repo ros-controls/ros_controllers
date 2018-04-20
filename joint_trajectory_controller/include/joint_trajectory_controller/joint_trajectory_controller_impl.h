@@ -174,6 +174,7 @@ template <class SegmentImpl, class HardwareInterface>
 inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 preemptActiveGoal()
 {
+  boost::mutex::scoped_lock lock(rt_active_goal_mutex_);
   RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
 
   // Cancels the currently active goal
@@ -354,6 +355,7 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 update(const ros::Time& time, const ros::Duration& period)
 {
+  boost::mutex::scoped_lock lock(rt_active_goal_mutex_);
   // Get currently followed trajectory
   TrajectoryPtr curr_traj_ptr;
   curr_trajectory_box_.get(curr_traj_ptr);
@@ -625,7 +627,10 @@ goalCB(GoalHandle gh)
     // Accept new goal
     preemptActiveGoal();
     gh.setAccepted();
-    rt_active_goal_ = rt_goal;
+    {
+      boost::mutex::scoped_lock lock(rt_active_goal_mutex_);
+      rt_active_goal_ = rt_goal;
+    }
 
     // Setup goal status checking timer
     goal_handle_timer_ = controller_nh_.createTimer(action_monitor_period_,
@@ -646,6 +651,7 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 cancelCB(GoalHandle gh)
 {
+  boost::mutex::scoped_lock lock(rt_active_goal_mutex_);
   RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
 
   // Check that cancel request refers to currently active goal (if any)

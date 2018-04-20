@@ -37,7 +37,8 @@
 #include <boost/array.hpp>
 #include <boost/foreach.hpp>
 
-#include <trajectory_interface/pos_vel_acc_state.h>
+#include <trajectory_interface/pos_vel_acc_eff_state.h>
+#include <ros/ros.h>
 
 namespace trajectory_interface
 {
@@ -53,7 +54,7 @@ class QuinticSplineSegment
 public:
   typedef ScalarType             Scalar;
   typedef Scalar                 Time;
-  typedef PosVelAccState<Scalar> State;
+  typedef PosVelAccEffState<Scalar> State;
 
   /**
    * \brief Creates an empty segment.
@@ -63,6 +64,7 @@ public:
    */
   QuinticSplineSegment()
     : coefs_(),
+      coefsEff_(),
       duration_(static_cast<Scalar>(0)),
       start_time_(static_cast<Scalar>(0))
   {}
@@ -121,6 +123,7 @@ public:
     state.position.resize(coefs_.size());
     state.velocity.resize(coefs_.size());
     state.acceleration.resize(coefs_.size());
+    state.effort.resize(coefsEff_.size());
 
     // Sample each dimension
     typedef typename std::vector<SplineCoefficients>::const_iterator ConstIterator;
@@ -130,6 +133,14 @@ public:
       sampleWithTimeBounds(*coefs_it,
                            duration_, (time - start_time_),
                            state.position[id], state.velocity[id], state.acceleration[id]);
+    }
+
+    typedef typename std::vector<SplineCoefficients>::const_iterator ConstIterator;
+    for(ConstIterator coefsEff_it = coefsEff_.begin(); coefsEff_it != coefsEff_.end(); ++coefsEff_it)
+    {
+      Scalar _;
+      const typename std::vector<Scalar>::size_type id = std::distance(coefsEff_.begin(), coefsEff_it);
+      sampleWithTimeBounds(*coefsEff_it, duration_, (time - start_time_), state.effort[id],_,_);
     }
   }
 
@@ -150,6 +161,7 @@ private:
    * <tt> coefs_[0] + coefs_[1]*x + coefs_[2]*x^2 + coefs_[3]*x^3 + coefs_[4]*x^4 + coefs_[5]*x^5 </tt>
    */
   std::vector<SplineCoefficients> coefs_;
+  std::vector<SplineCoefficients> coefsEff_;
   Time duration_;
   Time start_time_;
 
@@ -177,6 +189,7 @@ private:
 
   static void sampleWithTimeBounds(const SplineCoefficients& coefficients, const Scalar& duration, const Scalar& time,
                                   Scalar& position, Scalar& velocity, Scalar& acceleration);
+
 };
 
 template<class ScalarType>
@@ -185,88 +198,111 @@ void QuinticSplineSegment<ScalarType>::init(const Time&  start_time,
                                             const Time&  end_time,
                                             const State& end_state)
 {
-  // Preconditions
-  if (end_time < start_time)
-  {
-    throw(std::invalid_argument("Quintic spline segment can't be constructed: end_time < start_time."));
-  }
-  if (start_state.position.empty() || end_state.position.empty())
-  {
-    throw(std::invalid_argument("Quintic spline segment can't be constructed: Endpoint positions can't be empty."));
-  }
-  if (start_state.position.size() != end_state.position.size())
-  {
-    throw(std::invalid_argument("Quintic spline segment can't be constructed: Endpoint positions size mismatch."));
-  }
-
-  const unsigned int dim = start_state.position.size();
-  const bool has_velocity     = !start_state.velocity.empty()     && !end_state.velocity.empty();
-  const bool has_acceleration = !start_state.acceleration.empty() && !end_state.acceleration.empty();
-
-  if (has_velocity && dim != start_state.velocity.size())
-  {
-    throw(std::invalid_argument("Quintic spline segment can't be constructed: Start state velocity size mismatch."));
-  }
-  if (has_velocity && dim != end_state.velocity.size())
-  {
-    throw(std::invalid_argument("Quintic spline segment can't be constructed: End state velocity size mismatch."));
-  }
-  if (has_acceleration && dim!= start_state.acceleration.size())
-  {
-    throw(std::invalid_argument("Quintic spline segment can't be constructed: Start state acceleration size mismatch."));
-  }
-  if (has_acceleration && dim != end_state.acceleration.size())
-  {
-    throw(std::invalid_argument("Quintic spline segment can't be constructed: End state acceleratios size mismatch."));
-  }
-
-  // Time data
-  start_time_ = start_time;
-  duration_   = end_time - start_time;
-
-  // Spline coefficients
-  coefs_.resize(dim);
-
-  typedef typename std::vector<SplineCoefficients>::iterator Iterator;
-  if (!has_velocity)
-  {
-    // Linear interpolation
-    for(Iterator coefs_it = coefs_.begin(); coefs_it != coefs_.end(); ++coefs_it)
+    // Preconditions
+    if (end_time < start_time)
     {
-      const typename std::vector<Scalar>::size_type id = std::distance(coefs_.begin(), coefs_it);
-
-      computeCoefficients(start_state.position[id],
-                          end_state.position[id],
-                          duration_,
-                          *coefs_it);
+        throw(std::invalid_argument("Quintic spline segment can't be constructed: end_time < start_time."));
     }
-  }
-  else if (!has_acceleration)
-  {
-    // Cubic interpolation
-    for(Iterator coefs_it = coefs_.begin(); coefs_it != coefs_.end(); ++coefs_it)
+    if (start_state.position.empty() || end_state.position.empty())
     {
-      const typename std::vector<Scalar>::size_type id = std::distance(coefs_.begin(), coefs_it);
-
-      computeCoefficients(start_state.position[id], start_state.velocity[id],
-                          end_state.position[id],   end_state.velocity[id],
-                          duration_,
-                          *coefs_it);
+        throw(std::invalid_argument("Quintic spline segment can't be constructed: Endpoint positions can't be empty."));
     }
-  }
-  else
-  {
-    // Quintic interpolation
-    for(Iterator coefs_it = coefs_.begin(); coefs_it != coefs_.end(); ++coefs_it)
+    if (start_state.position.size() != end_state.position.size())
     {
-      const typename std::vector<Scalar>::size_type id = std::distance(coefs_.begin(), coefs_it);
-
-      computeCoefficients(start_state.position[id], start_state.velocity[id], start_state.acceleration[id],
-                          end_state.position[id],   end_state.velocity[id],   end_state.acceleration[id],
-                          duration_,
-                          *coefs_it);
+        throw(std::invalid_argument("Quintic spline segment can't be constructed: Endpoint positions size mismatch."));
     }
-  }
+
+    const unsigned int dim = start_state.position.size();
+    const bool has_position = !start_state.position.empty() && !end_state.position.empty();
+    const bool has_velocity     = !start_state.velocity.empty()     && !end_state.velocity.empty();
+    const bool has_acceleration = !start_state.acceleration.empty() && !end_state.acceleration.empty();
+    const bool has_effort = !start_state.effort.empty() && !end_state.effort.empty();
+
+    if (has_velocity && dim != start_state.velocity.size())
+    {
+        throw(std::invalid_argument("Quintic spline segment can't be constructed: Start state velocity size mismatch."));
+    }
+    if (has_velocity && dim != end_state.velocity.size())
+    {
+        throw(std::invalid_argument("Quintic spline segment can't be constructed: End state velocity size mismatch."));
+    }
+    if (has_acceleration && dim!= start_state.acceleration.size())
+    {
+        throw(std::invalid_argument("Quintic spline segment can't be constructed: Start state acceleration size mismatch."));
+    }
+    if (has_acceleration && dim != end_state.acceleration.size())
+    {
+        throw(std::invalid_argument("Quintic spline segment can't be constructed: End state acceleratios size mismatch."));
+    }
+
+    // Time data
+    start_time_ = start_time;
+    duration_   = end_time - start_time;
+
+    // Spline coefficients
+    coefs_.resize(dim);
+
+
+    typedef typename std::vector<SplineCoefficients>::iterator Iterator;
+
+    if (has_effort)
+    {
+        unsigned int effort_dim = end_state.effort.size();
+
+        if (has_position)
+        {
+            if (dim != end_state.effort.size())
+            {
+                throw(std::invalid_argument("Quintic spline segment can't be constructed: End state efforts size mismatch."));
+            }
+
+            effort_dim = dim;
+        }
+
+        coefsEff_.resize(effort_dim);
+
+        for(Iterator coefsEff_it = coefsEff_.begin(); coefsEff_it != coefsEff_.end(); ++coefsEff_it)
+        {
+            const typename std::vector<Scalar>::size_type id = std::distance(coefsEff_.begin(), coefsEff_it);
+            computeCoefficients(start_state.effort[id], end_state.effort[id], duration_, *coefsEff_it);
+        }
+    }
+
+    if (!has_velocity)
+    {
+        // Linear interpolation
+        for(Iterator coefs_it = coefs_.begin(); coefs_it != coefs_.end(); ++coefs_it)
+        {
+            const typename std::vector<Scalar>::size_type id = std::distance(coefs_.begin(), coefs_it);
+            computeCoefficients(start_state.position[id], end_state.position[id], duration_, *coefs_it);
+        }
+    }
+    else if (!has_acceleration)
+    {
+        // Cubic interpolation
+        for(Iterator coefs_it = coefs_.begin(); coefs_it != coefs_.end(); ++coefs_it)
+        {
+            const typename std::vector<Scalar>::size_type id = std::distance(coefs_.begin(), coefs_it);
+
+            computeCoefficients(start_state.position[id], start_state.velocity[id],
+                    end_state.position[id],   end_state.velocity[id],
+                    duration_,
+                    *coefs_it);
+        }
+    }
+    else
+    {
+        // Quintic interpolation
+        for(Iterator coefs_it = coefs_.begin(); coefs_it != coefs_.end(); ++coefs_it)
+        {
+            const typename std::vector<Scalar>::size_type id = std::distance(coefs_.begin(), coefs_it);
+
+            computeCoefficients(start_state.position[id], start_state.velocity[id], start_state.acceleration[id],
+                    end_state.position[id],   end_state.velocity[id],   end_state.acceleration[id],
+                    duration_,
+                    *coefs_it);
+        }
+    }
 }
 
 template<class ScalarType>
@@ -404,8 +440,7 @@ sampleWithTimeBounds(const SplineCoefficients& coefficients, const Scalar& durat
   }
   else
   {
-    sample(coefficients, time,
-           position, velocity, acceleration);
+    sample(coefficients, time, position, velocity, acceleration);
   }
 }
 

@@ -9,7 +9,7 @@
   <maintainer email="enrique.fernandez.perdomo@gmail.com">Enrique Fernandez</maintainer>
 
   <author email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</author>
-  <license>Modified BSD</license>
+  <license>BSD</license>
   <url type="website">http://wiki.ros.org/rqt_joint_trajectory_controller</url>
 
   <buildtool_depend>catkin</buildtool_depend>

@@ -32,6 +32,7 @@
 
   <test_depend>rostest</test_depend>
   <test_depend>controller_manager</test_depend>
+  <test_depend>rosgraph_msgs</test_depend>
   <test_depend>xacro</test_depend>
 
   <export>

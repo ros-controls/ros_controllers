@@ -55,6 +55,7 @@ if(CATKIN_ENABLE_TESTING)
     REQUIRED COMPONENTS
       actionlib
       controller_manager
+      rosgraph_msgs
       xacro
   )
 

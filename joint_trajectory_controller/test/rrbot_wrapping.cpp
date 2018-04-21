@@ -29,6 +29,7 @@
 
 // ROS
 #include <ros/ros.h>
+#include <rosgraph_msgs/Clock.h>
 #include <std_msgs/Float64.h>
 
 // angles
@@ -117,15 +118,44 @@ int main(int argc, char **argv)
   RRbotWrapping robot;
   controller_manager::ControllerManager cm(&robot, nh);
 
-  ros::Rate rate(1.0 / robot.getPeriod().toSec());
+  ros::Publisher clock_publisher = nh.advertise<rosgraph_msgs::Clock>("/clock", 1);
+
   ros::AsyncSpinner spinner(1);
   spinner.start();
+
+  boost::chrono::system_clock::time_point begin = boost::chrono::system_clock::now();
+  boost::chrono::system_clock::time_point end   = boost::chrono::system_clock::now();
+
+  ros::Time internal_time(10000);
+  const ros::Duration dt = robot.getPeriod();
+  double elapsed_secs = 0;
+
   while (ros::ok())
   {
+    begin = boost::chrono::system_clock::now();
+
     robot.read();
     cm.update(robot.getTime(), robot.getPeriod());
     robot.write();
-    rate.sleep();
+
+    end = boost::chrono::system_clock::now();
+
+    elapsed_secs = boost::chrono::duration_cast<boost::chrono::duration<double> >((end - begin)).count();
+    if (dt.toSec() - elapsed_secs < 0.0)
+    {
+      ROS_WARN_STREAM_THROTTLE(
+            0.1, "Control cycle is taking to much time, elapsed: " << elapsed_secs);
+    }
+    else
+    {
+      ROS_DEBUG_STREAM_THROTTLE(1.0, "Control cycle is, elapsed: " << elapsed_secs);
+      usleep((dt.toSec() - elapsed_secs) * 1e6);
+    }
+
+    rosgraph_msgs::Clock clock;
+    clock.clock = ros::Time(internal_time);
+    clock_publisher.publish(clock);
+    internal_time += dt;
   }
   spinner.stop();
 

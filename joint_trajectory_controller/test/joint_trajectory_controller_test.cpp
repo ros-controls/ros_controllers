@@ -1195,7 +1195,7 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, long_timeout));
 
   // Wait until done
   EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ABORTED, long_timeout));

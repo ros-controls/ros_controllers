@@ -1073,6 +1073,8 @@ TEST_F(JointTrajectoryControllerTest, ignoreOldTopicTraj)
   wait_duration = traj.points.back().time_from_start - traj.points.front().time_from_start + ros::Duration(0.5);
   wait_duration.sleep(); // Wait until first trajectory is done
 
+  // make sure that stateCB received the newer topics than when we confirmed with waitForState function
+  waitForNextState(short_timeout);
   // Check that we're at the original trajectory end (NOT back home)
   StateConstPtr state = getState();
   for (unsigned int i = 0; i < n_joints; ++i)

@@ -288,6 +288,7 @@ protected:
     start_controller.request.strictness = start_controller.request.STRICT;
     if(!switch_controller_service.call(start_controller)) return false;
     if(!start_controller.response.ok) return false;
+    return true;
   }
 };
 

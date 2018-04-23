@@ -201,6 +201,17 @@ protected:
     return controller_state;
   }
 
+  bool waitForNextState(const ros::Duration& timeout)
+  {
+    ros::Time start_time = ros::Time::now();
+    ros::Time state_time = getState()->header.stamp;
+    while ( getState()->header.stamp <= state_time && ros::ok() )
+    {
+      if (timeout >= ros::Duration(0.0) && (ros::Time::now() - start_time) > timeout) {return false;} // Timed-out
+      ros::Duration(0.001).sleep();
+    }
+  }
+
   bool initState(const ros::Duration& timeout = ros::Duration(5.0))
   {
     bool init_ok = false;
@@ -958,6 +969,8 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
   action_client->sendGoal(empty_goal);
   ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
   ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, short_timeout));
+  // make sure that stateCB received the newer topics than when we confirmed with waitForState function
+  waitForNextState(short_timeout);
 
   // Check that we're not on the start state
   StateConstPtr state1 = getState();

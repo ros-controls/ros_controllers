@@ -810,6 +810,8 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTraj)
   trajectory_msgs::JointTrajectory traj_empty;
   traj_pub.publish(traj_empty);
   ASSERT_TRUE(waitForState(action_client,  SimpleClientGoalState::PREEMPTED, short_timeout));
+  // make sure that stateCB received the newer topics than when we confirmed with waitForState function
+  waitForNextState(short_timeout);
 
   // Check that we're not on the start state
   StateConstPtr state1 = getState();

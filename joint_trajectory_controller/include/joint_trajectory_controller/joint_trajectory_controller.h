@@ -146,6 +146,22 @@ public:
   void update(const ros::Time& time, const ros::Duration& period);
   /*\}*/
 
+  /** \brief Operation modes of the controller.
+   *  The controller can either operate in the DEFAULT mode, accepting goals etc.
+   *  or it can be switch into a HOLDING mode where it is either moving to or staying
+   *  in a hold position. This can be used to bring the robot to a controlled stop while
+   *  avoiding mechanical stress before unloading the controller. While beeing in HOLDING mode
+   *  no further trajectories are executed.
+   */
+  enum JointTrajectoryControllerMode {DEFAULT, HOLDING} mode_;
+
+protected:
+  /**
+   * \brief Switch between modes
+   * \note This method is currently designed for the usage of derived classes.
+   */
+  void switchMode(const JointTrajectoryControllerMode& mode);
+
 private:
 
   struct TimeData

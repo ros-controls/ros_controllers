@@ -12,7 +12,6 @@ notifications:
     on_success: change
     on_failure: change
     recipients:
-      - adolfo.rodriguez@intermodalics.eu
       - enrique.fernandez.perdomo@gmail.com
       - bence.magyar.robotics@gmail.com    
       - gm130s@gmail.com
@@ -21,9 +20,9 @@ env:
     - CATKIN_PARALLEL_TEST_JOBS=-p1
     - ROS_PARALLEL_TEST_JOBS=-j1
   matrix:
-    - ROS_DISTRO="kinetic"  ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu
-    - ROS_DISTRO="kinetic"  ROS_REPOSITORY_PATH=http://packages.ros.org/ros-shadow-fixed/ubuntu
-    - ROS_DISTRO="kinetic"  UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall
+    - ROS_DISTRO="melodic"  ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu
+    - ROS_DISTRO="melodic"  ROS_REPOSITORY_PATH=http://packages.ros.org/ros-shadow-fixed/ubuntu
+    - ROS_DISTRO="melodic"  UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall
 install:
   - git clone https://github.com/ros-industrial/industrial_ci.git .ci_config
 script:

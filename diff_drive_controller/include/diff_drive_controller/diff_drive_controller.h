@@ -69,6 +69,7 @@ namespace diff_drive_controller{
   public:
     DiffDriveController();
 
+    using controller_interface::Controller<hardware_interface::VelocityJointInterface>::init;
     /**
      * \brief Initialize controller
      * \param hw            Velocity joint interface for the wheels

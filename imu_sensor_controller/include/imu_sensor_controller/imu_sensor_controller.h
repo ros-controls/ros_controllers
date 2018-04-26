@@ -47,6 +47,7 @@ class ImuSensorController: public controller_interface::Controller<hardware_inte
 public:
   ImuSensorController(){}
 
+  using controller_interface::Controller<hardware_interface::ImuSensorInterface>::init;
   virtual bool init(hardware_interface::ImuSensorInterface* hw, ros::NodeHandle &root_nh, ros::NodeHandle& controller_nh);
   virtual void starting(const ros::Time& time);
   virtual void update(const ros::Time& time, const ros::Duration& /*period*/);

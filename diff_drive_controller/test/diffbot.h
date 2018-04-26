@@ -80,6 +80,7 @@ public:
   ros::Time getTime() const {return ros::Time::now();}
   ros::Duration getPeriod() const {return ros::Duration(0.01);}
 
+  using hardware_interface::RobotHW::read;
   void read()
   {
     std::ostringstream os;
@@ -92,6 +93,7 @@ public:
     ROS_INFO_STREAM("Commands for joints: " << os.str());
   }
 
+  using hardware_interface::RobotHW::write;
   void write()
   {
     if (running_)

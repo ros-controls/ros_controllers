@@ -78,8 +78,10 @@ public:
   ros::Time getTime() const {return ros::Time::now();}
   ros::Duration getPeriod() const {return ros::Duration(0.01);}
 
+  using hardware_interface::RobotHW::read;
   void read() {}
 
+  using hardware_interface::RobotHW::write;
   void write()
   {
     const double smoothing = *(smoothing_.readFromRT());

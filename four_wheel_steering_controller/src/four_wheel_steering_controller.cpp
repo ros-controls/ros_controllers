@@ -168,10 +168,12 @@ namespace four_wheel_steering_controller{
 
     urdf_geometry_parser::UrdfGeometryParser uvk(root_nh, base_frame_id_);
     if(lookup_track)
+    {
       if(!uvk.getDistanceBetweenJoints(front_wheel_names[0], front_wheel_names[1], track_))
         return false;
       else
         controller_nh.setParam("track",track_);
+    }
 
     if(!uvk.getDistanceBetweenJoints(front_steering_names[0], front_wheel_names[0], wheel_steering_y_offset_))
       return false;
@@ -179,16 +181,20 @@ namespace four_wheel_steering_controller{
       controller_nh.setParam("wheel_steering_y_offset",wheel_steering_y_offset_);
 
     if(lookup_wheel_radius)
+    {
       if(!uvk.getJointRadius(front_wheel_names[0], wheel_radius_))
         return false;
       else
         controller_nh.setParam("wheel_radius",wheel_radius_);
+    }
 
     if(lookup_wheel_base)
+    {
       if(!uvk.getDistanceBetweenJoints(front_wheel_names[0], rear_wheel_names[0], wheel_base_))
         return false;
       else
         controller_nh.setParam("wheel_base",wheel_base_);
+    }
 
     // Regardless of how we got the separation and radius, use them
     // to set the odometry parameters

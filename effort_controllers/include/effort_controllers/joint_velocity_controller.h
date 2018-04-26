@@ -79,6 +79,7 @@ public:
   JointVelocityController();
   ~JointVelocityController();
 
+  using controller_interface::Controller<hardware_interface::EffortJointInterface>::init;
   bool init(hardware_interface::EffortJointInterface *robot, const std::string &joint_name, const control_toolbox::Pid &pid);
 
   /** \brief The init function is called to initialize the controller from a

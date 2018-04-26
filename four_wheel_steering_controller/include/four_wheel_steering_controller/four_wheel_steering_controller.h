@@ -64,6 +64,8 @@ namespace four_wheel_steering_controller{
   public:
     FourWheelSteeringController();
 
+    using controller_interface::MultiInterfaceController<hardware_interface::VelocityJointInterface,
+                                                         hardware_interface::PositionJointInterface>::init;
     /**
      * \brief Initialize controller
      * \param robot_hw      Velocity and position joint interface for the wheels

@@ -87,6 +87,7 @@ public:
   
   GripperActionController();
   
+  using controller_interface::Controller<HardwareInterface>::init;
   /** \name Non Real-Time Safe Functions
    *\{*/
   bool init(HardwareInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);

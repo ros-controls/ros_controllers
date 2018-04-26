@@ -99,6 +99,7 @@ public:
   JointPositionController();
   ~JointPositionController();
 
+  using controller_interface::Controller<hardware_interface::VelocityJointInterface>::init;
   /** \brief The init function is called to initialize the controller from a
    * non-realtime thread with a pointer to the hardware interface, itself,
    * instead of a pointer to a RobotHW.

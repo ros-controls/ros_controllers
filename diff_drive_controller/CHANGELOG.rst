@@ -2,6 +2,16 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add dynamic_reconf to diff_drive_controller
+* migrate to new pluginlib headers
+* per wheel radius multiplier
+* fix xacro macro warning
+* [DiffDrive] Fix time-sensitive tests of diff_drive_controller
+* separate include_directories as SYSTEM to avoid unrelated compilation warnings
+* Contributors: Jeremie Deray, Mathias Lüdtke
+
 0.13.2 (2017-12-23)
 -------------------
 

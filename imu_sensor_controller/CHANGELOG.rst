@@ -2,6 +2,11 @@
 Changelog for package imu_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* migrate to new pluginlib headers
+* Contributors: Mathias Lüdtke
+
 0.13.2 (2017-12-23)
 -------------------
 

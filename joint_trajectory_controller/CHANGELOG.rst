@@ -2,6 +2,14 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Make the compiler happy in the test.
+* migrate to new pluginlib headers
+* TrajectoryController: Use desired state to calculate hold trajectory (`#297 <https://github.com/ros-controls/ros_controllers/issues/297>`_)
+* Add velocity feedforward term to velocity HardwareInterfaceAdapter (`#227 <https://github.com/ros-controls/ros_controllers/issues/227>`_)
+* Contributors: Chris Lalancette, Mathias Lüdtke, Miguel Prada, agutenkunst
+
 0.13.2 (2017-12-23)
 -------------------
 * Changend the implementation of joint_trajectory_controller to enable the forwarding of the acceleration values from the trajectory

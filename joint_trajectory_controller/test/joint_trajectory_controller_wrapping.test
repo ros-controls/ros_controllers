@@ -1,5 +1,7 @@
 <launch>
   <arg name="display_plots" default="false"/>
+  <arg name="gtest_filter" default="*"/>
+
   <!-- Load RRbot model -->
   <param name="robot_description"
       command="$(find xacro)/xacro.py '$(find joint_trajectory_controller)/test/rrbot.xacro'" />
@@ -34,5 +36,6 @@
   <test test-name="joint_trajectory_controller_wrapping_test"
         pkg="joint_trajectory_controller"
         type="joint_trajectory_controller_wrapping_test"
+        args='--gtest_filter="$(arg gtest_filter)"'
         time-limit="80.0"/>
 </launch>

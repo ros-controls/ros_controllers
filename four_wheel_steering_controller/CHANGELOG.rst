@@ -2,8 +2,8 @@
 Changelog for package four_wheel_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.13.3 (2018-04-27)
+-------------------
 * migrate to new pluginlib headers
 * fix warning un/signed comparison
 * [4ws tests] simulation clock

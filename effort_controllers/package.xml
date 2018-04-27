@@ -1,6 +1,6 @@
 <package format="2">
   <name>effort_controllers</name>
-  <version>0.13.2</version>
+  <version>0.13.3</version>
   <description>effort_controllers</description>
   <maintainer email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</maintainer>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

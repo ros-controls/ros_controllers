@@ -2,8 +2,8 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.14.0 (2018-04-27)
+-------------------
 * migrate to new pluginlib headers
 * Contributors: Mathias Lüdtke
 

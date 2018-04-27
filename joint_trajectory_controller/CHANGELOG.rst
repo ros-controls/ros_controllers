@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.14.0 (2018-04-27)
+-------------------
 * Make the compiler happy in the test.
 * migrate to new pluginlib headers
 * TrajectoryController: Use desired state to calculate hold trajectory (`#297 <https://github.com/ros-controls/ros_controllers/issues/297>`_)

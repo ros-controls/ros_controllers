@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.14.0 (2018-04-27)
+-------------------
 * add dynamic_reconf to diff_drive_controller
 * migrate to new pluginlib headers
 * per wheel radius multiplier

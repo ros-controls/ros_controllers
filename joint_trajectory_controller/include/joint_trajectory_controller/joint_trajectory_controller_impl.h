@@ -189,7 +189,8 @@ template <class SegmentImpl, class HardwareInterface>
 JointTrajectoryController<SegmentImpl, HardwareInterface>::
 JointTrajectoryController()
   : verbose_(false), // Set to true during debugging
-    hold_trajectory_ptr_(new Trajectory)
+    hold_trajectory_ptr_(new Trajectory),
+    mode_(DEFAULT)
 {
   // The verbose parameter is for advanced use as it breaks real-time safety
   // by enabling ROS logging services
@@ -495,6 +496,19 @@ update(const ros::Time& time, const ros::Duration& period)
 }
 
 template <class SegmentImpl, class HardwareInterface>
+void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+switchMode(const JointTrajectoryControllerMode& mode)
+{
+  // On switch to holding
+  if(mode_ == DEFAULT && mode == HOLDING)
+  {
+    setHoldPosition(time_data_.readFromRT()->uptime);
+  }
+
+  mode_ = mode;
+}
+
+template <class SegmentImpl, class HardwareInterface>
 bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
 updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
 {
@@ -510,6 +524,12 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   if (!msg)
   {
     ROS_WARN_NAMED(name_, "Received null-pointer trajectory message, skipping.");
+    return false;
+  }
+
+  if(mode_ == HOLDING)
+  {
+    ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is in holding mode.");
     return false;
   }
 

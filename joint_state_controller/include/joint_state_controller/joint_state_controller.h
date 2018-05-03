@@ -34,10 +34,10 @@
 
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_state_interface.h>
+#include <memory>
 #include <pluginlib/class_list_macros.hpp>
-#include <sensor_msgs/JointState.h>
 #include <realtime_tools/realtime_publisher.h>
-#include <boost/shared_ptr.hpp>
+#include <sensor_msgs/JointState.h>
 
 namespace joint_state_controller
 {
@@ -90,7 +90,7 @@ public:
 
 private:
   std::vector<hardware_interface::JointStateHandle> joint_state_;
-  boost::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::JointState> > realtime_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::JointState> > realtime_pub_;
   ros::Time last_publish_time_;
   double publish_rate_;
   unsigned int num_hw_joints_; ///< Number of joints present in the JointStateInterface, excluding extra joints

@@ -33,20 +33,15 @@
  *********************************************************************/
 
 /*
- * Author: Bence Magyar
+ * Author: Bence Magyar, Enrique Fernández
  */
 
-#include <cmath>
-
-#include <tf/transform_datatypes.h>
-
-#include <urdf_parser/urdf_parser.h>
-
-#include <urdf/urdfdom_compatibility.h>
-
 #include <boost/assign.hpp>
-
+#include <cmath>
 #include <diff_drive_controller/diff_drive_controller.h>
+#include <tf/transform_datatypes.h>
+#include <urdf/urdfdom_compatibility.h>
+#include <urdf_parser/urdf_parser.h>
 
 static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3& vec2)
 {
@@ -317,7 +312,7 @@ namespace diff_drive_controller{
     // Wheel data:
     if (publish_joint_trajectory_controller_state_)
     {
-      controller_state_pub_ = boost::make_shared<realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState> >(controller_nh, "joint_trajectory_controller_state", 100);
+      controller_state_pub_.reset(new realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>(controller_nh, "wheel_joint_controller_state", 100));
 
       const size_t num_wheels = wheel_joints_size_ * 2;
 
@@ -380,7 +375,7 @@ namespace diff_drive_controller{
     config.publish_rate = publish_rate;
     config.enable_odom_tf = enable_odom_tf_;
 
-    dyn_reconf_server_ = boost::make_shared<ReconfigureServer>(controller_nh);
+    dyn_reconf_server_ = std::make_shared<ReconfigureServer>(controller_nh);
     dyn_reconf_server_->updateConfig(config);
     dyn_reconf_server_->setCallback(boost::bind(&DiffDriveController::reconfCallback, this, _1, _2));
 

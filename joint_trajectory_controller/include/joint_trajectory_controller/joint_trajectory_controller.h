@@ -36,6 +36,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <memory>
 
 // Boost
 #include <boost/shared_ptr.hpp>
@@ -158,7 +159,7 @@ protected:
   };
 
   typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>                  ActionServer;
-  typedef boost::shared_ptr<ActionServer>                                                     ActionServerPtr;
+  typedef std::shared_ptr<ActionServer>                                                       ActionServerPtr;
   typedef ActionServer::GoalHandle                                                            GoalHandle;
   typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::FollowJointTrajectoryAction> RealtimeGoalHandle;
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
@@ -169,8 +170,8 @@ protected:
   typedef JointTrajectorySegment<SegmentImpl> Segment;
   typedef std::vector<Segment> TrajectoryPerJoint;
   typedef std::vector<TrajectoryPerJoint> Trajectory;
-  typedef boost::shared_ptr<Trajectory> TrajectoryPtr;
-  typedef boost::shared_ptr<TrajectoryPerJoint> TrajectoryPerJointPtr;
+  typedef std::shared_ptr<Trajectory> TrajectoryPtr;
+  typedef std::shared_ptr<TrajectoryPerJoint> TrajectoryPerJointPtr;
   typedef realtime_tools::RealtimeBox<TrajectoryPtr> TrajectoryBox;
   typedef typename Segment::Scalar Scalar;
 

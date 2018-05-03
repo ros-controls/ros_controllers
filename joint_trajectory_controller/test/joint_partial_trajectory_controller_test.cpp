@@ -29,8 +29,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 
-#include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 
 #include <gtest/gtest.h>
@@ -136,7 +136,7 @@ public:
 
 protected:
   typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> ActionClient;
-  typedef boost::shared_ptr<ActionClient> ActionClientPtr;
+  typedef std::shared_ptr<ActionClient> ActionClientPtr;
   typedef control_msgs::FollowJointTrajectoryGoal ActionGoal;
   typedef control_msgs::JointTrajectoryControllerStateConstPtr StateConstPtr;
 

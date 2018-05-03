@@ -33,25 +33,23 @@
  *********************************************************************/
 
 /*
- * Author: Enrique Fernández
+ * Author: Bence Magyar, Enrique Fernández
  */
 
-#include <controller_interface/controller.h>
-#include <hardware_interface/joint_command_interface.h>
-#include <pluginlib/class_list_macros.hpp>
-#include <dynamic_reconfigure/server.h>
-
-#include <geometry_msgs/TwistStamped.h>
-#include <nav_msgs/Odometry.h>
-#include <tf/tfMessage.h>
 #include <control_msgs/JointTrajectoryControllerState.h>
-
-#include <realtime_tools/realtime_buffer.h>
-#include <realtime_tools/realtime_publisher.h>
-
+#include <controller_interface/controller.h>
+#include <diff_drive_controller/DiffDriveControllerConfig.h>
 #include <diff_drive_controller/odometry.h>
 #include <diff_drive_controller/speed_limiter.h>
-#include <diff_drive_controller/DiffDriveControllerConfig.h>
+#include <dynamic_reconfigure/server.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <hardware_interface/joint_command_interface.h>
+#include <memory>
+#include <nav_msgs/Odometry.h>
+#include <pluginlib/class_list_macros.hpp>
+#include <realtime_tools/realtime_buffer.h>
+#include <realtime_tools/realtime_publisher.h>
+#include <tf/tfMessage.h>
 
 namespace diff_drive_controller{
 
@@ -136,15 +134,15 @@ namespace diff_drive_controller{
     ros::Subscriber sub_command_;
 
     /// Publish executed commands
-    boost::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped> > cmd_vel_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped> > cmd_vel_pub_;
 
     /// Odometry related:
-    boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
-    boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
     Odometry odometry_;
 
-    /// Joint Trajectory Controller State
-    boost::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState> > controller_state_pub_;
+    /// Controller state publisher
+    std::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState> > controller_state_pub_;
 
     /// Wheel separation, wrt the midpoint of the wheel width:
     double wheel_separation_;
@@ -233,7 +231,8 @@ namespace diff_drive_controller{
 
     /// Dynamic Reconfigure server
     typedef dynamic_reconfigure::Server<DiffDriveControllerConfig> ReconfigureServer;
-        boost::shared_ptr<ReconfigureServer> dyn_reconf_server_;
+    
+    std::shared_ptr<ReconfigureServer> dyn_reconf_server_;
 
   private:
     /**

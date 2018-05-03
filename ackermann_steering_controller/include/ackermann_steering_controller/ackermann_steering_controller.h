@@ -33,22 +33,19 @@
  *********************************************************************/
 
 /*
- * Author: Enrique Fernández
- * Author: Masaru Morita
+ * Author: Masaru Morita, Bence Magyar, Enrique Fernández
  */
 
+#include <ackermann_steering_controller/odometry.h>
 #include <controller_interface/controller.h>
 #include <controller_interface/multi_interface_controller.h>
+#include <diff_drive_controller/speed_limiter.h>
 #include <hardware_interface/joint_command_interface.h>
-
+#include <memory>
 #include <nav_msgs/Odometry.h>
-#include <tf/tfMessage.h>
-
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
-
-#include <diff_drive_controller/speed_limiter.h>
-#include <ackermann_steering_controller/odometry.h>
+#include <tf/tfMessage.h>
 
 namespace ackermann_steering_controller{
 
@@ -125,8 +122,8 @@ namespace ackermann_steering_controller{
     ros::Subscriber sub_command_;
 
     /// Odometry related:
-    boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
-    boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
     Odometry odometry_;
 
     /// Wheel separation, wrt the midpoint of the wheel width:

@@ -1,4 +1,7 @@
 <launch>
+  <!-- Use simulation time -->
+  <rosparam param="use_sim_time">True</rosparam>
+
   <arg name="display_plots" default="false"/>
 
   <!-- Load RRbot model -->
@@ -35,5 +38,5 @@
   <test test-name="joint_trajectory_controller_test"
         pkg="joint_trajectory_controller"
         type="joint_trajectory_controller_test"
-        time-limit="85.0"/>
+        time-limit="120.0"/>
 </launch>

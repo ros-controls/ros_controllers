@@ -500,17 +500,24 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
 updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh, std::string* error_string)
 {
   typedef InitJointTrajectoryOptions<Trajectory> Options;
+  std::string error_string_tmp;
 
   // Preconditions
   if (!this->isRunning())
   {
-    ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
+    error_string_tmp = "Can't accept new commands. Controller is not running.";
+    ROS_ERROR_STREAM_NAMED(name_, error_string_tmp);
+    if (error_string)
+      *error_string = error_string_tmp;
     return false;
   }
 
   if (!msg)
   {
-    ROS_WARN_NAMED(name_, "Received null-pointer trajectory message, skipping.");
+    error_string_tmp = "Received null-pointer trajectory message, skipping.";
+    ROS_WARN_STREAM_NAMED(name_, error_string_tmp);
+    if (error_string)
+      *error_string = error_string_tmp;
     return false;
   }
 
@@ -562,11 +569,16 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   catch(const std::invalid_argument& ex)
   {
     ROS_ERROR_STREAM_NAMED(name_, ex.what());
+    if (error_string)
+      *error_string = ex.what();
     return false;
   }
   catch(...)
   {
-    ROS_ERROR_NAMED(name_, "Unexpected exception caught when initializing trajectory from ROS message data.");
+    error_string_tmp = "Unexpected exception caught when initializing trajectory from ROS message data.";
+    ROS_ERROR_STREAM_NAMED(name_, error_string_tmp);
+    if (error_string)
+      *error_string = error_string_tmp;
     return false;
   }
 

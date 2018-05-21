@@ -222,7 +222,7 @@ protected:
   ros::Timer         goal_handle_timer_;
   ros::Time          last_state_publish_time_;
 
-  virtual bool updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh);
+  virtual bool updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh, std::string* error_string = 0);
   virtual void trajectoryCommandCB(const JointTrajectoryConstPtr& msg);
   virtual void goalCB(GoalHandle gh);
   virtual void cancelCB(GoalHandle gh);

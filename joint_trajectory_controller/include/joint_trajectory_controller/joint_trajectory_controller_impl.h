@@ -166,8 +166,13 @@ template <class SegmentImpl, class HardwareInterface>
 inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 trajectoryCommandCB(const JointTrajectoryConstPtr& msg)
 {
-  const bool update_ok = updateTrajectoryCommand(msg, RealtimeGoalHandlePtr());
+  std::string error_string;
+  const bool update_ok = updateTrajectoryCommand(msg, RealtimeGoalHandlePtr(), &error_string);
   if (update_ok) {preemptActiveGoal();}
+  else
+  {
+    ROS_WARN_STREAM_NAMED(name_, "Failed to update trajectory: " << error_string);
+  }
 }
 
 template <class SegmentImpl, class HardwareInterface>
@@ -497,7 +502,7 @@ update(const ros::Time& time, const ros::Duration& period)
 
 template <class SegmentImpl, class HardwareInterface>
 bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
-updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
+updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh, std::string* error_string)
 {
   typedef InitJointTrajectoryOptions<Trajectory> Options;
 
@@ -543,6 +548,7 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   options.rt_goal_handle            = gh;
   options.default_tolerances        = &default_tolerances_;
   options.allow_partial_joints_goal = allow_partial_joints_goal_;
+  options.error_string              = error_string;
 
   // Update currently executing trajectory
   try
@@ -555,7 +561,7 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
     }
     else
     {
-      // All trajectory points are in the past, nothing new to execute. Keep on executing current trajectory
+      ROS_WARN_NAMED(name_, "Failed to initialize trajectory from message, skipping.");
       return false;
     }
   }
@@ -617,8 +623,10 @@ goalCB(GoalHandle gh)
 
   // Try to update new trajectory
   RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
+  std::string error_string;
   const bool update_ok = updateTrajectoryCommand(internal::share_member(gh.getGoal(), gh.getGoal()->trajectory),
-                                                 rt_goal);
+                                                 rt_goal,
+                                                 &error_string);
   rt_goal->preallocated_feedback_->joint_names = joint_names_;
 
   if (update_ok)
@@ -639,6 +647,7 @@ goalCB(GoalHandle gh)
     // Reject invalid goal
     control_msgs::FollowJointTrajectoryResult result;
     result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL;
+    result.error_string = error_string;
     gh.setRejected(result);
   }
 }

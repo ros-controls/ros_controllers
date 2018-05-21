@@ -166,13 +166,8 @@ template <class SegmentImpl, class HardwareInterface>
 inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 trajectoryCommandCB(const JointTrajectoryConstPtr& msg)
 {
-  std::string error_string;
-  const bool update_ok = updateTrajectoryCommand(msg, RealtimeGoalHandlePtr(), &error_string);
+  const bool update_ok = updateTrajectoryCommand(msg, RealtimeGoalHandlePtr());
   if (update_ok) {preemptActiveGoal();}
-  else
-  {
-    ROS_WARN_STREAM_NAMED(name_, "Failed to update trajectory: " << error_string);
-  }
 }
 
 template <class SegmentImpl, class HardwareInterface>
@@ -561,7 +556,6 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
     }
     else
     {
-      ROS_WARN_NAMED(name_, "Failed to initialize trajectory from message, skipping.");
       return false;
     }
   }

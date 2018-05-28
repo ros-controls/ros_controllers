@@ -198,14 +198,14 @@ namespace diff_drive_controller{
         os << "DynamicParams:\n"
            //
            << "\tOdometry parameters:\n"
-           << "\t\tleft wheel radius: "   << params.left_wheel_radius_multiplier  << "\n"
-           << "\t\tright wheel radius: "  << params.right_wheel_radius_multiplier << "\n"
-           << "\t\twheel separation: "    << params.wheel_separation_multiplier   << "\n"
+           << "\t\tleft wheel radius multiplier: "   << params.left_wheel_radius_multiplier  << "\n"
+           << "\t\tright wheel radius multiplier: "  << params.right_wheel_radius_multiplier << "\n"
+           << "\t\twheel separation multiplier: "    << params.wheel_separation_multiplier   << "\n"
            //
            << "\tPublication parameters:\n"
-           << "\t\tPublish executed velocity command: " << params.publish_cmd << "\n"
+           << "\t\tPublish executed velocity command: " << (params.publish_cmd?"enabled":"disabled") << "\n"
            << "\t\tPublication rate: " << params.publish_rate                 << "\n"
-           << "\t\tPublish frame odom on tf: " << params.enable_odom_tf;
+           << "\t\tPublish frame odom on tf: " << (params.enable_odom_tf?"enabled":"disabled");
 
         return os;
       }

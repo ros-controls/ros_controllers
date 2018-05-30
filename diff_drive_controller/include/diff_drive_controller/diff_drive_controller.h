@@ -110,6 +110,10 @@ namespace diff_drive_controller{
     std::vector<hardware_interface::JointHandle> left_wheel_joints_;
     std::vector<hardware_interface::JointHandle> right_wheel_joints_;
 
+    // Whether the joint's speed must be inverted:
+    bool left_inverted;
+    bool right_inverted;
+
     /// Velocity command related:
     struct Commands
     {

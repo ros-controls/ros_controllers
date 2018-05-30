@@ -58,7 +58,7 @@ static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3&
 /*
 * \brief Check that a link exists and has a geometry collision.
 * \param link The link
-* \return true if the link has a collision element with geometry 
+* \return true if the link has a collision element with geometry
 */
 static bool hasCollisionGeometry(const urdf::LinkConstSharedPtr& link)
 {
@@ -142,7 +142,7 @@ static bool getWheelRadius(const urdf::LinkConstSharedPtr& wheel_link, double& w
     wheel_radius = (static_cast<urdf::Sphere*>(wheel_link->collision->geometry.get()))->radius;
     return true;
   }
-  
+
   ROS_ERROR_STREAM("Wheel link " << wheel_link->name << " is NOT modeled as a cylinder or sphere!");
   return false;
 }
@@ -151,6 +151,8 @@ namespace diff_drive_controller{
 
   DiffDriveController::DiffDriveController()
     : open_loop_(false)
+    , left_inverted(false)
+    , right_inverted(false)
     , command_struct_()
     , wheel_separation_(0.0)
     , wheel_radius_(0.0)
@@ -197,6 +199,10 @@ namespace diff_drive_controller{
       left_wheel_joints_.resize(wheel_joints_size_);
       right_wheel_joints_.resize(wheel_joints_size_);
     }
+
+    // Inversion of rotation of wheels
+    controller_nh.param("left_inverted", left_inverted, false);
+    controller_nh.param("right_inverted", right_inverted, false);
 
     // Odometry related:
     double publish_rate;
@@ -450,8 +456,10 @@ namespace diff_drive_controller{
     }
 
     // Compute wheels velocities:
-    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/lwr;
-    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/rwr;
+    const short left_sign = left_inverted ? -1 : 1;
+    const double vel_left  = left_sign * (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/lwr;
+    const short right_sign = right_inverted ? -1 : 1;
+    const double vel_right = right_sign * (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/rwr;
 
     // Set wheels velocities:
     for (size_t i = 0; i < wheel_joints_size_; ++i)

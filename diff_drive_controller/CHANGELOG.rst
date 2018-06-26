@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* isPublishngCmdVelOut to check getNumPublisheres until timeout
+* Contributors: Kei Okada
+
 0.13.3 (2018-04-27)
 -------------------
 * add dynamic_reconf to diff_drive_controller

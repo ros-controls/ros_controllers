@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* joint_trajectory_controller tests stability improved
+* Use a copy of rt_active_goal in update()
+* Contributors: Kei Okada, Ryosuke Tajima
+
 0.14.0 (2018-04-27)
 -------------------
 * Make the compiler happy in the test.

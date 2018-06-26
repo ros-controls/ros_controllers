@@ -2,6 +2,12 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added 'multiplier' in DynamicParams ostream and changed boolean printing to 'enabled/disabled'
+* isPublishngCmdVelOut to check getNumPublisheres until timeout
+* Contributors: Kei Okada, Martin Ganeff
+
 0.14.0 (2018-04-27)
 -------------------
 * add dynamic_reconf to diff_drive_controller

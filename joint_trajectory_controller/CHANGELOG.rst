@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.13.4 (2018-06-26)
+-------------------
 * joint_trajectory_controller improve test stability
 * Use a copy of rt_active_goal in update()
 * Changes to allow inheritance from JointTrajectoryController.

@@ -2,6 +2,26 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.14.1 (2018-06-26)
+-------------------
+
+0.14.0 (2018-04-27)
+-------------------
+* migrate to new pluginlib headers
+* Contributors: Mathias Lüdtke
+
+0.13.2 (2017-12-23)
+-------------------
+
+0.13.1 (2017-11-06)
+-------------------
+* Code cleanup
+* Add JointGroupPositionController
+* Contributors: Bence Magyar, Maik Mugnai
+
+0.13.0 (2017-08-10)
+-------------------
+
 0.12.3 (2017-04-23)
 -------------------
 * Supply NodeHandle to urdf::Model. Closes `#244 <https://github.com/ros-controls/ros_controllers/issues/244>`_

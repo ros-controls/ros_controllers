@@ -34,10 +34,8 @@
 TEST_F(DiffDriveControllerTest, testNoOdomFrame)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
+  waitForController();
+
   // set up tf listener
   tf::TransformListener listener;
   ros::Duration(2.0).sleep();
@@ -48,10 +46,8 @@ TEST_F(DiffDriveControllerTest, testNoOdomFrame)
 TEST_F(DiffDriveControllerTest, testNewOdomFrame)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
+  waitForController();
+
   // set up tf listener
   tf::TransformListener listener;
   ros::Duration(2.0).sleep();
@@ -62,10 +58,10 @@ TEST_F(DiffDriveControllerTest, testNewOdomFrame)
 TEST_F(DiffDriveControllerTest, testOdomTopic)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
+  waitForController();
+
+  // wait until we received first odom msg
+  waitForOdomMsgs();
 
   // get an odom message
   nav_msgs::Odometry odom_msg = getLastOdom();

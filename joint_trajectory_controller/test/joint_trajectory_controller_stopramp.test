@@ -1,0 +1,41 @@
+<launch>
+  <arg name="display_plots" default="false"/>
+  <arg name="gtest_filter" default="*"/>
+
+  <!-- Load RRbot model -->
+  <param name="robot_description"
+      command="$(find xacro)/xacro '$(find joint_trajectory_controller)/test/rrbot.xacro'" />
+
+  <!-- Start RRbot -->
+  <node name="rrbot"
+      pkg="joint_trajectory_controller"
+      type="rrbot"/>
+
+  <!-- Load controller config -->
+  <rosparam command="load" file="$(find joint_trajectory_controller)/test/rrbot_controllers_stopramp.yaml" />
+
+  <!-- Spawn controller -->
+  <node name="controller_spawner"
+        pkg="controller_manager" type="spawner" output="screen"
+        args="rrbot_controller" />
+
+  <group if="$(arg display_plots)">
+    <!-- rqt_plot monitoring -->
+    <node name="rrbot_pos_monitor"
+          pkg="rqt_plot"
+          type="rqt_plot"
+          args="/rrbot_controller/state/desired/positions[0]:positions[1],/rrbot_controller/state/actual/positions[0]:positions[1]" />
+
+    <node name="rrbot_vel_monitor"
+          pkg="rqt_plot"
+          type="rqt_plot"
+          args="/rrbot_controller/state/desired/velocities[0]:velocities[1],/rrbot_controller/state/actual/velocities[0]:velocities[1]" />
+  </group>
+
+  <!-- Controller test -->
+  <test test-name="joint_trajectory_controller_stopramp_test"
+        pkg="joint_trajectory_controller"
+        type="joint_trajectory_controller_stopramp_test"
+        args='--gtest_filter="$(arg gtest_filter)"'
+        time-limit="85.0"/>
+</launch>

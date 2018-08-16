@@ -1,10 +1,10 @@
 <package format="2">
   <name>velocity_controllers</name>
-  <version>0.12.3</version>
+  <version>0.14.1</version>
   <description>velocity_controllers</description>
 
-  <maintainer email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</maintainer>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="mathias.luedtke@ipa.fraunhofer.de">Mathias Lüdtke</maintainer>
   <maintainer email="enrique.fernandez.perdomo@gmail.com">Enrique Fernandez</maintainer>
 
   <license>BSD</license>

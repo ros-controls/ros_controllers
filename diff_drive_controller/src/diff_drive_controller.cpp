@@ -155,8 +155,10 @@ namespace diff_drive_controller{
     , wheel_separation_(0.0)
     , wheel_radius_(0.0)
     , wheel_separation_multiplier_(1.0)
-    , wheel_radius_multiplier_(1.0)
+    , left_wheel_radius_multiplier_(1.0)
+    , right_wheel_radius_multiplier_(1.0)
     , cmd_vel_timeout_(0.5)
+    , allow_multiple_cmd_vel_publishers_(true)
     , base_frame_id_("base_link")
     , odom_frame_id_("odom")
     , enable_odom_tf_(true)
@@ -209,9 +211,24 @@ namespace diff_drive_controller{
     ROS_INFO_STREAM_NAMED(name_, "Wheel separation will be multiplied by "
                           << wheel_separation_multiplier_ << ".");
 
-    controller_nh.param("wheel_radius_multiplier", wheel_radius_multiplier_, wheel_radius_multiplier_);
-    ROS_INFO_STREAM_NAMED(name_, "Wheel radius will be multiplied by "
-                          << wheel_radius_multiplier_ << ".");
+    if (controller_nh.hasParam("wheel_radius_multiplier"))
+    {
+      double wheel_radius_multiplier;
+      controller_nh.getParam("wheel_radius_multiplier", wheel_radius_multiplier);
+
+      left_wheel_radius_multiplier_  = wheel_radius_multiplier;
+      right_wheel_radius_multiplier_ = wheel_radius_multiplier;
+    }
+    else
+    {
+      controller_nh.param("left_wheel_radius_multiplier", left_wheel_radius_multiplier_, left_wheel_radius_multiplier_);
+      controller_nh.param("right_wheel_radius_multiplier", right_wheel_radius_multiplier_, right_wheel_radius_multiplier_);
+    }
+
+    ROS_INFO_STREAM_NAMED(name_, "Left wheel radius will be multiplied by "
+                          << left_wheel_radius_multiplier_ << ".");
+    ROS_INFO_STREAM_NAMED(name_, "Right wheel radius will be multiplied by "
+                          << right_wheel_radius_multiplier_ << ".");
 
     int velocity_rolling_window_size = 10;
     controller_nh.param("velocity_rolling_window_size", velocity_rolling_window_size, velocity_rolling_window_size);
@@ -224,6 +241,10 @@ namespace diff_drive_controller{
     controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
     ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "
                           << cmd_vel_timeout_ << "s.");
+
+    controller_nh.param("allow_multiple_cmd_vel_publishers", allow_multiple_cmd_vel_publishers_, allow_multiple_cmd_vel_publishers_);
+    ROS_INFO_STREAM_NAMED(name_, "Allow mutiple cmd_vel publishers is "
+                          << (allow_multiple_cmd_vel_publishers_?"enabled":"disabled"));
 
     controller_nh.param("base_frame_id", base_frame_id_, base_frame_id_);
     ROS_INFO_STREAM_NAMED(name_, "Base frame_id set to " << base_frame_id_);
@@ -273,12 +294,14 @@ namespace diff_drive_controller{
 
     // Regardless of how we got the separation and radius, use them
     // to set the odometry parameters
-    const double ws = wheel_separation_multiplier_ * wheel_separation_;
-    const double wr = wheel_radius_multiplier_     * wheel_radius_;
-    odometry_.setWheelParams(ws, wr);
+    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
+    const double lwr = left_wheel_radius_multiplier_  * wheel_radius_;
+    const double rwr = right_wheel_radius_multiplier_ * wheel_radius_;
+    odometry_.setWheelParams(ws, lwr, rwr);
     ROS_INFO_STREAM_NAMED(name_,
                           "Odometry params : wheel separation " << ws
-                          << ", wheel radius " << wr);
+                          << ", left wheel radius "  << lwr
+                          << ", right wheel radius " << rwr);
 
     setOdomPubFields(root_nh, controller_nh);
 
@@ -288,7 +311,7 @@ namespace diff_drive_controller{
     }
 
     // Get the joint object to use in the realtime loop
-    for (int i = 0; i < wheel_joints_size_; ++i)
+    for (size_t i = 0; i < wheel_joints_size_; ++i)
     {
       ROS_INFO_STREAM_NAMED(name_,
                             "Adding left wheel with joint name: " << left_wheel_names[i]
@@ -299,11 +322,45 @@ namespace diff_drive_controller{
 
     sub_command_ = controller_nh.subscribe("cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
 
+    // Initialize dynamic parameters
+    DynamicParams dynamic_params;
+    dynamic_params.left_wheel_radius_multiplier  = left_wheel_radius_multiplier_;
+    dynamic_params.right_wheel_radius_multiplier = right_wheel_radius_multiplier_;
+    dynamic_params.wheel_separation_multiplier   = wheel_separation_multiplier_;
+
+    dynamic_params.publish_rate = publish_rate;
+    dynamic_params.enable_odom_tf = enable_odom_tf_;
+
+    dynamic_params_.writeFromNonRT(dynamic_params);
+
+    // Initialize dynamic_reconfigure server
+    DiffDriveControllerConfig config;
+    config.left_wheel_radius_multiplier  = left_wheel_radius_multiplier_;
+    config.right_wheel_radius_multiplier = right_wheel_radius_multiplier_;
+    config.wheel_separation_multiplier   = wheel_separation_multiplier_;
+
+    config.publish_rate = publish_rate;
+    config.enable_odom_tf = enable_odom_tf_;
+
+    dyn_reconf_server_ = boost::make_shared<ReconfigureServer>(controller_nh);
+    dyn_reconf_server_->updateConfig(config);
+    dyn_reconf_server_->setCallback(boost::bind(&DiffDriveController::reconfCallback, this, _1, _2));
+
     return true;
   }
 
   void DiffDriveController::update(const ros::Time& time, const ros::Duration& period)
   {
+    // update parameter from dynamic reconf
+    updateDynamicParams();
+
+    // Apply (possibly new) multipliers:
+    const double ws  = wheel_separation_multiplier_   * wheel_separation_;
+    const double lwr = left_wheel_radius_multiplier_  * wheel_radius_;
+    const double rwr = right_wheel_radius_multiplier_ * wheel_radius_;
+
+    odometry_.setWheelParams(ws, lwr, rwr);
+
     // COMPUTE AND PUBLISH ODOMETRY
     if (open_loop_)
     {
@@ -392,13 +449,9 @@ namespace diff_drive_controller{
       cmd_vel_pub_->unlockAndPublish();
     }
 
-    // Apply multipliers:
-    const double ws = wheel_separation_multiplier_ * wheel_separation_;
-    const double wr = wheel_radius_multiplier_     * wheel_radius_;
-
     // Compute wheels velocities:
-    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wr;
-    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wr;
+    const double vel_left  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/lwr;
+    const double vel_right = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/rwr;
 
     // Set wheels velocities:
     for (size_t i = 0; i < wheel_joints_size_; ++i)
@@ -437,6 +490,15 @@ namespace diff_drive_controller{
   {
     if (isRunning())
     {
+      // check that we don't have multiple publishers on the command topic
+      if (!allow_multiple_cmd_vel_publishers_ && sub_command_.getNumPublishers() > 1)
+      {
+        ROS_ERROR_STREAM_THROTTLE_NAMED(1.0, name_, "Detected " << sub_command_.getNumPublishers()
+            << " publishers. Only 1 publisher is allowed. Going to brake.");
+        brake();
+        return;
+      }
+
       command_struct_.ang   = command.angular.z;
       command_struct_.lin   = command.linear.x;
       command_struct_.stamp = ros::Time::now();
@@ -620,6 +682,35 @@ namespace diff_drive_controller{
     tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;
     tf_odom_pub_->msg_.transforms[0].child_frame_id = base_frame_id_;
     tf_odom_pub_->msg_.transforms[0].header.frame_id = odom_frame_id_;
+  }
+
+  void DiffDriveController::reconfCallback(DiffDriveControllerConfig& config, uint32_t /*level*/)
+  {
+    DynamicParams dynamic_params;
+    dynamic_params.left_wheel_radius_multiplier  = config.left_wheel_radius_multiplier;
+    dynamic_params.right_wheel_radius_multiplier = config.right_wheel_radius_multiplier;
+    dynamic_params.wheel_separation_multiplier   = config.wheel_separation_multiplier;
+
+    dynamic_params.publish_rate = config.publish_rate;
+
+    dynamic_params.enable_odom_tf = config.enable_odom_tf;
+
+    dynamic_params_.writeFromNonRT(dynamic_params);
+
+    ROS_INFO_STREAM_NAMED(name_, "Dynamic Reconfigure:\n" << dynamic_params);
+  }
+
+  void DiffDriveController::updateDynamicParams()
+  {
+    // Retreive dynamic params:
+    const DynamicParams dynamic_params = *(dynamic_params_.readFromRT());
+
+    left_wheel_radius_multiplier_  = dynamic_params.left_wheel_radius_multiplier;
+    right_wheel_radius_multiplier_ = dynamic_params.right_wheel_radius_multiplier;
+    wheel_separation_multiplier_   = dynamic_params.wheel_separation_multiplier;
+
+    publish_period_ = ros::Duration(1.0 / dynamic_params.publish_rate);
+    enable_odom_tf_ = dynamic_params.enable_odom_tf;
   }
 
 } // namespace diff_drive_controller

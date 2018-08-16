@@ -141,10 +141,11 @@ namespace diff_drive_controller
 
     /**
      * \brief Sets the wheel parameters: radius and separation
-     * \param wheel_separation Seperation between left and right wheels [m]
-     * \param wheel_radius     Wheel radius [m]
+     * \param wheel_separation   Separation between left and right wheels [m]
+     * \param left_wheel_radius  Left wheel radius [m]
+     * \param right_wheel_radius Right wheel radius [m]
      */
-    void setWheelParams(double wheel_separation, double wheel_radius);
+    void setWheelParams(double wheel_separation, double left_wheel_radius, double right_wheel_radius);
 
     /**
      * \brief Velocity rolling window size setter
@@ -191,7 +192,8 @@ namespace diff_drive_controller
 
     /// Wheel kinematic parameters [m]:
     double wheel_separation_;
-    double wheel_radius_;
+    double left_wheel_radius_;
+    double right_wheel_radius_;
 
     /// Previou wheel position/state [rad]:
     double left_wheel_old_pos_;

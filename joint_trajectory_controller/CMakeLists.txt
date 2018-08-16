@@ -51,7 +51,7 @@ add_library(${PROJECT_NAME} src/joint_trajectory_controller.cpp
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 if(CATKIN_ENABLE_TESTING)
-  find_package(catkin 
+  find_package(catkin
     REQUIRED COMPONENTS
       actionlib
       controller_manager
@@ -96,10 +96,16 @@ if(CATKIN_ENABLE_TESTING)
                     test/joint_trajectory_controller_test.cpp)
   target_link_libraries(joint_trajectory_controller_test ${catkin_LIBRARIES})
 
+  add_rostest_gtest(joint_trajectory_controller_stopramp_test
+                    test/joint_trajectory_controller_stopramp.test
+                    test/joint_trajectory_controller_test.cpp)
+  target_link_libraries(joint_trajectory_controller_stopramp_test ${catkin_LIBRARIES})
+
   add_rostest_gtest(joint_trajectory_controller_vel_test
                     test/joint_trajectory_controller_vel.test
                     test/joint_trajectory_controller_test.cpp)
   target_link_libraries(joint_trajectory_controller_vel_test ${catkin_LIBRARIES})
+  target_compile_definitions(joint_trajectory_controller_vel_test PRIVATE TEST_VELOCITY_FF=1)
 
   add_rostest_gtest(joint_trajectory_controller_wrapping_test
                     test/joint_trajectory_controller_wrapping.test

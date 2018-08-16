@@ -3,11 +3,14 @@ project(diff_drive_controller)
 
 find_package(catkin REQUIRED COMPONENTS
     controller_interface
+    dynamic_reconfigure
     nav_msgs
     realtime_tools
     tf
     urdf
 )
+
+generate_dynamic_reconfigure_options(cfg/DiffDriveController.cfg)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -15,11 +18,16 @@ catkin_package(
 )
 
 include_directories(
-  include ${catkin_INCLUDE_DIRS}
+  include
+)
+
+include_directories(SYSTEM
+  ${catkin_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
@@ -34,7 +42,7 @@ install(FILES diff_drive_controller_plugins.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 if (CATKIN_ENABLE_TESTING)
-  find_package(catkin REQUIRED COMPONENTS controller_manager rostest std_srvs tf)
+  find_package(catkin REQUIRED COMPONENTS controller_manager rosgraph_msgs rostest std_srvs tf)
   include_directories(include ${catkin_INCLUDE_DIRS})
 
   add_executable(diffbot test/diffbot.cpp)
@@ -62,6 +70,7 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_timeout_test.cpp)
   target_link_libraries(diff_drive_timeout_test ${catkin_LIBRARIES})
   add_rostest(test/diff_drive_multipliers.test)
+  add_rostest(test/diff_drive_left_right_multipliers.test)
   add_rostest_gtest(diff_drive_fail_test
     test/diff_drive_wrong.test
     test/diff_drive_fail_test.cpp)
@@ -86,6 +95,10 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_odom_frame.test
     test/diff_drive_odom_frame_test.cpp)
   target_link_libraries(diff_drive_odom_frame_test ${catkin_LIBRARIES})
+  add_rostest_gtest(diff_drive_multiple_cmd_vel_publishers_test
+    test/diff_drive_multiple_cmd_vel_publishers.test
+    test/diff_drive_multiple_cmd_vel_publishers_test.cpp)
+  target_link_libraries(diff_drive_multiple_cmd_vel_publishers_test ${catkin_LIBRARIES})
   add_rostest(test/diff_drive_open_loop.test)
   add_rostest(test/skid_steer_controller.test)
   add_rostest(test/skid_steer_no_wheels.test)
@@ -94,4 +107,8 @@ if (CATKIN_ENABLE_TESTING)
   add_rostest(test/diff_drive_radius_param_fail.test)
   add_rostest(test/diff_drive_separation_param.test)
   add_rostest(test/diff_drive_bad_urdf.test)
+  add_rostest_gtest(diff_drive_dyn_reconf_test
+    test/diff_drive_dyn_reconf.test
+    test/diff_drive_dyn_reconf_test.cpp)
+  target_link_libraries(diff_drive_dyn_reconf_test ${catkin_LIBRARIES})
 endif()

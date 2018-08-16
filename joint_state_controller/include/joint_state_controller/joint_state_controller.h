@@ -34,7 +34,7 @@
 
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_state_interface.h>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <sensor_msgs/JointState.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <boost/shared_ptr.hpp>

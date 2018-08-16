@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="chassis">
+  <!-- Base Properties -->
+  <xacro:property name="mass_base" value="340" />
+  <xacro:property name="base_x_size" value="1.66000" />
+  <xacro:property name="base_y_size" value="0.60000" />
+  <xacro:property name="base_z_size" value="0.66000" />
+
+  <xacro:property name="wheelbase" value="1.9" />
+  <xacro:property name="track" value="1.1" />
+
+  <xacro:macro name="chassis">
+    <!-- Base footprint is on the ground under the robot -->
+    <link name="base_footprint"/>
+
+    <gazebo reference="base_link">
+      <material>Gazebo/Grey</material>
+    </gazebo>
+    <!-- Base link is the center of the robot's bottom plate -->
+    <link name="base_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="${base_x_size} ${base_y_size} ${base_z_size}"/>
+        </geometry>
+        <material name="grey">
+          <color rgba="0.6 0.6 0.6 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${base_x_size} ${base_y_size} ${base_z_size}"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="base_footprint_joint" type="fixed">
+      <origin xyz="0 0 ${ground_clearance + base_z_size/2}" rpy="0 0 0" />
+      <child link="base_link" />
+      <parent link="base_footprint" />
+    </joint>
+
+    <!-- Interial link stores the robot's inertial information -->
+    <link name="inertial_link">
+      <inertial>
+        <mass value="340" />
+        <origin xyz="0 0 0" />
+        <inertia ixx="${mass_base/12.0 * (base_y_size*base_y_size + base_z_size*base_z_size)}" ixy="0" ixz="0"
+                 iyy="${mass_base/12.0 * (base_x_size*base_x_size + base_z_size*base_z_size)}" iyz="0"
+                 izz="${mass_base/12.0 * (base_y_size*base_y_size + base_x_size*base_x_size)}" />
+      </inertial>
+    </link>
+
+    <joint name="inertial_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent link="base_link" />
+      <child link="inertial_link" />
+    </joint>
+  </xacro:macro>
+</robot>

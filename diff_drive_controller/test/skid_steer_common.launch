@@ -1,4 +1,7 @@
 <launch>
+  <!-- Use simulation time -->
+  <rosparam param="use_sim_time">True</rosparam>
+
   <!-- Load skidsteerbot model -->
   <param name="robot_description"
          command="$(find xacro)/xacro '$(find diff_drive_controller)/test/skidsteerbot.xacro' --inorder" />

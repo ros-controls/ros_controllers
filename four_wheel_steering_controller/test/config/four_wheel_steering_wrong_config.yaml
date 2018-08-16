@@ -1,0 +1,36 @@
+four_wheel_steering_controller:
+  type: "four_wheel_steering_controller/FourWheelSteeringController"
+  front_wheel: ['joint_that_does_not_exist', 'front_right_wheel']
+  rear_wheel: ['rear_left_wheel', 'rear_right_wheel']
+  front_steering: ['front_left_steering_joint', 'front_right_steering_joint']
+  rear_steering: ['rear_left_steering_joint', 'rear_right_steering_joint']
+  publish_rate: 50
+  pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.03]
+  twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.03]
+  cmd_vel_timeout: 0.25
+
+  # Base frame_id
+  base_frame_id: base_footprint
+
+  # Odometry fused with IMU is published by robot_localization, so
+  # no need to publish a TF based on encoders alone.
+  enable_odom_tf: true
+
+  #wheel_separation: 1.23
+  #wheel_radius: 0.28
+  #wheel_base: 1.22
+
+  # Velocity and acceleration limits
+  # Whenever a min_* is unspecified, default to -max_*
+  linear:
+    x:
+      has_velocity_limits    : true
+      max_velocity           : 3.0   # m/s
+      has_acceleration_limits: true
+      max_acceleration       : 3.0   # m/s^2
+  angular:
+    z:
+      has_velocity_limits    : true
+      max_velocity           : 1.0   # rad/s
+      has_acceleration_limits: true
+      max_acceleration       : 2.0   # rad/s^2

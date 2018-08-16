@@ -138,6 +138,13 @@ starting(const ros::Time& time)
   time_data.uptime = ros::Time(0.0);
   time_data_.initRT(time_data);
 
+  // Initialize the desired_state with the current state on startup
+  for (unsigned int i = 0; i < joints_.size(); ++i)
+  {
+    desired_state_.position[i] = joints_[i].getPosition();
+    desired_state_.velocity[i] = joints_[i].getVelocity();
+  }
+
   // Hold current position
   setHoldPosition(time_data.uptime);
 
@@ -183,7 +190,17 @@ JointTrajectoryController<SegmentImpl, HardwareInterface>::
 JointTrajectoryController()
   : verbose_(false), // Set to true during debugging
     hold_trajectory_ptr_(new Trajectory)
-{}
+{
+  // The verbose parameter is for advanced use as it breaks real-time safety
+  // by enabling ROS logging services
+  if (verbose_)
+  {
+    ROS_WARN_STREAM(
+        "The joint_trajectory_controller verbose flag is enabled. "
+        << "This flag breaks real-time safety and should only be "
+        << "used for debugging");
+  }
+}
 
 template <class SegmentImpl, class HardwareInterface>
 bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInterface* hw,
@@ -374,7 +391,7 @@ update(const ros::Time& time, const ros::Duration& period)
     }
     desired_state_.position[i] = desired_joint_state_.position[0];
     desired_state_.velocity[i] = desired_joint_state_.velocity[0];
-    desired_state_.acceleration[i] = 0.0;
+    desired_state_.acceleration[i] = desired_joint_state_.acceleration[0]; ;
 
     state_joint_error_.position[0] = angles::shortest_angular_distance(current_state_.position[i],desired_joint_state_.position[0]);
     state_joint_error_.velocity[0] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
@@ -451,6 +468,7 @@ update(const ros::Time& time, const ros::Duration& period)
   {
     current_active_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
     current_active_goal->setSucceeded(current_active_goal->preallocated_result_);
+    current_active_goal.reset(); // do not publish feedback  
     rt_active_goal_.reset();
     successful_joint_traj_.reset();
   }
@@ -460,17 +478,17 @@ update(const ros::Time& time, const ros::Duration& period)
                                   desired_state_, state_error_);
 
   // Set action feedback
-  if (rt_active_goal_)
+  if (current_active_goal)
   {
-    rt_active_goal_->preallocated_feedback_->header.stamp          = time_data_.readFromRT()->time;
-    rt_active_goal_->preallocated_feedback_->desired.positions     = desired_state_.position;
-    rt_active_goal_->preallocated_feedback_->desired.velocities    = desired_state_.velocity;
-    rt_active_goal_->preallocated_feedback_->desired.accelerations = desired_state_.acceleration;
-    rt_active_goal_->preallocated_feedback_->actual.positions      = current_state_.position;
-    rt_active_goal_->preallocated_feedback_->actual.velocities     = current_state_.velocity;
-    rt_active_goal_->preallocated_feedback_->error.positions       = state_error_.position;
-    rt_active_goal_->preallocated_feedback_->error.velocities      = state_error_.velocity;
-    rt_active_goal_->setFeedback( rt_active_goal_->preallocated_feedback_ );
+    current_active_goal->preallocated_feedback_->header.stamp          = time_data_.readFromRT()->time;
+    current_active_goal->preallocated_feedback_->desired.positions     = desired_state_.position;
+    current_active_goal->preallocated_feedback_->desired.velocities    = desired_state_.velocity;
+    current_active_goal->preallocated_feedback_->desired.accelerations = desired_state_.acceleration;
+    current_active_goal->preallocated_feedback_->actual.positions      = current_state_.position;
+    current_active_goal->preallocated_feedback_->actual.velocities     = current_state_.velocity;
+    current_active_goal->preallocated_feedback_->error.positions       = state_error_.position;
+    current_active_goal->preallocated_feedback_->error.velocities      = state_error_.velocity;
+    current_active_goal->setFeedback( current_active_goal->preallocated_feedback_ );
   }
 
   // Publish state
@@ -726,45 +744,64 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
 {
-  // Settle position in a fixed time. We do the following:
-  // - Create segment that goes from current (pos,vel) to (pos,-vel) in 2x the desired stop time
-  // - Assuming segment symmetry, sample segment at its midpoint (desired stop time). It should have zero velocity
-  // - Create segment that goes from current state to above zero velocity state, in the desired time
-  // NOTE: The symmetry assumption from the second point above might not hold for all possible segment types
-
   assert(joint_names_.size() == hold_trajectory_ptr_->size());
 
   typename Segment::State hold_start_state_ = typename Segment::State(1);
   typename Segment::State hold_end_state_ = typename Segment::State(1);
-
-  const typename Segment::Time start_time  = time.toSec();
-  const typename Segment::Time end_time    = time.toSec() + stop_trajectory_duration_;
-  const typename Segment::Time end_time_2x = time.toSec() + 2.0 * stop_trajectory_duration_;
-
-  // Create segment that goes from current (pos,vel) to (pos,-vel)
   const unsigned int n_joints = joints_.size();
-  for (unsigned int i = 0; i < n_joints; ++i)
+  const typename Segment::Time start_time  = time.toSec();
+
+  if(stop_trajectory_duration_ == 0.0)
   {
-    hold_start_state_.position[0]     =  joints_[i].getPosition();
-    hold_start_state_.velocity[0]     =  joints_[i].getVelocity();
-    hold_start_state_.acceleration[0] =  0.0;
+    // stop at current actual position
+    for (unsigned int i = 0; i < n_joints; ++i)
+    {
+      hold_start_state_.position[0]     =  joints_[i].getPosition();
+      hold_start_state_.velocity[0]     =  0.0;
+      hold_start_state_.acceleration[0] =  0.0;
+      (*hold_trajectory_ptr_)[i].front().init(start_time,  hold_start_state_,
+                                              start_time, hold_start_state_);
+      // Set goal handle for the segment
+      (*hold_trajectory_ptr_)[i].front().setGoalHandle(gh);
+    }
+  }
+  else
+  {
+    // Settle position in a fixed time. We do the following:
+    // - Create segment that goes from current (pos,vel) to (pos,-vel) in 2x the desired stop time
+    // - Assuming segment symmetry, sample segment at its midpoint (desired stop time). It should have zero velocity
+    // - Create segment that goes from current state to above zero velocity state, in the desired time
+    // NOTE: The symmetry assumption from the second point above might not hold for all possible segment types
 
-    hold_end_state_.position[0]       =  joints_[i].getPosition();
-    hold_end_state_.velocity[0]       = -joints_[i].getVelocity();
-    hold_end_state_.acceleration[0]   =  0.0;
+    const typename Segment::Time end_time    = time.toSec() + stop_trajectory_duration_;
+    const typename Segment::Time end_time_2x = time.toSec() + 2.0 * stop_trajectory_duration_;
 
-    (*hold_trajectory_ptr_)[i].front().init(start_time,  hold_start_state_,
-                                                             end_time_2x, hold_end_state_);
+    // Create segment that goes from current (pos,vel) to (pos,-vel)
+    for (unsigned int i = 0; i < n_joints; ++i)
+    {
+      // If there is a time delay in the system it is better to calculate the hold trajectory starting from the
+      // desired position. Otherwise there would be a jerk in the motion.
+      hold_start_state_.position[0]     =  desired_state_.position[i];
+      hold_start_state_.velocity[0]     =  desired_state_.velocity[i];
+      hold_start_state_.acceleration[0] =  0.0;
 
-    // Sample segment at its midpoint, that should have zero velocity
-    (*hold_trajectory_ptr_)[i].front().sample(end_time, hold_end_state_);
+      hold_end_state_.position[0]       =  desired_state_.position[i];
+      hold_end_state_.velocity[0]       = -desired_state_.velocity[i];
+      hold_end_state_.acceleration[0]   =  0.0;
 
-    // Now create segment that goes from current state to one with zero end velocity
-    (*hold_trajectory_ptr_)[i].front().init(start_time, hold_start_state_,
-                                                             end_time,   hold_end_state_);
+      (*hold_trajectory_ptr_)[i].front().init(start_time,  hold_start_state_,
+                                                               end_time_2x, hold_end_state_);
 
-    // Set goal handle for the segment
-    (*hold_trajectory_ptr_)[i].front().setGoalHandle(gh);
+      // Sample segment at its midpoint, that should have zero velocity
+      (*hold_trajectory_ptr_)[i].front().sample(end_time, hold_end_state_);
+
+      // Now create segment that goes from current state to one with zero end velocity
+      (*hold_trajectory_ptr_)[i].front().init(start_time, hold_start_state_,
+                                                               end_time,   hold_end_state_);
+
+      // Set goal handle for the segment
+      (*hold_trajectory_ptr_)[i].front().setGoalHandle(gh);
+    }
   }
   curr_trajectory_box_.set(hold_trajectory_ptr_);
 }

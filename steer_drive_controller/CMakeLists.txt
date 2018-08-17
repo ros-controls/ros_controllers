@@ -41,7 +41,7 @@ include_directories(
 link_directories(${GAZEBO_LIBRARY_DIRS})
 list(APPEND CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
-add_library(${PROJECT_NAME} src/steer_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
+add_library(${PROJECT_NAME} src/steer_drive_controller.cpp src/odometry.cpp ../diff_drive_controller/src/speed_limiter.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME}

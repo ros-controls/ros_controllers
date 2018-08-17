@@ -29,8 +29,13 @@ catkin_package(
   roscpp
 )
 
+set(DIFF_DRIVE_CONTROLLER_DIR ../../diff_drive_controller)
+
 include_directories(
-  include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS}
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${GAZEBO_INCLUDE_DIRS}
+  ${DIFF_DRIVE_CONTROLLER_DIR}/include
 )
 
 link_directories(${GAZEBO_LIBRARY_DIRS})

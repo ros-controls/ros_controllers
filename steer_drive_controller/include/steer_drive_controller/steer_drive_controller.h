@@ -48,10 +48,12 @@
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
 
+#include <diff_drive_controller/speed_limiter.h>
 #include <steer_drive_controller/odometry.h>
-#include <steer_drive_controller/speed_limiter.h>
 
 //#define GUI_DEBUG // uncommentout when you use qtcreator for debugging
+
+using diff_drive_controller::SpeedLimiter;
 
 namespace steer_drive_controller{
 

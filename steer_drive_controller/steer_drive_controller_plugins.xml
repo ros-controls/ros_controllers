@@ -1,9 +1,0 @@
-<library path="lib/libsteer_drive_controller">
-
-  <class name="steer_drive_controller/SteerDriveController" type="steer_drive_controller::SteerDriveController" base_class_type="controller_interface::ControllerBase">
-    <description>
-      The SteerDriveController tracks velocity commands. It expects 1 VelocityJointInterface and 1 PositionJointInterfece types of hardware interfaces.
-    </description>
-  </class>
-
-</library>

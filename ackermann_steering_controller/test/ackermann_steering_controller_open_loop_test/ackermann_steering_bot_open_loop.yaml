@@ -1,0 +1,2 @@
+ackermann_steering_bot_controller:
+  open_loop: true

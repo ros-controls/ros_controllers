@@ -1,0 +1,16 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find ackermann_steering_controller)/test/common/launch/ackermann_steering_common.launch" />
+
+  <!-- Load diff drive parameter open loop -->
+  <rosparam command="load" file="$(find ackermann_steering_controller)/test/ackermann_steering_controller_open_loop_test/ackermann_steering_bot_open_loop.yaml" />
+
+  <!-- Controller test -->
+  <test test-name="ackermann_steering_controller_open_loop_test"
+        pkg="ackermann_steering_controller"
+        type="ackermann_steering_controller_test"
+        time-limit="80.0">
+    <remap from="cmd_vel" to="ackermann_steering_bot_controller/cmd_vel" />
+    <remap from="odom" to="ackermann_steering_bot_controller/odom" />
+  </test>
+</launch>

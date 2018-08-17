@@ -71,22 +71,6 @@ namespace steer_drive_controller{
       hardware_interface::PositionJointInterface,
       hardware_interface::VelocityJointInterface>
   {
-    // constants
-  private:
-    enum INDX_WHEEL {
-      INDX_WHEEL_FRNT = 0,
-      INDX_WHEEL_MID = 1,
-      INDX_WHEEL_BACK = 2,
-    };
-    enum INDX_STEER {
-      INDX_STEER_FRNT = 0,
-      INDX_STEER_BACK = 1,
-    };
-    // constant
-    enum INDEX_WHEEL {
-      INDEX_RIGHT = 0,
-      INDEX_LEFT = 1
-    };
   public:
     SteerDriveController();
 

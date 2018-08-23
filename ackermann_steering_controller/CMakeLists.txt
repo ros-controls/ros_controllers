@@ -5,6 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
   angles
   control_toolbox
   controller_interface
+  diff_drive_controller
   gazebo_ros_control
   hardware_interface
   joint_limits_interface
@@ -29,19 +30,17 @@ catkin_package(
   roscpp
 )
 
-set(DIFF_DRIVE_CONTROLLER_DIR ../../diff_drive_controller)
-
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${GAZEBO_INCLUDE_DIRS}
-  ${DIFF_DRIVE_CONTROLLER_DIR}/include
+  ${diff_drive_controller_INCLUDE_DIRS}
 )
 
 link_directories(${GAZEBO_LIBRARY_DIRS})
 list(APPEND CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
-add_library(${PROJECT_NAME} src/ackermann_steering_controller.cpp src/odometry.cpp ../diff_drive_controller/src/speed_limiter.cpp)
+add_library(${PROJECT_NAME} src/ackermann_steering_controller.cpp src/odometry.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 install(TARGETS ${PROJECT_NAME}

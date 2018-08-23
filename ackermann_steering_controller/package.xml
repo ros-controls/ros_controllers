@@ -25,6 +25,7 @@
   <depend>tf</depend>
   <depend>urdf</depend>
 
+  <build_depend>diff_drive_controller</build_depend>
   <build_depend>gazebo</build_depend>
 
   <!--Tests-->

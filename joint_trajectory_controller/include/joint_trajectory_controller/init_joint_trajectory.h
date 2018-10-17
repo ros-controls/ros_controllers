@@ -65,7 +65,7 @@ template <class T>
 inline std::vector<unsigned int> mapping(const T& t1, const T& t2)
 {
   typedef unsigned int SizeType;
-  
+
   // t1 must be a subset of t2
   if (t1.size() > t2.size()) {return std::vector<SizeType>();}
 
@@ -118,6 +118,14 @@ struct InitJointTrajectoryOptions
   ros::Time*                 other_time_base;
   bool                       allow_partial_joints_goal;
   std::string*               error_string;
+
+  void setErrorString(const std::string &msg) const
+  {
+    if(error_string)
+    {
+      *error_string = msg;
+    }
+  }
 };
 
 template <class Trajectory>
@@ -217,8 +225,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   {
     error_string = "Trajectory message contains empty trajectory. Nothing to convert.";
     ROS_DEBUG_STREAM(error_string);
-    if (options.error_string)
-      *options.error_string = error_string;
+    options.setErrorString(error_string);
     return Trajectory();
   }
 
@@ -227,8 +234,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   {
     error_string = "Trajectory message contains waypoints that are not strictly increasing in time.";
     ROS_ERROR_STREAM(error_string);
-    if (options.error_string)
-      *options.error_string = error_string;
+    options.setErrorString(error_string);
     return Trajectory();
   }
 
@@ -274,8 +280,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       error_string = "Cannot create trajectory from message. "
                 "Vector specifying whether joints wrap around has an invalid size.";
       ROS_ERROR_STREAM(error_string);
-      if (options.error_string)
-        *options.error_string = error_string;
+      options.setErrorString(error_string);
       return Trajectory();
     }
   }
@@ -287,8 +292,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     {
       error_string = "Cannot create trajectory from message. It does not contain the expected joints.";
       ROS_ERROR_STREAM(error_string);
-      if (options.error_string)
-        *options.error_string = error_string;
+      options.setErrorString(error_string);
       return Trajectory();
     }
   }
@@ -301,8 +305,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   {
     error_string = "Cannot create trajectory from message. It does not contain the expected joints.";
     ROS_ERROR_STREAM(error_string);
-    if (options.error_string)
-      *options.error_string = error_string;
+    options.setErrorString(error_string);
     return Trajectory();
   }
 
@@ -335,8 +338,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       error_string += "Last point is " + std::to_string(last_point_dur.toSec());
       error_string += "s in the past.";
       ROS_WARN_STREAM(error_string);
-      if (options.error_string)
-        *options.error_string = error_string;
+      options.setErrorString(error_string);
       return Trajectory();
     }
     else if ( // If the first point is at time zero and no start time is set in the header, skip it silently
@@ -445,8 +447,7 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
         {
           error_string = "Unexpected error: Could not find segments in current trajectory. Please contact the package maintainer.";
           ROS_ERROR_STREAM(error_string);
-          if (options.error_string)
-            *options.error_string = error_string;
+          options.setErrorString(error_string);
           return Trajectory();
         }
         result_traj_per_joint.insert(result_traj_per_joint.begin(), first, ++last); // Range [first,last) will still be executed

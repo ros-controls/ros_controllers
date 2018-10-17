@@ -468,7 +468,7 @@ update(const ros::Time& time, const ros::Duration& period)
   {
     current_active_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
     current_active_goal->setSucceeded(current_active_goal->preallocated_result_);
-    current_active_goal.reset(); // do not publish feedback  
+    current_active_goal.reset(); // do not publish feedback
     rt_active_goal_.reset();
     successful_joint_traj_.reset();
   }
@@ -500,6 +500,8 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
 updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh, std::string* error_string)
 {
   typedef InitJointTrajectoryOptions<Trajectory> Options;
+  Options options;
+  options.error_string              = error_string;
   std::string error_string_tmp;
 
   // Preconditions
@@ -507,8 +509,7 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   {
     error_string_tmp = "Can't accept new commands. Controller is not running.";
     ROS_ERROR_STREAM_NAMED(name_, error_string_tmp);
-    if (error_string)
-      *error_string = error_string_tmp;
+    options.setErrorString(error_string_tmp);
     return false;
   }
 
@@ -516,8 +517,7 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   {
     error_string_tmp = "Received null-pointer trajectory message, skipping.";
     ROS_WARN_STREAM_NAMED(name_, error_string_tmp);
-    if (error_string)
-      *error_string = error_string_tmp;
+    options.setErrorString(error_string_tmp);
     return false;
   }
 
@@ -542,7 +542,6 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   TrajectoryPtr curr_traj_ptr;
   curr_trajectory_box_.get(curr_traj_ptr);
 
-  Options options;
   options.other_time_base           = &next_update_uptime;
   options.current_trajectory        = curr_traj_ptr.get();
   options.joint_names               = &joint_names_;
@@ -550,7 +549,6 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   options.rt_goal_handle            = gh;
   options.default_tolerances        = &default_tolerances_;
   options.allow_partial_joints_goal = allow_partial_joints_goal_;
-  options.error_string              = error_string;
 
   // Update currently executing trajectory
   try
@@ -569,16 +567,14 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   catch(const std::invalid_argument& ex)
   {
     ROS_ERROR_STREAM_NAMED(name_, ex.what());
-    if (error_string)
-      *error_string = ex.what();
+    options.setErrorString(ex.what());
     return false;
   }
   catch(...)
   {
     error_string_tmp = "Unexpected exception caught when initializing trajectory from ROS message data.";
     ROS_ERROR_STREAM_NAMED(name_, error_string_tmp);
-    if (error_string)
-      *error_string = error_string_tmp;
+    options.setErrorString(error_string_tmp);
     return false;
   }
 
@@ -720,7 +716,7 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
     response_point.velocity[i]     = state.velocity[0];
     response_point.acceleration[i] = state.acceleration[0];
   }
-  
+
   // Populate response
   resp.name         = joint_names_;
   resp.position     = response_point.position;

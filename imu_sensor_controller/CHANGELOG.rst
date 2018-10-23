@@ -2,8 +2,8 @@
 Changelog for package imu_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.14.2 (2018-10-23)
+-------------------
 * Update maintainers
 * Contributors: Bence Magyar
 

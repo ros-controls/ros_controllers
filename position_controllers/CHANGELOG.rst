@@ -2,8 +2,8 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.14.2 (2018-10-23)
+-------------------
 * Update maintainers
 * Contributors: Bence Magyar
 

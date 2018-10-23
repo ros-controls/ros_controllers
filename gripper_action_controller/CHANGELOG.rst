@@ -2,6 +2,9 @@
 Changelog for package gripper_action_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.14.1 (2018-06-26)
 -------------------
 

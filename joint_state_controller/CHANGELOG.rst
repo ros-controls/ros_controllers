@@ -2,6 +2,11 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update maintainers
+* Contributors: Bence Magyar
+
 0.14.1 (2018-06-26)
 -------------------
 

@@ -2,6 +2,15 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Report errors in updateTrajectoryCommand back though action result error_string
+* Remove redundant warning messages
+* Return error string when failing to initialize trajectory from message
+* Changes to allow inheritance from JointTrajectoryController.
+* Update maintainers
+* Contributors: Alexander Gutenkunst, Miguel Prada, Mathias Lüdtke, Bence Magyar
+
 0.14.1 (2018-06-26)
 -------------------
 * joint_trajectory_controller tests stability improved

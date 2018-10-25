@@ -314,6 +314,16 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
                       "s in the past.");
       return Trajectory();
     }
+    else if ( // If the first point is at time zero and no start time is set in the header, skip it silently
+              msg.points.begin()->time_from_start == ros::Duration(0.) &&
+              msg.header.stamp == ros::Time(0) &&
+              std::distance(msg.points.begin(), msg_it) == 1
+              )
+    {
+      ROS_DEBUG_STREAM("Dropping first trajectory point at time=0. " <<
+                       "First valid point will be reached at time_from_start " <<
+                       std::fixed << std::setprecision(3) << msg_it->time_from_start.toSec() << "s.");
+    }
     else
     {
       ros::Duration next_point_dur = msg_start_time + msg_it->time_from_start - time;

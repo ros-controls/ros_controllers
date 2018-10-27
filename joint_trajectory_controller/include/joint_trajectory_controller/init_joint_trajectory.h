@@ -315,8 +315,8 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
       return Trajectory();
     }
     else if ( // If the first point is at time zero and no start time is set in the header, skip it silently
-              msg.points.begin()->time_from_start == ros::Duration(0.) &&
-              msg.header.stamp == ros::Time(0) &&
+              msg.points.begin()->time_from_start.isZero() &&
+              msg.header.stamp.isZero() &&
               std::distance(msg.points.begin(), msg_it) == 1
               )
     {

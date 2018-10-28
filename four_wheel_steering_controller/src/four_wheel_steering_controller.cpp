@@ -209,8 +209,8 @@ namespace four_wheel_steering_controller{
     for (size_t i = 0; i < front_wheel_joints_.size(); ++i)
     {
       ROS_INFO_STREAM_NAMED(name_,
-                            "Adding left wheel with joint name: " << front_wheel_names[i]
-                            << " and right wheel with joint name: " << rear_wheel_names[i]);
+                            "Adding front wheel with joint name: " << front_wheel_names[i]
+                            << " and rear wheel with joint name: " << rear_wheel_names[i]);
       front_wheel_joints_[i] = vel_joint_hw->getHandle(front_wheel_names[i]);  // throws on failure
       rear_wheel_joints_[i] = vel_joint_hw->getHandle(rear_wheel_names[i]);  // throws on failure
     }

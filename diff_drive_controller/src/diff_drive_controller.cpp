@@ -586,7 +586,7 @@ namespace diff_drive_controller{
     std::string robot_model_str="";
     if (!res || !root_nh.getParam(model_param_name,robot_model_str))
     {
-      ROS_ERROR_NAMED(name_, "Robot descripion couldn't be retrieved from param server.");
+      ROS_ERROR_NAMED(name_, "Robot description couldn't be retrieved from param server.");
       return false;
     }
 

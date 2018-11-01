@@ -1,0 +1,11 @@
+<library path="lib/libtraj_or_jog_controller">
+
+  <class name="traj_or_jog_controllers/TrajOrJogController"
+	type="traj_or_jog_controllers::TrajOrJogController"
+	base_class_type="controller_interface::ControllerBase">
+  <description>
+    TODO
+  </description>
+  </class>
+
+</library>

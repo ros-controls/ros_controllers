@@ -314,10 +314,12 @@ template <class HardwareInterface>
 void GripperActionController<HardwareInterface>::
 checkForSuccess(const ros::Time& time, double error_position, double current_position, double current_velocity)
 {
-  if(!rt_active_goal_)
+  RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
+
+  if(!current_active_goal)
     return;
 
-  if(rt_active_goal_->gh_.getGoalStatus().status != actionlib_msgs::GoalStatus::ACTIVE)
+  if(current_active_goal->gh_.getGoalStatus().status != actionlib_msgs::GoalStatus::ACTIVE)
     return;
 
   if(fabs(error_position) < goal_tolerance_)
@@ -326,7 +328,7 @@ checkForSuccess(const ros::Time& time, double error_position, double current_pos
     pre_alloc_result_->position = current_position;
     pre_alloc_result_->reached_goal = true;
     pre_alloc_result_->stalled = false;
-    rt_active_goal_->setSucceeded(pre_alloc_result_);
+    current_active_goal->setSucceeded(pre_alloc_result_);
   }
   else
   {
@@ -340,7 +342,7 @@ checkForSuccess(const ros::Time& time, double error_position, double current_pos
       pre_alloc_result_->position = current_position;
       pre_alloc_result_->reached_goal = false;
       pre_alloc_result_->stalled = true;
-      rt_active_goal_->setAborted(pre_alloc_result_);
+      current_active_goal->setAborted(pre_alloc_result_);
     }
   }
 }

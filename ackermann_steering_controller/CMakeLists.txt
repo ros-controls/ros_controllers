@@ -2,39 +2,22 @@ cmake_minimum_required(VERSION 2.8.3)
 project(ackermann_steering_controller)
 
 find_package(catkin REQUIRED COMPONENTS
-  angles
-  control_toolbox
   controller_interface
   diff_drive_controller
-  gazebo_ros_control
-  hardware_interface
-  joint_limits_interface
   nav_msgs
-  realtime_tools
-  roscpp
   tf
   urdf
 )
 
-find_package(gazebo REQUIRED)
-
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS
-  angles
-  control_toolbox
-  gazebo_ros_control
-  hardware_interface
-  joint_limits_interface
-  roscpp
+  CATKIN_DEPENDS diff_drive_controller
 )
 
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${GAZEBO_INCLUDE_DIRS}
-  ${diff_drive_controller_INCLUDE_DIRS}
 )
 
 link_directories(${GAZEBO_LIBRARY_DIRS})

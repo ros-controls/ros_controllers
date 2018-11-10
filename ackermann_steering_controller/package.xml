@@ -13,27 +13,17 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <depend>angles</depend>
   <depend>controller_interface</depend>
-  <depend>control_toolbox</depend>
-  <depend>gazebo_ros_control</depend>
-  <depend>hardware_interface</depend>
-  <depend>joint_limits_interface</depend>
   <depend>nav_msgs</depend>
   <depend>realtime_tools</depend>
   <depend>roscpp</depend>
   <depend>tf</depend>
   <depend>urdf</depend>
-
-  <build_depend>diff_drive_controller</build_depend>
-  <build_depend>gazebo</build_depend>
+  <depend>diff_drive_controller</depend>
 
   <!--Tests-->
-  <build_depend>rostest</build_depend>
-
   <test_depend>controller_manager</test_depend>
   <test_depend>rostest</test_depend>
-  <test_depend>rosunit</test_depend>
   <test_depend>std_srvs</test_depend>
   <test_depend>xacro</test_depend>
 

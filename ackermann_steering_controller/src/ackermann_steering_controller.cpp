@@ -39,11 +39,10 @@
 
 #include <cmath>
 
-#include <tf/transform_datatypes.h>
-
-#include <urdf_parser/urdf_parser.h>
-
 #include <boost/assign.hpp>
+#include <pluginlib/class_list_macros.h>
+#include <tf/transform_datatypes.h>
+#include <urdf_parser/urdf_parser.h>
 
 #include <ackermann_steering_controller/ackermann_steering_controller.h>
 
@@ -123,7 +122,6 @@ namespace ackermann_steering_controller{
     , odom_frame_id_("odom")
     , enable_odom_tf_(true)
     , wheel_joints_size_(0)
-    , ns_("")
   {
   }
 
@@ -517,4 +515,5 @@ namespace ackermann_steering_controller{
     tf_odom_pub_->msg_.transforms[0].header.frame_id = odom_frame_id_;
   }
 
+  PLUGINLIB_EXPORT_CLASS(ackermann_steering_controller::AckermannSteeringController, controller_interface::ControllerBase)
 } // namespace ackermann_steering_controller

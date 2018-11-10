@@ -40,7 +40,6 @@
 #include <controller_interface/controller.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <pluginlib/class_list_macros.h>
 
 #include <nav_msgs/Odometry.h>
 #include <tf/tfMessage.h>
@@ -52,8 +51,6 @@
 #include <ackermann_steering_controller/odometry.h>
 
 //#define GUI_DEBUG // uncommentout when you use qtcreator for debugging
-
-using diff_drive_controller::SpeedLimiter;
 
 namespace ackermann_steering_controller{
 
@@ -169,8 +166,8 @@ namespace ackermann_steering_controller{
     /// Speed limiters:
     Commands last1_cmd_;
     Commands last0_cmd_;
-    SpeedLimiter limiter_lin_;
-    SpeedLimiter limiter_ang_;
+    diff_drive_controller::SpeedLimiter limiter_lin_;
+    diff_drive_controller::SpeedLimiter limiter_ang_;
 
     // FOR_DEBUG
     std::string ns_;
@@ -208,5 +205,4 @@ namespace ackermann_steering_controller{
 
   };
 
-  PLUGINLIB_EXPORT_CLASS(ackermann_steering_controller::AckermannSteeringController, controller_interface::ControllerBase)
-} // namespace diff_drive_controller
+} // namespace ackermann_drive_controller

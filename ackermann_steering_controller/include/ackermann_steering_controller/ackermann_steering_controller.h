@@ -50,8 +50,6 @@
 #include <diff_drive_controller/speed_limiter.h>
 #include <ackermann_steering_controller/odometry.h>
 
-//#define GUI_DEBUG // uncommentout when you use qtcreator for debugging
-
 namespace ackermann_steering_controller{
 
   /**
@@ -168,9 +166,6 @@ namespace ackermann_steering_controller{
     Commands last0_cmd_;
     diff_drive_controller::SpeedLimiter limiter_lin_;
     diff_drive_controller::SpeedLimiter limiter_ang_;
-
-    // FOR_DEBUG
-    std::string ns_;
 
   private:
     /**

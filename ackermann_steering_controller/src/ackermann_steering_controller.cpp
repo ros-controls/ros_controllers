@@ -144,11 +144,11 @@ namespace ackermann_steering_controller{
 
     //-- single rear wheel joint
     std::string rear_wheel_name = "rear_wheel_joint";
-    controller_nh.param(ns_ + "rear_wheel", rear_wheel_name, rear_wheel_name);
+    controller_nh.param("rear_wheel", rear_wheel_name, rear_wheel_name);
 
     //-- single front steer joint
     std::string front_steer_name = "front_steer_joint";
-    controller_nh.param(ns_ + "front_steer", front_steer_name, front_steer_name);
+    controller_nh.param("front_steer", front_steer_name, front_steer_name);
 
 
     // Odometry related:
@@ -158,69 +158,69 @@ namespace ackermann_steering_controller{
                           << publish_rate << "Hz.");
     publish_period_ = ros::Duration(1.0 / publish_rate);
 
-    controller_nh.param(ns_ + "open_loop", open_loop_, open_loop_);
+    controller_nh.param("open_loop", open_loop_, open_loop_);
 
-    controller_nh.param(ns_ + "wheel_separation_h_multiplier", wheel_separation_h_multiplier_, wheel_separation_h_multiplier_);
+    controller_nh.param("wheel_separation_h_multiplier", wheel_separation_h_multiplier_, wheel_separation_h_multiplier_);
     ROS_INFO_STREAM_NAMED(name_, "Wheel separation height will be multiplied by "
                           << wheel_separation_h_multiplier_ << ".");
 
-    controller_nh.param(ns_ + "wheel_radius_multiplier", wheel_radius_multiplier_, wheel_radius_multiplier_);
+    controller_nh.param("wheel_radius_multiplier", wheel_radius_multiplier_, wheel_radius_multiplier_);
     ROS_INFO_STREAM_NAMED(name_, "Wheel radius will be multiplied by "
                           << wheel_radius_multiplier_ << ".");
 
-    controller_nh.param(ns_ + "steer_pos_multiplier", steer_pos_multiplier_, steer_pos_multiplier_);
+    controller_nh.param("steer_pos_multiplier", steer_pos_multiplier_, steer_pos_multiplier_);
     ROS_INFO_STREAM_NAMED(name_, "Steer pos will be multiplied by "
                           << steer_pos_multiplier_ << ".");
 
     int velocity_rolling_window_size = 10;
-    controller_nh.param(ns_ + "velocity_rolling_window_size", velocity_rolling_window_size, velocity_rolling_window_size);
+    controller_nh.param("velocity_rolling_window_size", velocity_rolling_window_size, velocity_rolling_window_size);
     ROS_INFO_STREAM_NAMED(name_, "Velocity rolling window size of "
                           << velocity_rolling_window_size << ".");
 
     odometry_.setVelocityRollingWindowSize(velocity_rolling_window_size);
 
     // Twist command related:
-    controller_nh.param(ns_ + "cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
+    controller_nh.param("cmd_vel_timeout", cmd_vel_timeout_, cmd_vel_timeout_);
     ROS_INFO_STREAM_NAMED(name_, "Velocity commands will be considered old if they are older than "
                           << cmd_vel_timeout_ << "s.");
 
-    controller_nh.param(ns_ + "allow_multiple_cmd_vel_publishers", allow_multiple_cmd_vel_publishers_, allow_multiple_cmd_vel_publishers_);
+    controller_nh.param("allow_multiple_cmd_vel_publishers", allow_multiple_cmd_vel_publishers_, allow_multiple_cmd_vel_publishers_);
     ROS_INFO_STREAM_NAMED(name_, "Allow mutiple cmd_vel publishers is "
                           << (allow_multiple_cmd_vel_publishers_?"enabled":"disabled"));
 
-    controller_nh.param(ns_ + "base_frame_id", base_frame_id_, base_frame_id_);
+    controller_nh.param("base_frame_id", base_frame_id_, base_frame_id_);
     ROS_INFO_STREAM_NAMED(name_, "Base frame_id set to " << base_frame_id_);
 
-    controller_nh.param(ns_ + "odom_frame_id", odom_frame_id_, odom_frame_id_);
+    controller_nh.param("odom_frame_id", odom_frame_id_, odom_frame_id_);
     ROS_INFO_STREAM_NAMED(name_, "Odometry frame_id set to " << odom_frame_id_);
 
-    controller_nh.param(ns_ + "enable_odom_tf", enable_odom_tf_, enable_odom_tf_);
+    controller_nh.param("enable_odom_tf", enable_odom_tf_, enable_odom_tf_);
     ROS_INFO_STREAM_NAMED(name_, "Publishing to tf is " << (enable_odom_tf_?"enabled":"disabled"));
 
     // Velocity and acceleration limits:
-    controller_nh.param(ns_ + "linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
-    controller_nh.param(ns_ + "linear/x/has_acceleration_limits", limiter_lin_.has_acceleration_limits, limiter_lin_.has_acceleration_limits);
-    controller_nh.param(ns_ + "linear/x/has_jerk_limits"        , limiter_lin_.has_jerk_limits        , limiter_lin_.has_jerk_limits        );
-    controller_nh.param(ns_ + "linear/x/max_velocity"           , limiter_lin_.max_velocity           ,  limiter_lin_.max_velocity          );
-    controller_nh.param(ns_ + "linear/x/min_velocity"           , limiter_lin_.min_velocity           , -limiter_lin_.max_velocity          );
-    controller_nh.param(ns_ + "linear/x/max_acceleration"       , limiter_lin_.max_acceleration       ,  limiter_lin_.max_acceleration      );
-    controller_nh.param(ns_ + "linear/x/min_acceleration"       , limiter_lin_.min_acceleration       , -limiter_lin_.max_acceleration      );
-    controller_nh.param(ns_ + "linear/x/max_jerk"               , limiter_lin_.max_jerk               ,  limiter_lin_.max_jerk              );
-    controller_nh.param(ns_ + "linear/x/min_jerk"               , limiter_lin_.min_jerk               , -limiter_lin_.max_jerk              );
+    controller_nh.param("linear/x/has_velocity_limits"    , limiter_lin_.has_velocity_limits    , limiter_lin_.has_velocity_limits    );
+    controller_nh.param("linear/x/has_acceleration_limits", limiter_lin_.has_acceleration_limits, limiter_lin_.has_acceleration_limits);
+    controller_nh.param("linear/x/has_jerk_limits"        , limiter_lin_.has_jerk_limits        , limiter_lin_.has_jerk_limits        );
+    controller_nh.param("linear/x/max_velocity"           , limiter_lin_.max_velocity           ,  limiter_lin_.max_velocity          );
+    controller_nh.param("linear/x/min_velocity"           , limiter_lin_.min_velocity           , -limiter_lin_.max_velocity          );
+    controller_nh.param("linear/x/max_acceleration"       , limiter_lin_.max_acceleration       ,  limiter_lin_.max_acceleration      );
+    controller_nh.param("linear/x/min_acceleration"       , limiter_lin_.min_acceleration       , -limiter_lin_.max_acceleration      );
+    controller_nh.param("linear/x/max_jerk"               , limiter_lin_.max_jerk               ,  limiter_lin_.max_jerk              );
+    controller_nh.param("linear/x/min_jerk"               , limiter_lin_.min_jerk               , -limiter_lin_.max_jerk              );
 
-    controller_nh.param(ns_ + "angular/z/has_velocity_limits"    , limiter_ang_.has_velocity_limits    , limiter_ang_.has_velocity_limits    );
-    controller_nh.param(ns_ + "angular/z/has_acceleration_limits", limiter_ang_.has_acceleration_limits, limiter_ang_.has_acceleration_limits);
-    controller_nh.param(ns_ + "angular/z/has_jerk_limits"        , limiter_ang_.has_jerk_limits        , limiter_ang_.has_jerk_limits        );
-    controller_nh.param(ns_ + "angular/z/max_velocity"           , limiter_ang_.max_velocity           ,  limiter_ang_.max_velocity          );
-    controller_nh.param(ns_ + "angular/z/min_velocity"           , limiter_ang_.min_velocity           , -limiter_ang_.max_velocity          );
-    controller_nh.param(ns_ + "angular/z/max_acceleration"       , limiter_ang_.max_acceleration       ,  limiter_ang_.max_acceleration      );
-    controller_nh.param(ns_ + "angular/z/min_acceleration"       , limiter_ang_.min_acceleration       , -limiter_ang_.max_acceleration      );
-    controller_nh.param(ns_ + "angular/z/max_jerk"               , limiter_ang_.max_jerk               ,  limiter_ang_.max_jerk              );
-    controller_nh.param(ns_ + "angular/z/min_jerk"               , limiter_ang_.min_jerk               , -limiter_ang_.max_jerk              );
+    controller_nh.param("angular/z/has_velocity_limits"    , limiter_ang_.has_velocity_limits    , limiter_ang_.has_velocity_limits    );
+    controller_nh.param("angular/z/has_acceleration_limits", limiter_ang_.has_acceleration_limits, limiter_ang_.has_acceleration_limits);
+    controller_nh.param("angular/z/has_jerk_limits"        , limiter_ang_.has_jerk_limits        , limiter_ang_.has_jerk_limits        );
+    controller_nh.param("angular/z/max_velocity"           , limiter_ang_.max_velocity           ,  limiter_ang_.max_velocity          );
+    controller_nh.param("angular/z/min_velocity"           , limiter_ang_.min_velocity           , -limiter_ang_.max_velocity          );
+    controller_nh.param("angular/z/max_acceleration"       , limiter_ang_.max_acceleration       ,  limiter_ang_.max_acceleration      );
+    controller_nh.param("angular/z/min_acceleration"       , limiter_ang_.min_acceleration       , -limiter_ang_.max_acceleration      );
+    controller_nh.param("angular/z/max_jerk"               , limiter_ang_.max_jerk               ,  limiter_ang_.max_jerk              );
+    controller_nh.param("angular/z/min_jerk"               , limiter_ang_.min_jerk               , -limiter_ang_.max_jerk              );
 
     // If either parameter is not available, we need to look up the value in the URDF
-    bool lookup_wheel_separation_h = !controller_nh.getParam(ns_ + "wheel_separation_h", wheel_separation_h_);
-    bool lookup_wheel_radius = !controller_nh.getParam(ns_ + "wheel_radius", wheel_radius_);
+    bool lookup_wheel_separation_h = !controller_nh.getParam("wheel_separation_h", wheel_separation_h_);
+    bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius_);
 
     if (!setOdomParamsFromUrdf(root_nh,
                                rear_wheel_name,
@@ -472,21 +472,21 @@ namespace ackermann_steering_controller{
   {
     // Get and check params for covariances
     XmlRpc::XmlRpcValue pose_cov_list;
-    controller_nh.getParam(ns_ + "pose_covariance_diagonal", pose_cov_list);
+    controller_nh.getParam("pose_covariance_diagonal", pose_cov_list);
     ROS_ASSERT(pose_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
     ROS_ASSERT(pose_cov_list.size() == 6);
     for (int i = 0; i < pose_cov_list.size(); ++i)
       ROS_ASSERT(pose_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
     XmlRpc::XmlRpcValue twist_cov_list;
-    controller_nh.getParam(ns_ + "twist_covariance_diagonal", twist_cov_list);
+    controller_nh.getParam("twist_covariance_diagonal", twist_cov_list);
     ROS_ASSERT(twist_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
     ROS_ASSERT(twist_cov_list.size() == 6);
     for (int i = 0; i < twist_cov_list.size(); ++i)
       ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
     // Setup odometry realtime publisher + odom message constant fields
-    odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, ns_ + "odom", 100));
+    odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odom", 100));
     odom_pub_->msg_.header.frame_id = odom_frame_id_;
     odom_pub_->msg_.child_frame_id = base_frame_id_;
     odom_pub_->msg_.pose.pose.position.z = 0;

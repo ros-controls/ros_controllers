@@ -35,8 +35,6 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-list(APPEND CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-
 add_library(${PROJECT_NAME} src/ackermann_steering_controller.cpp src/odometry.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
@@ -52,11 +50,15 @@ install(FILES ackermann_steering_controller_plugins.xml
 if (CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS
     controller_manager
+    geometry_msgs
+    rostest
     rosunit
+    std_msgs
     std_srvs
+    gazebo_ros
+    xacro
   )
 
-  find_package(catkin REQUIRED COMPONENTS controller_manager rosgraph_msgs rostest std_srvs tf)
   add_executable(${PROJECT_NAME}_ackermann_steering_bot test/common/src/ackermann_steering_bot.cpp)
   add_dependencies(tests ${PROJECT_NAME}_ackermann_steering_bot)
 

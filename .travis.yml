@@ -26,5 +26,5 @@ env:
 install:
   - git clone https://github.com/ros-industrial/industrial_ci.git .ci_config
 script:
-  - travis_wait 30 .ci_config/travis.sh 
+  - .industrial_ci/travis.sh
 ##  - source ./travis.sh  # Enable this when you have a package-local script 

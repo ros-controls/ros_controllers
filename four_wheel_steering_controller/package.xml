@@ -13,17 +13,29 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <depend>boost</depend>
   <depend>controller_interface</depend>
-  <depend>nav_msgs</depend>
   <depend>four_wheel_steering_msgs</depend>
+  <depend>hardware_interface</depend>
+  <depend>nav_msgs</depend>
   <depend>realtime_tools</depend>
+  <depend>roscpp</depend>
   <depend>tf</depend>
-  <depend>urdf_geometry_parser</depend>
 
+  <build_depend>pluginlib</build_depend>
+  <build_depend>urdf_geometry_parser</build_depend>
+
+  <exec_depend>pluginlib</exec_depend>
+  <exec_depend>urdf_geometry_parser</exec_depend>
+
+  <test_depend>controller_manager</test_depend>
+  <test_depend>gazebo_ros</test_depend>
   <test_depend>rosgraph_msgs</test_depend>
   <test_depend>rostest</test_depend>
+  <test_depend>rosunit</test_depend>
+  <test_depend>std_msgs</test_depend>
   <test_depend>std_srvs</test_depend>
-  <test_depend>controller_manager</test_depend>
+  <test_depend>xacro</test_depend>
 
   <export>
     <controller_interface plugin="${prefix}/four_wheel_steering_controller_plugins.xml"/>

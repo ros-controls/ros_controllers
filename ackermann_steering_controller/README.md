@@ -1,4 +1,4 @@
-## Ackermann Steerubg Controller ##
+## Ackermann Steering Controller ##
 
 Controller for a ackermann steering drive mobile base. 
 

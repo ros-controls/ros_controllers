@@ -34,6 +34,7 @@
   <test_depend>geometry_msgs</test_depend>
   <test_depend>rostest</test_depend>
   <test_depend>rosunit</test_depend>
+  <test_depend>rviz</test_depend>
   <test_depend>std_msgs</test_depend>
   <test_depend>std_srvs</test_depend>
   <test_depend>xacro</test_depend>

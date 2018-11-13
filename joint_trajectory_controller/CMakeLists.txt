@@ -10,17 +10,12 @@ find_package(catkin
     control_toolbox
     control_msgs
     controller_interface
-    controller_manager
     hardware_interface
     pluginlib
     realtime_tools
     roscpp
-    rostest
-    rosunit
-    rqt_plot
     trajectory_msgs
     urdf
-    xacro
 )
 
 find_package(Boost REQUIRED COMPONENTS system thread)
@@ -59,6 +54,27 @@ add_library(${PROJECT_NAME} src/joint_trajectory_controller.cpp
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 
 if(CATKIN_ENABLE_TESTING)
+  find_package(catkin
+    REQUIRED COMPONENTS
+      actionlib
+      angles
+      cmake_modules
+      control_toolbox
+      control_msgs
+      controller_interface
+      controller_manager
+      hardware_interface
+      pluginlib
+      realtime_tools
+      roscpp
+      rostest
+      rosunit
+      rqt_plot
+      trajectory_msgs
+      urdf
+      xacro
+  )
+
   include_directories(include ${catkin_INCLUDE_DIRS})
 
   catkin_add_gtest(quintic_spline_segment_test test/quintic_spline_segment_test.cpp)

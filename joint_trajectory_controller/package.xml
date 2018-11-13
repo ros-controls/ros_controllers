@@ -36,10 +36,10 @@
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>urdf</exec_depend>
 
+  <test_depend>controller_manager</test_depend>
   <test_depend>rostest</test_depend>
   <test_depend>rosunit</test_depend>
   <test_depend>rqt_plot</test_depend>
-  <test_depend>controller_manager</test_depend>
   <test_depend>xacro</test_depend>
 
   <export>

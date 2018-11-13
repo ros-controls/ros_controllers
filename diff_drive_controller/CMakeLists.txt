@@ -3,23 +3,15 @@ project(diff_drive_controller)
 
 find_package(catkin REQUIRED COMPONENTS
   controller_interface
-  controller_manager
   dynamic_reconfigure
-  gazebo_ros
   geometry_msgs
   hardware_interface
   nav_msgs
   pluginlib
   realtime_tools
   roscpp
-  rosgraph_msgs
-  rostest
-  rosunit
-  std_msgs
-  std_srvs
   tf
   urdf
-  xacro
 )
 
 find_package(Boost REQUIRED COMPONENTS system thread)
@@ -69,6 +61,27 @@ install(FILES diff_drive_controller_plugins.xml
 )
 
 if (CATKIN_ENABLE_TESTING)
+  find_package(catkin REQUIRED COMPONENTS
+    controller_interface
+    controller_manager
+    dynamic_reconfigure
+    gazebo_ros
+    geometry_msgs
+    hardware_interface
+    nav_msgs
+    pluginlib
+    realtime_tools
+    roscpp
+    rosgraph_msgs
+    rostest
+    rosunit
+    std_msgs
+    std_srvs
+    tf
+    urdf
+    xacro
+  )
+
   include_directories(include ${catkin_INCLUDE_DIRS})
 
   add_executable(diffbot test/diffbot.cpp)

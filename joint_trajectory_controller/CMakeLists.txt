@@ -57,25 +57,22 @@ if(CATKIN_ENABLE_TESTING)
   find_package(catkin
     REQUIRED COMPONENTS
       actionlib
-      angles
-      cmake_modules
-      control_toolbox
       control_msgs
       controller_interface
       controller_manager
       hardware_interface
-      pluginlib
       realtime_tools
       roscpp
-      rostest
       rosunit
-      rqt_plot
+      std_msgs
       trajectory_msgs
       urdf
       xacro
   )
 
-  include_directories(include ${catkin_INCLUDE_DIRS})
+  find_package(rostest REQUIRED)
+
+  include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
   catkin_add_gtest(quintic_spline_segment_test test/quintic_spline_segment_test.cpp)
   target_link_libraries(quintic_spline_segment_test ${catkin_LIBRARIES})
@@ -110,23 +107,23 @@ if(CATKIN_ENABLE_TESTING)
   add_rostest_gtest(joint_trajectory_controller_test
                     test/joint_trajectory_controller.test
                     test/joint_trajectory_controller_test.cpp)
-  target_link_libraries(joint_trajectory_controller_test ${catkin_LIBRARIES})
+  target_link_libraries(joint_trajectory_controller_test ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 
   add_rostest_gtest(joint_trajectory_controller_stopramp_test
                     test/joint_trajectory_controller_stopramp.test
                     test/joint_trajectory_controller_test.cpp)
-  target_link_libraries(joint_trajectory_controller_stopramp_test ${catkin_LIBRARIES})
+  target_link_libraries(joint_trajectory_controller_stopramp_test ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 
   add_rostest_gtest(joint_trajectory_controller_vel_test
                     test/joint_trajectory_controller_vel.test
                     test/joint_trajectory_controller_test.cpp)
-  target_link_libraries(joint_trajectory_controller_vel_test ${catkin_LIBRARIES})
+  target_link_libraries(joint_trajectory_controller_vel_test ${Boost_LIBRARIES} ${catkin_LIBRARIES})
   target_compile_definitions(joint_trajectory_controller_vel_test PRIVATE TEST_VELOCITY_FF=1)
 
   add_rostest_gtest(joint_trajectory_controller_wrapping_test
                     test/joint_trajectory_controller_wrapping.test
                     test/joint_trajectory_controller_wrapping_test.cpp)
-  target_link_libraries(joint_trajectory_controller_wrapping_test ${catkin_LIBRARIES})
+  target_link_libraries(joint_trajectory_controller_wrapping_test ${Boost_LIBRARIES} ${catkin_LIBRARIES})
 
 endif()
 

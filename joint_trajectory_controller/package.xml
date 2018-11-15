@@ -40,6 +40,7 @@
   <test_depend>rostest</test_depend>
   <test_depend>rosunit</test_depend>
   <test_depend>rqt_plot</test_depend>
+  <test_depend>std_msgs</test_depend>
   <test_depend>xacro</test_depend>
 
   <export>

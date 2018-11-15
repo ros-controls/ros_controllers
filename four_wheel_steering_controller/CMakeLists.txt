@@ -53,25 +53,23 @@ install(FILES four_wheel_steering_controller_plugins.xml
 
 if(CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS
-    controller_interface
     controller_manager
     four_wheel_steering_msgs
     gazebo_ros
     geometry_msgs
     hardware_interface
     nav_msgs
-    pluginlib
     realtime_tools
     roscpp
     rosgraph_msgs
-    rostest
     rosunit
     std_msgs
     std_srvs
     tf
-    urdf_geometry_parser
     xacro
   )
+
+  find_package(rostest REQUIRED)
 
   add_executable(four_wheel_steering test/src/four_wheel_steering.cpp)
   target_link_libraries(four_wheel_steering ${catkin_LIBRARIES})

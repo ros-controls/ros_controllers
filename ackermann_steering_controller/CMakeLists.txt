@@ -49,25 +49,22 @@ install(FILES ackermann_steering_controller_plugins.xml
 
 if (CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS
-    controller_interface
     controller_manager
-    diff_drive_controller
     gazebo_ros
     geometry_msgs
     hardware_interface
     nav_msgs
-    pluginlib
     realtime_tools
     roscpp
-    rostest
     rosunit
-    rviz
     std_msgs
     std_srvs
     tf
     urdf
     xacro
   )
+
+  find_package(rostest REQUIRED)
 
   add_executable(${PROJECT_NAME}_ackermann_steering_bot test/common/src/ackermann_steering_bot.cpp)
   add_dependencies(tests ${PROJECT_NAME}_ackermann_steering_bot)

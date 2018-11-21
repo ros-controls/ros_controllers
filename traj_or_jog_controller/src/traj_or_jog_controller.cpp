@@ -61,7 +61,6 @@ goalCB(GoalHandle gh)
   allow_trajectory_execution_ = true;
 
   // Reset the JointTrajectoryController to ensure it has current joint angles, etc.
-  JointTrajectoryController::stopping(ros::Time::now());
   JointTrajectoryController::starting(ros::Time::now());
 
   JointTrajectoryController::goalCB(gh);

@@ -58,7 +58,11 @@ protected:
   void velocityCommandCB(const std_msgs::Float64MultiArrayConstPtr& msg)
   {
     // Disable trajectory execution since the real-time velocity command takes priority
-    allow_trajectory_execution_ = false;
+    if (allow_trajectory_execution_)
+    {
+      allow_trajectory_execution_ = false;
+      JointTrajectoryController::preemptActiveGoal();
+    }
 
     if(msg->data.size()!=n_joints_)
     { 

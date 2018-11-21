@@ -49,7 +49,7 @@ protected:
   typedef actionlib::ActionServer<control_msgs::FollowJointTrajectoryAction>::GoalHandle  GoalHandle;
 
   ros::Subscriber  velocity_command_sub_;
-  bool allow_trajectory_execution_ = true; ///< Current mode.
+  bool allow_trajectory_execution_; ///< Current mode.
 
   /**
    * \brief Callback for real-time JointGroupVelocityController commands.
@@ -61,7 +61,8 @@ protected:
     if (allow_trajectory_execution_)
     {
       allow_trajectory_execution_ = false;
-      JointTrajectoryController::preemptActiveGoal();
+      JointTrajectoryController::setHoldPosition(ros::Time::now());
+      JointTrajectoryController::stopping(ros::Time::now());
     }
 
     if(msg->data.size()!=n_joints_)

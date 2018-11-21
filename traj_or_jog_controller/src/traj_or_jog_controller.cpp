@@ -20,6 +20,8 @@ bool TrajOrJogController<SegmentImpl, HardwareInterface>::init(HardwareInterface
 
   commands_buffer_.writeFromNonRT(std::vector<double>(n_joints_, 0.0));
 
+  allow_trajectory_execution_ = false;
+
   return true;
 }
 

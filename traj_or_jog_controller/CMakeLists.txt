@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(traj_or_jog_controller)
 
-add_compile_options(-std=c++11)
-
 find_package(catkin
   REQUIRED COMPONENTS
     realtime_tools
@@ -38,3 +36,4 @@ install(TARGETS ${PROJECT_NAME}
 
 install(FILES traj_or_jog_controller_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+  

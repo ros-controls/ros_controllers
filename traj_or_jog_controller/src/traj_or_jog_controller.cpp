@@ -1,5 +1,4 @@
 #include <traj_or_jog_controller/traj_or_jog_controller.h>
-#include <traj_or_jog_controller/export_traj_or_jog_controllers.h>
 
 namespace traj_or_jog_controller
 {
@@ -67,3 +66,16 @@ goalCB(GoalHandle gh)
 }
 
 }  // namespace traj_or_jog_controller
+
+// Set up namespacing of controllers and create their plugins.
+namespace velocity_controllers
+{
+  /**
+   * \brief A combination of a JointTrajectoryController with a ForwardJointGroupCommand controller.
+   */
+  typedef traj_or_jog_controller::TrajOrJogController<trajectory_interface::QuinticSplineSegment<double>,
+                                                                 hardware_interface::VelocityJointInterface>
+          TrajOrJogController;
+}
+
+PLUGINLIB_EXPORT_CLASS(velocity_controllers::TrajOrJogController, controller_interface::ControllerBase)

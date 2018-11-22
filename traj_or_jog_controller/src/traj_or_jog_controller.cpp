@@ -58,10 +58,13 @@ goalCB(GoalHandle gh)
 {
   // Make sure trajectory execution is enabled.
   // It will be interrupted by any new real-time commands.
-  allow_trajectory_execution_ = true;
+  if (!allow_trajectory_execution_)
+  {
+    // Reset the JointTrajectoryController to ensure it has current joint angles, etc.
+    JointTrajectoryController::starting(ros::Time::now());
 
-  // Reset the JointTrajectoryController to ensure it has current joint angles, etc.
-  JointTrajectoryController::starting(ros::Time::now());
+    allow_trajectory_execution_ = true;
+  }
 
   JointTrajectoryController::goalCB(gh);
 }

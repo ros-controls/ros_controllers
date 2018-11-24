@@ -228,7 +228,8 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   ROS_DEBUG_STREAM_NAMED(name_, "Action status changes will be monitored at " << action_monitor_rate << "Hz.");
 
   // Stop trajectory duration
-  controller_nh_.param("my_num", stop_trajectory_duration_, 0.0);
+  stop_trajectory_duration_ = 0.0;
+  controller_nh_.getParam("stop_trajectory_duration", stop_trajectory_duration_);
   ROS_DEBUG_STREAM_NAMED(name_, "Stop trajectory has a duration of " << stop_trajectory_duration_ << "s.");
 
   // Checking if partial trajectories are allowed

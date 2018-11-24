@@ -228,15 +228,7 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   ROS_DEBUG_STREAM_NAMED(name_, "Action status changes will be monitored at " << action_monitor_rate << "Hz.");
 
   // Stop trajectory duration
-  stop_trajectory_duration_ = 0.0;
-  if (!controller_nh_.getParam("stop_trajectory_duration", stop_trajectory_duration_))
-  {
-    // TODO: Remove this check/warning in Indigo
-    if (controller_nh_.getParam("hold_trajectory_duration", stop_trajectory_duration_))
-    {
-      ROS_WARN("The 'hold_trajectory_duration' has been deprecated in favor of the 'stop_trajectory_duration' parameter. Please update your controller configuration.");
-    }
-  }
+  controller_nh_.param("my_num", stop_trajectory_duration_, 0.0);
   ROS_DEBUG_STREAM_NAMED(name_, "Stop trajectory has a duration of " << stop_trajectory_duration_ << "s.");
 
   // Checking if partial trajectories are allowed

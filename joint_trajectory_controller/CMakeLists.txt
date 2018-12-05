@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(joint_trajectory_controller)
+add_compile_options(-std=c++11)
 
 # Load catkin and all dependencies required for this package
 find_package(catkin

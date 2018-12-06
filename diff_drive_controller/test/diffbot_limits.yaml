@@ -8,7 +8,7 @@ diffbot_controller:
       min_acceleration: -0.5
       max_acceleration: 1.0
       has_jerk_limits: true
-      max_jerk: 5.0
+      max_jerk: 10.0
   angular:
     z:
       has_velocity_limits: true
@@ -16,4 +16,4 @@ diffbot_controller:
       has_acceleration_limits: true
       max_acceleration: 2.0
       has_jerk_limits: true
-      max_jerk: 10.0
+      max_jerk: 20.0

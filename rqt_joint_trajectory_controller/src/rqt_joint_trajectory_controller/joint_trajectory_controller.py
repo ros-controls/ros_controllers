@@ -260,7 +260,6 @@ class JointTrajectoryController(Plugin):
         valid_jtc_names = [data.name for data in valid_jtc]
 
         # Update widget
-        rospy.loginfo('show jtcs: {}'.format(valid_jtc_names))
         update_combo(self._widget.jtc_combo, sorted(valid_jtc_names))
 
     def _on_speed_scaling_change(self, val):

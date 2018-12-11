@@ -186,6 +186,7 @@ class JointTrajectoryController(Plugin):
         self._state_sub = None  # Controller state subscriber
 
         self._list_controllers = None
+        self.__ns_checked =[]
 
     def shutdown_plugin(self):
         self._update_cmd_timer.stop()
@@ -239,8 +240,17 @@ class JointTrajectoryController(Plugin):
         # List of running controllers with a valid joint limits specification
         # for _all_ their joints
         running_jtc = self._running_jtc_info()
-        if running_jtc and not self._robot_joint_limits:
-            self._robot_joint_limits = get_joint_limits()  # Lazy evaluation
+        try:
+            __description = rospy.get_param('robot_description')
+            if running_jtc and not self._robot_joint_limits:
+                self._robot_joint_limits = get_joint_limits(ns=ns, description=__description)
+        except KeyError:
+            ns=self._cm_ns.rsplit('/', 1)[0]
+            if ns not in self.__ns_checked:
+                __description = rospy.get_param('{}/robot_description'.format(ns))
+                for _jnt, _lims in  get_joint_limits(description=__description).iteritems():
+                    self._robot_joint_limits[_jnt] = _lims
+                self.__ns_checked.append(ns)
         valid_jtc = []
         for jtc_info in running_jtc:
             has_limits = all(name in self._robot_joint_limits
@@ -250,6 +260,7 @@ class JointTrajectoryController(Plugin):
         valid_jtc_names = [data.name for data in valid_jtc]
 
         # Update widget
+        rospy.loginfo('show jtcs: {}'.format(valid_jtc_names))
         update_combo(self._widget.jtc_combo, sorted(valid_jtc_names))
 
     def _on_speed_scaling_change(self, val):
@@ -268,9 +279,9 @@ class JointTrajectoryController(Plugin):
             # might have controllers with the same name but different
             # configurations. Clearing forces controller re-discovery
             self._widget.jtc_combo.clear()
-            self._update_jtc_list()
         else:
             self._list_controllers = None
+        self._update_jtc_list()
 
     def _on_jtc_change(self, jtc_name):
         self._unload_jtc()

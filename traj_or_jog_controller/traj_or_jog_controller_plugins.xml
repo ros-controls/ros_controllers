@@ -1,0 +1,11 @@
+<library path="lib/libtraj_or_jog_controller">
+
+  <class name="velocity_controllers/TrajOrJogController"
+	type="velocity_controllers::TrajOrJogController"
+	base_class_type="controller_interface::ControllerBase">
+  <description>
+    A controller accepting trajectories or velocity commands.
+  </description>
+  </class>
+
+</library>

@@ -1,0 +1,2 @@
+ackermann_steering_bot_controller:
+  cmd_vel_timeout: 0.5

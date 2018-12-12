@@ -65,7 +65,7 @@ template <class T>
 inline std::vector<unsigned int> mapping(const T& t1, const T& t2)
 {
   typedef unsigned int SizeType;
-  
+
   // t1 must be a subset of t2
   if (t1.size() > t2.size()) {return std::vector<SizeType>();}
 
@@ -106,7 +106,8 @@ struct InitJointTrajectoryOptions
       rt_goal_handle(),
       default_tolerances(0),
       other_time_base(0),
-      allow_partial_joints_goal(false)
+      allow_partial_joints_goal(false),
+      error_string(0)
   {}
 
   Trajectory*                current_trajectory;
@@ -116,6 +117,15 @@ struct InitJointTrajectoryOptions
   SegmentTolerances<Scalar>* default_tolerances;
   ros::Time*                 other_time_base;
   bool                       allow_partial_joints_goal;
+  std::string*               error_string;
+
+  void setErrorString(const std::string &msg) const
+  {
+    if(error_string)
+    {
+      *error_string = msg;
+    }
+  }
 };
 
 template <class Trajectory>
@@ -166,6 +176,9 @@ bool isNotEmpty(typename Trajectory::value_type trajPerJoint)
  * The typical usecase for this variable is when the \p current_trajectory option is specified, and contains data in
  * a different time base (eg. monotonically increasing) than \p msg (eg. system-clock synchronized).
  *
+ * - \b error_string Error message. If specified, an error message will be written to this string in case of failure to
+ * initialize the output trajectory from \p msg.
+ *
  * \return Trajectory container.
  *
  * \tparam Trajectory Trajectory type. Should be a \e sequence container \e sorted by segment start time.
@@ -205,17 +218,23 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   ROS_DEBUG_STREAM("Figuring out new trajectory starting at time "
                    << std::fixed << std::setprecision(3) << msg_start_time.toSec());
 
+  std::string error_string;
+
   // Empty trajectory
   if (msg.points.empty())
   {
-    ROS_DEBUG("Trajectory message contains empty trajectory. Nothing to convert.");
+    error_string = "Trajectory message contains empty trajectory. Nothing to convert.";
+    ROS_DEBUG_STREAM(error_string);
+    options.setErrorString(error_string);
     return Trajectory();
   }
 
   // Non strictly-monotonic waypoints
   if (!isTimeStrictlyIncreasing(msg))
   {
-    ROS_ERROR("Trajectory message contains waypoints that are not strictly increasing in time.");
+    error_string = "Trajectory message contains waypoints that are not strictly increasing in time.";
+    ROS_ERROR_STREAM(error_string);
+    options.setErrorString(error_string);
     return Trajectory();
   }
 
@@ -258,8 +277,10 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     const unsigned int n_angle_wraparound = options.angle_wraparound->size();
     if (n_angle_wraparound != joint_names.size())
     {
-      ROS_ERROR("Cannot create trajectory from message. "
-                "Vector specifying whether joints wrap around has an invalid size.");
+      error_string = "Cannot create trajectory from message. "
+                "Vector specifying whether joints wrap around has an invalid size.";
+      ROS_ERROR_STREAM(error_string);
+      options.setErrorString(error_string);
       return Trajectory();
     }
   }
@@ -269,7 +290,9 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   {
     if (msg.joint_names.size() != joint_names.size())
     {
-      ROS_ERROR("Cannot create trajectory from message. It does not contain the expected joints.");
+      error_string = "Cannot create trajectory from message. It does not contain the expected joints.";
+      ROS_ERROR_STREAM(error_string);
+      options.setErrorString(error_string);
       return Trajectory();
     }
   }
@@ -280,7 +303,9 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
 
   if (mapping_vector.empty())
   {
-    ROS_ERROR("Cannot create trajectory from message. It does not contain the expected joints.");
+    error_string = "Cannot create trajectory from message. It does not contain the expected joints.";
+    ROS_ERROR_STREAM(error_string);
+    options.setErrorString(error_string);
     return Trajectory();
   }
 
@@ -308,11 +333,26 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
     if (msg_it == msg.points.end())
     {
       ros::Duration last_point_dur = time - (msg_start_time + (--msg_it)->time_from_start);
-      ROS_WARN_STREAM("Dropping all " << msg.points.size() <<
-                      " trajectory point(s), as they occur before the current time.\n" <<
-                      "Last point is " << std::fixed << std::setprecision(3) << last_point_dur.toSec() <<
-                      "s in the past.");
+      std::stringstream error_stringstream;
+      error_stringstream << "Dropping all " << msg.points.size();
+      error_stringstream << " trajectory point(s), as they occur before the current time.\n";
+      error_stringstream << "Last point is " << last_point_dur.toSec();
+      error_stringstream << "s in the past.";
+
+      error_string = error_stringstream.str();
+      ROS_WARN_STREAM(error_string);
+      options.setErrorString(error_string);
       return Trajectory();
+    }
+    else if ( // If the first point is at time zero and no start time is set in the header, skip it silently
+              msg.points.begin()->time_from_start.isZero() &&
+              msg.header.stamp.isZero() &&
+              std::distance(msg.points.begin(), msg_it) == 1
+              )
+    {
+      ROS_DEBUG_STREAM("Dropping first trajectory point at time=0. " <<
+                       "First valid point will be reached at time_from_start " <<
+                       std::fixed << std::setprecision(3) << msg_it->time_from_start.toSec() << "s.");
     }
     else
     {
@@ -408,7 +448,9 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
         TrajIter last  = findSegment(curr_joint_traj, last_curr_time); // Segment active when new trajectory starts
         if (first == curr_joint_traj.end() || last == curr_joint_traj.end())
         {
-          ROS_ERROR("Unexpected error: Could not find segments in current trajectory. Please contact the package maintainer.");
+          error_string = "Unexpected error: Could not find segments in current trajectory. Please contact the package maintainer.";
+          ROS_ERROR_STREAM(error_string);
+          options.setErrorString(error_string);
           return Trajectory();
         }
         result_traj_per_joint.insert(result_traj_per_joint.begin(), first, ++last); // Range [first,last) will still be executed

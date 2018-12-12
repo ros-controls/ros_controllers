@@ -1,12 +1,9 @@
 # This config file for Travis CI utilizes ros-industrial/industrial_ci package.
 # For more info for the package, see https://github.com/ros-industrial/industrial_ci/blob/master/README.rst
-sudo: required 
-dist: trusty 
+dist: trusty
 services:
   - docker
-language: generic 
-compiler:
-  - gcc
+language: generic
 notifications:
   email:
     on_success: change
@@ -14,7 +11,7 @@ notifications:
     recipients:
       - adolfo.rodriguez@intermodalics.eu
       - enrique.fernandez.perdomo@gmail.com
-      - bence.magyar.robotics@gmail.com    
+      - bence.magyar.robotics@gmail.com
       - gm130s@gmail.com
 env:
   global:
@@ -25,7 +22,6 @@ env:
     - ROS_DISTRO="kinetic"  ROS_REPOSITORY_PATH=http://packages.ros.org/ros-shadow-fixed/ubuntu
     - ROS_DISTRO="kinetic"  UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall
 install:
-  - git clone https://github.com/ros-industrial/industrial_ci.git .ci_config
+  - git clone --depth=1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci
 script:
-  - travis_wait 30 .ci_config/travis.sh 
-##  - source ./travis.sh  # Enable this when you have a package-local script 
+  - .industrial_ci/travis.sh

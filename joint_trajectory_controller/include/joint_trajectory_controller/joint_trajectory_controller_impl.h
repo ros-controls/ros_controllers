@@ -325,13 +325,13 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   typename Segment::State current_joint_state_ = typename Segment::State(1);
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-	  current_joint_state_.position[0]= current_state_.position[i];
-	  current_joint_state_.velocity[0]= current_state_.velocity[i];
-	  Segment hold_segment(0.0, current_joint_state_, 0.0, current_joint_state_);
+    current_joint_state_.position[0]= current_state_.position[i];
+    current_joint_state_.velocity[0]= current_state_.velocity[i];
+    Segment hold_segment(0.0, current_joint_state_, 0.0, current_joint_state_);
 
-	  TrajectoryPerJoint joint_segment;
-	  joint_segment.resize(1, hold_segment);
-	  hold_trajectory_ptr_->push_back(joint_segment);
+    TrajectoryPerJoint joint_segment;
+    joint_segment.resize(1, hold_segment);
+    hold_trajectory_ptr_->push_back(joint_segment);
   }
 
   {
@@ -468,7 +468,7 @@ update(const ros::Time& time, const ros::Duration& period)
   {
     current_active_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
     current_active_goal->setSucceeded(current_active_goal->preallocated_result_);
-    current_active_goal.reset(); // do not publish feedback  
+    current_active_goal.reset(); // do not publish feedback
     rt_active_goal_.reset();
     successful_joint_traj_.reset();
   }
@@ -497,20 +497,27 @@ update(const ros::Time& time, const ros::Duration& period)
 
 template <class SegmentImpl, class HardwareInterface>
 bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
-updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh)
+updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh, std::string* error_string)
 {
   typedef InitJointTrajectoryOptions<Trajectory> Options;
+  Options options;
+  options.error_string              = error_string;
+  std::string error_string_tmp;
 
   // Preconditions
   if (!this->isRunning())
   {
-    ROS_ERROR_NAMED(name_, "Can't accept new commands. Controller is not running.");
+    error_string_tmp = "Can't accept new commands. Controller is not running.";
+    ROS_ERROR_STREAM_NAMED(name_, error_string_tmp);
+    options.setErrorString(error_string_tmp);
     return false;
   }
 
   if (!msg)
   {
-    ROS_WARN_NAMED(name_, "Received null-pointer trajectory message, skipping.");
+    error_string_tmp = "Received null-pointer trajectory message, skipping.";
+    ROS_WARN_STREAM_NAMED(name_, error_string_tmp);
+    options.setErrorString(error_string_tmp);
     return false;
   }
 
@@ -535,7 +542,6 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
   TrajectoryPtr curr_traj_ptr;
   curr_trajectory_box_.get(curr_traj_ptr);
 
-  Options options;
   options.other_time_base           = &next_update_uptime;
   options.current_trajectory        = curr_traj_ptr.get();
   options.joint_names               = &joint_names_;
@@ -555,18 +561,20 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
     }
     else
     {
-      // All trajectory points are in the past, nothing new to execute. Keep on executing current trajectory
       return false;
     }
   }
   catch(const std::invalid_argument& ex)
   {
     ROS_ERROR_STREAM_NAMED(name_, ex.what());
+    options.setErrorString(ex.what());
     return false;
   }
   catch(...)
   {
-    ROS_ERROR_NAMED(name_, "Unexpected exception caught when initializing trajectory from ROS message data.");
+    error_string_tmp = "Unexpected exception caught when initializing trajectory from ROS message data.";
+    ROS_ERROR_STREAM_NAMED(name_, error_string_tmp);
+    options.setErrorString(error_string_tmp);
     return false;
   }
 
@@ -617,8 +625,10 @@ goalCB(GoalHandle gh)
 
   // Try to update new trajectory
   RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
+  std::string error_string;
   const bool update_ok = updateTrajectoryCommand(internal::share_member(gh.getGoal(), gh.getGoal()->trajectory),
-                                                 rt_goal);
+                                                 rt_goal,
+                                                 &error_string);
   rt_goal->preallocated_feedback_->joint_names = joint_names_;
 
   if (update_ok)
@@ -639,6 +649,7 @@ goalCB(GoalHandle gh)
     // Reject invalid goal
     control_msgs::FollowJointTrajectoryResult result;
     result.error_code = control_msgs::FollowJointTrajectoryResult::INVALID_GOAL;
+    result.error_string = error_string;
     gh.setRejected(result);
   }
 }
@@ -705,7 +716,7 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
     response_point.velocity[i]     = state.velocity[0];
     response_point.acceleration[i] = state.acceleration[0];
   }
-  
+
   // Populate response
   resp.name         = joint_names_;
   resp.position     = response_point.position;

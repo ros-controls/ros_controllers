@@ -201,6 +201,17 @@ protected:
     return controller_state;
   }
 
+  bool waitForNextState(const ros::Duration& timeout)
+  {
+    ros::Time start_time = ros::Time::now();
+    ros::Time state_time = getState()->header.stamp;
+    while ( getState()->header.stamp <= state_time && ros::ok() )
+    {
+      if (timeout >= ros::Duration(0.0) && (ros::Time::now() - start_time) > timeout) {return false;} // Timed-out
+      ros::Duration(0.001).sleep();
+    }
+  }
+
   bool initState(const ros::Duration& timeout = ros::Duration(5.0))
   {
     bool init_ok = false;
@@ -277,6 +288,7 @@ protected:
     start_controller.request.strictness = start_controller.request.STRICT;
     if(!switch_controller_service.call(start_controller)) return false;
     if(!start_controller.response.ok) return false;
+    return true;
   }
 };
 
@@ -799,6 +811,8 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTraj)
   trajectory_msgs::JointTrajectory traj_empty;
   traj_pub.publish(traj_empty);
   ASSERT_TRUE(waitForState(action_client,  SimpleClientGoalState::PREEMPTED, short_timeout));
+  // make sure that stateCB received the newer topics than when we confirmed with waitForState function
+  waitForNextState(short_timeout);
 
   // Check that we're not on the start state
   StateConstPtr state1 = getState();
@@ -958,6 +972,8 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
   action_client->sendGoal(empty_goal);
   ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
   ASSERT_TRUE(waitForState(action_client, SimpleClientGoalState::SUCCEEDED, short_timeout));
+  // make sure that stateCB received the newer topics than when we confirmed with waitForState function
+  waitForNextState(short_timeout);
 
   // Check that we're not on the start state
   StateConstPtr state1 = getState();
@@ -1057,6 +1073,8 @@ TEST_F(JointTrajectoryControllerTest, ignoreOldTopicTraj)
   wait_duration = traj.points.back().time_from_start - traj.points.front().time_from_start + ros::Duration(0.5);
   wait_duration.sleep(); // Wait until first trajectory is done
 
+  // make sure that stateCB received the newer topics than when we confirmed with waitForState function
+  waitForNextState(short_timeout);
   // Check that we're at the original trajectory end (NOT back home)
   StateConstPtr state = getState();
   for (unsigned int i = 0; i < n_joints; ++i)
@@ -1182,7 +1200,7 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ACTIVE, long_timeout));
 
   // Wait until done
   EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ABORTED, long_timeout));

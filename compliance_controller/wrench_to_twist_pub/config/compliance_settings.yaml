@@ -1,0 +1,14 @@
+spin_rate:  50 # Hertz
+jacobian_frame_name: base_link # Should be the last link in your tf tree
+force_torque_frame_name: base # The frame of incoming force/torque data
+force_torque_topic: wrench # The topic of incoming force/torque data
+move_group_name: manipulator # The MoveGroup name of your robot
+max_allowable_cmd_magnitude: 0.15 # The largest joint speed correction that can be published [rad/s]
+compliance_library:
+  # Key equation: compliance_velocity[i] = wrench[i]/stiffness[i]
+  stiffness: [4000, 4000, 4000, 300, 300, 300] # First three element are Newtons/(m/s), last 3 are N*m/(rad/s)
+  low_pass_filter_param: 10 # Larger > more smoothing on compliance calcs, but more lag
+  deadband: [1, 1, 1, 1, 1, 1] # No reaction until force exceeds X [N, N, N, Nm, Nm, Nm]
+  end_condition_wrench: [80, 80, 80, 60, 60, 60] # Safety feature. Halt if force exceeds [N, N, N, Nm, Nm, Nm]
+  highest_allowable_force: 88 # Safety feature. Halt if force magnitude exceeds this across all dimensions [N]
+  highest_allowable_torque: 50 # Safety feature. Halt if torque magnitude exceeds this across all dimensions [Nm]

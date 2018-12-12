@@ -1,0 +1,21 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find ackermann_steering_controller)/test/common/launch/ackermann_steering_common.launch" />
+
+  <!-- Override robot_description with spere urdf -->
+  <param name="robot_description"
+      command="$(find xacro)/xacro '$(find ackermann_steering_controller)/test/common/urdf/ackermann_steering_bot_sphere_wheels.xacro' --inorder" />
+  <!-- Provide the radius, since the bot's wheels are spheres, not cylinders -->
+  <param name="ackermann_steering_bot_controller/wheel_radius" value="0.11"/>
+  <!-- Provide the wheel separation -->
+  <param name="ackermann_steering_bot_controller/wheel_separation_h" value="0.4"/>
+
+  <!-- Controller test -->
+  <test test-name="ackermann_steering_controller_wheel_separation_param_test"
+        pkg="ackermann_steering_controller"
+        type="ackermann_steering_controller_test"
+        time-limit="80.0">
+    <remap from="cmd_vel" to="ackermann_steering_bot_controller/cmd_vel" />
+    <remap from="odom" to="ackermann_steering_bot_controller/odom" />
+  </test>
+</launch>

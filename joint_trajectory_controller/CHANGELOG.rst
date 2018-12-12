@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.13.4 (2018-06-26)
+-------------------
+* joint_trajectory_controller improve test stability
+* Use a copy of rt_active_goal in update()
+* Changes to allow inheritance from JointTrajectoryController.
+* Contributors: Alexander Gutenkunst, Gennaro Raiola, Kei Okada, Ryosuke Tajima
+
 0.13.3 (2018-04-27)
 -------------------
 * migrate to new pluginlib headers

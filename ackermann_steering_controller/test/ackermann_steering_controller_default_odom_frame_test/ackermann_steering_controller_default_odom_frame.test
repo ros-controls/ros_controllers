@@ -1,0 +1,18 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find ackermann_steering_controller)/test/common/launch/ackermann_steering_common.launch" />
+  <!-- Do not specific an odom_frame_id -->
+  <!-- <rosparam>
+    ackermann_steering_bot_controller:
+      odom_frame_id: odom
+  </rosparam> -->
+
+  <!-- Controller test -->
+  <test test-name="ackermann_steering_controller_default_odom_frame_test"
+        pkg="ackermann_steering_controller"
+        type="ackermann_steering_controller_default_odom_frame_test"
+        time-limit="80.0">
+    <remap from="cmd_vel" to="ackermann_steering_bot_controller/cmd_vel" />
+    <remap from="odom" to="ackermann_steering_bot_controller/odom" />
+  </test>
+</launch>

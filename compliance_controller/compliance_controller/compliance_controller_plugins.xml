@@ -1,0 +1,11 @@
+<library path="lib/libcompliance_controller">
+
+  <class name="velocity_controllers/ComplianceController"
+	type="velocity_controllers::ComplianceController"
+	base_class_type="controller_interface::ControllerBase">
+  <description>
+    Add compliance to trajectories or velocity commands.
+  </description>
+  </class>
+
+</library>

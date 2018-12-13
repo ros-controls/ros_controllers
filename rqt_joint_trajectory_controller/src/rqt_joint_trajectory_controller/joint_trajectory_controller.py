@@ -243,17 +243,18 @@ class JointTrajectoryController(Plugin):
         try:
             __description = rospy.get_param('robot_description')
             if running_jtc and not self._robot_joint_limits:
-                self._robot_joint_limits = get_joint_limits(ns=ns, description=__description)
+                self._robot_joint_limits = get_joint_limits(description=__description)
         except KeyError:
-            ns=self._cm_ns.rsplit('/', 1)[0]
-            if ns not in self.__ns_checked:
-                try:
-                    __description = rospy.get_param('{}/robot_description'.format(ns))
-                    for _jnt, _lims in  get_joint_limits(description=__description).iteritems():
-                        self._robot_joint_limits[_jnt] = _lims
-                    self.__ns_checked.append(ns)
-                except KeyError:
-                    rospy.logerr('Could not find a valid robot_description parameter')
+            rospy.loginfo('Could not find robot_description parameter')
+        ns=self._cm_ns.rsplit('/', 1)[0]
+        if ns not in self.__ns_checked:
+            try:
+                __description = rospy.get_param('{}/robot_description'.format(ns))
+                for _jnt, _lims in  get_joint_limits(description=__description).iteritems():
+                    self._robot_joint_limits[_jnt] = _lims
+                self.__ns_checked.append(ns)
+            except KeyError:
+                rospy.loginfo('Could not find a valid robot_description parameter in namespace {}'.format(ns))
         valid_jtc = []
         for jtc_info in running_jtc:
             has_limits = all(name in self._robot_joint_limits

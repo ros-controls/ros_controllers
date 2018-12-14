@@ -249,10 +249,10 @@ class JointTrajectoryController(Plugin):
         ns=self._cm_ns.rsplit('/', 1)[0]
         if ns not in self._ns_checked:
             try:
+                self._ns_checked.append(ns)
                 _description = rospy.get_param('{}/robot_description'.format(ns))
                 for _jnt, _lims in  get_joint_limits(description=_description).iteritems():
                     self._robot_joint_limits[_jnt] = _lims
-                self._ns_checked.append(ns)
             except KeyError:
                 rospy.loginfo('Could not find a valid robot_description parameter in namespace {}'.format(ns))
         valid_jtc = []

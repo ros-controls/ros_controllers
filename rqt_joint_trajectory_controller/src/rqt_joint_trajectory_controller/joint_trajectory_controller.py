@@ -186,7 +186,7 @@ class JointTrajectoryController(Plugin):
         self._state_sub = None  # Controller state subscriber
 
         self._list_controllers = None
-        self.__ns_checked =[]
+        self._ns_checked = []
 
     def shutdown_plugin(self):
         self._update_cmd_timer.stop()
@@ -241,18 +241,18 @@ class JointTrajectoryController(Plugin):
         # for _all_ their joints
         running_jtc = self._running_jtc_info()
         try:
-            __description = rospy.get_param('robot_description')
             if running_jtc and not self._robot_joint_limits:
-                self._robot_joint_limits = get_joint_limits(description=__description)
+                _description = rospy.get_param('robot_description')
+                self._robot_joint_limits = get_joint_limits(description=_description)
         except KeyError:
             rospy.loginfo('Could not find robot_description parameter')
         ns=self._cm_ns.rsplit('/', 1)[0]
-        if ns not in self.__ns_checked:
+        if ns not in self._ns_checked:
             try:
-                __description = rospy.get_param('{}/robot_description'.format(ns))
-                for _jnt, _lims in  get_joint_limits(description=__description).iteritems():
+                _description = rospy.get_param('{}/robot_description'.format(ns))
+                for _jnt, _lims in  get_joint_limits(description=_description).iteritems():
                     self._robot_joint_limits[_jnt] = _lims
-                self.__ns_checked.append(ns)
+                self._ns_checked.append(ns)
             except KeyError:
                 rospy.loginfo('Could not find a valid robot_description parameter in namespace {}'.format(ns))
         valid_jtc = []

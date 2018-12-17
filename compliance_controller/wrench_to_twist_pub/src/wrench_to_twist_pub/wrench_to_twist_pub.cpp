@@ -58,6 +58,23 @@ int main(int argc, char** argv) {
   return 0;
 }
 
+bool wrench_to_twist_pub::PublishCompliantJointVelocities::checkJointLimits()
+{
+  for (auto joint : joint_model_group_->getJointModels())
+  {
+    if (!kinematic_state_->satisfiesPositionBounds(joint,
+                                                   -compliance_params_.joint_limit_margin))
+    {
+      ROS_WARN_STREAM_THROTTLE_NAMED(2, NODE_NAME, ros::this_node::getName() << " " << joint->getName()
+                                                                                 << " close to a "
+                                                                                    " position limit. Halting.");
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void wrench_to_twist_pub::PublishCompliantJointVelocities::spin()
 {
   while (ros::ok())
@@ -151,8 +168,10 @@ void wrench_to_twist_pub::PublishCompliantJointVelocities::spin()
       {
         delta_theta_msg.compliant_velocities.data.push_back( delta_theta[i] );
       }
-      // TODO: add joint limit checking
-      delta_theta_msg.near_joint_limit = false;
+
+      // Check if the command would cause a joint limit to be exceeded
+      delta_theta_msg.near_joint_limit = checkJointLimits();
+
       compliant_velocity_pub_.publish(delta_theta_msg);
     }
 
@@ -176,6 +195,7 @@ void wrench_to_twist_pub::PublishCompliantJointVelocities::readROSParameters()
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/stiffness", compliance_params_.stiffness);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/deadband", compliance_params_.deadband);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/end_condition_wrench", compliance_params_.end_condition_wrench);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/joint_limit_margin", compliance_params_.joint_limit_margin);
 
   rosparam_shortcuts::shutdownIfError(ros::this_node::getName(), error);
 
@@ -184,10 +204,11 @@ void wrench_to_twist_pub::PublishCompliantJointVelocities::readROSParameters()
     || (compliance_params_.low_pass_filter_param <= 0)
     || (compliance_params_.max_allowable_cmd_magnitude <= 0)
     || (compliance_params_.highest_allowable_force <= 0)
-    || (compliance_params_.highest_allowable_torque <= 0))
+    || (compliance_params_.highest_allowable_torque <= 0)
+    || (compliance_params_.joint_limit_margin <= 0))
   {
     ROS_ERROR_STREAM_NAMED(NODE_NAME, "These parameters should be greater than zero:");
-    ROS_ERROR_STREAM_NAMED(NODE_NAME, "spin_rate, low_pass_filter_param, max_allowable_cmd_magnitude, highest_allowable_force, highest_allowable_torque");
+    ROS_ERROR_STREAM_NAMED(NODE_NAME, "spin_rate, low_pass_filter_param, max_allowable_cmd_magnitude, highest_allowable_force, highest_allowable_torque, joint_limit_margin");
     exit(1);
   }
 

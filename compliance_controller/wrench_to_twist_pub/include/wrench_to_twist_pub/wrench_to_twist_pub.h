@@ -60,7 +60,7 @@ namespace wrench_to_twist_pub
 
 struct ROSParameters
 {
-  double spin_rate, max_allowable_cmd_magnitude, low_pass_filter_param, highest_allowable_force, highest_allowable_torque;
+  double spin_rate, max_allowable_cmd_magnitude, low_pass_filter_param, highest_allowable_force, highest_allowable_torque, joint_limit_margin;
   std::string jacobian_frame_name, force_torque_frame_name, force_torque_topic, move_group_name;
   std::vector<double> stiffness, deadband, end_condition_wrench;
 };
@@ -167,6 +167,11 @@ private:
    * Read parameters from a YAML file.
    */
   void readROSParameters();
+
+ /**
+   * Halt if we're past a joint margin and joint velocity is moving even farther past.
+   */
+  bool checkJointLimits();
 
   ros::NodeHandle n_;
 

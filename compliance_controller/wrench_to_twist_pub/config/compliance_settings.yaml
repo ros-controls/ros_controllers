@@ -4,6 +4,7 @@ force_torque_frame_name: base # The frame of incoming force/torque data
 force_torque_topic: wrench # The topic of incoming force/torque data
 move_group_name: manipulator # The MoveGroup name of your robot
 max_allowable_cmd_magnitude: 0.15 # The largest joint speed correction that can be published [rad/s]
+joint_limit_margin: 0.1 # added as a buffer to joint limits [radians]. If moving quickly, make this larger.
 compliance_library:
   # Key equation: compliance_velocity[i] = wrench[i]/stiffness[i]
   stiffness: [4000, 4000, 4000, 300, 300, 300] # First three element are Newtons/(m/s), last 3 are N*m/(rad/s)

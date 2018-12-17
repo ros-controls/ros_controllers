@@ -40,7 +40,7 @@
 #ifndef WRENCH_TO_TWIST_PUB_H
 #define WRENCH_TO_TWIST_PUB_H
 
-#include <wrench_to_twist_pub/compliant_control.h>
+#include <compliance_control_msgs/CompliantVelocities.h>
 #include <Eigen/Core>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <geometry_msgs/WrenchStamped.h>
@@ -50,10 +50,10 @@
 #include <ros/ros.h>
 #include <rosparam_shortcuts/rosparam_shortcuts.h>
 #include <sensor_msgs/JointState.h>
-#include <std_msgs/Float64MultiArray.h>
 #include <std_srvs/SetBool.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
+#include <wrench_to_twist_pub/compliant_control.h>
 
 namespace wrench_to_twist_pub
 {
@@ -105,7 +105,7 @@ public:
     joint_model_group_ = kinematic_model->getJointModelGroup(compliance_params_.move_group_name);
     kinematic_state_ = std::make_shared<robot_state::RobotState>(kinematic_model);
 
-    compliant_velocity_pub_ = n_.advertise<std_msgs::Float64MultiArray>("/compliance_controller/compliance_velocity_adjustment", 1);
+    compliant_velocity_pub_ = n_.advertise<compliance_control_msgs::CompliantVelocities>("/compliance_controller/compliance_velocity_adjustment", 1);
 
     joints_sub_ = n_.subscribe("joint_states", 1, &PublishCompliantJointVelocities::jointsCallback, this);
   }

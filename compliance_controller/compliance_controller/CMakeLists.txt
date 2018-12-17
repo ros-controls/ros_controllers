@@ -5,9 +5,9 @@ add_compile_options(-std=c++11)
 
 find_package(catkin
   REQUIRED COMPONENTS
+    compliance_control_msgs
     realtime_tools
     roscpp
-    std_msgs
     traj_or_jog_controller
 )
 
@@ -15,10 +15,10 @@ find_package(traj_or_jog_controller REQUIRED)
 
 catkin_package(
   CATKIN_DEPENDS
-    traj_or_jog_controller
+    compliance_control_msgs
     realtime_tools
     roscpp
-    std_msgs
+    traj_or_jog_controller
   INCLUDE_DIRS include
   LIBRARIES compliance_controller traj_or_jog_controller
 )

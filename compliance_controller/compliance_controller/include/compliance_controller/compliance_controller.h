@@ -47,7 +47,7 @@
 #include <actionlib/server/action_server.h>
 #include <joint_trajectory_controller/joint_trajectory_segment.h>
 #include <realtime_tools/realtime_buffer.h>
-#include <std_msgs/Float64MultiArray.h>
+#include <compliance_control_msgs/CompliantVelocities.h>
 #include <traj_or_jog_controller/traj_or_jog_controller.h>
 #include <trajectory_interface/quintic_spline_segment.h>
 
@@ -87,10 +87,17 @@ private:
   /**
    * \brief Callback for compliant joint velocity adjustments.
    */
-  void complianceAdjustmentCallback(const std_msgs::Float64MultiArray::ConstPtr& msg)
+  void complianceAdjustmentCallback(const compliance_control_msgs::CompliantVelocities::ConstPtr& msg)
   {
     last_compliance_adjustment_stamp_ = ros::Time::now();
-    compliance_velocity_adjustment_.data = msg->data;
+    compliance_velocity_adjustment_.data = msg->compliant_velocities.data;
+    near_joint_limit_ = msg->near_joint_limit;
+
+    if (near_joint_limit_)
+    {
+      // Stop executing trajectories if near a joint limit
+      TrajOrJogController::stopTrajectoryExecution();
+    }
   }
 
   ros::NodeHandle controller_nh_;
@@ -111,6 +118,9 @@ private:
 
   // The total compliant position adjustment for a trajectory
   std::vector<double> integrated_traj_position_adjustment_;
+
+  // If true, we're near a joint limit
+  bool near_joint_limit_ = false;
 };
 }
 

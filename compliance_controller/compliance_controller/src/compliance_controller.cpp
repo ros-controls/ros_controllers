@@ -59,8 +59,8 @@ namespace compliance_controller
       {
         for(unsigned int i=0; i<JointTrajectoryController::joints_.size(); ++i)
         {
-          // Add the compliance adjustment if it has been received recently
-          if ( !stale_compliance_command )
+          // Add the compliance adjustment if it has been received recently and robot is not near a joint limit
+          if ( !stale_compliance_command && !near_joint_limit_ )
           {
             JointTrajectoryController::joints_[i].setCommand( command[i] + compliance_velocity_adjustment_.data[i] );
           }
@@ -96,9 +96,6 @@ namespace compliance_controller
       if (JointTrajectoryController::rt_active_goal_ == NULL)
       {
         ComplianceController::activateVelocityStreaming();
-        
-        // Reset velocity commands to zero
-        TrajOrJogController::commands_buffer_.readFromRT()->assign(TrajOrJogController::n_joints_, 0.0);
       }
     }
   }
@@ -136,6 +133,9 @@ namespace compliance_controller
     last_trajectory_update_time_ = ros::Time(0);
     compliance_velocity_adjustment_.data.resize(TrajOrJogController::n_joints_, 0);
     integrated_traj_position_adjustment_.resize(TrajOrJogController::n_joints_, 0);
+
+    // Reset velocity commands to zero
+    TrajOrJogController::commands_buffer_.readFromRT()->assign(TrajOrJogController::n_joints_, 0.0);
   }  
 
   // Update the JointTrajectoryController like usual, but add the compliance command

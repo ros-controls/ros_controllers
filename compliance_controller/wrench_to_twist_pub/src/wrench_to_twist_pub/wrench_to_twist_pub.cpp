@@ -146,11 +146,13 @@ void wrench_to_twist_pub::PublishCompliantJointVelocities::spin()
 
       // Publish this joint velocity vector
       // Type is std_msgs/Float64MultiArray.h
-      std_msgs::Float64MultiArray delta_theta_msg;
+      compliance_control_msgs::CompliantVelocities delta_theta_msg;
       for (int i=0; i<delta_theta.size(); ++i)
       {
-        delta_theta_msg.data.push_back( delta_theta[i] );
+        delta_theta_msg.compliant_velocities.data.push_back( delta_theta[i] );
       }
+      // TODO: add joint limit checking
+      delta_theta_msg.near_joint_limit = false;
       compliant_velocity_pub_.publish(delta_theta_msg);
     }
 

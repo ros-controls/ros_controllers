@@ -11,11 +11,11 @@
   <author email="andyz@utexas.edu">Andy Zelenak</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <depend>compliance_control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>traj_or_jog_controller</depend>
   <depend>realtime_tools</depend>
   <depend>roscpp</depend>
-  <depend>std_msgs</depend>
 
   <export>
     <controller_interface plugin="${prefix}/compliance_controller_plugins.xml"/>

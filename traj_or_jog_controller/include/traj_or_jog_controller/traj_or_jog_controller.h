@@ -27,6 +27,8 @@ public:
 
   /** \name Real-Time Safe Functions
   *\{*/
+
+  /** \brief Start the controller. */
   void starting(const ros::Time& time)
   {
     // Start the base class, JointTrajectoryController
@@ -34,6 +36,13 @@ public:
 
     // Start the real-time velocity controller with 0.0 velocities
     commands_buffer_.readFromRT()->assign(n_joints_, 0.0); 
+  }
+
+  void stopTrajectoryExecution()
+  {
+    allow_trajectory_execution_ = false;
+    JointTrajectoryController::setHoldPosition(ros::Time::now());
+    JointTrajectoryController::stopping(ros::Time::now());
   }
 
   /** \brief Override updates of the base class. */
@@ -57,12 +66,10 @@ protected:
    */
   void velocityCommandCB(const std_msgs::Float64MultiArrayConstPtr& msg)
   {
-    // Disable trajectory execution since the real-time velocity command takes priority
+    // Disable trajectory execution since the new real-time velocity command takes priority
     if (allow_trajectory_execution_)
     {
-      allow_trajectory_execution_ = false;
-      JointTrajectoryController::setHoldPosition(ros::Time::now());
-      JointTrajectoryController::stopping(ros::Time::now());
+      stopTrajectoryExecution();
     }
 
     if(msg->data.size()!=n_joints_)

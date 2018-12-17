@@ -4,13 +4,13 @@ project(wrench_to_twist_pub)
 add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
+  compliance_control_msgs
   geometry_msgs
   moveit_ros_planning_interface
   roscpp
   rosparam_shortcuts
   rospy
   sensor_msgs
-  std_msgs
   std_srvs
   tf2_geometry_msgs
   tf2_ros
@@ -21,7 +21,17 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES compliant_control
-  CATKIN_DEPENDS geometry_msgs moveit_ros_planning_interface roscpp rosparam_shortcuts rospy sensor_msgs  std_msgs std_srvs tf2_geometry_msgs tf2_ros
+  CATKIN_DEPENDS
+    compliance_control_msgs
+    geometry_msgs
+    moveit_ros_planning_interface
+    roscpp
+    rosparam_shortcuts
+    rospy
+    sensor_msgs
+    std_srvs
+    tf2_geometry_msgs
+    tf2_ros
 )
 
 include_directories(

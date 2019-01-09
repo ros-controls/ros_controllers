@@ -186,7 +186,7 @@ class JointTrajectoryController(Plugin):
         self._state_sub = None  # Controller state subscriber
 
         self._list_controllers = None
-        self._ns_checked = []
+        self._cm_checked = []
 
     def shutdown_plugin(self):
         self._update_cmd_timer.stop()
@@ -240,21 +240,20 @@ class JointTrajectoryController(Plugin):
         # List of running controllers with a valid joint limits specification
         # for _all_ their joints
         running_jtc = self._running_jtc_info()
-        try:
-            if running_jtc and not self._robot_joint_limits:
-                _description = rospy.get_param('robot_description')
-                self._robot_joint_limits = get_joint_limits(description=_description)
-        except KeyError:
-            rospy.loginfo('Could not find robot_description parameter')
-        ns=self._cm_ns.rsplit('/', 1)[0]
-        if ns not in self._ns_checked:
-            try:
-                self._ns_checked.append(ns)
-                _description = rospy.get_param('{}/robot_description'.format(ns))
-                for _jnt, _lims in  get_joint_limits(description=_description).iteritems():
-                    self._robot_joint_limits[_jnt] = _lims
-            except KeyError:
-                rospy.loginfo('Could not find a valid robot_description parameter in namespace {}'.format(ns))
+        if running_jtc:
+            ns=self._cm_ns.rsplit('/', 1)[0]
+            if ns not in self._cm_checked:
+                try:
+                    self._cm_checked.append(ns)
+                    for _jnt, _lims in get_joint_limits(description=rospy.get_param('{}/robot_description'.format(ns))).iteritems():
+                            self._robot_joint_limits[_jnt] = _lims
+                except KeyError:
+                    rospy.loginfo('Could not find a valid robot_description parameter in namespace {}'.format(ns))
+                    try:
+                       for _jnt, _lims in  get_joint_limits(description=rospy.get_param('robot_description')).iteritems():
+                            self._robot_joint_limits[_jnt] = _lims
+                    except KeyError:
+                        rospy.loginfo('Could not find robot_description parameter')
         valid_jtc = []
         for jtc_info in running_jtc:
             has_limits = all(name in self._robot_joint_limits

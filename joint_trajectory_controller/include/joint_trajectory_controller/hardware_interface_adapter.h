@@ -51,7 +51,7 @@
  * interfaces accept position, velocity or effort commands.
  *
  * Use one of the available template specializations of this class (or create your own) to adapt the
- * JointTrajectoryController to a specidfic hardware interface.
+ * JointTrajectoryController to a specific hardware interface.
  */
 template <class HardwareInterface, class State>
 class HardwareInterfaceAdapter
@@ -139,7 +139,7 @@ private:
  * velocity feedforward term plus a corrective PID term.
  *
  * Use one of the available template specializations of this class (or create your own) to adapt the
- * JointTrajectoryController to a specidfic hardware interface.
+ * JointTrajectoryController to a specific hardware interface.
  */
 template <class State>
 class ClosedLoopHardwareInterfaceAdapter

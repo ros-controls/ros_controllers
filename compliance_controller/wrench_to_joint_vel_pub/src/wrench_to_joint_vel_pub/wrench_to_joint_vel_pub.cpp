@@ -189,13 +189,14 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::readROSParameters
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/jacobian_frame_name", compliance_params_.jacobian_frame_name);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/force_torque_frame_name", compliance_params_.force_torque_frame_name);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/force_torque_topic", compliance_params_.force_torque_topic);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/joint_limit_margin", compliance_params_.joint_limit_margin);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/outgoing_joint_vel_topic", compliance_params_.outgoing_joint_vel_topic);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/low_pass_filter_param", compliance_params_.low_pass_filter_param);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/highest_allowable_force", compliance_params_.highest_allowable_force);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/highest_allowable_torque", compliance_params_.highest_allowable_torque);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/stiffness", compliance_params_.stiffness);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/deadband", compliance_params_.deadband);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/end_condition_wrench", compliance_params_.end_condition_wrench);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/joint_limit_margin", compliance_params_.joint_limit_margin);
 
   rosparam_shortcuts::shutdownIfError(ros::this_node::getName(), error);
 

@@ -61,7 +61,7 @@ namespace wrench_to_joint_vel_pub
 struct ROSParameters
 {
   double spin_rate, max_allowable_cmd_magnitude, low_pass_filter_param, highest_allowable_force, highest_allowable_torque, joint_limit_margin;
-  std::string jacobian_frame_name, force_torque_frame_name, force_torque_topic, move_group_name;
+  std::string jacobian_frame_name, force_torque_frame_name, force_torque_topic, move_group_name, outgoing_joint_vel_topic;
   std::vector<double> stiffness, deadband, end_condition_wrench;
 };
 
@@ -105,7 +105,7 @@ public:
     joint_model_group_ = kinematic_model->getJointModelGroup(compliance_params_.move_group_name);
     kinematic_state_ = std::make_shared<robot_state::RobotState>(kinematic_model);
 
-    compliant_velocity_pub_ = n_.advertise<compliance_control_msgs::CompliantVelocities>("/compliance_controller/compliance_velocity_adjustment", 1);
+    compliant_velocity_pub_ = n_.advertise<compliance_control_msgs::CompliantVelocities>(compliance_params_.outgoing_joint_vel_topic, 1);
 
     joints_sub_ = n_.subscribe("joint_states", 1, &PublishCompliantJointVelocities::jointsCallback, this);
   }

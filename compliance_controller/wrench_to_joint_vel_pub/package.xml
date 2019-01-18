@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>wrench_to_twist_pub</name>
+  <name>wrench_to_joint_vel_pub</name>
   <version>0.0.0</version>
   <description>Take wrench inputs, use compliance to publish twist commands.</description>
 

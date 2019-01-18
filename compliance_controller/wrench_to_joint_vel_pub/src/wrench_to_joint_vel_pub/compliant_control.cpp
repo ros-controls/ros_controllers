@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 //      Title     : compliant_control.cpp
-//      Project   : wrench_to_twist_pub
+//      Project   : wrench_to_joint_vel_pub
 //      Created   : 9/27/2017
 //      Author    : Nitish Sharma
 //
@@ -39,7 +39,7 @@
 
 // Provides a library for compliance.
 
-#include "wrench_to_twist_pub/compliant_control.h"
+#include "wrench_to_joint_vel_pub/compliant_control.h"
 
 namespace compliant_control
 {

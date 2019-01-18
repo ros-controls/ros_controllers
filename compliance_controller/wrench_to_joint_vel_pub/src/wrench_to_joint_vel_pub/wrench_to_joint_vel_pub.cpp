@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
-//      Title     : wrench_to_twist_pub.cpp
-//      Project   : wrench_to_twist_pub
+//      Title     : wrench_to_joint_vel_pub.cpp
+//      Project   : wrench_to_joint_vel_pub
 //      Created   : 12/4/2018
 //      Author    : Andy Zelenak
 //
@@ -39,18 +39,18 @@
 
 // Subscribe to a wrench and publish a compliant joint velocity correction
 
-#include <wrench_to_twist_pub/wrench_to_twist_pub.h>
+#include <wrench_to_joint_vel_pub/wrench_to_joint_vel_pub.h>
 
 // Initialize static member of class PublishCompliantJointVelocities
-wrench_to_twist_pub::ROSParameters wrench_to_twist_pub::PublishCompliantJointVelocities::compliance_params_;
+wrench_to_joint_vel_pub::ROSParameters wrench_to_joint_vel_pub::PublishCompliantJointVelocities::compliance_params_;
 
-static const char* const NODE_NAME = "wrench_to_twist_pub";
+static const char* const NODE_NAME = "wrench_to_joint_vel_pub";
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, NODE_NAME);
 
   // Do compliance calculations in this class
-  wrench_to_twist_pub::PublishCompliantJointVelocities publish_compliance_velocities;
+  wrench_to_joint_vel_pub::PublishCompliantJointVelocities publish_compliance_velocities;
 
   // Spin and publish compliance velocities, unless disabled by a service call
   publish_compliance_velocities.spin();
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-bool wrench_to_twist_pub::PublishCompliantJointVelocities::checkJointLimits()
+bool wrench_to_joint_vel_pub::PublishCompliantJointVelocities::checkJointLimits()
 {
   for (auto joint : joint_model_group_->getJointModels())
   {
@@ -75,7 +75,7 @@ bool wrench_to_twist_pub::PublishCompliantJointVelocities::checkJointLimits()
   return false;
 }
 
-void wrench_to_twist_pub::PublishCompliantJointVelocities::spin()
+void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
 {
   while (ros::ok())
   {
@@ -179,7 +179,7 @@ void wrench_to_twist_pub::PublishCompliantJointVelocities::spin()
   }
 }
 
-void wrench_to_twist_pub::PublishCompliantJointVelocities::readROSParameters()
+void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::readROSParameters()
 {
   std::size_t error = 0;
 

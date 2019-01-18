@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
-//      Title     : wrench_to_twist_pub.h
-//      Project   : wrench_to_twist_pub
+//      Title     : wrench_to_joint_vel_pub.h
+//      Project   : wrench_to_joint_vel_pub
 //      Created   : 12/4/2018
 //      Author    : Andy Zelenak
 //
@@ -37,8 +37,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef WRENCH_TO_TWIST_PUB_H
-#define WRENCH_TO_TWIST_PUB_H
+#ifndef WRENCH_TO_JOINT_VEL_PUB_H
+#define WRENCH_TO_JOINT_VEL_PUB_H
 
 #include <compliance_control_msgs/CompliantVelocities.h>
 #include <Eigen/Core>
@@ -53,9 +53,9 @@
 #include <std_srvs/SetBool.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
-#include <wrench_to_twist_pub/compliant_control.h>
+#include <wrench_to_joint_vel_pub/compliant_control.h>
 
-namespace wrench_to_twist_pub
+namespace wrench_to_joint_vel_pub
 {
 
 struct ROSParameters
@@ -204,6 +204,6 @@ private:
   ros::Subscriber joints_sub_;
 };
 
-} // namespace wrench_to_twist_pub
+} // namespace wrench_to_joint_vel_pub
 
 #endif

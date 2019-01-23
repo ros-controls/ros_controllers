@@ -1,5 +1,5 @@
 spin_rate:  50 # Hertz
-jacobian_frame_name: base_link # Should be the last link in your tf tree
+jacobian_frame_name: base_link  # MoveIt! planning frame. Often the last link in your tf tree
 force_torque_frame_name: base # The frame of incoming force/torque data
 force_torque_topic: wrench # The topic of incoming force/torque data
 move_group_name: manipulator # The MoveGroup name of your robot

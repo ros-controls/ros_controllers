@@ -43,14 +43,14 @@
 #include "ros/ros.h"
 #include "std_msgs/Float64MultiArray.h"
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
   ros::init(argc, argv, "test_compliance_publisher");
 
   ros::NodeHandle n;
 
-  ros::Publisher compliance_command_pub = n.advertise<std_msgs::Float64MultiArray>(
-    "/compliance_controller/compliance_velocity_adjustment", 1);
+  ros::Publisher compliance_command_pub =
+      n.advertise<std_msgs::Float64MultiArray>("/compliance_controller/compliance_velocity_adjustment", 1);
 
   ros::Rate loop_rate(100);
 
@@ -58,9 +58,8 @@ int main(int argc, char **argv)
   {
     std_msgs::Float64MultiArray joint_velocities;
     joint_velocities.data.resize(6);
-    for (std::size_t i=0; i<joint_velocities.data.size(); ++i)
+    for (std::size_t i = 0; i < joint_velocities.data.size(); ++i)
       joint_velocities.data[i] = 0.001;
-
 
     compliance_command_pub.publish(joint_velocities);
 

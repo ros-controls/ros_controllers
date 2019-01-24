@@ -46,7 +46,8 @@ wrench_to_joint_vel_pub::ROSParameters wrench_to_joint_vel_pub::PublishCompliant
 
 static const char* const NODE_NAME = "wrench_to_joint_vel_pub";
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
   ros::init(argc, argv, NODE_NAME);
 
   // Do compliance calculations in this class
@@ -62,12 +63,11 @@ bool wrench_to_joint_vel_pub::PublishCompliantJointVelocities::checkJointLimits(
 {
   for (auto joint : joint_model_group_->getJointModels())
   {
-    if (!kinematic_state_->satisfiesPositionBounds(joint,
-                                                   -compliance_params_.joint_limit_margin))
+    if (!kinematic_state_->satisfiesPositionBounds(joint, -compliance_params_.joint_limit_margin))
     {
       ROS_WARN_STREAM_THROTTLE_NAMED(2, NODE_NAME, ros::this_node::getName() << " " << joint->getName()
-                                                                                 << " close to a "
-                                                                                    " position limit. Halting.");
+                                                                             << " close to a "
+                                                                                " position limit. Halting.");
       return true;
     }
   }
@@ -107,7 +107,7 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
       rotational_velocity.header.frame_id = compliance_params_.force_torque_frame_name;
       rotational_velocity.vector.x = velocity[3];
       rotational_velocity.vector.y = velocity[4];
-      rotational_velocity.vector.z = velocity[5];      
+      rotational_velocity.vector.z = velocity[5];
 
       // Transform this Cartesian velocity to the Jacobian frame
       geometry_msgs::TransformStamped force_torque_to_moveit_tf;
@@ -116,14 +116,13 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
         try
         {
           force_torque_to_moveit_tf = tf_buffer_.lookupTransform(
-            compliance_params_.jacobian_frame_name,
-            compliance_params_.force_torque_frame_name,
-            ros::Time(0));
+              compliance_params_.jacobian_frame_name, compliance_params_.force_torque_frame_name, ros::Time(0));
         }
-        catch (tf2::TransformException &ex)
+        catch (tf2::TransformException& ex)
         {
-          ROS_WARN_NAMED(NODE_NAME, "%s",ex.what());
-          ROS_WARN_NAMED(NODE_NAME, "Waiting for the transform from force/torque to the Jacobian frame to be published.");
+          ROS_WARN_NAMED(NODE_NAME, "%s", ex.what());
+          ROS_WARN_NAMED(NODE_NAME,
+                         "Waiting for the transform from force/torque to the Jacobian frame to be published.");
           ros::Duration(0.01).sleep();
           continue;
         }
@@ -148,12 +147,12 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
 
       // Check if a command magnitude would be too large.
       double largest_allowable_command = compliance_params_.max_allowable_cmd_magnitude;
-      for (int i=0; i<delta_theta.size(); ++i)
+      for (int i = 0; i < delta_theta.size(); ++i)
       {
-        if ( (fabs(delta_theta[i]) > largest_allowable_command) || std::isnan(delta_theta[i]) )
+        if ((fabs(delta_theta[i]) > largest_allowable_command) || std::isnan(delta_theta[i]))
         {
           ROS_WARN_STREAM_NAMED(NODE_NAME, "Magnitude of compliant command is too large. Pausing compliant commands.");
-          for (int j=0; j<delta_theta.size(); ++j)
+          for (int j = 0; j < delta_theta.size(); ++j)
           {
             delta_theta[j] = 0.;
           }
@@ -164,9 +163,9 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
       // Publish this joint velocity vector
       // Type is std_msgs/Float64MultiArray.h
       compliance_control_msgs::CompliantVelocities delta_theta_msg;
-      for (int i=0; i<delta_theta.size(); ++i)
+      for (int i = 0; i < delta_theta.size(); ++i)
       {
-        delta_theta_msg.compliant_velocities.data.push_back( delta_theta[i] );
+        delta_theta_msg.compliant_velocities.data.push_back(delta_theta[i]);
       }
 
       // Check if the command would cause a joint limit to be exceeded
@@ -184,43 +183,53 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::readROSParameters
   std::size_t error = 0;
 
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/spin_rate", compliance_params_.spin_rate);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/max_allowable_cmd_magnitude", compliance_params_.max_allowable_cmd_magnitude);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/move_group_name", compliance_params_.move_group_name);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/jacobian_frame_name", compliance_params_.jacobian_frame_name);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/force_torque_frame_name", compliance_params_.force_torque_frame_name);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/force_torque_topic", compliance_params_.force_torque_topic);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/joint_limit_margin", compliance_params_.joint_limit_margin);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/outgoing_joint_vel_topic", compliance_params_.outgoing_joint_vel_topic);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/low_pass_filter_param", compliance_params_.low_pass_filter_param);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/highest_allowable_force", compliance_params_.highest_allowable_force);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/highest_allowable_torque", compliance_params_.highest_allowable_torque);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/stiffness", compliance_params_.stiffness);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/deadband", compliance_params_.deadband);
-  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/end_condition_wrench", compliance_params_.end_condition_wrench);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/max_allowable_cmd_magnitude",
+                                    compliance_params_.max_allowable_cmd_magnitude);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/move_group_name",
+                                    compliance_params_.move_group_name);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/jacobian_frame_name",
+                                    compliance_params_.jacobian_frame_name);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/force_torque_frame_name",
+                                    compliance_params_.force_torque_frame_name);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/force_torque_topic",
+                                    compliance_params_.force_torque_topic);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/joint_limit_margin",
+                                    compliance_params_.joint_limit_margin);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/outgoing_joint_vel_topic",
+                                    compliance_params_.outgoing_joint_vel_topic);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/low_pass_filter_param",
+                                    compliance_params_.low_pass_filter_param);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/highest_allowable_force",
+                                    compliance_params_.highest_allowable_force);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/highest_allowable_torque",
+                                    compliance_params_.highest_allowable_torque);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/stiffness",
+                                    compliance_params_.stiffness);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/deadband",
+                                    compliance_params_.deadband);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/end_condition_wrench",
+                                    compliance_params_.end_condition_wrench);
 
   rosparam_shortcuts::shutdownIfError(ros::this_node::getName(), error);
 
   // Input checking
-  if ( (compliance_params_.spin_rate <= 0)
-    || (compliance_params_.low_pass_filter_param <= 0)
-    || (compliance_params_.max_allowable_cmd_magnitude <= 0)
-    || (compliance_params_.highest_allowable_force <= 0)
-    || (compliance_params_.highest_allowable_torque <= 0)
-    || (compliance_params_.joint_limit_margin <= 0))
+  if ((compliance_params_.spin_rate <= 0) || (compliance_params_.low_pass_filter_param <= 0) ||
+      (compliance_params_.max_allowable_cmd_magnitude <= 0) || (compliance_params_.highest_allowable_force <= 0) ||
+      (compliance_params_.highest_allowable_torque <= 0) || (compliance_params_.joint_limit_margin <= 0))
   {
     ROS_ERROR_STREAM_NAMED(NODE_NAME, "These parameters should be greater than zero:");
-    ROS_ERROR_STREAM_NAMED(NODE_NAME, "spin_rate, low_pass_filter_param, max_allowable_cmd_magnitude, highest_allowable_force, highest_allowable_torque, joint_limit_margin");
+    ROS_ERROR_STREAM_NAMED(NODE_NAME, "spin_rate, low_pass_filter_param, max_allowable_cmd_magnitude, "
+                                      "highest_allowable_force, highest_allowable_torque, joint_limit_margin");
     exit(1);
   }
 
-  for (std::size_t i=0; i<6; ++i)
+  for (std::size_t i = 0; i < 6; ++i)
   {
-    if (
-      (compliance_params_.stiffness[i] < 0)
-      || (compliance_params_.deadband[i] < 0)
-      || (compliance_params_.end_condition_wrench[i] < 0))
+    if ((compliance_params_.stiffness[i] < 0) || (compliance_params_.deadband[i] < 0) ||
+        (compliance_params_.end_condition_wrench[i] < 0))
     {
-      ROS_ERROR_STREAM_NAMED(NODE_NAME, "stiffness/deadband/end_condition_wrench parameters should be greater than zero.");
+      ROS_ERROR_STREAM_NAMED(NODE_NAME,
+                             "stiffness/deadband/end_condition_wrench parameters should be greater than zero.");
       exit(1);
     }
   }

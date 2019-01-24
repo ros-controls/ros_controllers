@@ -45,9 +45,10 @@
 
 // Project
 #include <actionlib/server/action_server.h>
+#include <compliance_control_msgs/CompliantVelocities.h>
 #include <joint_trajectory_controller/joint_trajectory_segment.h>
 #include <realtime_tools/realtime_buffer.h>
-#include <compliance_control_msgs/CompliantVelocities.h>
+#include <std_srvs/Trigger.h>
 #include <traj_or_jog_controller/traj_or_jog_controller.h>
 #include <trajectory_interface/quintic_spline_segment.h>
 
@@ -55,9 +56,9 @@ namespace compliance_controller
 {
 // ComplianceController inherits from TrajOrJogController, which inherits from JointTrajectoryController
 // and has been modified to accept real-time velocity commands, as well.
+// This gives flexibility to handle trajectory commands and real-time commands.
 template <class SegmentImpl, class HardwareInterface>
-class ComplianceController : 
-public traj_or_jog_controller::TrajOrJogController <SegmentImpl,HardwareInterface>
+class ComplianceController : public traj_or_jog_controller::TrajOrJogController<SegmentImpl, HardwareInterface>
 {
 public:
   /**
@@ -66,8 +67,9 @@ public:
   bool init(HardwareInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
 
 protected:
-  typedef traj_or_jog_controller::TrajOrJogController<SegmentImpl, HardwareInterface>  TrajOrJogController;
-  typedef joint_trajectory_controller::JointTrajectoryController<SegmentImpl, HardwareInterface>  JointTrajectoryController;
+  typedef traj_or_jog_controller::TrajOrJogController<SegmentImpl, HardwareInterface> TrajOrJogController;
+  typedef joint_trajectory_controller::JointTrajectoryController<SegmentImpl, HardwareInterface>
+      JointTrajectoryController;
 
 private:
   /** \brief Override updates of the base class. */
@@ -85,23 +87,18 @@ private:
   virtual void updateJointTrajControllerWithCompliace(const ros::Time& time, const ros::Duration& period);
 
   /**
-   * \brief Callback for compliant joint velocity adjustments.
+   * \brief Callback for messages of compliant joint velocity adjustments.
    */
-  void complianceAdjustmentCallback(const compliance_control_msgs::CompliantVelocities::ConstPtr& msg)
-  {
-    last_compliance_adjustment_stamp_ = ros::Time::now();
-    compliance_velocity_adjustment_.data = msg->compliant_velocities.data;
-    near_joint_limit_ = msg->near_joint_limit;
+  virtual void complianceAdjustmentCallback(const compliance_control_msgs::CompliantVelocities::ConstPtr& msg);
 
-    if (near_joint_limit_)
-    {
-      // Stop executing trajectories if near a joint limit
-      TrajOrJogController::stopTrajectoryExecution();
-    }
-  }
+  /**
+   * \brief Provides a service to toggle compliance
+   */
+  bool toggleCompliance(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
 
   ros::NodeHandle controller_nh_;
   ros::Subscriber compliance_adjustment_sub_;
+  ros::ServiceServer toggle_compliance_service_;
 
   // This stamp helps in tracking whether compliance commands are stale.
   // If stale, they will be ignored.

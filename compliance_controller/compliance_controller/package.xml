@@ -13,9 +13,11 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>compliance_control_msgs</depend>
   <depend>controller_interface</depend>
-  <depend>traj_or_jog_controller</depend>
+  <depend>message_runtime</depend>
   <depend>realtime_tools</depend>
   <depend>roscpp</depend>
+  <depend>std_srvs</depend>
+  <depend>traj_or_jog_controller</depend>
 
   <export>
     <controller_interface plugin="${prefix}/compliance_controller_plugins.xml"/>

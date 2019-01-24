@@ -6,8 +6,10 @@ add_compile_options(-std=c++11)
 find_package(catkin
   REQUIRED COMPONENTS
     compliance_control_msgs
+    message_generation
     realtime_tools
     roscpp
+    std_srvs
     traj_or_jog_controller
 )
 

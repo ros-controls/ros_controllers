@@ -8,7 +8,7 @@ outgoing_joint_vel_topic: /compliance_controller/compliance_velocity_adjustment 
 joint_limit_margin: 0.1 # added as a buffer to joint limits [radians]. If moving quickly, make this larger.
 compliance_library:
   # Key equation: compliance_velocity[i] = wrench[i]/stiffness[i]
-  stiffness: [4000, 4000, 4000, 300, 300, 300] # First three element are Newtons/(m/s), last 3 are N*m/(rad/s)
+  stiffness: [20000, 20000, 20000, 1000, 1000, 1000] # First three element are Newtons/(m/s), last 3 are N*m/(rad/s)
   low_pass_filter_param: 10 # Larger > more smoothing on compliance calcs, but more lag
   deadband: [1, 1, 1, 1, 1, 1] # No reaction until force exceeds X [N, N, N, Nm, Nm, Nm]
   end_condition_wrench: [80, 80, 80, 60, 60, 60] # Safety feature. Halt if force exceeds [N, N, N, Nm, Nm, Nm]

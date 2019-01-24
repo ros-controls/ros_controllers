@@ -57,24 +57,23 @@
 
 namespace wrench_to_joint_vel_pub
 {
-
 struct ROSParameters
 {
-  double spin_rate, max_allowable_cmd_magnitude, low_pass_filter_param, highest_allowable_force, highest_allowable_torque, joint_limit_margin;
-  std::string jacobian_frame_name, force_torque_frame_name, force_torque_topic, move_group_name, outgoing_joint_vel_topic;
+  double spin_rate, max_allowable_cmd_magnitude, low_pass_filter_param, highest_allowable_force,
+      highest_allowable_torque, joint_limit_margin;
+  std::string jacobian_frame_name, force_torque_frame_name, force_torque_topic, move_group_name,
+      outgoing_joint_vel_topic;
   std::vector<double> stiffness, deadband, end_condition_wrench;
 };
 
 class PublishCompliantJointVelocities
 {
 public:
-
   /**
    * Create an object which takes wrench data, converts to compliant twist corrections, and publishes.
    * @param filter_param Larger->more smoothing but more lag.
    */
-  PublishCompliantJointVelocities() :
-    tf_listener_(tf_buffer_)
+  PublishCompliantJointVelocities() : tf_listener_(tf_buffer_)
   {
     readROSParameters();
 
@@ -82,30 +81,30 @@ public:
     // Use a unique_ptr to avoid memory management issues.
     // Assume a bias wrench of all zeros
     geometry_msgs::WrenchStamped bias;
-    compliant_control_ptr_.reset( new compliant_control::CompliantControl (
-      compliance_params_.stiffness,
-      compliance_params_.deadband,
-      compliance_params_.end_condition_wrench,
-      compliance_params_.low_pass_filter_param,
-      bias,
-      compliance_params_.highest_allowable_force,
-      compliance_params_.highest_allowable_torque    
-      ));
+    compliant_control_ptr_.reset(new compliant_control::CompliantControl(
+        compliance_params_.stiffness, compliance_params_.deadband, compliance_params_.end_condition_wrench,
+        compliance_params_.low_pass_filter_param, bias, compliance_params_.highest_allowable_force,
+        compliance_params_.highest_allowable_torque));
 
-  	enable_compliance_service_ = n_.advertiseService(
-  	  n_.getNamespace() + "/" + ros::this_node::getName() + "/toggle_compliance_publication", &PublishCompliantJointVelocities::toggleCompliance, this);
+    enable_compliance_service_ =
+        n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/toggle_compliance_publication",
+                            &PublishCompliantJointVelocities::toggleCompliance, this);
 
-    bias_compliance_service_ = n_.advertiseService(
-      n_.getNamespace() + "/" + ros::this_node::getName() + "/bias_compliance_calcs", &PublishCompliantJointVelocities::biasCompliantCalcs, this);
+    bias_compliance_service_ =
+        n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/bias_compliance_calcs",
+                            &PublishCompliantJointVelocities::biasCompliantCalcs, this);
 
-    wrench_subscriber_ = n_.subscribe(compliance_params_.force_torque_topic, 1, &PublishCompliantJointVelocities::wrenchCallback, this);
+    wrench_subscriber_ =
+        n_.subscribe(compliance_params_.force_torque_topic, 1, &PublishCompliantJointVelocities::wrenchCallback, this);
 
-    std::unique_ptr<robot_model_loader::RobotModelLoader> model_loader_ptr_ = std::unique_ptr<robot_model_loader::RobotModelLoader>(new robot_model_loader::RobotModelLoader);
+    std::unique_ptr<robot_model_loader::RobotModelLoader> model_loader_ptr_ =
+        std::unique_ptr<robot_model_loader::RobotModelLoader>(new robot_model_loader::RobotModelLoader);
     const robot_model::RobotModelPtr& kinematic_model = model_loader_ptr_->getModel();
     joint_model_group_ = kinematic_model->getJointModelGroup(compliance_params_.move_group_name);
     kinematic_state_ = std::make_shared<robot_state::RobotState>(kinematic_model);
 
-    compliant_velocity_pub_ = n_.advertise<compliance_control_msgs::CompliantVelocities>(compliance_params_.outgoing_joint_vel_topic, 1);
+    compliant_velocity_pub_ =
+        n_.advertise<compliance_control_msgs::CompliantVelocities>(compliance_params_.outgoing_joint_vel_topic, 1);
 
     joints_sub_ = n_.subscribe("joint_states", 1, &PublishCompliantJointVelocities::jointsCallback, this);
   }
@@ -119,8 +118,7 @@ private:
   /**
    * A service callback. Toggles compliance publication on/off
    */
-  bool toggleCompliance(std_srvs::SetBool::Request &req,
-    std_srvs::SetBool::Response &res)
+  bool toggleCompliance(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)
   {
     compliance_enabled_ = req.data;
     res.success = true;
@@ -131,8 +129,7 @@ private:
    * A service callback. Biases (aka tares, aka zeroes) the compliance calculations
    * based on the most-recently-received wrench
    */
-  bool biasCompliantCalcs(std_srvs::SetBool::Request &req,
-    std_srvs::SetBool::Response &res)
+  bool biasCompliantCalcs(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)
   {
     if (req.data)
     {
@@ -163,14 +160,14 @@ private:
     kinematic_state_->setVariableValues(*msg);
   }
 
- /**
-   * Read parameters from a YAML file.
-   */
+  /**
+    * Read parameters from a YAML file.
+    */
   void readROSParameters();
 
- /**
-   * Halt if we're past a joint margin and joint velocity is moving even farther past.
-   */
+  /**
+    * Halt if we're past a joint margin and joint velocity is moving even farther past.
+    */
   bool checkJointLimits();
 
   ros::NodeHandle n_;
@@ -178,7 +175,6 @@ private:
   // An object to do compliance calculations.
   // Key equation: compliance_velocity[i] = wrench[i]/stiffness[i]
   std::unique_ptr<compliant_control::CompliantControl> compliant_control_ptr_;
-
 
   bool compliance_enabled_ = true;
 
@@ -204,6 +200,6 @@ private:
   ros::Subscriber joints_sub_;
 };
 
-} // namespace wrench_to_joint_vel_pub
+}  // namespace wrench_to_joint_vel_pub
 
 #endif

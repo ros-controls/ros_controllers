@@ -60,8 +60,11 @@ void ComplianceController<SegmentImpl, HardwareInterface>::update(const ros::Tim
     {
       for (unsigned int i = 0; i < JointTrajectoryController::joints_.size(); ++i)
       {
-        // Add the compliance adjustment if it has been received recently and robot is not near a joint limit
-        if (!stale_compliance_command && !near_joint_limit_)
+        // Add the compliance adjustment if:
+        // it has been received recently,
+        // robot is not near a joint limit,
+        // compliance is enabled
+        if (!stale_compliance_command && !near_joint_limit_ && compliance_enabled_)
         {
           JointTrajectoryController::joints_[i].setCommand(command[i] + compliance_velocity_adjustment_.data[i]);
         }
@@ -355,6 +358,11 @@ template <class SegmentImpl, class HardwareInterface>
 bool ComplianceController<SegmentImpl, HardwareInterface>::toggleCompliance(std_srvs::Trigger::Request& req,
                                                                             std_srvs::Trigger::Response& res)
 {
+  compliance_enabled_ = !compliance_enabled_;
+
+  res.success = true;
+  res.message = (compliance_enabled_) ? "enabled" : "disabled";
+
   return true;
 }
 

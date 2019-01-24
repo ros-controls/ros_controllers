@@ -118,6 +118,9 @@ private:
 
   // If true, we're near a joint limit
   bool near_joint_limit_ = false;
+
+  // Toggles compliance
+  bool compliance_enabled_ = false;
 };
 }
 

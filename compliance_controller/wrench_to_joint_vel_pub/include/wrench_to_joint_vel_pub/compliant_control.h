@@ -2,7 +2,7 @@
 //      Title     : compliant_control.h
 //      Project   : wrench_to_twist_pub
 //      Created   : 9/27/2017
-//      Author    : Nitish Sharma
+//      Author    : Nitish Sharma, Andy Zelenak
 //
 // BSD 3-Clause License
 //
@@ -37,14 +37,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef COMPLIANT_CONTROL_H
-#define COMPLIANT_CONTROL_H
+#ifndef WRENCH_TO_TWIST_PUB_COMPLIANT_CONTROL_H
+#define WRENCH_TO_TWIST_PUB_COMPLIANT_CONTROL_H
 
 /**
  * compliant control class. Allows you to control each dimension with a
  * compliant constant.
  * The key equation for each dimension is compliance_velocity[i] =
- * wrench[i]/stiffness[i]
+ * wrench[i]/stiffness[i] + wrench_dot[i]/damping[i]
  */
 
 #include <geometry_msgs/WrenchStamped.h>
@@ -106,7 +106,7 @@ public:
   /**
    * \brief Update member variables with current, filtered forces/torques
    */
-  void getForceTorque(geometry_msgs::WrenchStamped force_torque_data);
+  void updateWrench(geometry_msgs::WrenchStamped wrench_data);
 
   /**
    * \brief Set the "springiness" of compliance in each direction
@@ -124,28 +124,26 @@ public:
   void biasSensor(const geometry_msgs::WrenchStamped& bias);
 
   /**
-   * \brief Set the target FT wrench
+   * \brief Calculate a velocity adjustment due to compliance
    */
-  compliant_control::ExitCondition getVelocity(std::vector<double> v_in, geometry_msgs::WrenchStamped force_torque_data,
-                                               std::vector<double>& v_out);
-
-  /**
-   * Set the topic to output velocity commands to.
-   * @param velTopic    The velocity jog command topic.
-   */
-  void setVelTopic(std::string velTop);
+  compliant_control::ExitCondition getVelocity(std::vector<double> v_in, geometry_msgs::WrenchStamped wrench_data,
+                                               std::vector<double>& v_out, ros::Time time);
 
   std::vector<double> stiffness_;
   std::vector<double> deadband_;
   std::vector<double> end_condition_wrench_;
   std::vector<double> wrench_;
+  std::vector<double> wrench_dot_;
   // Initial biased force
   std::vector<double> bias_;
   // Quit if these forces/torques are exceeded
   double safe_force_limit_, safe_torque_limit_;
-  std::vector<compliant_control::LowPassFilter> vectorOfFilters_;
+  std::vector<compliant_control::LowPassFilter> vector_of_filters_;
 
-private:
+  // Used in derivative calculations
+  ros::Time prev_time_ = ros::Time(0);  
+  ros::Duration delta_t_ = ros::Duration(0);
+  std::vector<double> prev_wrench_;
 };
 
 class LowPassFilter

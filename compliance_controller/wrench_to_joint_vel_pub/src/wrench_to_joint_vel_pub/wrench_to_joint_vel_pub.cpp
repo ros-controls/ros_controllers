@@ -46,19 +46,6 @@ wrench_to_joint_vel_pub::ROSParameters wrench_to_joint_vel_pub::PublishCompliant
 
 static const char* const NODE_NAME = "wrench_to_joint_vel_pub";
 
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, NODE_NAME);
-
-  // Do compliance calculations in this class
-  wrench_to_joint_vel_pub::PublishCompliantJointVelocities publish_compliance_velocities;
-
-  // Spin and publish compliance velocities, unless disabled by a service call
-  publish_compliance_velocities.spin();
-
-  return 0;
-}
-
 bool wrench_to_joint_vel_pub::PublishCompliantJointVelocities::checkJointLimits()
 {
   for (auto joint : joint_model_group_->getJointModels())
@@ -95,7 +82,7 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
       // Input to the compliance calculation is an all-zero nominal velocity
       std::vector<double> velocity(6);
       // Calculate the compliant velocity adjustment
-      compliant_control_ptr_->getVelocity(velocity, last_wrench_data_, velocity);
+      compliant_control_ptr_->getVelocity(velocity, last_wrench_data_, velocity, ros::Time::now());
 
       geometry_msgs::Vector3Stamped translational_velocity;
       translational_velocity.header.frame_id = compliance_params_.force_torque_frame_name;
@@ -233,4 +220,17 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::readROSParameters
       exit(1);
     }
   }
+}
+
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, NODE_NAME);
+
+  // Do compliance calculations in this class
+  wrench_to_joint_vel_pub::PublishCompliantJointVelocities publish_compliance_velocities;
+
+  // Spin and publish compliance velocities, unless disabled by a service call
+  publish_compliance_velocities.spin();
+
+  return 0;
 }

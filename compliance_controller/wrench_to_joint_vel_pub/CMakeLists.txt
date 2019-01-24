@@ -48,9 +48,9 @@ add_executable(wrench_to_joint_vel_pub src/${PROJECT_NAME}/wrench_to_joint_vel_p
 add_dependencies(wrench_to_joint_vel_pub ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(wrench_to_joint_vel_pub ${catkin_LIBRARIES} compliant_control ${Eigen_LIBRARIES})
 
-add_executable(test_compliance_publisher src/${PROJECT_NAME}/test_compliance_publisher.cpp)
-add_dependencies(test_compliance_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(test_compliance_publisher ${catkin_LIBRARIES})
+add_executable(compliance_publisher_demo src/${PROJECT_NAME}/compliance_publisher_demo.cpp)
+add_dependencies(compliance_publisher_demo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(compliance_publisher_demo ${catkin_LIBRARIES})
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

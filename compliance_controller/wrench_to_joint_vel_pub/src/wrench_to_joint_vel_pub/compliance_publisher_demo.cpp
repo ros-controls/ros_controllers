@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-//      Title     : test_compliance_publisher.cpp
+//      Title     : compliance_pubisher_demo.cpp
 //      Project   : wrench_to_twist_pub
 //      Created   : 12/4/2018
 //      Author    : Andy Zelenak
@@ -45,7 +45,7 @@
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "test_compliance_publisher");
+  ros::init(argc, argv, "compliance_pubisher_demo");
 
   ros::NodeHandle n;
 

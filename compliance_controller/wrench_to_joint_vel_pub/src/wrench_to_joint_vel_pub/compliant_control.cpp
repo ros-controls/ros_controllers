@@ -2,7 +2,7 @@
 //      Title     : compliant_control.cpp
 //      Project   : wrench_to_joint_vel_pub
 //      Created   : 9/27/2017
-//      Author    : Nitish Sharma
+//      Author    : Nitish Sharma, Andy Zelenak
 //
 // BSD 3-Clause License
 //
@@ -53,11 +53,12 @@ CompliantControl::CompliantControl(const std::vector<double>& stiffness, const s
   , safe_force_limit_(highest_allowable_force)
   , safe_torque_limit_(highest_allowable_torque)
 {
-  bias_.resize(compliant_control::NUM_DIMS);
-  wrench_.resize(compliant_control::NUM_DIMS);
+  bias_.resize(compliant_control::NUM_DIMS, 0);
+  wrench_.resize(compliant_control::NUM_DIMS, 0);
+  wrench_dot_.resize(compliant_control::NUM_DIMS, 0);
 
   for (int i = 0; i < compliant_control::NUM_DIMS; ++i)
-    vectorOfFilters_.push_back(LowPassFilter(filter_param));
+    vector_of_filters_.push_back(LowPassFilter(filter_param));
 
   biasSensor(bias);
   wrench_ = bias_;
@@ -72,9 +73,11 @@ void CompliantControl::biasSensor(const geometry_msgs::WrenchStamped& bias)
   bias_[4] = bias.wrench.torque.y;
   bias_[5] = bias.wrench.torque.z;
 
+  // Reset
+  wrench_dot_.resize(compliant_control::NUM_DIMS, 0);
   for (int i = 0; i < compliant_control::NUM_DIMS; ++i)
   {
-    vectorOfFilters_[i].reset(0.);
+    vector_of_filters_[i].reset(0.);
   }
 }
 
@@ -118,51 +121,74 @@ void CompliantControl::setEndCondition(const std::vector<double>& end_condition_
   }
 }
 
-void CompliantControl::getForceTorque(geometry_msgs::WrenchStamped force_torque_data)
+void CompliantControl::updateWrench(geometry_msgs::WrenchStamped wrench_data)
 {
   std::vector<double> biasedFT(6, 0.);
 
   // Apply the deadband
-  if (fabs(force_torque_data.wrench.force.x - bias_[0]) < fabs(deadband_[0]))
+  if (fabs(wrench_data.wrench.force.x - bias_[0]) < fabs(deadband_[0]))
     biasedFT[0] = 0.;
   else
-    biasedFT[0] = force_torque_data.wrench.force.x - bias_[0];
-  if (fabs(force_torque_data.wrench.force.y - bias_[1]) < fabs(deadband_[1]))
+    biasedFT[0] = wrench_data.wrench.force.x - bias_[0];
+  if (fabs(wrench_data.wrench.force.y - bias_[1]) < fabs(deadband_[1]))
     biasedFT[1] = 0.;
   else
-    biasedFT[1] = force_torque_data.wrench.force.y - bias_[1];
-  if (fabs(force_torque_data.wrench.force.z - bias_[2]) < fabs(deadband_[2]))
+    biasedFT[1] = wrench_data.wrench.force.y - bias_[1];
+  if (fabs(wrench_data.wrench.force.z - bias_[2]) < fabs(deadband_[2]))
     biasedFT[2] = 0.;
   else
-    biasedFT[2] = force_torque_data.wrench.force.z - bias_[2];
+    biasedFT[2] = wrench_data.wrench.force.z - bias_[2];
 
-  if (fabs(force_torque_data.wrench.torque.x - bias_[3]) < fabs(deadband_[3]))
+  if (fabs(wrench_data.wrench.torque.x - bias_[3]) < fabs(deadband_[3]))
     biasedFT[3] = 0.;
   else
-    biasedFT[3] = force_torque_data.wrench.torque.x - bias_[3];
-  if (fabs(force_torque_data.wrench.torque.y - bias_[4]) < fabs(deadband_[4]))
+    biasedFT[3] = wrench_data.wrench.torque.x - bias_[3];
+  if (fabs(wrench_data.wrench.torque.y - bias_[4]) < fabs(deadband_[4]))
     biasedFT[4] = 0.;
   else
-    biasedFT[4] = force_torque_data.wrench.torque.y - bias_[4];
-  if (fabs(force_torque_data.wrench.torque.z - bias_[5]) < fabs(deadband_[5]))
+    biasedFT[4] = wrench_data.wrench.torque.y - bias_[4];
+  if (fabs(wrench_data.wrench.torque.z - bias_[5]) < fabs(deadband_[5]))
     biasedFT[5] = 0.;
   else
-    biasedFT[5] = force_torque_data.wrench.torque.x - bias_[5];
+    biasedFT[5] = wrench_data.wrench.torque.z - bias_[5];
 
-  wrench_[0] = vectorOfFilters_[0].filter(biasedFT[0]);
-  wrench_[1] = vectorOfFilters_[1].filter(biasedFT[1]);
-  wrench_[2] = vectorOfFilters_[2].filter(biasedFT[2]);
-  wrench_[3] = vectorOfFilters_[3].filter(biasedFT[3]);
-  wrench_[4] = vectorOfFilters_[4].filter(biasedFT[4]);
-  wrench_[5] = vectorOfFilters_[5].filter(biasedFT[5]);
+  wrench_[0] = vector_of_filters_[0].filter(biasedFT[0]);
+  wrench_[1] = vector_of_filters_[1].filter(biasedFT[1]);
+  wrench_[2] = vector_of_filters_[2].filter(biasedFT[2]);
+  wrench_[3] = vector_of_filters_[3].filter(biasedFT[3]);
+  wrench_[4] = vector_of_filters_[4].filter(biasedFT[4]);
+  wrench_[5] = vector_of_filters_[5].filter(biasedFT[5]);
 }
 
 compliant_control::ExitCondition CompliantControl::getVelocity(std::vector<double> v_in,
-                                                               geometry_msgs::WrenchStamped force_torque_data,
-                                                               std::vector<double>& v_out)
+                                                               geometry_msgs::WrenchStamped wrench_data,
+                                                               std::vector<double>& v_out, ros::Time time)
 {
   compliant_control::ExitCondition exit_condition = compliant_control::NOT_CONTROLLED;
-  getForceTorque(force_torque_data);
+
+  prev_wrench_ = wrench_;
+  updateWrench(wrench_data);
+
+  // Differentiate the wrench
+  delta_t_ = time - prev_time_;
+  prev_time_ = time;
+  // Avoid divide-by-zero
+  if (delta_t_ > ros::Duration(0))
+  {
+    for (int i=0; i<6; ++i)
+    {
+      wrench_dot_[i] = (wrench_[i] - prev_wrench_[i]) / delta_t_.toSec();
+      ROS_ERROR_STREAM(wrench_dot_[i]);
+    }
+  }
+  else
+  {
+    for (int i=0; i<6; ++i)
+    {
+      wrench_dot_[i] = 0;
+      ROS_ERROR_STREAM(wrench_dot_[i]);
+    }
+  } 
 
   if (pow(wrench_[0] * wrench_[0] + wrench_[1] * wrench_[1] + wrench_[2] * wrench_[2], 0.5) > safe_force_limit_ ||
       pow(wrench_[3] * wrench_[3] + wrench_[4] * wrench_[4] + wrench_[5] * wrench_[5], 0.5) > safe_torque_limit_)
@@ -227,7 +253,6 @@ double LowPassFilter::filter(const double new_msrmt)
                               (prev_msrmts_[2] + 2 * prev_msrmts_[1] + prev_msrmts_[0] -
                                (filter_param_ * filter_param_ - 1.414 * filter_param_ + 1) * prev_filtered_msrmts_[1] -
                                (-2 * filter_param_ * filter_param_ + 2) * prev_filtered_msrmts_[0]);
-  ;
 
   // Store the new filtered measurement
   prev_filtered_msrmts_[1] = prev_filtered_msrmts_[0];

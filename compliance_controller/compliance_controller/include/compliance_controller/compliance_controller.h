@@ -37,8 +37,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef COMPLIANCE_CONTROLLER_H
-#define COMPLIANCE_CONTROLLER_H
+#ifndef COMPLIANCE_CONTROLLER_COMPLIANCE_CONTROLLER_H
+#define COMPLIANCE_CONTROLLER_COMPLIANCE_CONTROLLER_H
 
 // Pluginlib
 #include <pluginlib/class_list_macros.hpp>

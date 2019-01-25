@@ -63,7 +63,7 @@ struct ROSParameters
       highest_allowable_torque, joint_limit_margin;
   std::string jacobian_frame_name, force_torque_frame_name, force_torque_topic, move_group_name,
       outgoing_joint_vel_topic;
-  std::vector<double> stiffness, deadband, end_condition_wrench;
+  std::vector<double> stiffness, damping, deadband, end_condition_wrench;
 };
 
 class PublishCompliantJointVelocities
@@ -82,7 +82,7 @@ public:
     // Assume a bias wrench of all zeros
     geometry_msgs::WrenchStamped bias;
     compliant_control_ptr_.reset(new wrench_to_joint_vel_pub::CompliantControl(
-        compliance_params_.stiffness, compliance_params_.deadband, compliance_params_.end_condition_wrench,
+        compliance_params_.stiffness, compliance_params_.damping, compliance_params_.deadband, compliance_params_.end_condition_wrench,
         compliance_params_.low_pass_filter_param, bias, compliance_params_.highest_allowable_force,
         compliance_params_.highest_allowable_torque));
 

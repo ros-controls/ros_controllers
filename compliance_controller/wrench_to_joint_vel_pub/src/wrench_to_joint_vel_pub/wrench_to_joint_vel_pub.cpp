@@ -192,6 +192,8 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::readROSParameters
                                     compliance_params_.highest_allowable_torque);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/stiffness",
                                     compliance_params_.stiffness);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/damping",
+                                    compliance_params_.damping);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/deadband",
                                     compliance_params_.deadband);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/end_condition_wrench",

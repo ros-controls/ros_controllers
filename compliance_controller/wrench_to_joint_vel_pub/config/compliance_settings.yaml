@@ -9,6 +9,7 @@ joint_limit_margin: 0.1 # added as a buffer to joint limits [radians]. If moving
 compliance_library:
   # Key equation: compliance_velocity[i] = wrench[i]/stiffness[i]
   stiffness: [2000, 2000, 2000, 100, 100, 100] # First three element are Newtons/(m/s), last 3 are N*m/(rad/s)
+  damping: [10000, 10000, 10000, 10000, 10000, 10000] # First three element are Newtons/m, last 3 are N*m/rad
   low_pass_filter_param: 10 # Larger > more smoothing on compliance calcs, but more lag
   deadband: [1, 1, 1, 1, 1, 1] # No reaction until force exceeds X [N, N, N, Nm, Nm, Nm]
   end_condition_wrench: [80, 80, 80, 60, 60, 60] # Safety feature. Halt if force exceeds [N, N, N, Nm, Nm, Nm]

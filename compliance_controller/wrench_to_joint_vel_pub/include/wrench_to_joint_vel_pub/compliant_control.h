@@ -54,7 +54,6 @@
 #include <std_msgs/Float64.h>
 #include <string>
 #include <vector>
-#include <wrench_to_joint_vel_pub/low_pass_derivative.h>
 #include <wrench_to_joint_vel_pub/low_pass_filter.h>
 
 namespace wrench_to_joint_vel_pub
@@ -92,7 +91,7 @@ public:
    * \brief Construct an object to take wrench data and calculate compliance velocity
    * adjustments.
    */
-  CompliantControl(const std::vector<double>& stiffness, const std::vector<double>& deadband,
+  CompliantControl(const std::vector<double>& stiffness, const std::vector<double>& damping, const std::vector<double>& deadband,
                    const std::vector<double>& endConditionWrench, double filter_param,
                    geometry_msgs::WrenchStamped bias, double highest_allowable_force, double highest_allowable_torque);
 
@@ -100,6 +99,11 @@ public:
    * \brief Set the "springiness" of compliance in each direction.
    */
   void setStiffness(const std::vector<double>& stiffness);
+
+  /**
+   * \brief Set the damping constant in each direction.
+   */
+  void setDamping(const std::vector<double>& damping);
 
   /**
    * \brief Exit when the given force/torque wrench is achieved in any direction
@@ -133,6 +137,7 @@ public:
                                                std::vector<double>& v_out, ros::Time time);
 
   std::vector<double> stiffness_;
+  std::vector<double> damping_;
   std::vector<double> deadband_;
   std::vector<double> end_condition_wrench_;
   std::vector<double> wrench_;
@@ -142,7 +147,12 @@ public:
   // Quit if these forces/torques are exceeded
   double safe_force_limit_, safe_torque_limit_;
   std::vector<wrench_to_joint_vel_pub::LowPassFilter> wrench_filters_;
-  std::vector<wrench_to_joint_vel_pub::LowPassDerivative> wrench_derivative_filters_;
+  std::vector<wrench_to_joint_vel_pub::LowPassFilter> wrench_derivative_filters_;
+
+  // Used in derivative calculations
+  ros::Time prev_time_ = ros::Time(0);
+  ros::Duration delta_t_ = ros::Duration(0);
+  std::vector<double> prev_wrench_;
 };
 } // namespace wrench_to_joint_vel_pub
 #endif

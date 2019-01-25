@@ -42,7 +42,6 @@ include_directories(
 
 add_library(compliant_control
   src/${PROJECT_NAME}/compliant_control.cpp
-  src/${PROJECT_NAME}/low_pass_derivative.cpp 
   src/${PROJECT_NAME}/low_pass_filter.cpp
 )
 

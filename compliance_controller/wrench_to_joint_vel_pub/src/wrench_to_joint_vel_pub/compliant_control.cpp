@@ -229,39 +229,21 @@ wrench_to_joint_vel_pub::ExitCondition CompliantControl::getVelocity(std::vector
 
   for (int i = 0; i < wrench_to_joint_vel_pub::NUM_DIMS; ++i)
   {
-    if (end_condition_wrench_[i] > 0)
+    // Target wrench was exceeded
+    if (((end_condition_wrench_[i] > 0) && (wrench_[i] > end_condition_wrench_[i])) ||
+      ((end_condition_wrench_[i] < 0) && (wrench_[i] < end_condition_wrench_[i])))
     {
-      if (wrench_[i] > end_condition_wrench_[i])
-      {
-        ROS_INFO_STREAM_NAMED(LOGNAME, "Exit condition met in direction: " << i);
-        v_out[i] = 0.0;
-        exit_condition = wrench_to_joint_vel_pub::CONDITION_MET;
-      }
-      else
-      {
-        // TODO: consolidate this and the next if-else
-        v_out[i] = v_in[i] + wrench_[i] / stiffness_[i] + wrench_dot_[i] / damping_[i];
-        if (exit_condition != wrench_to_joint_vel_pub::CONDITION_MET)
-        {
-          exit_condition = wrench_to_joint_vel_pub::CONDITION_NOT_MET;
-        }
-      }
+      ROS_INFO_STREAM_NAMED(LOGNAME, "Exit condition met in direction: " << i);
+      v_out[i] = 0.0;
+      exit_condition = wrench_to_joint_vel_pub::CONDITION_MET;      
     }
-    else  // end_condition_wrench_[i]<=0
+    // Normal compliance calculation
+    else
     {
-      if (wrench_[i] < end_condition_wrench_[i])
+      v_out[i] = v_in[i] + wrench_[i] / stiffness_[i] + wrench_dot_[i] / damping_[i];
+      if (exit_condition != wrench_to_joint_vel_pub::CONDITION_MET)
       {
-        ROS_INFO_STREAM_NAMED(LOGNAME, "Exit condition met in direction: " << i);
-        v_out[i] = 0.0;
-        exit_condition = wrench_to_joint_vel_pub::CONDITION_MET;
-      }
-      else
-      {
-        v_out[i] = v_in[i] + wrench_[i] / stiffness_[i] + wrench_dot_[i] / damping_[i];
-        if (exit_condition != wrench_to_joint_vel_pub::CONDITION_MET)
-        {
-          exit_condition = wrench_to_joint_vel_pub::CONDITION_NOT_MET;
-        }
+        exit_condition = wrench_to_joint_vel_pub::CONDITION_NOT_MET;
       }
     }
   }

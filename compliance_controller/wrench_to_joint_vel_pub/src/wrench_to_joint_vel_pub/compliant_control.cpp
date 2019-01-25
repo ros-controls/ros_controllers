@@ -39,9 +39,9 @@
 
 // Provides a library for compliance.
 
-#include "wrench_to_joint_vel_pub/compliant_control.h"
+#include <wrench_to_joint_vel_pub/compliant_control.h>
 
-namespace compliant_control
+namespace wrench_to_joint_vel_pub
 {
 CompliantControl::CompliantControl(const std::vector<double>& stiffness, const std::vector<double>& deadband,
                                    const std::vector<double>& end_condition_wrench, double filter_param,
@@ -53,12 +53,12 @@ CompliantControl::CompliantControl(const std::vector<double>& stiffness, const s
   , safe_force_limit_(highest_allowable_force)
   , safe_torque_limit_(highest_allowable_torque)
 {
-  bias_.resize(compliant_control::NUM_DIMS, 0);
-  wrench_.resize(compliant_control::NUM_DIMS, 0);
-  wrench_dot_.resize(compliant_control::NUM_DIMS, 0);
+  bias_.resize(wrench_to_joint_vel_pub::NUM_DIMS, 0);
+  wrench_.resize(wrench_to_joint_vel_pub::NUM_DIMS, 0);
+  wrench_dot_.resize(wrench_to_joint_vel_pub::NUM_DIMS, 0);
 
-  for (int i = 0; i < compliant_control::NUM_DIMS; ++i)
-    vector_of_filters_.push_back(LowPassFilter(filter_param));
+  for (int i = 0; i < wrench_to_joint_vel_pub::NUM_DIMS; ++i)
+    wrench_filters_.push_back(LowPassFilter(filter_param));
 
   biasSensor(bias);
   wrench_ = bias_;
@@ -74,26 +74,26 @@ void CompliantControl::biasSensor(const geometry_msgs::WrenchStamped& bias)
   bias_[5] = bias.wrench.torque.z;
 
   // Reset
-  wrench_dot_.resize(compliant_control::NUM_DIMS, 0);
-  for (int i = 0; i < compliant_control::NUM_DIMS; ++i)
+  wrench_dot_.resize(wrench_to_joint_vel_pub::NUM_DIMS, 0);
+  for (int i = 0; i < wrench_to_joint_vel_pub::NUM_DIMS; ++i)
   {
-    vector_of_filters_[i].reset(0.);
+    wrench_filters_[i].reset(0.);
   }
 }
 
 void CompliantControl::setStiffness(const std::vector<double>& stiffness)
 {
-  if (stiffness.size() != compliant_control::NUM_DIMS)
+  if (stiffness.size() != wrench_to_joint_vel_pub::NUM_DIMS)
   {
-    ROS_ERROR_NAMED("compliant_control", "Invalid stiffness vector: ");
+    ROS_ERROR_NAMED(LOGNAME, "Invalid stiffness vector: ");
   }
   else
   {
-    for (int i = 0; i < compliant_control::NUM_DIMS; ++i)
+    for (int i = 0; i < wrench_to_joint_vel_pub::NUM_DIMS; ++i)
     {
       if (fabs(stiffness[i]) <= 1e-3)
       {
-        ROS_ERROR_STREAM_NAMED("compliant_control", "Stiffness must be non-zero.Ignoring "
+        ROS_ERROR_STREAM_NAMED(LOGNAME, "Stiffness must be non-zero.Ignoring "
                                                     "compliance in direction: "
                                                         << i);
         stiffness_[i] = DBL_MAX;
@@ -108,13 +108,13 @@ void CompliantControl::setStiffness(const std::vector<double>& stiffness)
 
 void CompliantControl::setEndCondition(const std::vector<double>& end_condition_wrench)
 {
-  if (end_condition_wrench.size() != compliant_control::NUM_DIMS)
+  if (end_condition_wrench.size() != wrench_to_joint_vel_pub::NUM_DIMS)
   {
-    ROS_ERROR_NAMED("compliant_control", "Invalid vector end_condition_wrench: ");
+    ROS_ERROR_NAMED(LOGNAME, "Invalid vector end_condition_wrench: ");
   }
   else
   {
-    for (int i = 0; i < compliant_control::NUM_DIMS; ++i)
+    for (int i = 0; i < wrench_to_joint_vel_pub::NUM_DIMS; ++i)
     {
       end_condition_wrench_[i] = end_condition_wrench[i];
     }
@@ -152,68 +152,46 @@ void CompliantControl::updateWrench(geometry_msgs::WrenchStamped wrench_data)
   else
     biasedFT[5] = wrench_data.wrench.torque.z - bias_[5];
 
-  wrench_[0] = vector_of_filters_[0].filter(biasedFT[0]);
-  wrench_[1] = vector_of_filters_[1].filter(biasedFT[1]);
-  wrench_[2] = vector_of_filters_[2].filter(biasedFT[2]);
-  wrench_[3] = vector_of_filters_[3].filter(biasedFT[3]);
-  wrench_[4] = vector_of_filters_[4].filter(biasedFT[4]);
-  wrench_[5] = vector_of_filters_[5].filter(biasedFT[5]);
+  wrench_[0] = wrench_filters_[0].filter(biasedFT[0]);
+  wrench_[1] = wrench_filters_[1].filter(biasedFT[1]);
+  wrench_[2] = wrench_filters_[2].filter(biasedFT[2]);
+  wrench_[3] = wrench_filters_[3].filter(biasedFT[3]);
+  wrench_[4] = wrench_filters_[4].filter(biasedFT[4]);
+  wrench_[5] = wrench_filters_[5].filter(biasedFT[5]);
 }
 
-compliant_control::ExitCondition CompliantControl::getVelocity(std::vector<double> v_in,
+wrench_to_joint_vel_pub::ExitCondition CompliantControl::getVelocity(std::vector<double> v_in,
                                                                geometry_msgs::WrenchStamped wrench_data,
                                                                std::vector<double>& v_out, ros::Time time)
 {
-  compliant_control::ExitCondition exit_condition = compliant_control::NOT_CONTROLLED;
+  wrench_to_joint_vel_pub::ExitCondition exit_condition = wrench_to_joint_vel_pub::NOT_CONTROLLED;
 
-  prev_wrench_ = wrench_;
-  updateWrench(wrench_data);
-
-  // Differentiate the wrench
-  delta_t_ = time - prev_time_;
-  prev_time_ = time;
-  // Avoid divide-by-zero
-  if (delta_t_ > ros::Duration(0))
-  {
-    for (int i=0; i<6; ++i)
-    {
-      wrench_dot_[i] = (wrench_[i] - prev_wrench_[i]) / delta_t_.toSec();
-      ROS_ERROR_STREAM(wrench_dot_[i]);
-    }
-  }
-  else
-  {
-    for (int i=0; i<6; ++i)
-    {
-      wrench_dot_[i] = 0;
-      ROS_ERROR_STREAM(wrench_dot_[i]);
-    }
-  } 
+  updateWrench(wrench_data); 
 
   if (pow(wrench_[0] * wrench_[0] + wrench_[1] * wrench_[1] + wrench_[2] * wrench_[2], 0.5) > safe_force_limit_ ||
       pow(wrench_[3] * wrench_[3] + wrench_[4] * wrench_[4] + wrench_[5] * wrench_[5], 0.5) > safe_torque_limit_)
   {
-    ROS_ERROR_NAMED("compliant_control", "Total force or torque exceeds safety limits. Stopping motion.");
+    ROS_ERROR_NAMED(LOGNAME, "Total force or torque exceeds safety limits. Stopping motion.");
     v_out = std::vector<double>(6, 0.0);
-    return compliant_control::FT_VIOLATION;
+    return wrench_to_joint_vel_pub::FT_VIOLATION;
   }
 
-  for (int i = 0; i < compliant_control::NUM_DIMS; ++i)
+  for (int i = 0; i < wrench_to_joint_vel_pub::NUM_DIMS; ++i)
   {
     if (end_condition_wrench_[i] > 0)
     {
       if (wrench_[i] > end_condition_wrench_[i])
       {
-        ROS_INFO_STREAM_NAMED("compliant_control", "Exit condition met in direction: " << i);
+        ROS_INFO_STREAM_NAMED(LOGNAME, "Exit condition met in direction: " << i);
         v_out[i] = 0.0;
-        exit_condition = compliant_control::CONDITION_MET;
+        exit_condition = wrench_to_joint_vel_pub::CONDITION_MET;
       }
       else
       {
         v_out[i] = v_in[i] + wrench_[i] / stiffness_[i];
-        if (exit_condition != compliant_control::CONDITION_MET)
+        if (exit_condition != wrench_to_joint_vel_pub::CONDITION_MET)
         {
-          exit_condition = compliant_control::CONDITION_NOT_MET;
+          exit_condition = wrench_to_joint_vel_pub::CONDITION_NOT_MET;
         }
       }
     }
@@ -221,49 +199,20 @@ compliant_control::ExitCondition CompliantControl::getVelocity(std::vector<doubl
     {
       if (wrench_[i] < end_condition_wrench_[i])
       {
-        ROS_INFO_STREAM_NAMED("compliant_control", "Exit condition met in direction: " << i);
+        ROS_INFO_STREAM_NAMED(LOGNAME, "Exit condition met in direction: " << i);
         v_out[i] = 0.0;
-        exit_condition = compliant_control::CONDITION_MET;
+        exit_condition = wrench_to_joint_vel_pub::CONDITION_MET;
       }
       else
       {
         v_out[i] = v_in[i] + wrench_[i] / stiffness_[i];
-        if (exit_condition != compliant_control::CONDITION_MET)
+        if (exit_condition != wrench_to_joint_vel_pub::CONDITION_MET)
         {
-          exit_condition = compliant_control::CONDITION_NOT_MET;
+          exit_condition = wrench_to_joint_vel_pub::CONDITION_NOT_MET;
         }
       }
     }
   }
   return exit_condition;
 }
-
-LowPassFilter::LowPassFilter(double filter_param) : filter_param_(filter_param)
-{
-}
-
-double LowPassFilter::filter(const double new_msrmt)
-{
-  // Push in the new measurement
-  prev_msrmts_[2] = prev_msrmts_[1];
-  prev_msrmts_[1] = prev_msrmts_[0];
-  prev_msrmts_[0] = new_msrmt;
-
-  double new_filtered_msrmt = (1 / (1 + filter_param_ * filter_param_ + 1.414 * filter_param_)) *
-                              (prev_msrmts_[2] + 2 * prev_msrmts_[1] + prev_msrmts_[0] -
-                               (filter_param_ * filter_param_ - 1.414 * filter_param_ + 1) * prev_filtered_msrmts_[1] -
-                               (-2 * filter_param_ * filter_param_ + 2) * prev_filtered_msrmts_[0]);
-
-  // Store the new filtered measurement
-  prev_filtered_msrmts_[1] = prev_filtered_msrmts_[0];
-  prev_filtered_msrmts_[0] = new_filtered_msrmt;
-
-  return new_filtered_msrmt;
-}
-
-void LowPassFilter::reset(double data)
-{
-  prev_msrmts_ = { data, data, data };
-  prev_filtered_msrmts_ = { data, data };
-}
-}  // end namespace compliant_control
+}  // end namespace wrench_to_joint_vel_pub

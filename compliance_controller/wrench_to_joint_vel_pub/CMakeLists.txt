@@ -42,6 +42,8 @@ include_directories(
 
 add_library(compliant_control
   src/${PROJECT_NAME}/compliant_control.cpp
+  src/${PROJECT_NAME}/low_pass_derivative.cpp 
+  src/${PROJECT_NAME}/low_pass_filter.cpp
 )
 
 add_executable(wrench_to_joint_vel_pub src/${PROJECT_NAME}/wrench_to_joint_vel_pub.cpp)

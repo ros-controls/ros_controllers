@@ -54,9 +54,12 @@
 #include <std_msgs/Float64.h>
 #include <string>
 #include <vector>
+#include <wrench_to_joint_vel_pub/low_pass_derivative.h>
+#include <wrench_to_joint_vel_pub/low_pass_filter.h>
 
-namespace compliant_control
+namespace wrench_to_joint_vel_pub
 {
+static const std::string LOGNAME = "compliant_control";
 /**
  * Dimension enum.
  */
@@ -111,7 +114,7 @@ public:
   /**
    * \brief Set the "springiness" of compliance in each direction
    */
-  void adjustStiffness(compliant_control::Dimension dim, double stiffness);
+  void adjustStiffness(wrench_to_joint_vel_pub::Dimension dim, double stiffness);
 
   /**
    * \brief Update Force/Torque values
@@ -126,7 +129,7 @@ public:
   /**
    * \brief Calculate a velocity adjustment due to compliance
    */
-  compliant_control::ExitCondition getVelocity(std::vector<double> v_in, geometry_msgs::WrenchStamped wrench_data,
+  wrench_to_joint_vel_pub::ExitCondition getVelocity(std::vector<double> v_in, geometry_msgs::WrenchStamped wrench_data,
                                                std::vector<double>& v_out, ros::Time time);
 
   std::vector<double> stiffness_;
@@ -138,44 +141,8 @@ public:
   std::vector<double> bias_;
   // Quit if these forces/torques are exceeded
   double safe_force_limit_, safe_torque_limit_;
-  std::vector<compliant_control::LowPassFilter> vector_of_filters_;
-
-  // Used in derivative calculations
-  ros::Time prev_time_ = ros::Time(0);  
-  ros::Duration delta_t_ = ros::Duration(0);
-  std::vector<double> prev_wrench_;
+  std::vector<wrench_to_joint_vel_pub::LowPassFilter> wrench_filters_;
+  std::vector<wrench_to_joint_vel_pub::LowPassDerivative> wrench_derivative_filters_;
 };
-
-class LowPassFilter
-{
-public:
-  /**
-   * Create an object which low-pass filters a datastream.
-   * @param filter_param Larger->more smoothing but more lag.
-   */
-  LowPassFilter(double filter_param);
-
-  /**
-   * Apply the low-pass filter to a datastream.
-   */
-  double filter(const double new_msrmt);
-
-  /**
-   * \brief Clear a low-pass filter's history.
-   * Often would use an argument of zero.
-   */
-  void reset(double data);
-
-private:
-  std::vector<double> prev_msrmts_ = { 0., 0., 0. };
-  std::vector<double> prev_filtered_msrmts_ = { 0., 0. };
-
-  // Related to the cutoff frequency of the filter.
-  // filter_param=1 results in a cutoff at 1/4 of the sampling rate.
-  // See bitbucket.org/AndyZe/pid for slightly more sophistication.
-  // Larger filter_param --> trust the filtered data more, trust the measurements
-  // less, i.e. higher cutoff frequency.
-  double filter_param_ = 4.;
-};
-}
+} // namespace wrench_to_joint_vel_pub
 #endif

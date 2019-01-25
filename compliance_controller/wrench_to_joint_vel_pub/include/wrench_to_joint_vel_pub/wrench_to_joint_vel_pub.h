@@ -81,7 +81,7 @@ public:
     // Use a unique_ptr to avoid memory management issues.
     // Assume a bias wrench of all zeros
     geometry_msgs::WrenchStamped bias;
-    compliant_control_ptr_.reset(new compliant_control::CompliantControl(
+    compliant_control_ptr_.reset(new wrench_to_joint_vel_pub::CompliantControl(
         compliance_params_.stiffness, compliance_params_.deadband, compliance_params_.end_condition_wrench,
         compliance_params_.low_pass_filter_param, bias, compliance_params_.highest_allowable_force,
         compliance_params_.highest_allowable_torque));
@@ -174,7 +174,7 @@ private:
 
   // An object to do compliance calculations.
   // Key equation: compliance_velocity[i] = wrench[i]/stiffness[i]
-  std::unique_ptr<compliant_control::CompliantControl> compliant_control_ptr_;
+  std::unique_ptr<wrench_to_joint_vel_pub::CompliantControl> compliant_control_ptr_;
 
   bool compliance_enabled_ = true;
 

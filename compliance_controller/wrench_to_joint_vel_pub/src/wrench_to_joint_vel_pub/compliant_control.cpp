@@ -98,12 +98,12 @@ void CompliantControl::setStiffness(const std::vector<double>& stiffness)
     stiffness_.resize(wrench_to_joint_vel_pub::NUM_DIMS,0);
     for (int i = 0; i < wrench_to_joint_vel_pub::NUM_DIMS; ++i)
     {
-      if (fabs(stiffness[i]) <= 1e-3)
+      if (stiffness[i] <= 1e-3)
       {
         ROS_ERROR_STREAM_NAMED(LOGNAME, "Stiffness must be > zero.Ignoring "
-                                                    "compliance in direction: "
+                                                    "stiffness in direction: "
                                                         << i);
-        stiffness_[i] = DBL_MAX;
+        stiffness_[i] = DBL_MAX; // Very stiff, practically no effect
       }
       else
       {
@@ -124,12 +124,14 @@ void CompliantControl::setDamping(const std::vector<double>& damping)
     damping_.resize(wrench_to_joint_vel_pub::NUM_DIMS,0);
     for (int i = 0; i < wrench_to_joint_vel_pub::NUM_DIMS; ++i)
     {
-      if (fabs(damping[i]) <= 1e-3)
+      // The sign on damping should be +. See for example,
+      // Hogan, 1985, Impedance Control of Industrial Robots, Appendix 3
+      if (damping[i] <= 1e-3)
       {
         ROS_ERROR_STREAM_NAMED(LOGNAME, "Damping must be > zero. Ignoring "
-                                                    "compliance in direction: "
+                                                    "damping in direction: "
                                                         << i);
-        damping_[i] = DBL_MAX;
+        damping_[i] = DBL_MAX; // Very large, practically no effect
       }
       else
       {

@@ -457,7 +457,7 @@ update(const ros::Time& time, const ros::Duration& period)
 
   //If there is an active goal and all segments finished successfully then set goal as succeeded
   RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
-  if (current_active_goal and successful_joint_traj_.count() == joints_.size())
+  if (current_active_goal && successful_joint_traj_.count() == joints_.size())
   {
     current_active_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
     current_active_goal->setSucceeded(current_active_goal->preallocated_result_);

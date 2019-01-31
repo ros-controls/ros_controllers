@@ -177,7 +177,7 @@ namespace diff_drive_controller{
 
     // Get joint names from the parameter server
     std::vector<std::string> left_wheel_names, right_wheel_names;
-    if (!getWheelNames(controller_nh, "left_wheel", left_wheel_names) or
+    if (!getWheelNames(controller_nh, "left_wheel", left_wheel_names) ||
         !getWheelNames(controller_nh, "right_wheel", right_wheel_names))
     {
       return false;

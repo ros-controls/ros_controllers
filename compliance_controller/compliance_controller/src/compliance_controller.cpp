@@ -203,9 +203,11 @@ void ComplianceController<SegmentImpl, HardwareInterface>::updateJointTrajContro
     if (time_data.uptime != last_trajectory_update_time_)
     {
       last_trajectory_update_time_ = time_data.uptime;
-      integrated_traj_position_adjustment_[i] += compliance_velocity_adjustment_.data[i] * time_data.period.toSec();
-      JointTrajectoryController::desired_joint_state_.position[0] += integrated_traj_position_adjustment_[i];
     }
+
+    // Integrate compliance commands
+    integrated_traj_position_adjustment_[i] += compliance_velocity_adjustment_.data[i] * time_data.period.toSec();
+    JointTrajectoryController::desired_joint_state_.position[0] += integrated_traj_position_adjustment_[i];
 
     JointTrajectoryController::desired_state_.position[i] = JointTrajectoryController::desired_joint_state_.position[0];
     JointTrajectoryController::desired_state_.velocity[i] = JointTrajectoryController::desired_joint_state_.velocity[0];
@@ -353,7 +355,7 @@ void ComplianceController<SegmentImpl, HardwareInterface>::complianceAdjustmentC
   }
 }
 
-// Callback for compliant joint velocity adjustments.
+// Callback to toggle compliance on/off
 template <class SegmentImpl, class HardwareInterface>
 bool ComplianceController<SegmentImpl, HardwareInterface>::toggleCompliance(std_srvs::Trigger::Request& req,
                                                                             std_srvs::Trigger::Response& res)
@@ -362,6 +364,9 @@ bool ComplianceController<SegmentImpl, HardwareInterface>::toggleCompliance(std_
 
   res.success = true;
   res.message = (compliance_enabled_) ? "enabled" : "disabled";
+
+  compliance_velocity_adjustment_.data.resize(TrajOrJogController::n_joints_, 0);
+  integrated_traj_position_adjustment_.resize(TrajOrJogController::n_joints_, 0);
 
   return true;
 }

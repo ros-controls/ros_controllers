@@ -242,7 +242,7 @@ wrench_to_joint_vel_pub::ExitCondition CompliantControl::getVelocity(std::vector
     // Normal compliance calculation
     else
     {
-      v_out[i] = v_in[i] + wrench_[i] / stiffness_[i] + wrench_dot_[i] / damping_[i];
+      v_out[i] = v_in[i] + wrench_[i] / stiffness_[i] - wrench_dot_[i] / damping_[i];
       if (exit_condition != wrench_to_joint_vel_pub::CONDITION_MET)
       {
         exit_condition = wrench_to_joint_vel_pub::CONDITION_NOT_MET;

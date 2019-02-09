@@ -2,6 +2,14 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Report errors in updateTrajectoryCommand back though action result error_string
+* Remove redundant warning messages
+* Return error string when failing to initialize trajectory from message
+* don't print warning about dropped first point (`#366 <https://github.com/ros-controls/ros_controllers/issues/366>`_)
+* Contributors: Mathias Lüdtke, Miguel Prada, hsl, jschleicher
+
 0.13.4 (2018-06-26)
 -------------------
 * joint_trajectory_controller improve test stability

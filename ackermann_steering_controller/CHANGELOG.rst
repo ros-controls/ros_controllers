@@ -1,19 +1,20 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package gripper_action_controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package ackermann_steering_controller
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
-* Use a copy of the pointer in update() to avoid crash by cancelCB()
-* Contributors: oka
+* Add ackermann_steering_controller (`#356 <https://github.com/ros-controls/ros_controllers/issues/356>`_)
+* Contributors: Mori
+
+* Add ackermann_steering_controller (`#356 <https://github.com/ros-controls/ros_controllers/issues/356>`_)
+* Contributors: Mori
 
 0.13.4 (2018-06-26)
 -------------------
 
 0.13.3 (2018-04-27)
 -------------------
-* migrate to new pluginlib headers
-* Contributors: Mathias Lüdtke
 
 0.13.2 (2017-12-23)
 -------------------
@@ -35,12 +36,6 @@ Forthcoming
 
 0.12.0 (2017-02-15)
 -------------------
-* Fix most catkin lint issues
-* Change for format2
-* Add Enrique and Bence to maintainers
-* urdf::Model typedefs had to be added to a different repo first
-* Replace boost::shared_ptr<urdf::XY> with urdf::XYConstSharedPtr when exists
-* Contributors: Bence Magyar
 
 0.11.2 (2016-08-16)
 -------------------
@@ -62,8 +57,6 @@ Forthcoming
 
 0.9.0 (2014-10-31)
 ------------------
-* Buildsystem fixes
-* Contributors: Adolfo Rodriguez Tsouroukdissian, Lukas Bulwahn
 
 0.8.1 (2014-07-11)
 ------------------
@@ -73,13 +66,27 @@ Forthcoming
 
 0.7.2 (2014-04-01)
 ------------------
-* Added missing deps to package.xml
-* Contributors: Scott K Logan
 
 0.7.1 (2014-03-31)
 ------------------
 
-0.7.0 (2014-03-28)
+0.6.0 (2014-02-05)
 ------------------
-* gripper_action_controller: New controller for single dof grippers.
-* Contributors: Sachin Chitta.
+
+0.5.4 (2013-09-30)
+------------------
+
+0.5.3 (2013-09-04)
+------------------
+
+0.5.2 (2013-08-06)
+------------------
+
+0.5.1 (2013-07-19)
+------------------
+
+0.5.0 (2013-07-16)
+------------------
+
+0.4.0 (2013-06-26)
+------------------

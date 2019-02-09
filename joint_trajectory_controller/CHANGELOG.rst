@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.13.5 (2019-02-09)
+-------------------
 * Report errors in updateTrajectoryCommand back though action result error_string
 * Remove redundant warning messages
 * Return error string when failing to initialize trajectory from message

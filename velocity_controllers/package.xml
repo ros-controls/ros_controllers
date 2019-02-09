@@ -1,6 +1,6 @@
 <package format="2">
   <name>velocity_controllers</name>
-  <version>0.13.4</version>
+  <version>0.13.5</version>
   <description>velocity_controllers</description>
 
   <maintainer email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</maintainer>

@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.14.3 (2019-02-09)
+-------------------
 * use operators instead of aliases
 * joint_trajectory_controller: fix minor typo in class doc.
 * correctly parse joint trajectory options

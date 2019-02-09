@@ -2,8 +2,8 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.14.3 (2019-02-09)
+-------------------
 * Sync version number with rest of repo
 * migrate to new URDF shared pointer types
 * Add ackermann_steering_controller (`#356 <https://github.com/ros-controls/ros_controllers/issues/356>`_)

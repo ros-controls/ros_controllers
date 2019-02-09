@@ -2,8 +2,8 @@
 Changelog for package four_wheel_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.14.3 (2019-02-09)
+-------------------
 * Minor change in one of the ROS_INFO_STREAM
 * Contributors: Jan-Felix Klein
 

@@ -1,11 +1,18 @@
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package four_wheel_steering_controller
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package ackermann_steering_controller
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Forthcoming
 -----------
-* Minor change in one of the ROS_INFO_STREAM
-* Contributors: Jan-Felix Klein
+* Sync version number with rest of repo
+* migrate to new URDF shared pointer types
+* Add ackermann_steering_controller (`#356 <https://github.com/ros-controls/ros_controllers/issues/356>`_)
+* Contributors: Bence Magyar, Mathias Lüdtke, Mori
+
+* Sync version number with rest of repo
+* migrate to new URDF shared pointer types
+* Add ackermann_steering_controller (`#356 <https://github.com/ros-controls/ros_controllers/issues/356>`_)
+* Contributors: Bence Magyar, Mathias Lüdtke, Mori
 
 0.14.2 (2018-10-23)
 -------------------
@@ -15,16 +22,9 @@ Forthcoming
 
 0.14.0 (2018-04-27)
 -------------------
-* migrate to new pluginlib headers
-* fix warning un/signed comparison
-* [4ws tests] simulation clock
-* [4ws tests] Increase position tolerance
-* Contributors: Bence Magyar, Jeremie Deray, Mathias Lüdtke, Vincent Rousseau
 
 0.13.2 (2017-12-23)
 -------------------
-* Add four_wheel_steering_controller
-* Contributors: Vincent Rousseau
 
 0.13.1 (2017-11-06)
 -------------------

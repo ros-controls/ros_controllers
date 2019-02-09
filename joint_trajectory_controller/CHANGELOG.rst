@@ -2,6 +2,15 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* use operators instead of aliases
+* joint_trajectory_controller: fix minor typo in class doc.
+* correctly parse joint trajectory options
+* Remove deprecated parameter hold_trajectory_duration (`#386 <https://github.com/ros-controls/ros_controllers/issues/386>`_)
+* dont print warning about dropped first point, if it is expected behaviour
+* Contributors: AndyZe, G.A. vd. Hoorn, Gennaro Raiola, James Xu, Joachim Schleicher, Karsten Knese
+
 0.14.2 (2018-10-23)
 -------------------
 * Report errors in updateTrajectoryCommand back though action result error_string

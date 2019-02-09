@@ -2,6 +2,11 @@
 Changelog for package ros_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add ackermann_steering_controller (`#356 <https://github.com/ros-controls/ros_controllers/issues/356>`_)
+* Contributors: Mori
+
 0.14.2 (2018-10-23)
 -------------------
 * Update maintainers

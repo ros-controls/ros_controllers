@@ -368,6 +368,9 @@ bool ComplianceController<SegmentImpl, HardwareInterface>::toggleCompliance(std_
   compliance_velocity_adjustment_.data.resize(TrajOrJogController::n_joints_, 0);
   integrated_traj_position_adjustment_.resize(TrajOrJogController::n_joints_, 0);
 
+  JointTrajectoryController::rt_active_goal_.reset();
+  JointTrajectoryController::successful_joint_traj_.reset();
+
   return true;
 }
 

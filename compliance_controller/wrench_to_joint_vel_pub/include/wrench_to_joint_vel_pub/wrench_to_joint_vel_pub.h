@@ -198,6 +198,12 @@ private:
   ros::Publisher compliant_velocity_pub_;
 
   ros::Subscriber joints_sub_;
+
+  // For Jacobian pseudoinverse calculations
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd_;
+  Eigen::MatrixXd matrix_s_;
+  Eigen::MatrixXd pseudo_inverse_;
+  Eigen::VectorXd delta_theta_;
 };
 
 }  // namespace wrench_to_joint_vel_pub

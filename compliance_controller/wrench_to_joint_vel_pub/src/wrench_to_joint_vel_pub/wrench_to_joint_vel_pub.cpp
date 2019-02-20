@@ -128,20 +128,23 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
 
       // Multiply by the Jacobian pseudo-inverse to calculate a joint velocity vector
       // This Jacobian is w.r.t. to the last link
-      Eigen::MatrixXd j = kinematic_state_->getJacobian(joint_model_group_);
-      // J^T* (J*(J^T)^-1) is the Moore-Penrose pseudo-inverse
-      Eigen::VectorXd delta_theta = (j.transpose() * (j * j.transpose()).inverse()) * cartesian_velocity;
+      Eigen::MatrixXd jacobian = kinematic_state_->getJacobian(joint_model_group_);
+
+      svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
+      matrix_s_ = svd_.singularValues().asDiagonal();
+      pseudo_inverse_ = svd_.matrixV() * matrix_s_.inverse() * svd_.matrixU().transpose();
+      delta_theta_ = pseudo_inverse_ * cartesian_velocity;
 
       // Check if a command magnitude would be too large.
       double largest_allowable_command = compliance_params_.max_allowable_cmd_magnitude;
-      for (int i = 0; i < delta_theta.size(); ++i)
+      for (int i = 0; i < delta_theta_.size(); ++i)
       {
-        if ((fabs(delta_theta[i]) > largest_allowable_command) || std::isnan(delta_theta[i]))
+        if ((fabs(delta_theta_[i]) > largest_allowable_command) || std::isnan(delta_theta_[i]))
         {
           ROS_WARN_STREAM_NAMED(NODE_NAME, "Magnitude of compliant command is too large. Pausing compliant commands.");
-          for (int j = 0; j < delta_theta.size(); ++j)
+          for (int j = 0; j < delta_theta_.size(); ++j)
           {
-            delta_theta[j] = 0.;
+            delta_theta_[j] = 0.;
           }
           break;
         }
@@ -150,9 +153,9 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
       // Publish this joint velocity vector
       // Type is std_msgs/Float64MultiArray.h
       compliance_control_msgs::CompliantVelocities delta_theta_msg;
-      for (int i = 0; i < delta_theta.size(); ++i)
+      for (int i = 0; i < delta_theta_.size(); ++i)
       {
-        delta_theta_msg.compliant_velocities.data.push_back(delta_theta[i]);
+        delta_theta_msg.compliant_velocities.data.push_back(delta_theta_[i]);
       }
 
       // Check if the command would cause a joint limit to be exceeded

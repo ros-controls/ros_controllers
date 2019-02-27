@@ -130,10 +130,23 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
       // This Jacobian is w.r.t. to the last link
       Eigen::MatrixXd jacobian = kinematic_state_->getJacobian(joint_model_group_);
 
-      svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
+      // TESTING -- allow free rotation
+      // Remove the last 3 rows from the Jacobian
+      Eigen::MatrixXd reduced_jacobian ( jacobian.rows()-3, jacobian.cols() );
+      for (std::size_t i=0; i<reduced_jacobian.rows(); ++i)
+      {
+        reduced_jacobian.row(i) = jacobian.row(i);
+      }
+      // Remove the last 3 rows from the Cartesian command
+      Eigen::VectorXd reduced_cartesian_velocity(3);
+      reduced_cartesian_velocity[0] = cartesian_velocity[0];
+      reduced_cartesian_velocity[1] = cartesian_velocity[1];
+      reduced_cartesian_velocity[2] = cartesian_velocity[2];
+
+      svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(reduced_jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
       matrix_s_ = svd_.singularValues().asDiagonal();
       pseudo_inverse_ = svd_.matrixV() * matrix_s_.inverse() * svd_.matrixU().transpose();
-      delta_theta_ = pseudo_inverse_ * cartesian_velocity;
+      delta_theta_ = pseudo_inverse_ * reduced_cartesian_velocity;
 
       // Check if a command magnitude would be too large.
       double largest_allowable_command = compliance_params_.max_allowable_cmd_magnitude;

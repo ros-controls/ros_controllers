@@ -152,11 +152,17 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
               ROS_WARN_STREAM("Transferring row " << start_search_at + num_rows_filled << " to " << jacobian_row);
               reduced_jacobian.row(jacobian_row) = jacobian.row(start_search_at + num_rows_filled);
               ++num_rows_filled;
+              start_search_at = start_search_at + num_rows_filled;
+              num_rows_filled = 0;
               continue;
             }
+            else
+            {
+              start_search_at = start_search_at + num_rows_filled;
+              num_rows_filled = 0;
+              break;
+            }
           }
-          start_search_at = start_search_at + num_rows_filled;
-          num_rows_filled = 0;
         }
       }
       ROS_ERROR_STREAM("Done parsing dropped_dof_index");

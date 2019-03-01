@@ -40,6 +40,7 @@
 #ifndef WRENCH_TO_JOINT_VEL_PUB_H
 #define WRENCH_TO_JOINT_VEL_PUB_H
 
+#include <compliance_control_msgs/ComplianceSettings.h>
 #include <compliance_control_msgs/CompliantVelocities.h>
 #include <Eigen/Core>
 #include <geometry_msgs/Vector3Stamped.h>
@@ -94,6 +95,9 @@ public:
         n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/bias_compliance_calcs",
                             &PublishCompliantJointVelocities::biasCompliantCalcs, this);
 
+    adjust_settings_service_ = n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/adjust_compliance_settings",
+                            &PublishCompliantJointVelocities::adjustSettings, this);
+
     wrench_subscriber_ =
         n_.subscribe(compliance_params_.force_torque_topic, 1, &PublishCompliantJointVelocities::wrenchCallback, this);
 
@@ -122,6 +126,19 @@ private:
   {
     compliance_enabled_ = req.data;
     res.success = true;
+    return true;
+  }
+
+  /**
+   * A service callback. Adjusts compliance settings
+   * TODO: error checking that these indices are betweeen 0-5 and in increasing order
+   */
+  bool adjustSettings(compliance_control_msgs::ComplianceSettings::Request& req, compliance_control_msgs::ComplianceSettings::Response& res)
+  {
+    dof_to_drop_.clear();
+    dof_to_drop_.push_back(req.dimensions_to_ignore.data[0]);
+    ROS_ERROR_STREAM(dof_to_drop_.front() << " " << dof_to_drop_.back());
+
     return true;
   }
 
@@ -181,7 +198,7 @@ private:
   static ROSParameters compliance_params_;
 
   // Publish compliance commands unless interrupted by a service call
-  ros::ServiceServer enable_compliance_service_, bias_compliance_service_;
+  ros::ServiceServer enable_compliance_service_, bias_compliance_service_, adjust_settings_service_;
 
   // Subscribe to wrench data from a force/torque sensor
   ros::Subscriber wrench_subscriber_;
@@ -204,8 +221,13 @@ private:
   Eigen::MatrixXd matrix_s_;
   Eigen::MatrixXd pseudo_inverse_;
   Eigen::VectorXd delta_theta_;
+
+  // Track degrees of freedom to drop
+  // By default, ignore compliance in dimensions 3,4,5
+  // i.e. roll/pitch/yaw
+  std::vector<int> dof_to_drop_{3,4,5};
 };
 
 }  // namespace wrench_to_joint_vel_pub
 
-#endif
+#endif // WRENCH_TO_JOINT_VEL_PUB_H

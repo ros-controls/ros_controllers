@@ -11,6 +11,11 @@ add_message_files(
   CompliantVelocities.msg
 )
 
+add_service_files(
+  FILES
+  ComplianceSettings.srv
+)
+
 generate_messages(
   DEPENDENCIES
   std_msgs

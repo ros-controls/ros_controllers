@@ -1,0 +1,22 @@
+# Turn off compliance along these dimensions.
+# For example, [1 4] would turn off compliance for y-translation and pitch.
+# Entries must be in the range [0-5] and increase in order.
+# e.g. [0 1 2 3 4 5] is valid and will disable compliance in all dimensions.
+# [3 2 4] is invalid (not increasing order).
+# [6] is invalid (not in the range 0-5).
+std_msgs/Int32MultiArray dimensions_to_ignore
+
+# The key equation for compliance is:
+# compliance_velocity[i] = wrench[i]/stiffness[i]
+
+# Set stiffness in each dimension.
+# First three element are Newtons/(m/s), last 3 are N*m/(rad/s).
+# Should be positive.
+std_msgs/Float64MultiArray stiffness
+
+# Set damping factors in each dimension.
+# First three element are Newtons/m, last 3 are N*m/rad.
+# Should be positive.
+std_msgs/Float64MultiArray damping
+---
+std_msgs/Bool success

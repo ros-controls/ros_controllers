@@ -97,12 +97,16 @@ public:
                    double highest_allowable_torque);
 
   /**
-   * \brief Set the "springiness" of compliance in each direction.
+   * Set the "springiness" of compliance in each direction.
+   * First three element are Newtons/(m/s), last 3 are N*m/(rad/s).
+   * Should be positive.
    */
   void setStiffness(const std::vector<double>& stiffness);
 
   /**
-   * \brief Set the damping constant in each direction.
+   * Set the "springiness" of compliance in each direction.
+   * First three element are Newtons/m, last 3 are N*m/rad.
+   * Should be positive.
    */
   void setDamping(const std::vector<double>& damping);
 

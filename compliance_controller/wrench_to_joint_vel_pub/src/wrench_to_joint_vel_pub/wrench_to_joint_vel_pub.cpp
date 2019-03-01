@@ -134,9 +134,8 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
 
       // From the jacobian, drop degrees of freedom that should be disregarded
       // TODO: error checking that these indices are betweeen 0-5 and in increasing order
-      //std::vector<double> dof_to_drop{ 3, 4, 5 };
-      std::vector<double> dof_to_drop{ 0 };
-      // Skip joint indices that have been checked already:
+      std::vector<double> dof_to_drop{ 3, 4, 5 };
+      // Skip dimensions that have been checked already:
       int start_search_at = 0;
       //  Number of rows that have been successfully transferred to reduced jacobian:
       int num_rows_filled = 0;
@@ -176,12 +175,10 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
       ROS_ERROR_STREAM(std::endl << reduced_jacobian.matrix());
 
       // Remove corresponding rows from the Cartesian command
-      Eigen::VectorXd reduced_cartesian_velocity(5);
-      reduced_cartesian_velocity[0] = cartesian_velocity[1];
-      reduced_cartesian_velocity[1] = cartesian_velocity[2];
-      reduced_cartesian_velocity[2] = cartesian_velocity[3];
-      reduced_cartesian_velocity[3] = cartesian_velocity[4];
-      reduced_cartesian_velocity[4] = cartesian_velocity[5];
+      Eigen::VectorXd reduced_cartesian_velocity(3);
+      reduced_cartesian_velocity[0] = cartesian_velocity[0];
+      reduced_cartesian_velocity[1] = cartesian_velocity[1];
+      reduced_cartesian_velocity[2] = cartesian_velocity[2];
 
       svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(reduced_jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
       matrix_s_ = svd_.singularValues().asDiagonal();

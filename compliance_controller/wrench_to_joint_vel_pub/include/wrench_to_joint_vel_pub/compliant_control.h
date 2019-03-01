@@ -91,9 +91,10 @@ public:
    * \brief Construct an object to take wrench data and calculate compliance velocity
    * adjustments.
    */
-  CompliantControl(const std::vector<double>& stiffness, const std::vector<double>& damping, const std::vector<double>& deadband,
-                   const std::vector<double>& endConditionWrench, double filter_param,
-                   geometry_msgs::WrenchStamped bias, double highest_allowable_force, double highest_allowable_torque);
+  CompliantControl(const std::vector<double>& stiffness, const std::vector<double>& damping,
+                   const std::vector<double>& deadband, const std::vector<double>& endConditionWrench,
+                   double filter_param, geometry_msgs::WrenchStamped bias, double highest_allowable_force,
+                   double highest_allowable_torque);
 
   /**
    * \brief Set the "springiness" of compliance in each direction.
@@ -134,7 +135,7 @@ public:
    * \brief Calculate a velocity adjustment due to compliance
    */
   wrench_to_joint_vel_pub::ExitCondition getVelocity(std::vector<double> v_in, geometry_msgs::WrenchStamped wrench_data,
-                                               std::vector<double>& v_out, ros::Time time);
+                                                     std::vector<double>& v_out, ros::Time time);
 
   std::vector<double> stiffness_;
   std::vector<double> damping_;
@@ -154,5 +155,5 @@ public:
   ros::Duration delta_t_ = ros::Duration(0);
   std::vector<double> prev_wrench_;
 };
-} // namespace wrench_to_joint_vel_pub
+}  // namespace wrench_to_joint_vel_pub
 #endif

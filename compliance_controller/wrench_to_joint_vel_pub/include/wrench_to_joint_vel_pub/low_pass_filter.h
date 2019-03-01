@@ -75,6 +75,6 @@ private:
   // less, i.e. higher cutoff frequency.
   double filter_param_ = 4.;
 };
-} // namespace wrench_to_joint_vel_pub
+}  // namespace wrench_to_joint_vel_pub
 
 #endif

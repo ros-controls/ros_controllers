@@ -30,4 +30,4 @@ void LowPassFilter::reset(double data)
   prev_msrmts_ = { data, data, data };
   prev_filtered_msrmts_ = { data, data };
 }
-} // namespace wrench_to_joint_vel_pub
+}  // namespace wrench_to_joint_vel_pub

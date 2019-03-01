@@ -82,9 +82,9 @@ public:
     // Assume a bias wrench of all zeros
     geometry_msgs::WrenchStamped bias;
     compliant_control_ptr_.reset(new wrench_to_joint_vel_pub::CompliantControl(
-        compliance_params_.stiffness, compliance_params_.damping, compliance_params_.deadband, compliance_params_.end_condition_wrench,
-        compliance_params_.low_pass_filter_param, bias, compliance_params_.highest_allowable_force,
-        compliance_params_.highest_allowable_torque));
+        compliance_params_.stiffness, compliance_params_.damping, compliance_params_.deadband,
+        compliance_params_.end_condition_wrench, compliance_params_.low_pass_filter_param, bias,
+        compliance_params_.highest_allowable_force, compliance_params_.highest_allowable_torque));
 
     enable_compliance_service_ =
         n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/toggle_compliance_publication",

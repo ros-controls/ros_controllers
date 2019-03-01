@@ -43,10 +43,10 @@
 
 namespace wrench_to_joint_vel_pub
 {
-CompliantControl::CompliantControl(const std::vector<double>& stiffness, const std::vector<double>& damping, const std::vector<double>& deadband,
-                                   const std::vector<double>& end_condition_wrench, double filter_param,
-                                   geometry_msgs::WrenchStamped bias, double highest_allowable_force,
-                                   double highest_allowable_torque)
+CompliantControl::CompliantControl(const std::vector<double>& stiffness, const std::vector<double>& damping,
+                                   const std::vector<double>& deadband, const std::vector<double>& end_condition_wrench,
+                                   double filter_param, geometry_msgs::WrenchStamped bias,
+                                   double highest_allowable_force, double highest_allowable_torque)
   : deadband_(deadband)
   , end_condition_wrench_(end_condition_wrench)
   , safe_force_limit_(highest_allowable_force)
@@ -95,15 +95,15 @@ void CompliantControl::setStiffness(const std::vector<double>& stiffness)
   }
   else
   {
-    stiffness_.resize(wrench_to_joint_vel_pub::NUM_DIMS,0);
+    stiffness_.resize(wrench_to_joint_vel_pub::NUM_DIMS, 0);
     for (int i = 0; i < wrench_to_joint_vel_pub::NUM_DIMS; ++i)
     {
       if (stiffness[i] <= 1e-3)
       {
         ROS_ERROR_STREAM_NAMED(LOGNAME, "Stiffness must be > zero.Ignoring "
-                                                    "stiffness in direction: "
-                                                        << i);
-        stiffness_[i] = DBL_MAX; // Very stiff, practically no effect
+                                        "stiffness in direction: "
+                                            << i);
+        stiffness_[i] = DBL_MAX;  // Very stiff, practically no effect
       }
       else
       {
@@ -121,7 +121,7 @@ void CompliantControl::setDamping(const std::vector<double>& damping)
   }
   else
   {
-    damping_.resize(wrench_to_joint_vel_pub::NUM_DIMS,0);
+    damping_.resize(wrench_to_joint_vel_pub::NUM_DIMS, 0);
     for (int i = 0; i < wrench_to_joint_vel_pub::NUM_DIMS; ++i)
     {
       // The sign on damping should be +. See for example,
@@ -129,9 +129,9 @@ void CompliantControl::setDamping(const std::vector<double>& damping)
       if (damping[i] <= 1e-3)
       {
         ROS_ERROR_STREAM_NAMED(LOGNAME, "Damping must be > zero. Ignoring "
-                                                    "damping in direction: "
-                                                        << i);
-        damping_[i] = DBL_MAX; // Very large, practically no effect
+                                        "damping in direction: "
+                                            << i);
+        damping_[i] = DBL_MAX;  // Very large, practically no effect
       }
       else
       {
@@ -187,15 +187,15 @@ void CompliantControl::updateWrench(geometry_msgs::WrenchStamped wrench_data)
   else
     biasedFT[5] = wrench_data.wrench.torque.z - bias_[5];
 
-  for (int i=0; i<6; ++i)
+  for (int i = 0; i < 6; ++i)
   {
     wrench_[i] = wrench_filters_[i].filter(biasedFT[i]);
   }
 }
 
 wrench_to_joint_vel_pub::ExitCondition CompliantControl::getVelocity(std::vector<double> v_in,
-                                                               geometry_msgs::WrenchStamped wrench_data,
-                                                               std::vector<double>& v_out, ros::Time time)
+                                                                     geometry_msgs::WrenchStamped wrench_data,
+                                                                     std::vector<double>& v_out, ros::Time time)
 {
   wrench_to_joint_vel_pub::ExitCondition exit_condition = wrench_to_joint_vel_pub::NOT_CONTROLLED;
 
@@ -208,16 +208,16 @@ wrench_to_joint_vel_pub::ExitCondition CompliantControl::getVelocity(std::vector
   // Avoid divide-by-zero
   if (delta_t_ > ros::Duration(0))
   {
-    for (int i=0; i<6; ++i)
+    for (int i = 0; i < 6; ++i)
     {
-      wrench_dot_[i] = wrench_derivative_filters_[i].filter( (wrench_[i] - prev_wrench_[i]) / delta_t_.toSec() );
+      wrench_dot_[i] = wrench_derivative_filters_[i].filter((wrench_[i] - prev_wrench_[i]) / delta_t_.toSec());
     }
   }
   else
   {
-    for (int i=0; i<6; ++i)
+    for (int i = 0; i < 6; ++i)
     {
-      wrench_dot_[i] = wrench_derivative_filters_[i].filter( 0 );
+      wrench_dot_[i] = wrench_derivative_filters_[i].filter(0);
     }
   }
 
@@ -233,11 +233,11 @@ wrench_to_joint_vel_pub::ExitCondition CompliantControl::getVelocity(std::vector
   {
     // Target wrench was exceeded
     if (((end_condition_wrench_[i] > 0) && (wrench_[i] > end_condition_wrench_[i])) ||
-      ((end_condition_wrench_[i] < 0) && (wrench_[i] < end_condition_wrench_[i])))
+        ((end_condition_wrench_[i] < 0) && (wrench_[i] < end_condition_wrench_[i])))
     {
       ROS_INFO_STREAM_NAMED(LOGNAME, "Exit condition met in direction: " << i);
       v_out[i] = 0.0;
-      exit_condition = wrench_to_joint_vel_pub::CONDITION_MET;      
+      exit_condition = wrench_to_joint_vel_pub::CONDITION_MET;
     }
     // Normal compliance calculation
     else

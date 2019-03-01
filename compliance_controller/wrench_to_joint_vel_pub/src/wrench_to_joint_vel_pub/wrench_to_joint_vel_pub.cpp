@@ -134,18 +134,18 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
 
       // From the jacobian, drop degrees of freedom that should be disregarded
       // TODO: error checking that these indices are betweeen 0-5
-      std::vector<double> dof_to_drop {3, 4, 5};
+      std::vector<double> dof_to_drop{ 3, 4, 5 };
       // Skip joint indices that have been checked already:
       int start_search_at = 0;
       //  Number of rows that have been successfully transferred to reduced jacobian:
       int num_rows_filled = 0;
       // Transfer rows to reduced_jacobian, up to the last index in dof_to_drop
-      Eigen::MatrixXd reduced_jacobian ( jacobian.rows()-3, jacobian.cols() );
-      for (std::size_t dropped_dof_index=0; dropped_dof_index<dof_to_drop.size(); ++dropped_dof_index)
+      Eigen::MatrixXd reduced_jacobian(jacobian.rows() - 3, jacobian.cols());
+      for (std::size_t dropped_dof_index = 0; dropped_dof_index < dof_to_drop.size(); ++dropped_dof_index)
       {
-        for (std::size_t jacobian_row=start_search_at; jacobian_row<6; ++jacobian_row)
+        for (std::size_t jacobian_row = start_search_at; jacobian_row < 6; ++jacobian_row)
         {
-          if (dof_to_drop[dropped_dof_index] != start_search_at+num_rows_filled)
+          if (dof_to_drop[dropped_dof_index] != start_search_at + num_rows_filled)
           {
             reduced_jacobian.row(jacobian_row) = jacobian.row(start_search_at + num_rows_filled);
             ++num_rows_filled;
@@ -158,10 +158,10 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
         }
       }
       // Transfer remaining rows to reduced_jacobian
-      start_search_at = num_rows_filled+1;
-      for (std::size_t index=start_search_at; index<6; ++index)
+      start_search_at = num_rows_filled + 1;
+      for (std::size_t index = start_search_at; index < 6; ++index)
       {
-        reduced_jacobian.row(index) = jacobian.row(index+dof_to_drop.size());
+        reduced_jacobian.row(index) = jacobian.row(index + dof_to_drop.size());
       }
       ROS_ERROR_STREAM(std::endl << reduced_jacobian.matrix());
 

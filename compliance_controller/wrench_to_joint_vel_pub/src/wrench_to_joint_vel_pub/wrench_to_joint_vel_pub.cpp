@@ -134,13 +134,14 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
 
       // From the jacobian, drop degrees of freedom that should be disregarded
       // TODO: error checking that these indices are betweeen 0-5 and in increasing order
-      std::vector<double> dof_to_drop{ 3, 4, 5 };
+      //std::vector<double> dof_to_drop{ 3, 4, 5 };
+      std::vector<double> dof_to_drop{ 0 };
       // Skip joint indices that have been checked already:
       int start_search_at = 0;
       //  Number of rows that have been successfully transferred to reduced jacobian:
       int num_rows_filled = 0;
       // Transfer rows to reduced_jacobian, up to the last index in dof_to_drop
-      Eigen::MatrixXd reduced_jacobian(jacobian.rows() - 3, jacobian.cols());
+      Eigen::MatrixXd reduced_jacobian(jacobian.rows() - dof_to_drop.size(), jacobian.cols());
       for (std::size_t dropped_dof_index = 0; dropped_dof_index < dof_to_drop.size(); ++dropped_dof_index)
       {
         for (std::size_t jacobian_row = start_search_at; jacobian_row < 6; ++jacobian_row)
@@ -152,12 +153,11 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
               ROS_WARN_STREAM("Transferring row " << start_search_at + num_rows_filled << " to " << jacobian_row);
               reduced_jacobian.row(jacobian_row) = jacobian.row(start_search_at + num_rows_filled);
               ++num_rows_filled;
-              start_search_at = start_search_at + num_rows_filled;
-              num_rows_filled = 0;
               continue;
             }
             else
             {
+              ROS_ERROR_STREAM("Not transferring Jacobian row " << start_search_at + num_rows_filled);
               start_search_at = start_search_at + num_rows_filled;
               num_rows_filled = 0;
               break;
@@ -168,18 +168,20 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
       ROS_ERROR_STREAM("Done parsing dropped_dof_index");
 
       // Transfer remaining rows to reduced_jacobian
-      ++start_search_at;
-      for (std::size_t index = start_search_at; index < 6; ++index)
+      for (std::size_t index = start_search_at; index < 6 - dof_to_drop.size(); ++index)
       {
-        ;
+        ROS_WARN_STREAM("Transferring remaining row " << index + dof_to_drop.size());
+        reduced_jacobian.row(index) = jacobian.row(index + dof_to_drop.size());
       }
       ROS_ERROR_STREAM(std::endl << reduced_jacobian.matrix());
 
       // Remove corresponding rows from the Cartesian command
-      Eigen::VectorXd reduced_cartesian_velocity(3);
-      reduced_cartesian_velocity[0] = cartesian_velocity[0];
-      reduced_cartesian_velocity[1] = cartesian_velocity[1];
-      reduced_cartesian_velocity[2] = cartesian_velocity[2];
+      Eigen::VectorXd reduced_cartesian_velocity(5);
+      reduced_cartesian_velocity[0] = cartesian_velocity[1];
+      reduced_cartesian_velocity[1] = cartesian_velocity[2];
+      reduced_cartesian_velocity[2] = cartesian_velocity[3];
+      reduced_cartesian_velocity[3] = cartesian_velocity[4];
+      reduced_cartesian_velocity[4] = cartesian_velocity[5];
 
       svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(reduced_jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
       matrix_s_ = svd_.singularValues().asDiagonal();

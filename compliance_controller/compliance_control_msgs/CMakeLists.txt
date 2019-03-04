@@ -13,7 +13,9 @@ add_message_files(
 
 add_service_files(
   FILES
-  ComplianceSettings.srv
+  DisableComplianceDimensions.srv
+  AdjustStiffness.srv
+  AdjustDamping.srv
 )
 
 generate_messages(

@@ -1,0 +1,6 @@
+# Set damping factors in each dimension.
+# First three element are Newtons/m, last 3 are N*m/rad.
+# Should be positive and have a length of 6.
+std_msgs/Float64MultiArray damping
+---
+bool success

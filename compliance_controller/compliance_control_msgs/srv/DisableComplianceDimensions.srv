@@ -1,0 +1,10 @@
+# Turn off compliance along these dimensions.
+# For example, [1 4] would turn off compliance for y-translation and pitch.
+# Entries must be in the range [0-5] and increase in order.
+# e.g. [0 1 2 3 4 5] is valid and will disable compliance in all dimensions.
+# [] is valid and will enable compliance in all dimensions.
+# [3 2 4] is invalid (not increasing order).
+# [6] is invalid (not in the range 0-5).
+std_msgs/Int32MultiArray dimensions_to_ignore
+---
+bool success

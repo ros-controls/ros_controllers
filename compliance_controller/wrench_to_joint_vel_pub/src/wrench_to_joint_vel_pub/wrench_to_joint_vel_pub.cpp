@@ -83,7 +83,7 @@ PublishCompliantJointVelocities::PublishCompliantJointVelocities()
                           &PublishCompliantJointVelocities::biasCompliantCalcs, this);
 
   adjust_settings_service_ = n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/adjust_compliance_settings",
-                          &PublishCompliantJointVelocities::adjustSettings, this);
+                          &PublishCompliantJointVelocities::disableComplianceDimensions, this);
 
   wrench_subscriber_ =
       n_.subscribe(compliance_params_.force_torque_topic, 1, &PublishCompliantJointVelocities::wrenchCallback, this);
@@ -98,6 +98,19 @@ PublishCompliantJointVelocities::PublishCompliantJointVelocities()
       n_.advertise<compliance_control_msgs::CompliantVelocities>(compliance_params_.outgoing_joint_vel_topic, 1);
 
   joints_sub_ = n_.subscribe("joint_states", 1, &PublishCompliantJointVelocities::jointsCallback, this);
+}
+
+bool PublishCompliantJointVelocities::disableComplianceDimensions(compliance_control_msgs::DisableComplianceDimensions::Request& req, compliance_control_msgs::DisableComplianceDimensions::Response& res)
+{
+  dof_to_drop_.clear();
+  for (std::vector<int>::const_iterator it = req.dimensions_to_ignore.data.begin(); it != req.dimensions_to_ignore.data.end(); ++it)
+  {
+    dof_to_drop_.push_back(*it);
+    ROS_INFO_STREAM(dof_to_drop_.back());
+  }
+
+  res.success = true;
+  return true;
 }
 
 bool PublishCompliantJointVelocities::biasCompliantCalcs(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)

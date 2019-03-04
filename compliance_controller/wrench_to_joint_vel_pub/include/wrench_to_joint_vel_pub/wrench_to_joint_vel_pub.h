@@ -40,8 +40,8 @@
 #ifndef WRENCH_TO_JOINT_VEL_PUB_H
 #define WRENCH_TO_JOINT_VEL_PUB_H
 
-#include <compliance_control_msgs/ComplianceSettings.h>
 #include <compliance_control_msgs/CompliantVelocities.h>
+#include <compliance_control_msgs/DisableComplianceDimensions.h>
 #include <Eigen/Core>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <geometry_msgs/WrenchStamped.h>
@@ -99,13 +99,7 @@ private:
    * A service callback. Adjusts compliance settings
    * TODO: error checking that these indices are betweeen 0-5 and in increasing order
    */
-  bool adjustSettings(compliance_control_msgs::ComplianceSettings::Request& req, compliance_control_msgs::ComplianceSettings::Response& res)
-  {
-    dof_to_drop_.clear();
-    dof_to_drop_.push_back(req.dimensions_to_ignore.data[0]);
-
-    return true;
-  }
+  bool disableComplianceDimensions(compliance_control_msgs::DisableComplianceDimensions::Request& req, compliance_control_msgs::DisableComplianceDimensions::Response& res);
 
   /**
    * A service callback. Biases (aka tares, aka zeroes) the compliance calculations

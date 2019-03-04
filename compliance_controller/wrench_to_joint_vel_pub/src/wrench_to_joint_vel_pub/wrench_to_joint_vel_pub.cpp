@@ -139,8 +139,9 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
       Eigen::MatrixXd reduced_jacobian(jacobian.rows() - dof_to_drop_.size(), jacobian.cols());
       Eigen::VectorXd reduced_cartesian_velocity(6-dof_to_drop_.size());
 
-      // If the user wants to skip compliance in any dimension
-      // Transfer rows to reduced_jacobian, up to the last index in dof_to_drop_
+      // If the user wants to skip compliance in any dimension.
+      // Transfer rows to reduced_jacobian, up to the last index in dof_to_drop_.
+      // Also, remove corresponding rows from the Cartesian command.
       if (dof_to_drop_.size()>0)
       {
         for (std::size_t dropped_dof_index = 0; dropped_dof_index < dof_to_drop_.size(); ++dropped_dof_index)
@@ -152,6 +153,7 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
               if (dof_to_drop_[dropped_dof_index] != start_search_at + num_rows_filled)
               {
                 reduced_jacobian.row(jacobian_row) = jacobian.row(start_search_at + num_rows_filled);
+                reduced_cartesian_velocity[jacobian_row] = cartesian_velocity[start_search_at + num_rows_filled];
                 ++num_rows_filled;
                 continue;
               }
@@ -169,6 +171,7 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
         for (std::size_t index = start_search_at; index < 6 - dof_to_drop_.size(); ++index)
         {
           reduced_jacobian.row(index) = jacobian.row(index + dof_to_drop_.size());
+          reduced_cartesian_velocity[index] = cartesian_velocity[index + dof_to_drop_.size()];
         }
 
         // Remove corresponding rows from the Cartesian command

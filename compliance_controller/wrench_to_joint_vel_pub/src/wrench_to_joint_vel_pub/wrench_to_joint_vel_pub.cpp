@@ -41,12 +41,80 @@
 
 #include <wrench_to_joint_vel_pub/wrench_to_joint_vel_pub.h>
 
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, wrench_to_joint_vel_pub::NODE_NAME);
+
+  // Do compliance calculations in this class
+  wrench_to_joint_vel_pub::PublishCompliantJointVelocities publish_compliance_velocities;
+
+  // Spin and publish compliance velocities, unless disabled by a service call
+  publish_compliance_velocities.spin();
+
+  return 0;
+}
+
+namespace wrench_to_joint_vel_pub
+{
+
 // Initialize static member of class PublishCompliantJointVelocities
-wrench_to_joint_vel_pub::ROSParameters wrench_to_joint_vel_pub::PublishCompliantJointVelocities::compliance_params_;
+ROSParameters PublishCompliantJointVelocities::compliance_params_;
 
-static const char* const NODE_NAME = "wrench_to_joint_vel_pub";
+PublishCompliantJointVelocities::PublishCompliantJointVelocities()
+ : tf_listener_(tf_buffer_)
+{
+  readROSParameters();
 
-bool wrench_to_joint_vel_pub::PublishCompliantJointVelocities::checkJointLimits()
+  // Initialize an object of the compliance library.
+  // Use a unique_ptr to avoid memory management issues.
+  // Assume a bias wrench of all zeros
+  geometry_msgs::WrenchStamped bias;
+  compliant_control_ptr_.reset(new CompliantControl(
+      compliance_params_.stiffness, compliance_params_.damping, compliance_params_.deadband,
+      compliance_params_.end_condition_wrench, compliance_params_.low_pass_filter_param, bias,
+      compliance_params_.highest_allowable_force, compliance_params_.highest_allowable_torque));
+
+  enable_compliance_service_ =
+      n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/toggle_compliance_publication",
+                          &PublishCompliantJointVelocities::toggleCompliance, this);
+
+  bias_compliance_service_ =
+      n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/bias_compliance_calcs",
+                          &PublishCompliantJointVelocities::biasCompliantCalcs, this);
+
+  adjust_settings_service_ = n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/adjust_compliance_settings",
+                          &PublishCompliantJointVelocities::adjustSettings, this);
+
+  wrench_subscriber_ =
+      n_.subscribe(compliance_params_.force_torque_topic, 1, &PublishCompliantJointVelocities::wrenchCallback, this);
+
+  std::unique_ptr<robot_model_loader::RobotModelLoader> model_loader_ptr_ =
+      std::unique_ptr<robot_model_loader::RobotModelLoader>(new robot_model_loader::RobotModelLoader);
+  const robot_model::RobotModelPtr& kinematic_model = model_loader_ptr_->getModel();
+  joint_model_group_ = kinematic_model->getJointModelGroup(compliance_params_.move_group_name);
+  kinematic_state_ = std::make_shared<robot_state::RobotState>(kinematic_model);
+
+  compliant_velocity_pub_ =
+      n_.advertise<compliance_control_msgs::CompliantVelocities>(compliance_params_.outgoing_joint_vel_topic, 1);
+
+  joints_sub_ = n_.subscribe("joint_states", 1, &PublishCompliantJointVelocities::jointsCallback, this);
+}
+
+bool PublishCompliantJointVelocities::biasCompliantCalcs(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)
+{
+  if (req.data)
+  {
+    compliant_control_ptr_->biasSensor(last_wrench_data_);
+    ROS_INFO_STREAM("The bias of compliance calculations was reset.");
+    res.success = true;
+  }
+  else
+    res.success = false;
+
+  return true;
+}
+
+bool PublishCompliantJointVelocities::checkJointLimits()
 {
   for (auto joint : joint_model_group_->getJointModels())
   {
@@ -62,7 +130,7 @@ bool wrench_to_joint_vel_pub::PublishCompliantJointVelocities::checkJointLimits(
   return false;
 }
 
-void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
+void PublishCompliantJointVelocities::spin()
 {
   while (ros::ok())
   {
@@ -219,7 +287,7 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
   }
 }
 
-void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::readROSParameters()
+void PublishCompliantJointVelocities::readROSParameters()
 {
   std::size_t error = 0;
 
@@ -277,16 +345,4 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::readROSParameters
     }
   }
 }
-
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, NODE_NAME);
-
-  // Do compliance calculations in this class
-  wrench_to_joint_vel_pub::PublishCompliantJointVelocities publish_compliance_velocities;
-
-  // Spin and publish compliance velocities, unless disabled by a service call
-  publish_compliance_velocities.spin();
-
-  return 0;
-}
+} // namespace

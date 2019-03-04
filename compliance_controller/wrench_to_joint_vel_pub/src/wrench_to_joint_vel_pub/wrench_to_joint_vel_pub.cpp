@@ -135,41 +135,53 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
       int start_search_at = 0;
       //  Number of rows that have been successfully transferred to reduced jacobian:
       int num_rows_filled = 0;
-      // Transfer rows to reduced_jacobian, up to the last index in dof_to_drop_
+
       Eigen::MatrixXd reduced_jacobian(jacobian.rows() - dof_to_drop_.size(), jacobian.cols());
-      for (std::size_t dropped_dof_index = 0; dropped_dof_index < dof_to_drop_.size(); ++dropped_dof_index)
+      Eigen::VectorXd reduced_cartesian_velocity(6-dof_to_drop_.size());
+
+      // If the user wants to skip compliance in any dimension
+      // Transfer rows to reduced_jacobian, up to the last index in dof_to_drop_
+      if (dof_to_drop_.size()>0)
       {
-        for (std::size_t jacobian_row = start_search_at; jacobian_row < 6; ++jacobian_row)
+        for (std::size_t dropped_dof_index = 0; dropped_dof_index < dof_to_drop_.size(); ++dropped_dof_index)
         {
-          if (start_search_at < dof_to_drop_.size())
+          for (std::size_t jacobian_row = start_search_at; jacobian_row < 6; ++jacobian_row)
           {
-            if (dof_to_drop_[dropped_dof_index] != start_search_at + num_rows_filled)
+            if (start_search_at < dof_to_drop_.size())
             {
-              reduced_jacobian.row(jacobian_row) = jacobian.row(start_search_at + num_rows_filled);
-              ++num_rows_filled;
-              continue;
-            }
-            else
-            {
-              start_search_at = start_search_at + num_rows_filled;
-              num_rows_filled = 0;
-              break;
+              if (dof_to_drop_[dropped_dof_index] != start_search_at + num_rows_filled)
+              {
+                reduced_jacobian.row(jacobian_row) = jacobian.row(start_search_at + num_rows_filled);
+                ++num_rows_filled;
+                continue;
+              }
+              else
+              {
+                start_search_at = start_search_at + num_rows_filled;
+                num_rows_filled = 0;
+                break;
+              }
             }
           }
         }
-      }
 
-      // Transfer remaining rows to reduced_jacobian
-      for (std::size_t index = start_search_at; index < 6 - dof_to_drop_.size(); ++index)
+        // Transfer remaining rows to reduced_jacobian
+        for (std::size_t index = start_search_at; index < 6 - dof_to_drop_.size(); ++index)
+        {
+          reduced_jacobian.row(index) = jacobian.row(index + dof_to_drop_.size());
+        }
+
+        // Remove corresponding rows from the Cartesian command
+        reduced_cartesian_velocity[0] = cartesian_velocity[0];
+        reduced_cartesian_velocity[1] = cartesian_velocity[1];
+        reduced_cartesian_velocity[2] = cartesian_velocity[2];
+      }
+      // If user wants to keep compliance in all 6 dimensions
+      else
       {
-        reduced_jacobian.row(index) = jacobian.row(index + dof_to_drop_.size());
+        reduced_jacobian = jacobian;
+        reduced_cartesian_velocity = cartesian_velocity;
       }
-
-      // Remove corresponding rows from the Cartesian command
-      Eigen::VectorXd reduced_cartesian_velocity(3);
-      reduced_cartesian_velocity[0] = cartesian_velocity[0];
-      reduced_cartesian_velocity[1] = cartesian_velocity[1];
-      reduced_cartesian_velocity[2] = cartesian_velocity[2];
 
       svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(reduced_jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
       matrix_s_ = svd_.singularValues().asDiagonal();

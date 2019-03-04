@@ -40,6 +40,8 @@
 #ifndef WRENCH_TO_JOINT_VEL_PUB_H
 #define WRENCH_TO_JOINT_VEL_PUB_H
 
+#include <compliance_control_msgs/AdjustDamping.h>
+#include <compliance_control_msgs/AdjustStiffness.h>
 #include <compliance_control_msgs/CompliantVelocities.h>
 #include <compliance_control_msgs/DisableComplianceDimensions.h>
 #include <Eigen/Core>
@@ -58,7 +60,6 @@
 
 namespace wrench_to_joint_vel_pub
 {
-
 static const char* const NODE_NAME = "wrench_to_joint_vel_pub";
 
 struct ROSParameters
@@ -96,10 +97,23 @@ private:
   }
 
   /**
-   * A service callback. Adjusts compliance settings
+   * A service callback. Do not control compliance in the given dimensions.
    * TODO: error checking that these indices are betweeen 0-5 and in increasing order
    */
-  bool disableComplianceDimensions(compliance_control_msgs::DisableComplianceDimensions::Request& req, compliance_control_msgs::DisableComplianceDimensions::Response& res);
+  bool disableComplianceDimensions(compliance_control_msgs::DisableComplianceDimensions::Request& req,
+                                   compliance_control_msgs::DisableComplianceDimensions::Response& res);
+
+  /**
+   * A service callback. Adjust stiffness constants.
+   */
+  bool adjustStiffness(compliance_control_msgs::AdjustStiffness::Request& req,
+                                   compliance_control_msgs::AdjustStiffness::Response& res);
+
+  /**
+   * A service callback. Adjust damping constants.
+   */
+  bool adjustDamping(compliance_control_msgs::AdjustDamping::Request& req,
+                                   compliance_control_msgs::AdjustDamping::Response& res);
 
   /**
    * A service callback. Biases (aka tares, aka zeroes) the compliance calculations
@@ -145,7 +159,8 @@ private:
   static ROSParameters compliance_params_;
 
   // Publish compliance commands unless interrupted by a service call
-  ros::ServiceServer enable_compliance_service_, bias_compliance_service_, adjust_settings_service_;
+  ros::ServiceServer enable_compliance_service_, bias_compliance_service_, disable_compliance_dimensions_service_,
+      adjust_stiffness_service_, adjust_damping_service_;
 
   // Subscribe to wrench data from a force/torque sensor
   ros::Subscriber wrench_subscriber_;
@@ -172,9 +187,9 @@ private:
   // Track degrees of freedom to drop
   // By default, ignore compliance in dimensions 3,4,5
   // i.e. roll/pitch/yaw
-  std::vector<int> dof_to_drop_{3,4,5};
+  std::vector<int> dof_to_drop_{ 3, 4, 5 };
 };
 
 }  // namespace wrench_to_joint_vel_pub
 
-#endif // WRENCH_TO_JOINT_VEL_PUB_H
+#endif  // WRENCH_TO_JOINT_VEL_PUB_H

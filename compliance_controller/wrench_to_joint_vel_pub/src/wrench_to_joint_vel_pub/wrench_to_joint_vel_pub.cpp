@@ -56,12 +56,10 @@ int main(int argc, char** argv)
 
 namespace wrench_to_joint_vel_pub
 {
-
 // Initialize static member of class PublishCompliantJointVelocities
 ROSParameters PublishCompliantJointVelocities::compliance_params_;
 
-PublishCompliantJointVelocities::PublishCompliantJointVelocities()
- : tf_listener_(tf_buffer_)
+PublishCompliantJointVelocities::PublishCompliantJointVelocities() : tf_listener_(tf_buffer_)
 {
   readROSParameters();
 
@@ -69,10 +67,10 @@ PublishCompliantJointVelocities::PublishCompliantJointVelocities()
   // Use a unique_ptr to avoid memory management issues.
   // Assume a bias wrench of all zeros
   geometry_msgs::WrenchStamped bias;
-  compliant_control_ptr_.reset(new CompliantControl(
-      compliance_params_.stiffness, compliance_params_.damping, compliance_params_.deadband,
-      compliance_params_.end_condition_wrench, compliance_params_.low_pass_filter_param, bias,
-      compliance_params_.highest_allowable_force, compliance_params_.highest_allowable_torque));
+  compliant_control_ptr_.reset(
+      new CompliantControl(compliance_params_.stiffness, compliance_params_.damping, compliance_params_.deadband,
+                           compliance_params_.end_condition_wrench, compliance_params_.low_pass_filter_param, bias,
+                           compliance_params_.highest_allowable_force, compliance_params_.highest_allowable_torque));
 
   enable_compliance_service_ =
       n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/toggle_compliance_publication",
@@ -82,8 +80,17 @@ PublishCompliantJointVelocities::PublishCompliantJointVelocities()
       n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/bias_compliance_calcs",
                           &PublishCompliantJointVelocities::biasCompliantCalcs, this);
 
-  adjust_settings_service_ = n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/adjust_compliance_settings",
+  disable_compliance_dimensions_service_ =
+      n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/disable_compliance_dimensions",
                           &PublishCompliantJointVelocities::disableComplianceDimensions, this);
+
+  adjust_stiffness_service_ =
+      n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/adjust_stiffness_service",
+                          &PublishCompliantJointVelocities::adjustStiffness, this);
+
+  adjust_damping_service_ =
+      n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/adjust_damping_service",
+                          &PublishCompliantJointVelocities::adjustDamping, this);
 
   wrench_subscriber_ =
       n_.subscribe(compliance_params_.force_torque_topic, 1, &PublishCompliantJointVelocities::wrenchCallback, this);
@@ -100,10 +107,13 @@ PublishCompliantJointVelocities::PublishCompliantJointVelocities()
   joints_sub_ = n_.subscribe("joint_states", 1, &PublishCompliantJointVelocities::jointsCallback, this);
 }
 
-bool PublishCompliantJointVelocities::disableComplianceDimensions(compliance_control_msgs::DisableComplianceDimensions::Request& req, compliance_control_msgs::DisableComplianceDimensions::Response& res)
+bool PublishCompliantJointVelocities::disableComplianceDimensions(
+    compliance_control_msgs::DisableComplianceDimensions::Request& req,
+    compliance_control_msgs::DisableComplianceDimensions::Response& res)
 {
   dof_to_drop_.clear();
-  for (std::vector<int>::const_iterator it = req.dimensions_to_ignore.data.begin(); it != req.dimensions_to_ignore.data.end(); ++it)
+  for (std::vector<int>::const_iterator it = req.dimensions_to_ignore.data.begin();
+       it != req.dimensions_to_ignore.data.end(); ++it)
   {
     dof_to_drop_.push_back(*it);
     ROS_INFO_STREAM(dof_to_drop_.back());
@@ -113,7 +123,30 @@ bool PublishCompliantJointVelocities::disableComplianceDimensions(compliance_con
   return true;
 }
 
-bool PublishCompliantJointVelocities::biasCompliantCalcs(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)
+bool PublishCompliantJointVelocities::adjustStiffness(
+    compliance_control_msgs::AdjustStiffness::Request& req,
+    compliance_control_msgs::AdjustStiffness::Response& res)
+{
+  std::vector<double> stiffness = req.stiffness.data;
+  compliant_control_ptr_->setStiffness(stiffness);
+
+  res.success = true;
+  return true;
+}
+
+bool PublishCompliantJointVelocities::adjustDamping(
+    compliance_control_msgs::AdjustDamping::Request& req,
+    compliance_control_msgs::AdjustDamping::Response& res)
+{
+  std::vector<double> damping = req.damping.data;
+  compliant_control_ptr_->setDamping(damping);
+
+  res.success = true;
+  return true;
+}
+
+bool PublishCompliantJointVelocities::biasCompliantCalcs(std_srvs::SetBool::Request& req,
+                                                         std_srvs::SetBool::Response& res)
 {
   if (req.data)
   {
@@ -218,12 +251,12 @@ void PublishCompliantJointVelocities::spin()
       int num_rows_filled = 0;
 
       Eigen::MatrixXd reduced_jacobian(jacobian.rows() - dof_to_drop_.size(), jacobian.cols());
-      Eigen::VectorXd reduced_cartesian_velocity(6-dof_to_drop_.size());
+      Eigen::VectorXd reduced_cartesian_velocity(6 - dof_to_drop_.size());
 
       // If the user wants to skip compliance in any dimension.
       // Transfer rows to reduced_jacobian, up to the last index in dof_to_drop_.
       // Also, remove corresponding rows from the Cartesian command.
-      if (dof_to_drop_.size()>0)
+      if (dof_to_drop_.size() > 0)
       {
         for (std::size_t dropped_dof_index = 0; dropped_dof_index < dof_to_drop_.size(); ++dropped_dof_index)
         {
@@ -358,4 +391,4 @@ void PublishCompliantJointVelocities::readROSParameters()
     }
   }
 }
-} // namespace
+}  // namespace

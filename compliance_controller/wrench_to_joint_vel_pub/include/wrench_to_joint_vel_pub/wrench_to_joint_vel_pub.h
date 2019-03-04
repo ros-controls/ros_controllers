@@ -137,7 +137,6 @@ private:
   {
     dof_to_drop_.clear();
     dof_to_drop_.push_back(req.dimensions_to_ignore.data[0]);
-    ROS_ERROR_STREAM(dof_to_drop_.front() << " " << dof_to_drop_.back());
 
     return true;
   }

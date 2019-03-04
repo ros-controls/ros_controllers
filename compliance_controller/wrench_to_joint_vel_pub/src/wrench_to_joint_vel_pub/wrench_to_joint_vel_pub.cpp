@@ -173,11 +173,6 @@ void wrench_to_joint_vel_pub::PublishCompliantJointVelocities::spin()
           reduced_jacobian.row(index) = jacobian.row(index + dof_to_drop_.size());
           reduced_cartesian_velocity[index] = cartesian_velocity[index + dof_to_drop_.size()];
         }
-
-        // Remove corresponding rows from the Cartesian command
-        reduced_cartesian_velocity[0] = cartesian_velocity[0];
-        reduced_cartesian_velocity[1] = cartesian_velocity[1];
-        reduced_cartesian_velocity[2] = cartesian_velocity[2];
       }
       // If user wants to keep compliance in all 6 dimensions
       else

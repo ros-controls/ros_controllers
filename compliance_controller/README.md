@@ -1,6 +1,6 @@
 ### Setup for a UR robot
 
-This should be similar for other ROS robots that have velocity_controllers and position_controllers available.
+This should be similar for other ROS robots that have velocity_controllers/JointGroupVelocityController and velocity_controllers/JointTrajectoryController available.
 
 ### Building
 

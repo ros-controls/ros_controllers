@@ -157,8 +157,16 @@ starting(const ros::Time& time)
 
 template <class SegmentImpl, class HardwareInterface>
 inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-stopping(const ros::Time& /*time*/)
+stopping(const ros::Time& time)
 {
+  // Update time data
+  TimeData time_data;
+  time_data.time   = time;
+  time_data.uptime = ros::Time(0.0);
+  time_data_.initRT(time_data);
+
+  // Hardware interface adapter
+  hw_iface_adapter_.stopping(time_data.uptime);
   preemptActiveGoal();
 }
 

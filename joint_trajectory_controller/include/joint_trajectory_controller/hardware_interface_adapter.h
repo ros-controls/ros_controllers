@@ -190,7 +190,15 @@ public:
     }
   }
 
-  void stopping(const ros::Time& /*time*/) {}
+  void stopping(const ros::Time& /*time*/) {
+    if (!joint_handles_ptr_) {return;}
+
+    // zero commands
+    for (unsigned int i = 0; i < pids_.size(); ++i)
+    {
+      (*joint_handles_ptr_)[i].setCommand(0.0);
+    }
+  }
 
   void updateCommand(const ros::Time&     /*time*/,
                      const ros::Duration& period,

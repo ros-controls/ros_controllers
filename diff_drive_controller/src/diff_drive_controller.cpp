@@ -474,8 +474,8 @@ namespace diff_drive_controller{
 
     // Compute desired wheels velocities,
     // that is before applying limits:
-    const double vel_left_desired  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/wr;
-    const double vel_right_desired = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/wr;
+    const double vel_left_desired  = (curr_cmd.lin - curr_cmd.ang * ws / 2.0)/lwr;
+    const double vel_right_desired = (curr_cmd.lin + curr_cmd.ang * ws / 2.0)/rwr;
 
     limiter_lin_.limit(curr_cmd.lin, last0_cmd_.lin, last1_cmd_.lin, cmd_dt);
     limiter_ang_.limit(curr_cmd.ang, last0_cmd_.ang, last1_cmd_.ang, cmd_dt);

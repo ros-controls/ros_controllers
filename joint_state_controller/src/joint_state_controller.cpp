@@ -52,9 +52,16 @@ namespace joint_state_controller
       ROS_ERROR("Parameter 'publish_rate' not set");
       return false;
     }
+    
+    // get topic name 
+    std::string topic_name;
+    if (!controller_nh.getParam("topic", topic_name)){
+      topic_name = "joint_states";
+      ROS_WARN("Parameter 'topic' not set, using default topic name 'joint_states'");
+    }
 
     // realtime publisher
-    realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(root_nh, "joint_states", 4));
+    realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(root_nh, topic_name, 4));
 
     // get joints and allocate message
     for (unsigned i=0; i<num_hw_joints_; i++){

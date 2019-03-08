@@ -93,7 +93,7 @@ You may want to save a copy of each file in a new directory, rather than modifyi
 
 		roslaunch wrench_to_joint_vel_pub ur_compliance.launch
 
-You should see the robot start to move/twitch slightly. Push on the end-effector and the robot should move with you. You can also execute a trajectory, just like normal.
+Push on the end-effector and the robot should move with you. You can also execute a trajectory, just like normal.
 
 ### Summary
 

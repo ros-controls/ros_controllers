@@ -101,14 +101,14 @@ public:
    * First three element are Newtons/(m/s), last 3 are N*m/(rad/s).
    * Should be positive.
    */
-  void setStiffness(const std::vector<double>& stiffness);
+  bool setStiffness(const std::vector<double>& stiffness);
 
   /**
    * Set the "springiness" of compliance in each direction.
    * First three element are Newtons/m, last 3 are N*m/rad.
    * Should be positive.
    */
-  void setDamping(const std::vector<double>& damping);
+  bool setDamping(const std::vector<double>& damping);
 
   /**
    * \brief Exit when the given force/torque wrench is achieved in any direction

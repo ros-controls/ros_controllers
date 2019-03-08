@@ -87,11 +87,12 @@ void CompliantControl::biasSensor(const geometry_msgs::WrenchStamped& bias)
   }
 }
 
-void CompliantControl::setStiffness(const std::vector<double>& stiffness)
+bool CompliantControl::setStiffness(const std::vector<double>& stiffness)
 {
   if (stiffness.size() != wrench_to_joint_vel_pub::NUM_DIMS)
   {
     ROS_ERROR_NAMED(LOGNAME, "Invalid stiffness vector");
+    return false;
   }
   else
   {
@@ -104,6 +105,7 @@ void CompliantControl::setStiffness(const std::vector<double>& stiffness)
                                         "stiffness in direction: "
                                             << i);
         stiffness_[i] = DBL_MAX;  // Very stiff, practically no effect
+        return false;
       }
       else
       {
@@ -111,13 +113,16 @@ void CompliantControl::setStiffness(const std::vector<double>& stiffness)
       }
     }
   }
+
+  return true;
 }
 
-void CompliantControl::setDamping(const std::vector<double>& damping)
+bool CompliantControl::setDamping(const std::vector<double>& damping)
 {
   if (damping.size() != wrench_to_joint_vel_pub::NUM_DIMS)
   {
     ROS_ERROR_NAMED(LOGNAME, "Invalid damping vector");
+    return false;
   }
   else
   {
@@ -139,6 +144,7 @@ void CompliantControl::setDamping(const std::vector<double>& damping)
       }
     }
   }
+  return true;
 }
 
 void CompliantControl::setEndCondition(const std::vector<double>& end_condition_wrench)

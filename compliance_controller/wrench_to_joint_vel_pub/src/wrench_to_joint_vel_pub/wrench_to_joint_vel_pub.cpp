@@ -85,11 +85,11 @@ PublishCompliantJointVelocities::PublishCompliantJointVelocities() : tf_listener
                           &PublishCompliantJointVelocities::disableComplianceDimensions, this);
 
   adjust_stiffness_service_ =
-      n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/adjust_stiffness_service",
+      n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/adjust_stiffness",
                           &PublishCompliantJointVelocities::adjustStiffness, this);
 
   adjust_damping_service_ =
-      n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/adjust_damping_service",
+      n_.advertiseService(n_.getNamespace() + "/" + ros::this_node::getName() + "/adjust_damping",
                           &PublishCompliantJointVelocities::adjustDamping, this);
 
   wrench_subscriber_ =
@@ -128,10 +128,16 @@ bool PublishCompliantJointVelocities::adjustStiffness(
     compliance_control_msgs::AdjustStiffness::Response& res)
 {
   std::vector<double> stiffness = req.stiffness.data;
-  compliant_control_ptr_->setStiffness(stiffness);
-
-  res.success = true;
-  return true;
+  if (compliant_control_ptr_->setStiffness(stiffness))
+  {
+    res.success = true;
+    return true;
+  }
+  else
+  {
+    res.success = false;
+    return false;
+  }
 }
 
 bool PublishCompliantJointVelocities::adjustDamping(
@@ -139,10 +145,16 @@ bool PublishCompliantJointVelocities::adjustDamping(
     compliance_control_msgs::AdjustDamping::Response& res)
 {
   std::vector<double> damping = req.damping.data;
-  compliant_control_ptr_->setDamping(damping);
-
-  res.success = true;
-  return true;
+  if (compliant_control_ptr_->setDamping(damping))
+  {
+    res.success = true;
+    return true;
+  }
+  else
+  {
+    res.success = false;
+    return false;
+  }
 }
 
 bool PublishCompliantJointVelocities::biasCompliantCalcs(std_srvs::SetBool::Request& req,

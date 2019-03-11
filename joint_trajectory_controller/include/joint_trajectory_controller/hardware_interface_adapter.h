@@ -109,9 +109,9 @@ public:
     if (!joint_handles_ptr_) {return;}
 
     // Semantic zero for commands
-    for (unsigned int i = 0; i < joint_handles_ptr_->size(); ++i)
+    for (auto& jh : *joint_handles_ptr_)
     {
-      (*joint_handles_ptr_)[i].setCommand((*joint_handles_ptr_)[i].getPosition());
+      jh.setCommand(jh.getPosition());
     }
   }
 

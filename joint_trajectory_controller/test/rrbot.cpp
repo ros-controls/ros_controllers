@@ -144,19 +144,19 @@ public:
   bool prepareSwitch(const ControllerList& start_list,
                      const ControllerList& stop_list)
   {
-    for(ControllerList::const_iterator it = start_list.begin(); it != start_list.end(); ++it)
+    for(const auto& it : start_list)
     {
-      for(std::vector<hardware_interface::InterfaceResources>::const_iterator iface_it = it->claimed_resources.begin(); iface_it != it->claimed_resources.end(); ++iface_it)
+      for(const auto& iface_it : it.claimed_resources)
       {
-        for(std::set<std::string>::const_iterator res_it = iface_it->resources.begin(); res_it != iface_it->resources.end(); ++res_it)
+        for(const auto& res_it : iface_it.resources)
         {
-          if(*res_it == "joint1")
+          if(res_it == "joint1")
           {
-            next_active_interface_[0] = iface_it->hardware_interface;
+            next_active_interface_[0] = iface_it.hardware_interface;
           }
-          else if(*res_it == "joint2")
+          else if(res_it == "joint2")
           {
-            next_active_interface_[1] = iface_it->hardware_interface;
+            next_active_interface_[1] = iface_it.hardware_interface;
           }
         }
       }

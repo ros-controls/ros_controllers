@@ -40,7 +40,6 @@
 
 // Boost
 #include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/dynamic_bitset.hpp>
 
 // ROS
@@ -165,7 +164,7 @@ protected:
   typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
   typedef trajectory_msgs::JointTrajectory::ConstPtr                                          JointTrajectoryConstPtr;
   typedef realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>     StatePublisher;
-  typedef boost::scoped_ptr<StatePublisher>                                                   StatePublisherPtr;
+  typedef std::unique_ptr<StatePublisher>                                                     StatePublisherPtr;
 
   typedef JointTrajectorySegment<SegmentImpl> Segment;
   typedef std::vector<Segment> TrajectoryPerJoint;

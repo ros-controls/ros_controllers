@@ -2,6 +2,7 @@
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2017, Irstea
+ *  Copyright (c) 2013, PAL Robotics, S.L.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without

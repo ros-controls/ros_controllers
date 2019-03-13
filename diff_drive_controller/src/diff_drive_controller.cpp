@@ -317,31 +317,31 @@ namespace diff_drive_controller{
     // Wheel data:
     if (publish_joint_trajectory_controller_state_)
     {
-      joint_trajectory_controller_state_pub_ = boost::make_shared<realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState> >(controller_nh, "joint_trajectory_controller_state", 100);
+      controller_state_pub_ = boost::make_shared<realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState> >(controller_nh, "joint_trajectory_controller_state", 100);
 
       const size_t num_wheels = wheel_joints_size_ * 2;
 
-      joint_trajectory_controller_state_pub_->msg_.joint_names.resize(num_wheels);
+      controller_state_pub_->msg_.joint_names.resize(num_wheels);
 
-      joint_trajectory_controller_state_pub_->msg_.desired.positions.resize(num_wheels);
-      joint_trajectory_controller_state_pub_->msg_.desired.velocities.resize(num_wheels);
-      joint_trajectory_controller_state_pub_->msg_.desired.accelerations.resize(num_wheels);
-      joint_trajectory_controller_state_pub_->msg_.desired.effort.resize(num_wheels);
+      controller_state_pub_->msg_.desired.positions.resize(num_wheels);
+      controller_state_pub_->msg_.desired.velocities.resize(num_wheels);
+      controller_state_pub_->msg_.desired.accelerations.resize(num_wheels);
+      controller_state_pub_->msg_.desired.effort.resize(num_wheels);
 
-      joint_trajectory_controller_state_pub_->msg_.actual.positions.resize(num_wheels);
-      joint_trajectory_controller_state_pub_->msg_.actual.velocities.resize(num_wheels);
-      joint_trajectory_controller_state_pub_->msg_.actual.accelerations.resize(num_wheels);
-      joint_trajectory_controller_state_pub_->msg_.actual.effort.resize(num_wheels);
+      controller_state_pub_->msg_.actual.positions.resize(num_wheels);
+      controller_state_pub_->msg_.actual.velocities.resize(num_wheels);
+      controller_state_pub_->msg_.actual.accelerations.resize(num_wheels);
+      controller_state_pub_->msg_.actual.effort.resize(num_wheels);
 
-      joint_trajectory_controller_state_pub_->msg_.error.positions.resize(num_wheels);
-      joint_trajectory_controller_state_pub_->msg_.error.velocities.resize(num_wheels);
-      joint_trajectory_controller_state_pub_->msg_.error.accelerations.resize(num_wheels);
-      joint_trajectory_controller_state_pub_->msg_.error.effort.resize(num_wheels);
+      controller_state_pub_->msg_.error.positions.resize(num_wheels);
+      controller_state_pub_->msg_.error.velocities.resize(num_wheels);
+      controller_state_pub_->msg_.error.accelerations.resize(num_wheels);
+      controller_state_pub_->msg_.error.effort.resize(num_wheels);
 
       for (size_t i = 0; i < wheel_joints_size_; ++i)
       {
-        joint_trajectory_controller_state_pub_->msg_.joint_names[i] = left_wheel_names[i];
-        joint_trajectory_controller_state_pub_->msg_.joint_names[i + wheel_joints_size_] = right_wheel_names[i];
+        controller_state_pub_->msg_.joint_names[i] = left_wheel_names[i];
+        controller_state_pub_->msg_.joint_names[i + wheel_joints_size_] = right_wheel_names[i];
       }
 
       vel_left_previous_.resize(wheel_joints_size_, 0.0);
@@ -758,14 +758,14 @@ namespace diff_drive_controller{
   void DiffDriveController::publishWheelData(const ros::Time& time, const ros::Duration& period, Commands& curr_cmd,
           double wheel_separation, double left_wheel_radius, double right_wheel_radius)
   {
-    if (publish_joint_trajectory_controller_state_ && joint_trajectory_controller_state_pub_->trylock())
+    if (publish_joint_trajectory_controller_state_ && controller_state_pub_->trylock())
     {
       const double cmd_dt(period.toSec());
 
       // Compute desired wheels velocities, that is before applying limits:
       const double vel_left_desired  = (curr_cmd.lin - curr_cmd.ang * wheel_separation / 2.0) / left_wheel_radius;
       const double vel_right_desired = (curr_cmd.lin + curr_cmd.ang * wheel_separation / 2.0) / right_wheel_radius;
-      joint_trajectory_controller_state_pub_->msg_.header.stamp = time;
+      controller_state_pub_->msg_.header.stamp = time;
 
       for (size_t i = 0; i < wheel_joints_size_; ++i)
       {
@@ -775,45 +775,45 @@ namespace diff_drive_controller{
         const double right_wheel_acc = (right_wheel_joints_[i].getVelocity() - vel_right_previous_[i]) / control_duration;
 
         // Actual
-        joint_trajectory_controller_state_pub_->msg_.actual.positions[i]     = left_wheel_joints_[i].getPosition();
-        joint_trajectory_controller_state_pub_->msg_.actual.velocities[i]    = left_wheel_joints_[i].getVelocity();
-        joint_trajectory_controller_state_pub_->msg_.actual.accelerations[i] = left_wheel_acc;
-        joint_trajectory_controller_state_pub_->msg_.actual.effort[i]        = left_wheel_joints_[i].getEffort();
+        controller_state_pub_->msg_.actual.positions[i]     = left_wheel_joints_[i].getPosition();
+        controller_state_pub_->msg_.actual.velocities[i]    = left_wheel_joints_[i].getVelocity();
+        controller_state_pub_->msg_.actual.accelerations[i] = left_wheel_acc;
+        controller_state_pub_->msg_.actual.effort[i]        = left_wheel_joints_[i].getEffort();
 
-        joint_trajectory_controller_state_pub_->msg_.actual.positions[i + wheel_joints_size_]     = right_wheel_joints_[i].getPosition();
-        joint_trajectory_controller_state_pub_->msg_.actual.velocities[i + wheel_joints_size_]    = right_wheel_joints_[i].getVelocity();
-        joint_trajectory_controller_state_pub_->msg_.actual.accelerations[i + wheel_joints_size_] = right_wheel_acc;
-        joint_trajectory_controller_state_pub_->msg_.actual.effort[i+ wheel_joints_size_]         = right_wheel_joints_[i].getEffort();
+        controller_state_pub_->msg_.actual.positions[i + wheel_joints_size_]     = right_wheel_joints_[i].getPosition();
+        controller_state_pub_->msg_.actual.velocities[i + wheel_joints_size_]    = right_wheel_joints_[i].getVelocity();
+        controller_state_pub_->msg_.actual.accelerations[i + wheel_joints_size_] = right_wheel_acc;
+        controller_state_pub_->msg_.actual.effort[i+ wheel_joints_size_]         = right_wheel_joints_[i].getEffort();
 
         // Desired
-        joint_trajectory_controller_state_pub_->msg_.desired.positions[i]    += vel_left_desired * cmd_dt;
-        joint_trajectory_controller_state_pub_->msg_.desired.velocities[i]    = vel_left_desired;
-        joint_trajectory_controller_state_pub_->msg_.desired.accelerations[i] = (vel_left_desired - vel_left_desired_previous_) * cmd_dt;
-        joint_trajectory_controller_state_pub_->msg_.desired.effort[i]        = std::numeric_limits<double>::quiet_NaN();
+        controller_state_pub_->msg_.desired.positions[i]    += vel_left_desired * cmd_dt;
+        controller_state_pub_->msg_.desired.velocities[i]    = vel_left_desired;
+        controller_state_pub_->msg_.desired.accelerations[i] = (vel_left_desired - vel_left_desired_previous_) * cmd_dt;
+        controller_state_pub_->msg_.desired.effort[i]        = std::numeric_limits<double>::quiet_NaN();
 
-        joint_trajectory_controller_state_pub_->msg_.desired.positions[i + wheel_joints_size_]    += vel_right_desired * cmd_dt;
-        joint_trajectory_controller_state_pub_->msg_.desired.velocities[i + wheel_joints_size_]    = vel_right_desired;
-        joint_trajectory_controller_state_pub_->msg_.desired.accelerations[i + wheel_joints_size_] = (vel_right_desired - vel_right_desired_previous_) * cmd_dt;
-        joint_trajectory_controller_state_pub_->msg_.desired.effort[i+ wheel_joints_size_]         = std::numeric_limits<double>::quiet_NaN();
+        controller_state_pub_->msg_.desired.positions[i + wheel_joints_size_]    += vel_right_desired * cmd_dt;
+        controller_state_pub_->msg_.desired.velocities[i + wheel_joints_size_]    = vel_right_desired;
+        controller_state_pub_->msg_.desired.accelerations[i + wheel_joints_size_] = (vel_right_desired - vel_right_desired_previous_) * cmd_dt;
+        controller_state_pub_->msg_.desired.effort[i+ wheel_joints_size_]         = std::numeric_limits<double>::quiet_NaN();
 
         // Error
-        joint_trajectory_controller_state_pub_->msg_.error.positions[i]     = joint_trajectory_controller_state_pub_->msg_.desired.positions[i] -
-                                                                              joint_trajectory_controller_state_pub_->msg_.actual.positions[i];
-        joint_trajectory_controller_state_pub_->msg_.error.velocities[i]    = joint_trajectory_controller_state_pub_->msg_.desired.velocities[i] -
-                                                                              joint_trajectory_controller_state_pub_->msg_.actual.velocities[i];
-        joint_trajectory_controller_state_pub_->msg_.error.accelerations[i] = joint_trajectory_controller_state_pub_->msg_.desired.accelerations[i] -
-                                                                              joint_trajectory_controller_state_pub_->msg_.actual.accelerations[i];
-        joint_trajectory_controller_state_pub_->msg_.error.effort[i]        = joint_trajectory_controller_state_pub_->msg_.desired.effort[i] -
-                                                                              joint_trajectory_controller_state_pub_->msg_.actual.effort[i];
+        controller_state_pub_->msg_.error.positions[i]     = controller_state_pub_->msg_.desired.positions[i] -
+                                                                              controller_state_pub_->msg_.actual.positions[i];
+        controller_state_pub_->msg_.error.velocities[i]    = controller_state_pub_->msg_.desired.velocities[i] -
+                                                                              controller_state_pub_->msg_.actual.velocities[i];
+        controller_state_pub_->msg_.error.accelerations[i] = controller_state_pub_->msg_.desired.accelerations[i] -
+                                                                              controller_state_pub_->msg_.actual.accelerations[i];
+        controller_state_pub_->msg_.error.effort[i]        = controller_state_pub_->msg_.desired.effort[i] -
+                                                                              controller_state_pub_->msg_.actual.effort[i];
 
-        joint_trajectory_controller_state_pub_->msg_.error.positions[i + wheel_joints_size_]     = joint_trajectory_controller_state_pub_->msg_.desired.positions[i + wheel_joints_size_] -
-                                                                                                   joint_trajectory_controller_state_pub_->msg_.actual.positions[i + wheel_joints_size_];
-        joint_trajectory_controller_state_pub_->msg_.error.velocities[i + wheel_joints_size_]    = joint_trajectory_controller_state_pub_->msg_.desired.velocities[i + wheel_joints_size_] -
-                                                                                                   joint_trajectory_controller_state_pub_->msg_.actual.velocities[i + wheel_joints_size_];
-        joint_trajectory_controller_state_pub_->msg_.error.accelerations[i + wheel_joints_size_] = joint_trajectory_controller_state_pub_->msg_.desired.accelerations[i + wheel_joints_size_] -
-                                                                                                   joint_trajectory_controller_state_pub_->msg_.actual.accelerations[i + wheel_joints_size_];
-        joint_trajectory_controller_state_pub_->msg_.error.effort[i+ wheel_joints_size_]         = joint_trajectory_controller_state_pub_->msg_.desired.effort[i + wheel_joints_size_] -
-                                                                                                   joint_trajectory_controller_state_pub_->msg_.actual.effort[i + wheel_joints_size_];
+        controller_state_pub_->msg_.error.positions[i + wheel_joints_size_]     = controller_state_pub_->msg_.desired.positions[i + wheel_joints_size_] -
+                                                                                                   controller_state_pub_->msg_.actual.positions[i + wheel_joints_size_];
+        controller_state_pub_->msg_.error.velocities[i + wheel_joints_size_]    = controller_state_pub_->msg_.desired.velocities[i + wheel_joints_size_] -
+                                                                                                   controller_state_pub_->msg_.actual.velocities[i + wheel_joints_size_];
+        controller_state_pub_->msg_.error.accelerations[i + wheel_joints_size_] = controller_state_pub_->msg_.desired.accelerations[i + wheel_joints_size_] -
+                                                                                                   controller_state_pub_->msg_.actual.accelerations[i + wheel_joints_size_];
+        controller_state_pub_->msg_.error.effort[i+ wheel_joints_size_]         = controller_state_pub_->msg_.desired.effort[i + wheel_joints_size_] -
+                                                                                                   controller_state_pub_->msg_.actual.effort[i + wheel_joints_size_];
 
         // Save previous velocities to compute acceleration
         vel_left_previous_[i] = left_wheel_joints_[i].getVelocity();
@@ -822,7 +822,7 @@ namespace diff_drive_controller{
         vel_right_desired_previous_ = vel_right_desired;
       }
 
-      joint_trajectory_controller_state_pub_->unlockAndPublish();
+      controller_state_pub_->unlockAndPublish();
     }
   }
 

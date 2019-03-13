@@ -144,7 +144,7 @@ namespace diff_drive_controller{
     Odometry odometry_;
 
     /// Joint Trajectory Controller State
-    boost::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState> > joint_trajectory_controller_state_pub_;
+    boost::shared_ptr<realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState> > controller_state_pub_;
 
     /// Wheel separation, wrt the midpoint of the wheel width:
     double wheel_separation_;

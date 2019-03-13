@@ -290,6 +290,22 @@ namespace diff_drive_controller{
      * \brief Update the dynamic parameters in the RT loop
      */
     void updateDynamicParams();
+
+    /**
+     * \brief
+     * \param time Current time
+     * \param period Time since the last called to update
+     * \param curr_cmd Current velocity command
+     * \param wheel_separation wheel separation with multiplier
+     * \param left_wheel_radius left wheel radius with multiplier
+     * \param right_wheel_radius right wheel radius with multiplier
+     */
+    void publishWheelData(const ros::Time& time,
+                          const ros::Duration& period,
+                          Commands& curr_cmd,
+                          double wheel_separation,
+                          double left_wheel_radius,
+                          double right_wheel_radius);
   };
 
   PLUGINLIB_EXPORT_CLASS(diff_drive_controller::DiffDriveController, controller_interface::ControllerBase);

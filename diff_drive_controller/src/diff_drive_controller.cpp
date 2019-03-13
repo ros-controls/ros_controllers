@@ -36,7 +36,6 @@
  * Author: Bence Magyar, Enrique Fernández
  */
 
-#include <boost/assign.hpp>
 #include <cmath>
 #include <diff_drive_controller/diff_drive_controller.h>
 #include <tf/transform_datatypes.h>
@@ -696,24 +695,24 @@ namespace diff_drive_controller{
     odom_pub_->msg_.header.frame_id = odom_frame_id_;
     odom_pub_->msg_.child_frame_id = base_frame_id_;
     odom_pub_->msg_.pose.pose.position.z = 0;
-    odom_pub_->msg_.pose.covariance = boost::assign::list_of
-        (static_cast<double>(pose_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(pose_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(pose_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(pose_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[5]));
+    odom_pub_->msg_.pose.covariance = {
+        static_cast<double>(pose_cov_list[0]), 0., 0., 0., 0., 0.,
+        0., static_cast<double>(pose_cov_list[1]), 0., 0., 0., 0.,
+        0., 0., static_cast<double>(pose_cov_list[2]), 0., 0., 0.,
+        0., 0., 0., static_cast<double>(pose_cov_list[3]), 0., 0.,
+        0., 0., 0., 0., static_cast<double>(pose_cov_list[4]), 0.,
+        0., 0., 0., 0., 0., static_cast<double>(pose_cov_list[5]) };
     odom_pub_->msg_.twist.twist.linear.y  = 0;
     odom_pub_->msg_.twist.twist.linear.z  = 0;
     odom_pub_->msg_.twist.twist.angular.x = 0;
     odom_pub_->msg_.twist.twist.angular.y = 0;
-    odom_pub_->msg_.twist.covariance = boost::assign::list_of
-        (static_cast<double>(twist_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(twist_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(twist_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(twist_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
+    odom_pub_->msg_.twist.covariance = {
+        static_cast<double>(twist_cov_list[0]), 0., 0., 0., 0., 0.,
+        0., static_cast<double>(twist_cov_list[1]), 0., 0., 0., 0.,
+        0., 0., static_cast<double>(twist_cov_list[2]), 0., 0., 0.,
+        0., 0., 0., static_cast<double>(twist_cov_list[3]), 0., 0.,
+        0., 0., 0., 0., static_cast<double>(twist_cov_list[4]), 0.,
+        0., 0., 0., 0., 0., static_cast<double>(twist_cov_list[5]) };
     tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
     tf_odom_pub_->msg_.transforms.resize(1);
     tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;

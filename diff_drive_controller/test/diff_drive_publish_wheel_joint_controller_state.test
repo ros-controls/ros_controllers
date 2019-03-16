@@ -5,16 +5,16 @@
   <!-- default value -->
    <rosparam>
     diffbot_controller:
-      publish_joint_trajectory_controller_state: True
+      publish_wheel_joint_controller_state: True
   </rosparam>
 
   <!-- Controller test -->
-  <test test-name="diff_drive_publish_joint_trajectory_controller_state_test"
+  <test test-name="diff_drive_publish_wheel_joint_controller_state__test"
         pkg="diff_drive_controller"
-        type="diff_drive_publish_joint_trajectory_controller_state_test"
+        type="diff_drive_publish_wheel_joint_controller_state_test"
         time-limit="30.0">
     <remap from="cmd_vel" to="diffbot_controller/cmd_vel" />
     <remap from="odom" to="diffbot_controller/odom" />
-    <remap from="joint_trajectory_controller_state" to="diffbot_controller/joint_trajectory_controller_state" />
+    <remap from="wheel_joint_controller_state" to="diffbot_controller/wheel_joint_controller_state" />
   </test>
 </launch>

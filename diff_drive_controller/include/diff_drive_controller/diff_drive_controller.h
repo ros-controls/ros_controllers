@@ -183,7 +183,7 @@ namespace diff_drive_controller{
     bool publish_cmd_;
 
     /// Publish wheel data:
-    bool publish_joint_trajectory_controller_state_;
+    bool publish_wheel_joint_controller_state_;
 
     // A struct to hold dynamic parameters
     // set from dynamic_reconfigure server

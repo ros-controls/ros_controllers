@@ -89,14 +89,14 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_pub_cmd_vel_out.test
     test/diff_drive_pub_cmd_vel_out_test.cpp)
   target_link_libraries(diff_drive_pub_cmd_vel_out_test ${catkin_LIBRARIES})
-  add_rostest_gtest(diff_drive_default_joint_trajectory_controller_state_test
-    test/diff_drive_default_joint_trajectory_controller_state.test
-    test/diff_drive_default_joint_trajectory_controller_state_test.cpp)
-  target_link_libraries(diff_drive_default_joint_trajectory_controller_state_test ${catkin_LIBRARIES})
-  add_rostest_gtest(diff_drive_publish_joint_trajectory_controller_state_test
-    test/diff_drive_publish_joint_trajectory_controller_state.test
-    test/diff_drive_publish_joint_trajectory_controller_state_test.cpp)
-  target_link_libraries(diff_drive_publish_joint_trajectory_controller_state_test ${catkin_LIBRARIES})
+  add_rostest_gtest(diff_drive_default_wheel_joint_controller_state_test
+    test/diff_drive_default_wheel_joint_controller_state.test
+    test/diff_drive_default_wheel_joint_controller_state_test.cpp)
+  target_link_libraries(diff_drive_default_wheel_joint_controller_state_test ${catkin_LIBRARIES})
+  add_rostest_gtest(diff_drive_publish_wheel_joint_controller_state_test
+    test/diff_drive_publish_wheel_joint_controller_state.test
+    test/diff_drive_publish_wheel_joint_controller_state_test.cpp)
+  target_link_libraries(diff_drive_publish_wheel_joint_controller_state_test ${catkin_LIBRARIES})
   add_rostest_gtest(diff_drive_default_odom_frame_test
     test/diff_drive_default_odom_frame.test
     test/diff_drive_default_odom_frame_test.cpp)

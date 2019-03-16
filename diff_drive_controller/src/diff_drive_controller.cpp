@@ -158,7 +158,7 @@ namespace diff_drive_controller{
     , enable_odom_tf_(true)
     , wheel_joints_size_(0)
     , publish_cmd_(false)
-    , publish_joint_trajectory_controller_state_(false)
+    , publish_wheel_joint_controller_state_(false)
   {
   }
 
@@ -275,7 +275,7 @@ namespace diff_drive_controller{
     controller_nh.param("publish_cmd", publish_cmd_, publish_cmd_);
 
     // Publish wheel data:
-    controller_nh.param("publish_joint_trajectory_controller_state", publish_joint_trajectory_controller_state_, publish_joint_trajectory_controller_state_);
+    controller_nh.param("publish_wheel_joint_controller_state", publish_wheel_joint_controller_state_, publish_wheel_joint_controller_state_);
 
     // If either parameter is not available, we need to look up the value in the URDF
     bool lookup_wheel_separation = !controller_nh.getParam("wheel_separation", wheel_separation_);
@@ -308,8 +308,8 @@ namespace diff_drive_controller{
       cmd_vel_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped>(controller_nh, "cmd_vel_out", 100));
     }
 
-    // Wheel data:
-    if (publish_joint_trajectory_controller_state_)
+    // Wheel joint controller state:
+    if (publish_wheel_joint_controller_state_)
     {
       controller_state_pub_.reset(new realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>(controller_nh, "wheel_joint_controller_state", 100));
 
@@ -752,7 +752,7 @@ namespace diff_drive_controller{
   void DiffDriveController::publishWheelData(const ros::Time& time, const ros::Duration& period, Commands& curr_cmd,
           double wheel_separation, double left_wheel_radius, double right_wheel_radius)
   {
-    if (publish_joint_trajectory_controller_state_ && controller_state_pub_->trylock())
+    if (publish_wheel_joint_controller_state_ && controller_state_pub_->trylock())
     {
       const double cmd_dt(period.toSec());
 

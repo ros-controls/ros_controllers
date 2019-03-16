@@ -57,7 +57,7 @@ public:
   , cmd_pub(nh.advertise<geometry_msgs::Twist>("cmd_vel", 100))
   , odom_sub(nh.subscribe("odom", 100, &DiffDriveControllerTest::odomCallback, this))
   , vel_out_sub(nh.subscribe("cmd_vel_out", 100, &DiffDriveControllerTest::cmdVelOutCallback, this))
-  , joint_traj_controller_state_sub(nh.subscribe("joint_trajectory_controller_state", 100, &DiffDriveControllerTest::jointTrajectoryControllerStateCallback, this))
+  , joint_traj_controller_state_sub(nh.subscribe("wheel_joint_controller_state", 100, &DiffDriveControllerTest::jointTrajectoryControllerStateCallback, this))
   , start_srv(nh.serviceClient<std_srvs::Empty>("start"))
   , stop_srv(nh.serviceClient<std_srvs::Empty>("stop"))
   {

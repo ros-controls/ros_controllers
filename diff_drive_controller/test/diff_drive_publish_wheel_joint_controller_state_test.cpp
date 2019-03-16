@@ -30,7 +30,7 @@
 #include "test_common.h"
 
 // TEST CASES
-TEST_F(DiffDriveControllerTest, testDefaultJointTrajectoryControllerStateTopic)
+TEST_F(DiffDriveControllerTest, testPublishJointTrajectoryControllerStateTopic)
 {
   // wait for ROS
   while(!isControllerAlive())
@@ -38,7 +38,7 @@ TEST_F(DiffDriveControllerTest, testDefaultJointTrajectoryControllerStateTopic)
     ros::Duration(0.1).sleep();
   }
 
-  EXPECT_FALSE(isPublishingJointTrajectoryControllerState());
+  EXPECT_TRUE(isPublishingJointTrajectoryControllerState());
 
   // zero everything before test
   geometry_msgs::Twist cmd_vel;
@@ -51,13 +51,13 @@ TEST_F(DiffDriveControllerTest, testDefaultJointTrajectoryControllerStateTopic)
   publish(cmd_vel);
   ros::Duration(0.1).sleep();
 
-  EXPECT_FALSE(isPublishingJointTrajectoryControllerState());
+  EXPECT_TRUE(isPublishingJointTrajectoryControllerState());
 }
 
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "diff_drive_default_joint_traj_controller_state_topic_test");
+  ros::init(argc, argv, "diff_drive_publish_wheel_joint_controller_state_topic_test");
 
   ros::AsyncSpinner spinner(1);
   spinner.start();

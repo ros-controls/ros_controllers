@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(four_wheel_steering_controller)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
 set(${PROJECT_NAME}_CATKIN_DEPS
     controller_interface

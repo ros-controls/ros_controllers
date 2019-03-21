@@ -33,20 +33,14 @@
  *********************************************************************/
 
 /*
- * Author: Bence Magyar
+ * Author: Bence Magyar, Enrique Fernández
  */
 
 #include <cmath>
-
-#include <tf/transform_datatypes.h>
-
-#include <urdf_parser/urdf_parser.h>
-
-#include <urdf/urdfdom_compatibility.h>
-
-#include <boost/assign.hpp>
-
 #include <diff_drive_controller/diff_drive_controller.h>
+#include <tf/transform_datatypes.h>
+#include <urdf/urdfdom_compatibility.h>
+#include <urdf_parser/urdf_parser.h>
 
 static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3& vec2)
 {
@@ -164,7 +158,7 @@ namespace diff_drive_controller{
     , enable_odom_tf_(true)
     , wheel_joints_size_(0)
     , publish_cmd_(false)
-    , publish_joint_trajectory_controller_state_(false)
+    , publish_wheel_joint_controller_state_(false)
   {
   }
 
@@ -281,7 +275,7 @@ namespace diff_drive_controller{
     controller_nh.param("publish_cmd", publish_cmd_, publish_cmd_);
 
     // Publish wheel data:
-    controller_nh.param("publish_joint_trajectory_controller_state", publish_joint_trajectory_controller_state_, publish_joint_trajectory_controller_state_);
+    controller_nh.param("publish_wheel_joint_controller_state", publish_wheel_joint_controller_state_, publish_wheel_joint_controller_state_);
 
     // If either parameter is not available, we need to look up the value in the URDF
     bool lookup_wheel_separation = !controller_nh.getParam("wheel_separation", wheel_separation_);
@@ -314,10 +308,10 @@ namespace diff_drive_controller{
       cmd_vel_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped>(controller_nh, "cmd_vel_out", 100));
     }
 
-    // Wheel data:
-    if (publish_joint_trajectory_controller_state_)
+    // Wheel joint controller state:
+    if (publish_wheel_joint_controller_state_)
     {
-      controller_state_pub_ = boost::make_shared<realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState> >(controller_nh, "joint_trajectory_controller_state", 100);
+      controller_state_pub_.reset(new realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>(controller_nh, "wheel_joint_controller_state", 100));
 
       const size_t num_wheels = wheel_joints_size_ * 2;
 
@@ -380,7 +374,7 @@ namespace diff_drive_controller{
     config.publish_rate = publish_rate;
     config.enable_odom_tf = enable_odom_tf_;
 
-    dyn_reconf_server_ = boost::make_shared<ReconfigureServer>(controller_nh);
+    dyn_reconf_server_ = std::make_shared<ReconfigureServer>(controller_nh);
     dyn_reconf_server_->updateConfig(config);
     dyn_reconf_server_->setCallback(boost::bind(&DiffDriveController::reconfCallback, this, _1, _2));
 
@@ -701,24 +695,24 @@ namespace diff_drive_controller{
     odom_pub_->msg_.header.frame_id = odom_frame_id_;
     odom_pub_->msg_.child_frame_id = base_frame_id_;
     odom_pub_->msg_.pose.pose.position.z = 0;
-    odom_pub_->msg_.pose.covariance = boost::assign::list_of
-        (static_cast<double>(pose_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(pose_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(pose_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(pose_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[5]));
+    odom_pub_->msg_.pose.covariance = {
+        static_cast<double>(pose_cov_list[0]), 0., 0., 0., 0., 0.,
+        0., static_cast<double>(pose_cov_list[1]), 0., 0., 0., 0.,
+        0., 0., static_cast<double>(pose_cov_list[2]), 0., 0., 0.,
+        0., 0., 0., static_cast<double>(pose_cov_list[3]), 0., 0.,
+        0., 0., 0., 0., static_cast<double>(pose_cov_list[4]), 0.,
+        0., 0., 0., 0., 0., static_cast<double>(pose_cov_list[5]) };
     odom_pub_->msg_.twist.twist.linear.y  = 0;
     odom_pub_->msg_.twist.twist.linear.z  = 0;
     odom_pub_->msg_.twist.twist.angular.x = 0;
     odom_pub_->msg_.twist.twist.angular.y = 0;
-    odom_pub_->msg_.twist.covariance = boost::assign::list_of
-        (static_cast<double>(twist_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(twist_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(twist_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(twist_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
+    odom_pub_->msg_.twist.covariance = {
+        static_cast<double>(twist_cov_list[0]), 0., 0., 0., 0., 0.,
+        0., static_cast<double>(twist_cov_list[1]), 0., 0., 0., 0.,
+        0., 0., static_cast<double>(twist_cov_list[2]), 0., 0., 0.,
+        0., 0., 0., static_cast<double>(twist_cov_list[3]), 0., 0.,
+        0., 0., 0., 0., static_cast<double>(twist_cov_list[4]), 0.,
+        0., 0., 0., 0., 0., static_cast<double>(twist_cov_list[5]) };
     tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
     tf_odom_pub_->msg_.transforms.resize(1);
     tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;
@@ -758,7 +752,7 @@ namespace diff_drive_controller{
   void DiffDriveController::publishWheelData(const ros::Time& time, const ros::Duration& period, Commands& curr_cmd,
           double wheel_separation, double left_wheel_radius, double right_wheel_radius)
   {
-    if (publish_joint_trajectory_controller_state_ && controller_state_pub_->trylock())
+    if (publish_wheel_joint_controller_state_ && controller_state_pub_->trylock())
     {
       const double cmd_dt(period.toSec());
 

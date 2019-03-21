@@ -65,13 +65,14 @@ std::vector<std::string> getStrings(const ros::NodeHandle& nh, const std::string
   std::vector<std::string> out;
   for (int i = 0; i < xml_array.size(); ++i)
   {
-    if (xml_array[i].getType() != XmlRpcValue::TypeString)
+    XmlRpc::XmlRpcValue& elem = xml_array[i];
+    if (elem.getType() != XmlRpcValue::TypeString)
     {
       ROS_ERROR_STREAM("The '" << param_name << "' parameter contains a non-string element (namespace: " <<
                        nh.getNamespace() << ").");
       return std::vector<std::string>();
     }
-    out.push_back(static_cast<std::string>(xml_array[i]));
+    out.push_back(static_cast<std::string>(elem));
   }
   return out;
 }
@@ -103,16 +104,16 @@ urdf::ModelSharedPtr getUrdf(const ros::NodeHandle& nh, const std::string& param
 std::vector<urdf::JointConstSharedPtr> getUrdfJoints(const urdf::Model& urdf, const std::vector<std::string>& joint_names)
 {
   std::vector<urdf::JointConstSharedPtr> out;
-  for (unsigned int i = 0; i < joint_names.size(); ++i)
+  for (const auto& joint_name : joint_names)
   {
-    urdf::JointConstSharedPtr urdf_joint = urdf.getJoint(joint_names[i]);
+    urdf::JointConstSharedPtr urdf_joint = urdf.getJoint(joint_name);
     if (urdf_joint)
     {
       out.push_back(urdf_joint);
     }
     else
     {
-      ROS_ERROR_STREAM("Could not find joint '" << joint_names[i] << "' in URDF model.");
+      ROS_ERROR_STREAM("Could not find joint '" << joint_name << "' in URDF model.");
       return std::vector<urdf::JointConstSharedPtr>();
     }
   }

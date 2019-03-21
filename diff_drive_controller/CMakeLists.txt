@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(diff_drive_controller)
 
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
 find_package(catkin REQUIRED COMPONENTS
     controller_interface
     control_msgs
@@ -89,14 +94,14 @@ if (CATKIN_ENABLE_TESTING)
     test/diff_drive_pub_cmd_vel_out.test
     test/diff_drive_pub_cmd_vel_out_test.cpp)
   target_link_libraries(diff_drive_pub_cmd_vel_out_test ${catkin_LIBRARIES})
-  add_rostest_gtest(diff_drive_default_joint_trajectory_controller_state_test
-    test/diff_drive_default_joint_trajectory_controller_state.test
-    test/diff_drive_default_joint_trajectory_controller_state_test.cpp)
-  target_link_libraries(diff_drive_default_joint_trajectory_controller_state_test ${catkin_LIBRARIES})
-  add_rostest_gtest(diff_drive_publish_joint_trajectory_controller_state_test
-    test/diff_drive_publish_joint_trajectory_controller_state.test
-    test/diff_drive_publish_joint_trajectory_controller_state_test.cpp)
-  target_link_libraries(diff_drive_publish_joint_trajectory_controller_state_test ${catkin_LIBRARIES})
+  add_rostest_gtest(diff_drive_default_wheel_joint_controller_state_test
+    test/diff_drive_default_wheel_joint_controller_state.test
+    test/diff_drive_default_wheel_joint_controller_state_test.cpp)
+  target_link_libraries(diff_drive_default_wheel_joint_controller_state_test ${catkin_LIBRARIES})
+  add_rostest_gtest(diff_drive_publish_wheel_joint_controller_state_test
+    test/diff_drive_publish_wheel_joint_controller_state.test
+    test/diff_drive_publish_wheel_joint_controller_state_test.cpp)
+  target_link_libraries(diff_drive_publish_wheel_joint_controller_state_test ${catkin_LIBRARIES})
   add_rostest_gtest(diff_drive_default_odom_frame_test
     test/diff_drive_default_odom_frame.test
     test/diff_drive_default_odom_frame_test.cpp)

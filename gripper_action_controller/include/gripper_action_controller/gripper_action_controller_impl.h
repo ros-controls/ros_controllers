@@ -68,16 +68,16 @@ urdf::ModelSharedPtr getUrdf(const ros::NodeHandle& nh, const std::string& param
 std::vector<urdf::JointConstSharedPtr> getUrdfJoints(const urdf::Model& urdf, const std::vector<std::string>& joint_names)
 {
   std::vector<urdf::JointConstSharedPtr> out;
-  for (unsigned int i = 0; i < joint_names.size(); ++i)
+  for (const auto& joint_name : joint_names)
   {
-    urdf::JointConstSharedPtr urdf_joint = urdf.getJoint(joint_names[i]);
+    urdf::JointConstSharedPtr urdf_joint = urdf.getJoint(joint_name);
     if (urdf_joint)
     {
       out.push_back(urdf_joint);
     }
     else
     {
-      ROS_ERROR_STREAM("Could not find joint '" << joint_names[i] << "' in URDF model.");
+      ROS_ERROR_STREAM("Could not find joint '" << joint_name << "' in URDF model.");
       return std::vector<urdf::JointConstSharedPtr>();
     }
   }
@@ -274,8 +274,8 @@ goalCB(GoalHandle gh)
     
   // Setup goal status checking timer
   goal_handle_timer_ = controller_nh_.createTimer(action_monitor_period_,
-						  &RealtimeGoalHandle::runNonRealtime,
-						  rt_goal);
+                                                  &RealtimeGoalHandle::runNonRealtime,
+                                                  rt_goal);
   goal_handle_timer_.start();
   rt_active_goal_ = rt_goal;
 }

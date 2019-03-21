@@ -2,6 +2,7 @@
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2017, Irstea
+ *  Copyright (c) 2013, PAL Robotics, S.L.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -33,12 +34,8 @@
  *********************************************************************/
 
 #include <cmath>
-
-#include <tf/transform_datatypes.h>
-
-#include <boost/assign.hpp>
-
 #include <four_wheel_steering_controller/four_wheel_steering_controller.h>
+#include <tf/transform_datatypes.h>
 #include <urdf_geometry_parser/urdf_geometry_parser.h>
 
 namespace four_wheel_steering_controller{
@@ -644,25 +641,24 @@ namespace four_wheel_steering_controller{
     odom_pub_->msg_.header.frame_id = "odom";
     odom_pub_->msg_.child_frame_id = base_frame_id_;
     odom_pub_->msg_.pose.pose.position.z = 0;
-    odom_pub_->msg_.pose.covariance = boost::assign::list_of
-        (static_cast<double>(pose_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(pose_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(pose_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(pose_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[5]));
+    odom_pub_->msg_.pose.covariance = {
+        static_cast<double>(pose_cov_list[0]), 0., 0., 0., 0., 0.,
+        0., static_cast<double>(pose_cov_list[1]), 0., 0., 0., 0.,
+        0., 0., static_cast<double>(pose_cov_list[2]), 0., 0., 0.,
+        0., 0., 0., static_cast<double>(pose_cov_list[3]), 0., 0.,
+        0., 0., 0., 0., static_cast<double>(pose_cov_list[4]), 0.,
+        0., 0., 0., 0., 0., static_cast<double>(pose_cov_list[5]) };
     odom_pub_->msg_.twist.twist.linear.y  = 0;
     odom_pub_->msg_.twist.twist.linear.z  = 0;
     odom_pub_->msg_.twist.twist.angular.x = 0;
     odom_pub_->msg_.twist.twist.angular.y = 0;
-    odom_pub_->msg_.twist.covariance = boost::assign::list_of
-        (static_cast<double>(twist_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(twist_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(twist_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(twist_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
-
+    odom_pub_->msg_.twist.covariance = {
+        static_cast<double>(twist_cov_list[0]), 0., 0., 0., 0., 0.,
+        0., static_cast<double>(twist_cov_list[1]), 0., 0., 0., 0.,
+        0., 0., static_cast<double>(twist_cov_list[2]), 0., 0., 0.,
+        0., 0., 0., static_cast<double>(twist_cov_list[3]), 0., 0.,
+        0., 0., 0., 0., static_cast<double>(twist_cov_list[4]), 0.,
+        0., 0., 0., 0., 0., static_cast<double>(twist_cov_list[5]) };
     odom_4ws_pub_.reset(new realtime_tools::RealtimePublisher<four_wheel_steering_msgs::FourWheelSteeringStamped>(controller_nh, "odom_steer", 100));
     odom_4ws_pub_->msg_.header.frame_id = "odom";
 

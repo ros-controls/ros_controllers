@@ -31,12 +31,9 @@
 #ifndef TRAJECTORY_INTERFACE_QUINTIC_SPLINE_SEGMENT_H
 #define TRAJECTORY_INTERFACE_QUINTIC_SPLINE_SEGMENT_H
 
+#include <array>
 #include <iterator>
 #include <stdexcept>
-
-#include <boost/array.hpp>
-#include <boost/foreach.hpp>
-
 #include <trajectory_interface/pos_vel_acc_state.h>
 
 namespace trajectory_interface
@@ -143,7 +140,7 @@ public:
   unsigned int size() const {return coefs_.size();}
 
 private:
-  typedef boost::array<Scalar, 6> SplineCoefficients;
+  typedef std::array<Scalar, 6> SplineCoefficients;
 
   /** Coefficients represent a quintic polynomial like so:
    *

@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(forward_command_controller)
 
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS controller_interface hardware_interface std_msgs realtime_tools)
 

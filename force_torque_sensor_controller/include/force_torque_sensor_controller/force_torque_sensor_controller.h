@@ -32,11 +32,11 @@
 #define FORCE_TORQUE_SENSOR_CONTROLLER_FORCE_TORQUE_SENSOR_CONTROLLER_H
 
 #include <controller_interface/controller.h>
-#include <hardware_interface/force_torque_sensor_interface.h>
-#include <pluginlib/class_list_macros.hpp>
 #include <geometry_msgs/WrenchStamped.h>
+#include <hardware_interface/force_torque_sensor_interface.h>
+#include <memory>
+#include <pluginlib/class_list_macros.hpp>
 #include <realtime_tools/realtime_publisher.h>
-#include <boost/shared_ptr.hpp>
 
 namespace force_torque_sensor_controller
 {
@@ -54,7 +54,7 @@ public:
 
 private:
   std::vector<hardware_interface::ForceTorqueSensorHandle> sensors_;
-  typedef boost::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::WrenchStamped> > RtPublisherPtr;
+  typedef std::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::WrenchStamped> > RtPublisherPtr;
   std::vector<RtPublisherPtr> realtime_pubs_;
   std::vector<ros::Time> last_publish_times_;
   double publish_rate_;

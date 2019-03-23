@@ -279,6 +279,8 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
 
     ROS_DEBUG_STREAM_NAMED(name_, "Found " << not_if << "continuous joint '" << joint_names_[i] << "' in '" <<
                                   this->getHardwareInterfaceType() << "'.");
+
+    ROS_INFO_STREAM("Loaidng joint " << joint_names_[i] << " (" << i << ")");
   }
 
   assert(joints_.size() == angle_wraparound_.size());
@@ -345,6 +347,56 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
     state_publisher_->msg_.error.positions.resize(n_joints);
     state_publisher_->msg_.error.velocities.resize(n_joints);
     state_publisher_->unlock();
+  }
+
+  //
+  // List of mimic joints
+  //
+  if (controller_nh_.hasParam("mimic_joints"))
+  {
+    mimic_joint_names_ = getStrings(controller_nh_, "mimic_joints");
+    const unsigned int n_mimic_joints = mimic_joint_names_.size();
+    mimic_joints_.resize(n_mimic_joints);
+    mimic_joint_ids_.resize(n_mimic_joints);
+    mimic_urdf_joints_.resize(n_mimic_joints);
+    for (unsigned int i = 0; i < n_mimic_joints; ++i)
+    {
+      // Mimic Joint handle
+      try {
+        mimic_joints_[i] = hw->hardware_interface::ResourceManager<JointHandle>::getHandle(mimic_joint_names_[i]);
+      }
+      catch (...)
+      {
+        ROS_ERROR_STREAM_NAMED(name_, "Could not find joint '" << mimic_joint_names_[i] << "' in '" <<
+                               this->getHardwareInterfaceType() << "'.");
+        return false;
+      }
+      mimic_urdf_joints_[i]  = urdf->getJoint(mimic_joint_names_[i]);
+      if (!(mimic_urdf_joints_[i] && mimic_urdf_joints_[i]->mimic))
+      {
+        ROS_ERROR_STREAM_NAMED(name_, "Could not find joint '" << mimic_joint_names_[i] << "' in URDF");
+      }
+      mimic_joint_ids_[i] = std::distance(joint_names_.begin(), std::find(joint_names_.begin(), joint_names_.end(), mimic_urdf_joints_[i]->mimic->joint_name));
+      if (mimic_joint_ids_[i] == joint_names_.size())
+      {
+        ROS_ERROR_STREAM_NAMED(name_, "Could not find joint '" << mimic_urdf_joints_[i]->mimic->joint_name << "' in joint_names");
+      }
+      ROS_INFO_STREAM("Loaidng mimic_joint " << mimic_joint_names_[i] << " = " << joint_names_[mimic_joint_ids_[i]] << " (" << mimic_joint_ids_[i] << ") * " << mimic_urdf_joints_[i]->mimic->multiplier << " + " << mimic_urdf_joints_[i]->mimic->offset);
+    }
+    // Hardware interface adapter
+    mimic_hw_iface_adapter_.init(mimic_joints_, controller_nh_);
+
+    mimic_current_state_       = typename Segment::State(n_mimic_joints);
+    mimic_desired_state_       = typename Segment::State(n_mimic_joints);
+    mimic_state_error_         = typename Segment::State(n_mimic_joints);
+
+    // Initialize trajectory with all joints
+    typename Segment::State mimic_current_joint_state_ = typename Segment::State(1);
+    for (unsigned int i = 0; i < n_mimic_joints; ++i)
+    {
+      mimic_current_joint_state_.position[0]= mimic_current_state_.position[i];
+      mimic_current_joint_state_.velocity[0]= mimic_current_state_.velocity[i];
+    }
   }
 
   return true;
@@ -493,6 +545,32 @@ update(const ros::Time& time, const ros::Duration& period)
 
   // Publish state
   publishState(time_data.uptime);
+
+  // Mimic Joints
+  // Update current state and state error for mimic_joint
+  for (unsigned int i = 0; i < mimic_joints_.size(); ++i)
+  {
+    mimic_current_state_.position[i] = mimic_joints_[i].getPosition();
+    mimic_current_state_.velocity[i] = mimic_joints_[i].getVelocity();
+    // There's no acceleration data available in a joint handle
+
+    unsigned int mimic_joint_id = mimic_joint_ids_[i];
+    mimic_desired_state_.position[i] = desired_state_.position[mimic_joint_id] * mimic_urdf_joints_[i]->mimic->multiplier + mimic_urdf_joints_[i]->mimic->offset;
+    mimic_desired_state_.velocity[i] = desired_state_.velocity[mimic_joint_id];
+    mimic_desired_state_.acceleration[i] = desired_state_.acceleration[mimic_joint_id];
+
+    mimic_state_error_.position[i] = angles::shortest_angular_distance(mimic_current_state_.position[i],mimic_desired_state_.position[i]);
+    mimic_state_error_.velocity[i] = mimic_desired_state_.velocity[i] - mimic_current_state_.velocity[i];
+    mimic_state_error_.acceleration[i] = 0.0;
+  }
+
+  // Send commands to mimic joints_
+  if (mimic_joints_.size() >  0)
+  {
+    mimic_hw_iface_adapter_.updateCommand(time_data.uptime, time_data.period,
+                                          mimic_desired_state_, mimic_state_error_);
+  }
+
 }
 
 template <class SegmentImpl, class HardwareInterface>

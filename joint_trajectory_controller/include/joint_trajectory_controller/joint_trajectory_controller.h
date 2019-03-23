@@ -222,6 +222,17 @@ protected:
   ros::Timer         goal_handle_timer_;
   ros::Time          last_state_publish_time_;
 
+  // Mimic Joints
+  std::vector<JointHandle>  mimic_joints_;             ///< Handles to mimic joints.
+  std::vector<std::string>  mimic_joint_names_;        ///< Mimic joint names.
+  std::vector<urdf::JointConstSharedPtr> mimic_urdf_joints_; ///< URDF joint of mimic joints
+  std::vector<unsigned int> mimic_joint_ids_;          ///< index of target joint in joints_ vector
+
+  typename Segment::State mimic_current_state_;         ///< Preallocated workspace variable.
+  typename Segment::State mimic_desired_state_;         ///< Preallocated workspace variable.
+  typename Segment::State mimic_state_error_;           ///< Preallocated workspace variable.
+  HwIfaceAdapter          mimic_hw_iface_adapter_;      ///< Adapts desired trajectory state to HW interface.
+
   virtual bool updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePtr gh, std::string* error_string = 0);
   virtual void trajectoryCommandCB(const JointTrajectoryConstPtr& msg);
   virtual void goalCB(GoalHandle gh);

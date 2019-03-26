@@ -2,6 +2,13 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Default all controller builds to C++14
+* boost::assign -> C++ initializer list
+* boost::shared_ptr -> std::shared_ptr
+* Contributors: Bence Magyar, Gennaro Raiola
+
 0.14.3 (2019-02-09)
 -------------------
 * Sync version number with rest of repo

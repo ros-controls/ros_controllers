@@ -2,6 +2,14 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Default all controller builds to C++14
+* Use range-based for loops wherever possible
+* boost::scoped_ptr -> std::unique_ptr
+* fix install destination for libraries (`#403 <https://github.com/ros-controls/ros_controllers/issues/403>`_)
+* Contributors: Bence Magyar, Gennaro Raiola, James Xu
+
 0.14.3 (2019-02-09)
 -------------------
 

@@ -2,6 +2,13 @@
 Changelog for package imu_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Default all controller builds to C++14
+* boost::shared_ptr -> std::shared_ptr
+* fix install destination for libraries (`#403 <https://github.com/ros-controls/ros_controllers/issues/403>`_)
+* Contributors: Bence Magyar, Gennaro Raiola, James Xu
+
 0.14.3 (2019-02-09)
 -------------------
 

@@ -2,8 +2,8 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.15.0 (2019-03-26)
+-------------------
 * Default all controller builds to C++14
 * Use range-based for loops wherever possible
 * boost::shared_ptr -> std::shared_ptr

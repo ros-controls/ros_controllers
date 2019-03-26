@@ -2,8 +2,8 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.15.0 (2019-03-26)
+-------------------
 * Default all controller builds to C++14
 * Use range-based for loops wherever possible
 * boost::scoped_ptr -> std::unique_ptr

@@ -2,8 +2,8 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.15.0 (2019-03-26)
+-------------------
 * Default all controller builds to C++14
 * boost::scoped_ptr -> std::unique_ptr
 * fix install destination for libraries (`#403 <https://github.com/ros-controls/ros_controllers/issues/403>`_)

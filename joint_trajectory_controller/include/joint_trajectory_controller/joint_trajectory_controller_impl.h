@@ -558,7 +558,7 @@ updateTrajectoryCommand(const JointTrajectoryConstPtr& msg, RealtimeGoalHandlePt
       return false;
     }
   }
-  catch(const std::invalid_argument& ex)
+  catch(const std::exception& ex)
   {
     ROS_ERROR_STREAM_NAMED(name_, ex.what());
     options.setErrorString(ex.what());

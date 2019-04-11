@@ -19,7 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(Boost REQUIRED COMPONENTS system thread)
- 
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
@@ -36,7 +36,7 @@ catkin_package(
 
 include_directories(
   include
-  ${Boost_INCLUDE_DIRS} 
+  ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -63,6 +63,7 @@ if (CATKIN_ENABLE_TESTING)
     gazebo_ros
     xacro
   )
+  include_directories(${catkin_INCLUDE_DIRS})
 
   add_executable(${PROJECT_NAME}_ackermann_steering_bot test/common/src/ackermann_steering_bot.cpp)
   add_dependencies(tests ${PROJECT_NAME}_ackermann_steering_bot)

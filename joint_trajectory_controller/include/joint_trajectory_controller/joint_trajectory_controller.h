@@ -43,6 +43,7 @@
 
 // ROS
 #include <ros/node_handle.h>
+#include <std_srvs/Trigger.h>
 
 // URDF
 #include <urdf/model.h>
@@ -216,6 +217,7 @@ protected:
   ros::Subscriber    trajectory_command_sub_;
   ActionServerPtr    action_server_;
   ros::ServiceServer query_state_service_;
+  ros::ServiceServer query_activity_service_;
   StatePublisherPtr  state_publisher_;
 
   ros::Timer         goal_handle_timer_;
@@ -229,12 +231,17 @@ protected:
   virtual bool queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
                                  control_msgs::QueryTrajectoryState::Response& resp);
 
+    virtual bool queryActivityService(std_srvs::Trigger::Request&  req,
+                                  std_srvs::Trigger::Response& resp);
+
   /**
    * \brief Publish current controller state at a throttled frequency.
    * \note This method is realtime-safe and is meant to be called from \ref update, as it shares data with it without
    * any locking.
    */
   void publishState(const ros::Time& time);
+
+  bool is_active();
 
   /**
    * \brief Hold the current position.

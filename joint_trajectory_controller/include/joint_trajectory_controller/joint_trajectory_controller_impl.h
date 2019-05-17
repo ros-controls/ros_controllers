@@ -306,6 +306,11 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
                                                          &JointTrajectoryController::queryStateService,
                                                          this);
 
+  // ROS API: Provided services
+  query_activity_service_ = controller_nh_.advertiseService("is_active",
+                                                         &JointTrajectoryController::queryActivityService,
+                                                         this);
+
   // Preeallocate resources
   current_state_       = typename Segment::State(n_joints);
   desired_state_       = typename Segment::State(n_joints);
@@ -342,6 +347,34 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   }
 
   return true;
+}
+
+
+template <class SegmentImpl, class HardwareInterface>
+bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
+is_active(){
+
+  // Get currently followed trajectory
+  TrajectoryPtr curr_traj_ptr;
+  curr_trajectory_box_.get(curr_traj_ptr);
+  Trajectory& curr_traj = *curr_traj_ptr;
+
+  // Update time data
+
+  typename Segment::State state;
+
+  bool is_active{false};
+
+  for (unsigned int i = 0; i < joints_.size(); ++i)
+  {
+    typename TrajectoryPerJoint::const_iterator segment_it = sample(curr_traj[i], time_data_.readFromRT()->uptime.toSec(), state);
+
+    if (segment_it != --curr_traj[i].end() || time_data_.readFromRT()->uptime.toSec() <= segment_it->endTime()){
+      is_active = true;
+    }
+  }
+
+  return is_active;
 }
 
 template <class SegmentImpl, class HardwareInterface>
@@ -670,6 +703,16 @@ cancelCB(GoalHandle gh)
     // Mark the current goal as canceled
     current_active_goal->gh_.setCanceled();
   }
+}
+
+template <class SegmentImpl, class HardwareInterface>
+bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
+queryActivityService(std_srvs::Trigger::Request&  req,
+              std_srvs::Trigger::Response& resp)
+{
+
+  resp.success = is_active();
+  return true;
 }
 
 template <class SegmentImpl, class HardwareInterface>

@@ -14,6 +14,8 @@ This should be similar for other ROS robots that have velocity_controllers/Joint
 
 * catkin build
 
+* Make sure these new packages are sourced (e.g. open a new terminal for future commands)
+
 ### Config
 
 urXX below means ur5 for a UR5 robot, for example.
@@ -83,6 +85,7 @@ You may want to save a copy of each file in a new directory, rather than modifyi
 		<arg name="stopped_controllers" default="pos_based_pos_traj_controller joint_group_vel_controller vel_based_pos_traj_controller"/>
 
 * Check that you can move the robot with ros_control. Launch these files then test a move in Rviz:
+
 		roslaunch ur_modern_driver urXX_ros_control.launch robot_ip:=192.168.1.102
 		roslaunch urXX_moveit_config urXX_moveit_planning_execution.launch
 		roslaunch urXX_moveit_config moveit_rviz.launch config:=true
@@ -93,7 +96,13 @@ You may want to save a copy of each file in a new directory, rather than modifyi
 
 		roslaunch wrench_to_joint_vel_pub ur_compliance.launch
 
+* Enable compliance with this service call:
+
+		rosservice call /compliance_controller/toggle_compliance "{}"
+
 Push on the end-effector and the robot should move with you. You can also execute a trajectory, just like normal.
+
+* Adjust stiffness and damping in the wrench_to_joint_vel_pub package, /config/compliance_settings.yaml.
 
 ### Summary
 
@@ -109,3 +118,11 @@ The rosservice call to toggle compliance ON/OFF is:
 		rosservice call /compliance_controller/toggle_compliance "{}"
 
 It defaults to no compliance.
+
+### Troubleshooting
+
+If you plan a motion but execution fails, the most likely causes are:
+
+* The robot is near a joint limit.
+
+* Compliant motion causes the robot to drift away from the start pose so the trajectory is no longer valid. In this case, you can check that your force data is well-filtered and biased when no external forces are applied. Try more-stiff compliance settings so the robot "drifts" less. Or, toggle compliance ON after the trajectory has already begun.

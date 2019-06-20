@@ -150,7 +150,7 @@ public:
   void printDebug();
 
   /**
-   * \brief Get the PID parameters
+   * \brief Set the PID parameters
    */
   void setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min, const bool &antiwindup = false);
 

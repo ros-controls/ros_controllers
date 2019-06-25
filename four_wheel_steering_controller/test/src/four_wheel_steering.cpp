@@ -2,6 +2,7 @@
 
 #include "four_wheel_steering.h"
 #include <chrono>
+#include <thread>
 #include <controller_manager/controller_manager.h>
 #include <ros/ros.h>
 #include <rosgraph_msgs/Clock.h>
@@ -50,7 +51,7 @@ int main(int argc, char **argv)
     else
     {
       ROS_DEBUG_STREAM_THROTTLE(1.0, "Control cycle is, elapsed: " << elapsed_secs);
-      usleep((dt.toSec() - elapsed_secs) * 1e6);
+      std::this_thread::sleep_for(std::chrono::duration<double>(dt.toSec() - elapsed_secs));
     }
 
     rosgraph_msgs::Clock clock;

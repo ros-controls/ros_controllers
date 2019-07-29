@@ -1,0 +1,4 @@
+[submodule "skid_steer_controller"]
+	path = skid_steer_controller
+	url = https://github.com/UTNuclearRobotics/skid_steer_controller
+	branch = melodic

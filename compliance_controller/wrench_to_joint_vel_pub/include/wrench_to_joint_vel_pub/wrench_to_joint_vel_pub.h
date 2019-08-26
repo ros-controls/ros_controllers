@@ -185,9 +185,9 @@ private:
   Eigen::VectorXd delta_theta_;
 
   // Track degrees of freedom to drop
-  // By default, ignore compliance in dimensions 3,4,5
-  // i.e. roll/pitch/yaw
-  std::vector<int> dof_to_drop_{ 3, 4, 5 };
+  // By default, ignore compliance in dimensions 4,5
+  // i.e. pitch/yaw
+  std::vector<int> dof_to_drop_{4, 5};
 };
 
 }  // namespace wrench_to_joint_vel_pub

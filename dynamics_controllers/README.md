@@ -133,6 +133,7 @@ There are some limitations for these controllers:
 - The sub-controller must control all joints of the internal `Chain`/`Tree`.
 
 
+
 ### Possible Improvements
 
 - [ ] Compensation of external payloads, mainly in two ways:
@@ -140,7 +141,8 @@ There are some limitations for these controllers:
     - Allowing to dynamically modify the `Chain`/`Tree` instances
 - [ ] Support for moving bases. This likely requires to re-implement the
       controllers using another library, such as pinocchio, or to expand KDL.
-- [ ] Additional parameters such as joint inertia and viscous friction
+- [ ] Additional parameters such as joint inertia and viscous friction.
+- [ ] Allow multiple sub-controllers to manage different joints.
 
 
 ### Personal todo list:

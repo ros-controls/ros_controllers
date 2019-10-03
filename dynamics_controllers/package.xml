@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>dynamics_controllers</name>
+  <version>0.0.0</version>
+  <description>Adds a "dynamics control layer" to standard effort controllers.</description>
+
+  <author email="franco.fusco@ls2n.fr">Franco FUSCO</author>
+  <maintainer email="franco.fusco@ls2n.fr">Franco FUSCO</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>controller_interface</depend>
+  <depend>orocos_kdl</depend>
+  <depend>kdl_parser</depend>
+
+  <export>
+    <controller_interface plugin="${prefix}/dynamics_controllers.xml"/>
+  </export>
+</package>

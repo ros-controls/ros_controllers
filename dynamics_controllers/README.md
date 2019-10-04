@@ -18,6 +18,9 @@ Currently, there exist two controllers: `KdlChainController` and
 They are both based on KDL's implementation of the Recursive Newton-Euler
 algorithm for the inverse dynamics.
 
+**Note**: as of today, you need to install KDL from source (master branch)
+in order to have the `KdlTreeController`.
+
 
 
 ### Gravity Compensation vs Full Inverse Dynamics
@@ -147,8 +150,9 @@ There are some limitations for these controllers:
 
 ### Personal todo list:
 
-- How should the license be pasted? Some headers contain only WillowGarage,
-  some many institutions. Should I put myself?
-- Check CMakeLists.txt (install targets etc)
-- Tell about the KDL version that is needed!
-- Add documentation as in other packages
+- [ ] How should the license be pasted? Some headers contain only WillowGarage,
+  some many institutions. Should I put myself as well?
+- [ ] Check CMakeLists.txt (install targets etc).
+- [x] Tell about the KDL version that is needed!
+- [ ] Add documentation as in other ROS-controllers packages.
+- [ ] Complete `KdlTreeController` so that proper sub-tree extraction is possible.

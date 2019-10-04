@@ -119,8 +119,7 @@ should not depend on a specific controller (at least in principle!).
 - `gravity`: list with three elements, representing the gravity vector in the
   base frame of the chain. Searched for. Default: `[0,0,0]`.
 - `tree_root`: base of the tree. Searched for. Default: name of the root link
-  from the robot description. **NOTE**: currently, the parameter is ignored
-  and the generated tree is always rooted at the base of the URDF.
+  from the robot description.
 - `gravity_compensation_only`: as discussed above. Default: `false`.
 
 
@@ -155,4 +154,4 @@ There are some limitations for these controllers:
 - [ ] Check CMakeLists.txt (install targets etc).
 - [x] Tell about the KDL version that is needed!
 - [ ] Add documentation as in other ROS-controllers packages.
-- [ ] Complete `KdlTreeController` so that proper sub-tree extraction is possible.
+- [x] Complete `KdlTreeController` so that proper sub-tree extraction is possible.

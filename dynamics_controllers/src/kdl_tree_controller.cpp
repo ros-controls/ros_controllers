@@ -101,8 +101,11 @@ bool KdlTreeController::initDynamics(ros::NodeHandle& nh) {
   }
   ROS_DEBUG("'root_name' is: '%s'", root_name.c_str());
 
-  // TODO: extract the tree from a given root
-  tree_ = internal::extractSubTree(tree, root_name);
+  // extract the tree from a given root
+  if(!internal::extractSubTree(tree, root_name, tree_)) {
+    ROS_ERROR("Failed to extrac sub-tree from segment '%s'", root_name.c_str());
+    return false;
+  }
 
   // get gravity vector
   std::string grav_param;
@@ -215,11 +218,48 @@ void KdlTreeController::computeEfforts() {
 }
 
 
-KDL::Tree internal::extractSubTree(const KDL::Tree& tree, const std::string& root)
+namespace internal
 {
-  return tree;
+
+// Utility function that basically copies the private method "KDL::Tree::addTreeRecursive" (which is private).
+bool expandTreeRecursive(KDL::Tree& tree, KDL::SegmentMap::const_iterator root, const std::string& hook_name)
+{
+  // get iterator for root-segment
+  KDL::SegmentMap::const_iterator child;
+  // try to add all of root's children
+  for (unsigned int i = 0; i < GetTreeElementChildren(root->second).size(); i++) {
+    child = GetTreeElementChildren(root->second)[i];
+    // try to add the child
+    if (tree.addSegment(GetTreeElementSegment(child->second), hook_name)) {
+      std::cout << "--> Appended segment " << child->first << " to " << hook_name << std::endl;
+      // if child is added, add all the child's children
+      if (!expandTreeRecursive(tree, child, child->first)) {
+        // if it didn't work, return false
+        return false;
+      }
+    }
+    else {
+      // if the child could not be added, return false
+      return false;
+    }
+  }
+  return true;
 }
 
-} // end of namespace
+
+bool extractSubTree(const KDL::Tree& tree, const std::string& root_name, KDL::Tree& subtree)
+{
+  // check if root_name exists
+  KDL::SegmentMap::const_iterator root = tree.getSegment(root_name);
+  if (root == tree.getSegments().end())
+    return false;
+  // init the subtree, root_name is the new root.
+  subtree = KDL::Tree(root->first);
+  return expandTreeRecursive(subtree, root, root_name);
+}
+
+} // end of namespace internal
+
+} // end of namespace dynamics_controllers
 
 PLUGINLIB_EXPORT_CLASS(dynamics_controllers::KdlTreeController, controller_interface::ControllerBase)

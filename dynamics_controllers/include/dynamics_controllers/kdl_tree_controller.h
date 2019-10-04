@@ -56,7 +56,7 @@ namespace internal {
  * However, the PR is not available yet. As a workaround, a similar function
  * is given here. If the PR is merged, the following will be removed.
  */
-KDL::Tree extractSubTree(const KDL::Tree& tree, const std::string& root);
+bool extractSubTree(const KDL::Tree& tree, const std::string& root_name, KDL::Tree& subtree);
 }
 
 class KdlTreeController : public DynamicsControllerBase {

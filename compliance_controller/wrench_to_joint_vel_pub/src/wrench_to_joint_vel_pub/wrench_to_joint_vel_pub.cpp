@@ -308,22 +308,33 @@ void PublishCompliantJointVelocities::spin()
       }
 
       svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(reduced_jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
-      matrix_s_ = svd_.singularValues().asDiagonal();
-      pseudo_inverse_ = svd_.matrixV() * matrix_s_.inverse() * svd_.matrixU().transpose();
-      delta_theta_ = pseudo_inverse_ * reduced_cartesian_velocity;
 
-      // Check if a command magnitude would be too large.
-      double largest_allowable_command = compliance_params_.max_allowable_cmd_magnitude;
-      for (int i = 0; i < delta_theta_.size(); ++i)
+      // Get the condition number as largest singular value divided by smallest singular value
+      if(fabs(svd_.singularValues().head(1) / svd_.singularValues().tail(1)) > compliance_params_.condition_number_limit)
       {
-        if ((fabs(delta_theta_[i]) > largest_allowable_command) || std::isnan(delta_theta_[i]))
+        // If condition number is too high set the compliance-adjusted velocities to 0
+        delta_theta_.assign(delta_theta_.size(), 0.0);
+        ROS_WARN_STREAM_NAMED(NODE_NAME, "Jacobian is near singular! Pausing compliant commands.");
+      }
+      else
+      {
+        matrix_s_ = svd_.singularValues().asDiagonal();
+        pseudo_inverse_ = svd_.matrixV() * matrix_s_.inverse() * svd_.matrixU().transpose();
+        delta_theta_ = pseudo_inverse_ * reduced_cartesian_velocity;
+
+        // Check if a command magnitude would be too large.
+        double largest_allowable_command = compliance_params_.max_allowable_cmd_magnitude;
+        for (int i = 0; i < delta_theta_.size(); ++i)
         {
-          ROS_WARN_STREAM_NAMED(NODE_NAME, "Magnitude of compliant command is too large. Pausing compliant commands.");
-          for (int j = 0; j < delta_theta_.size(); ++j)
+          if ((fabs(delta_theta_[i]) > largest_allowable_command) || std::isnan(delta_theta_[i]))
           {
-            delta_theta_[j] = 0.;
+            ROS_WARN_STREAM_NAMED(NODE_NAME, "Magnitude of compliant command is too large. Pausing compliant commands.");
+            for (int j = 0; j < delta_theta_.size(); ++j)
+            {
+              delta_theta_[j] = 0.;
+            }
+            break;
           }
-          break;
         }
       }
 
@@ -362,6 +373,8 @@ void PublishCompliantJointVelocities::readROSParameters()
                                     compliance_params_.force_torque_topic);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/joint_limit_margin",
                                     compliance_params_.joint_limit_margin);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/condition_number_limit",
+                                    compliance_params_.condition_number_limit);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/outgoing_joint_vel_topic",
                                     compliance_params_.outgoing_joint_vel_topic);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/low_pass_filter_param",

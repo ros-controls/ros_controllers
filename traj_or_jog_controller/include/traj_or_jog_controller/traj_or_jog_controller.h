@@ -1,5 +1,4 @@
-#ifndef TRAJ_OR_JOG_CONTROLLER_H
-#define TRAJ_OR_JOG_CONTROLLER_H
+#pragma once
 
 // Pluginlib
 #include <pluginlib/class_list_macros.hpp>
@@ -86,5 +85,3 @@ protected:
   void goalCB(GoalHandle gh);
 };
 }
-
-#endif  // header guard

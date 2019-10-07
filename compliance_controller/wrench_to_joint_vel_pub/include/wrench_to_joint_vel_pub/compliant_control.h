@@ -37,8 +37,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef WRENCH_TO_TWIST_PUB_COMPLIANT_CONTROL_H
-#define WRENCH_TO_TWIST_PUB_COMPLIANT_CONTROL_H
+#pragma once
 
 /**
  * compliant control class. Allows you to control each dimension with a
@@ -59,13 +58,8 @@
 namespace wrench_to_joint_vel_pub
 {
 static const std::string LOGNAME = "compliant_control";
-/**
- * Dimension enum.
- */
-enum Dimension
-{
-  NUM_DIMS = 6  // 3 translational, 3 rotational dimensions
-};
+
+const size_t NUM_DIMS = 6; // 3 translational, 3 rotational dimensions
 
 /**
  * ExitCondition enum.
@@ -121,11 +115,6 @@ public:
   void updateWrench(geometry_msgs::WrenchStamped wrench_data);
 
   /**
-   * \brief Set the "springiness" of compliance in each direction
-   */
-  void adjustStiffness(wrench_to_joint_vel_pub::Dimension dim, double stiffness);
-
-  /**
    * \brief Update Force/Torque values
    */
   void dataCallback(const geometry_msgs::WrenchStamped::ConstPtr& msg);
@@ -134,6 +123,11 @@ public:
    * \brief Bias the FT values, i.e. reset the baseline wrench measurement.
    */
   void biasSensor(const geometry_msgs::WrenchStamped& bias);
+
+  /**
+   * \brief Remove the weight of the EE from the measured wrench.
+   */
+  void subtractEEWeight(const geometry_msgs::WrenchStamped& bias);
 
   /**
    * \brief Calculate a velocity adjustment due to compliance
@@ -149,6 +143,8 @@ public:
   std::vector<double> wrench_dot_;
   // Initial biased force
   std::vector<double> bias_;
+  // EE Weight bias
+  std::vector<double> ee_weight_bias_;
   // Quit if these forces/torques are exceeded
   double safe_force_limit_, safe_torque_limit_;
   std::vector<wrench_to_joint_vel_pub::LowPassFilter> wrench_filters_;
@@ -160,4 +156,3 @@ public:
   std::vector<double> prev_wrench_;
 };
 }  // namespace wrench_to_joint_vel_pub
-#endif

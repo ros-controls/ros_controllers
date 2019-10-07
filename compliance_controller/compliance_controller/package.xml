@@ -5,6 +5,7 @@
   <description>Controller adds compliance to trajectories or velocity commands.</description>
 
   <maintainer email="andyz@utexas.edu">Andy Zelenak</maintainer>
+  <maintainer email="bmagyar@users.noreply.github.com">Bence Magyar</maintainer>
 
   <license>BSD</license>
 

@@ -5,8 +5,11 @@
   <description>The compliance_control_msgs package</description>
 
   <maintainer email="andyz@utexas.edu">AndyZe</maintainer>
+  <maintainer email="bmagyar@users.noreply.github.com">Bence Magyar</maintainer>
 
   <license>BSD 3-Clause</license>
+
+  <author email="andyz@utexas.edu">Andy Zelenak</author>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>message_generation</build_depend>

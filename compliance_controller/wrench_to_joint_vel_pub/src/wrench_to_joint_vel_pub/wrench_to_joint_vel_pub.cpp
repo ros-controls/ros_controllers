@@ -104,20 +104,44 @@ PublishCompliantJointVelocities::PublishCompliantJointVelocities() : tf_listener
   compliant_velocity_pub_ =
       n_.advertise<compliance_control_msgs::CompliantVelocities>(compliance_params_.outgoing_joint_vel_topic, 1);
 
+  debug_pub_ =
+      n_.advertise<geometry_msgs::WrenchStamped>("/DEBUG/" + ros::this_node::getName() + "/wrench", 1); // DEBUG
+
   joints_sub_ = n_.subscribe("joint_states", 1, &PublishCompliantJointVelocities::jointsCallback, this);
+
+  // Set up initial compliant dimensions
+  num_output_dofs_ = compliance_params_.default_dimensions.size();
+  compliant_dofs_.assign(num_output_dofs_, true);
+  for(size_t i=0; i<num_output_dofs_; ++i)
+  {
+    if(compliance_params_.default_dimensions[i] == 0) compliant_dofs_[i] = false;
+  }
 }
 
 bool PublishCompliantJointVelocities::disableComplianceDimensions(
     compliance_control_msgs::DisableComplianceDimensions::Request& req,
     compliance_control_msgs::DisableComplianceDimensions::Response& res)
 {
-  dof_to_drop_.clear();
-  for (std::vector<int>::const_iterator it = req.dimensions_to_ignore.data.begin();
-       it != req.dimensions_to_ignore.data.end(); ++it)
+  if(req.dimensions_to_ignore.size() != num_output_dofs_)
   {
-    dof_to_drop_.push_back(*it);
-    ROS_INFO_STREAM(dof_to_drop_.back());
+    ROS_ERROR_STREAM("Invalid Request. Manipulator output space is " << num_output_dofs_ 
+        << " DOF, but " << req.dimensions_to_ignore.size() << " dimensions were given.");
+    res.success = false;
+    return false;
   }
+
+  std::stringstream output;
+  output << "Compliant Dimensions are now: [";
+
+  compliant_dofs_.assign(num_output_dofs_, true);
+  for (size_t i = 0; i < num_output_dofs_; ++i)
+  {
+    if(!req.dimensions_to_ignore[i]) compliant_dofs_[i] = false;
+    output << compliant_dofs_[i] << ", ";
+  }
+  output.seekp(-2,output.cur);
+  output << "].";
+  ROS_INFO_STREAM(output.str());
 
   res.success = true;
   return true;
@@ -127,7 +151,7 @@ bool PublishCompliantJointVelocities::adjustStiffness(
     compliance_control_msgs::AdjustStiffness::Request& req,
     compliance_control_msgs::AdjustStiffness::Response& res)
 {
-  std::vector<double> stiffness = req.stiffness.data;
+  const std::vector<double> stiffness = req.stiffness.data;
   if (compliant_control_ptr_->setStiffness(stiffness))
   {
     res.success = true;
@@ -144,7 +168,7 @@ bool PublishCompliantJointVelocities::adjustDamping(
     compliance_control_msgs::AdjustDamping::Request& req,
     compliance_control_msgs::AdjustDamping::Response& res)
 {
-  std::vector<double> damping = req.damping.data;
+  const std::vector<double> damping = req.damping.data;
   if (compliant_control_ptr_->setDamping(damping))
   {
     res.success = true;
@@ -199,16 +223,84 @@ void PublishCompliantJointVelocities::spin()
     {
       // The algorithm:
       // Get a wrench in the force/torque sensor frame
+      // If desired, remove the wrench caused by the EE weight from the measured wrench
       // With the compliance object, calculate a compliant, Cartesian velocity in the force/torque sensor frame
       // Transform this Cartesian velocity to the MoveIt! planning frame
       // Multiply by the Jacobian pseudo-inverse to calculate a joint velocity vector
       // Publish this joint velocity vector
       // Another node can sum it with nominal joint velocities to result in spring-like motion
 
+      geometry_msgs::WrenchStamped ee_weight_wrench;
+      if(compliance_params_.compensate_for_ee_weight)
+      {
+        // Get the weight of the EEF in the gravitational frame
+        geometry_msgs::Vector3Stamped ee_weight;
+        ee_weight.vector.x = 0;
+        ee_weight.vector.y = 0;
+        ee_weight.vector.z = -1 * compliance_params_.ee_weight;
+
+        // Get the transform from gravitational frame to force/torque frame
+        geometry_msgs::TransformStamped gravity_to_ft_tf;
+        while (gravity_to_ft_tf.header.frame_id == "" && ros::ok())
+        {
+          try
+          {
+            gravity_to_ft_tf = tf_buffer_.lookupTransform(
+                compliance_params_.force_torque_frame_name, compliance_params_.gravity_frame_name, ros::Time(0));
+          }
+          catch (tf2::TransformException& ex)
+          {
+            ROS_WARN_NAMED(NODE_NAME, "%s", ex.what());
+            ROS_WARN_NAMED(NODE_NAME,
+                          "Waiting for the transform from gravity frame to the force/torque frame to be published.");
+            ros::Duration(0.01).sleep();
+            continue;
+          }
+        }
+
+        // Transform the EEF weight to the force/torque frame
+        tf2::doTransform(ee_weight, ee_weight, gravity_to_ft_tf);
+
+        // Use the Center of Mass info to calculate the torques caused by the weight
+        // Torque = (r_com) cross (F_weight)
+        ee_weight_wrench.wrench.force.x = ee_weight.vector.x;
+        ee_weight_wrench.wrench.force.y = ee_weight.vector.y;
+        ee_weight_wrench.wrench.force.z = ee_weight.vector.z;
+        ee_weight_wrench.wrench.torque.x = (compliance_params_.ee_com[1] * ee_weight.vector.z) - (compliance_params_.ee_com[2] * ee_weight.vector.y);
+        ee_weight_wrench.wrench.torque.y = (compliance_params_.ee_com[2] * ee_weight.vector.x) - (compliance_params_.ee_com[0] * ee_weight.vector.z);
+        ee_weight_wrench.wrench.torque.z = (compliance_params_.ee_com[0] * ee_weight.vector.y) - (compliance_params_.ee_com[1] * ee_weight.vector.x);
+      } 
+
+      // Send EE weight wrench to compliance control object (or send 0 if we are not accounting for that)
+      compliant_control_ptr_->subtractEEWeight(ee_weight_wrench);
+
       // Input to the compliance calculation is an all-zero nominal velocity
-      std::vector<double> velocity(6);
+      std::vector<double> velocity(num_output_dofs_);
       // Calculate the compliant velocity adjustment
       compliant_control_ptr_->getVelocity(velocity, last_wrench_data_, velocity, ros::Time::now());
+
+      geometry_msgs::WrenchStamped debug_wrench; //DEBUG
+      debug_wrench.header.stamp = ros::Time::now(); // DEBUG
+      // debug_wrench.wrench.force.x = compliant_control_ptr_->wrench_[0]; //DEBUG
+      // debug_wrench.wrench.force.y = compliant_control_ptr_->wrench_[1]; //DEBUG
+      // debug_wrench.wrench.force.z = compliant_control_ptr_->wrench_[2]; //DEBUG
+      // debug_wrench.wrench.torque.x = compliant_control_ptr_->wrench_[3]; //DEBUG
+      // debug_wrench.wrench.torque.y = compliant_control_ptr_->wrench_[4]; //DEBUG
+      // debug_wrench.wrench.torque.z = compliant_control_ptr_->wrench_[5]; //DEBUG
+
+      debug_wrench = ee_weight_wrench; //DEBUG
+
+      debug_pub_.publish(debug_wrench); //DEBUG
+
+      // Remove non-compliant dimensions
+      for (size_t i = 0; i < compliant_dofs_.size(); ++i)
+      {
+        if(!compliant_dofs_[i]) // If we are not compliant:
+        {
+          // It is as easy as setting the compliant velocity to 0, instead of what it was for the impedance law
+          velocity[i] = 0;
+        }
+      }
 
       geometry_msgs::Vector3Stamped translational_velocity;
       translational_velocity.header.frame_id = compliance_params_.force_torque_frame_name;
@@ -256,74 +348,37 @@ void PublishCompliantJointVelocities::spin()
       // This Jacobian is w.r.t. to the last link
       Eigen::MatrixXd jacobian = kinematic_state_->getJacobian(joint_model_group_);
 
-      // From the jacobian, drop degrees of freedom that should be disregarded
-      // Skip dimensions that have been checked already:
-      int start_search_at = 0;
-      //  Number of rows that have been successfully transferred to reduced jacobian:
-      int num_rows_filled = 0;
+      svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
-      Eigen::MatrixXd reduced_jacobian(jacobian.rows() - dof_to_drop_.size(), jacobian.cols());
-      Eigen::VectorXd reduced_cartesian_velocity(6 - dof_to_drop_.size());
-
-      // If the user wants to skip compliance in any dimension.
-      // Transfer rows to reduced_jacobian, up to the last index in dof_to_drop_.
-      // Also, remove corresponding rows from the Cartesian command.
-      if (dof_to_drop_.size() > 0)
+      if(fabs(svd_.singularValues()[0] / svd_.singularValues().tail(1)[0] > compliance_params_.condition_number_limit))
       {
-        for (std::size_t dropped_dof_index = 0; dropped_dof_index < dof_to_drop_.size(); ++dropped_dof_index)
+        // If condition number is too high set the compliance-adjusted velocities to 0
+        for (int i = 0; i < delta_theta_.size(); ++i)
         {
-          for (std::size_t jacobian_row = start_search_at; jacobian_row < 6; ++jacobian_row)
-          {
-            if (start_search_at < dof_to_drop_.size())
-            {
-              if (dof_to_drop_[dropped_dof_index] != start_search_at + num_rows_filled)
-              {
-                reduced_jacobian.row(jacobian_row) = jacobian.row(start_search_at + num_rows_filled);
-                reduced_cartesian_velocity[jacobian_row] = cartesian_velocity[start_search_at + num_rows_filled];
-                ++num_rows_filled;
-                continue;
-              }
-              else
-              {
-                start_search_at = start_search_at + num_rows_filled;
-                num_rows_filled = 0;
-                break;
-              }
-            }
-          }
+          delta_theta_[i] = 0.0;
         }
-
-        // Transfer remaining rows to reduced_jacobian
-        for (std::size_t index = start_search_at; index < 6 - dof_to_drop_.size(); ++index)
-        {
-          reduced_jacobian.row(index) = jacobian.row(index + dof_to_drop_.size());
-          reduced_cartesian_velocity[index] = cartesian_velocity[index + dof_to_drop_.size()];
-        }
+        ROS_WARN_STREAM_THROTTLE_NAMED(1, NODE_NAME, "Jacobian is near singular (condition number: " 
+              << svd_.singularValues()[0] / svd_.singularValues().tail(1)[0] << ")! Pausing compliant commands.");
       }
-      // If user wants to keep compliance in all 6 dimensions
       else
       {
-        reduced_jacobian = jacobian;
-        reduced_cartesian_velocity = cartesian_velocity;
-      }
+        matrix_s_ = svd_.singularValues().asDiagonal();
+        pseudo_inverse_ = svd_.matrixV() * matrix_s_.inverse() * svd_.matrixU().transpose();
+        delta_theta_ = pseudo_inverse_ * cartesian_velocity;
 
-      svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(reduced_jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
-      matrix_s_ = svd_.singularValues().asDiagonal();
-      pseudo_inverse_ = svd_.matrixV() * matrix_s_.inverse() * svd_.matrixU().transpose();
-      delta_theta_ = pseudo_inverse_ * reduced_cartesian_velocity;
-
-      // Check if a command magnitude would be too large.
-      double largest_allowable_command = compliance_params_.max_allowable_cmd_magnitude;
-      for (int i = 0; i < delta_theta_.size(); ++i)
-      {
-        if ((fabs(delta_theta_[i]) > largest_allowable_command) || std::isnan(delta_theta_[i]))
+        // Check if a command magnitude would be too large.
+        double largest_allowable_command = compliance_params_.max_allowable_cmd_magnitude;
+        for (int i = 0; i < delta_theta_.size(); ++i)
         {
-          ROS_WARN_STREAM_NAMED(NODE_NAME, "Magnitude of compliant command is too large. Pausing compliant commands.");
-          for (int j = 0; j < delta_theta_.size(); ++j)
+          if ((fabs(delta_theta_[i]) > largest_allowable_command) || std::isnan(delta_theta_[i]))
           {
-            delta_theta_[j] = 0.;
+            ROS_WARN_STREAM_NAMED(NODE_NAME, "Magnitude of compliant command is too large. Pausing compliant commands.");
+            for (int j = 0; j < delta_theta_.size(); ++j)
+            {
+              delta_theta_[j] = 0.;
+            }
+            break;
           }
-          break;
         }
       }
 
@@ -362,6 +417,8 @@ void PublishCompliantJointVelocities::readROSParameters()
                                     compliance_params_.force_torque_topic);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/joint_limit_margin",
                                     compliance_params_.joint_limit_margin);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/condition_number_limit",
+                                    compliance_params_.condition_number_limit);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/outgoing_joint_vel_topic",
                                     compliance_params_.outgoing_joint_vel_topic);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/low_pass_filter_param",
@@ -378,6 +435,16 @@ void PublishCompliantJointVelocities::readROSParameters()
                                     compliance_params_.deadband);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/end_condition_wrench",
                                     compliance_params_.end_condition_wrench);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/default_compliant_dimensions",
+                                    compliance_params_.default_dimensions);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/compensate_for_ee_weight",
+                                    compliance_params_.compensate_for_ee_weight);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/ee_weight",
+                                    compliance_params_.ee_weight);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/ee_com",
+                                    compliance_params_.ee_com);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/gravity_frame_name",
+                                    compliance_params_.gravity_frame_name);
 
   rosparam_shortcuts::shutdownIfError(ros::this_node::getName(), error);
 

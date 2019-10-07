@@ -56,6 +56,7 @@ CompliantControl::CompliantControl(const std::vector<double>& stiffness, const s
   setDamping(damping);
 
   bias_.resize(wrench_to_joint_vel_pub::NUM_DIMS, 0);
+  ee_weight_bias_.resize(wrench_to_joint_vel_pub::NUM_DIMS, 0);
   wrench_.resize(wrench_to_joint_vel_pub::NUM_DIMS, 0);
   wrench_dot_.resize(wrench_to_joint_vel_pub::NUM_DIMS, 0);
 
@@ -85,6 +86,16 @@ void CompliantControl::biasSensor(const geometry_msgs::WrenchStamped& bias)
     wrench_filters_[i].reset(0.);
     wrench_derivative_filters_[i].reset(0.);
   }
+}
+
+void CompliantControl::subtractEEWeight(const geometry_msgs::WrenchStamped& bias)
+{
+  ee_weight_bias_[0] = bias.wrench.force.x;
+  ee_weight_bias_[1] = bias.wrench.force.y;
+  ee_weight_bias_[2] = bias.wrench.force.z;
+  ee_weight_bias_[3] = bias.wrench.torque.x;
+  ee_weight_bias_[4] = bias.wrench.torque.y;
+  ee_weight_bias_[5] = bias.wrench.torque.z;
 }
 
 bool CompliantControl::setStiffness(const std::vector<double>& stiffness)
@@ -167,31 +178,31 @@ void CompliantControl::updateWrench(geometry_msgs::WrenchStamped wrench_data)
   std::vector<double> biasedFT(6, 0.);
 
   // Apply the deadband
-  if (fabs(wrench_data.wrench.force.x - bias_[0]) < fabs(deadband_[0]))
+  if (fabs(wrench_data.wrench.force.x - bias_[0] - ee_weight_bias_[0]) < fabs(deadband_[0]))
     biasedFT[0] = 0.;
   else
-    biasedFT[0] = wrench_data.wrench.force.x - bias_[0];
-  if (fabs(wrench_data.wrench.force.y - bias_[1]) < fabs(deadband_[1]))
+    biasedFT[0] = wrench_data.wrench.force.x - bias_[0] - ee_weight_bias_[0];
+  if (fabs(wrench_data.wrench.force.y - bias_[1] - ee_weight_bias_[1]) < fabs(deadband_[1]))
     biasedFT[1] = 0.;
   else
-    biasedFT[1] = wrench_data.wrench.force.y - bias_[1];
-  if (fabs(wrench_data.wrench.force.z - bias_[2]) < fabs(deadband_[2]))
+    biasedFT[1] = wrench_data.wrench.force.y - bias_[1] - ee_weight_bias_[1];
+  if (fabs(wrench_data.wrench.force.z - bias_[2] - ee_weight_bias_[2]) < fabs(deadband_[2]))
     biasedFT[2] = 0.;
   else
-    biasedFT[2] = wrench_data.wrench.force.z - bias_[2];
+    biasedFT[2] = wrench_data.wrench.force.z - bias_[2] - ee_weight_bias_[2];
 
-  if (fabs(wrench_data.wrench.torque.x - bias_[3]) < fabs(deadband_[3]))
+  if (fabs(wrench_data.wrench.torque.x - bias_[3] - ee_weight_bias_[3]) < fabs(deadband_[3]))
     biasedFT[3] = 0.;
   else
-    biasedFT[3] = wrench_data.wrench.torque.x - bias_[3];
-  if (fabs(wrench_data.wrench.torque.y - bias_[4]) < fabs(deadband_[4]))
+    biasedFT[3] = wrench_data.wrench.torque.x - bias_[3] - ee_weight_bias_[3];
+  if (fabs(wrench_data.wrench.torque.y - bias_[4] - ee_weight_bias_[4]) < fabs(deadband_[4]))
     biasedFT[4] = 0.;
   else
-    biasedFT[4] = wrench_data.wrench.torque.y - bias_[4];
-  if (fabs(wrench_data.wrench.torque.z - bias_[5]) < fabs(deadband_[5]))
+    biasedFT[4] = wrench_data.wrench.torque.y - bias_[4] - ee_weight_bias_[4];
+  if (fabs(wrench_data.wrench.torque.z - bias_[5] - ee_weight_bias_[5]) < fabs(deadband_[5]))
     biasedFT[5] = 0.;
   else
-    biasedFT[5] = wrench_data.wrench.torque.z - bias_[5];
+    biasedFT[5] = wrench_data.wrench.torque.z - bias_[5] - ee_weight_bias_[5];
 
   for (int i = 0; i < 6; ++i)
   {

@@ -6,6 +6,7 @@ move_group_name: manipulator # The MoveGroup name of your robot
 max_allowable_cmd_magnitude: 0.5 # The largest joint speed correction that can be published [rad/s]
 outgoing_joint_vel_topic: /compliance_controller/compliance_velocity_adjustment # Joint delta-velocities
 joint_limit_margin: 0.1 # added as a buffer to joint limits [radians]. If moving quickly, make this larger.
+condition_number_limit: 50 # The Jacobian condition number above which to pause compliance
 compliance_library:
   # Key equation: compliance_velocity[i] = wrench[i]/stiffness[i]
   stiffness: [2000, 2000, 2000, 100, 100, 100] # First three element are Newtons/(m/s), last 3 are N*m/(rad/s). Should be positive.
@@ -15,3 +16,10 @@ compliance_library:
   end_condition_wrench: [80, 80, 80, 60, 60, 60] # Safety feature. Halt if force exceeds [N, N, N, Nm, Nm, Nm]
   highest_allowable_force: 88 # Safety feature. Halt if force magnitude exceeds this across all dimensions [N]
   highest_allowable_torque: 50 # Safety feature. Halt if torque magnitude exceeds this across all dimensions [Nm]
+  # Defines which directions (true's) the compliance starts in
+  # Order is [translation-x, translation-y, translation-z, rotation-x, rotation-y, rotation-z]
+  default_compliant_dimensions: [1, 1, 1, 0, 0, 0] 
+  compensate_for_ee_weight: true # Determines whether or not to remove the wrench caused be EE weight before doing calcs
+  ee_weight: 10 # Newtons, the weight of the EE
+  ee_com: [0.3, 0.2, 0.1] # Meters, the location of the center of mass, in the Force/torque frame
+  gravity_frame_name: base_link_footprint # The frame name who's z-axis points world-up (away from gravity)

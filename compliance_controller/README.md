@@ -4,13 +4,13 @@ This should be similar for other ROS robots that have velocity_controllers/Joint
 
 ### Building
 
-* sudo apt install ros-kinetic-ros-contro*
+* sudo apt install ros-melodic-ros-contro*
 
-* Clone universal_robot (kinetic-devel branch), https://github.com/ros-industrial/universal_robot
+* Clone universal_robot (melodic-devel branch), https://github.com/ros-industrial/universal_robot/tree/melodic-devel
 
 * Clone ur_modern_driver (kinetic-devel branch), https://github.com/ros-industrial/ur_modern_driver
 
-* Clone NRG's ros_controllers repo (kinetic-compliance branch), https://github.com/UTNuclearRobotics/ros_controllers
+* Clone ros_controllers repo (melodic-devel branch), https://github.com/ros-controls/ros_controllers
 
 * catkin build
 
@@ -87,7 +87,7 @@ You may want to save a copy of each file in a new directory, rather than modifyi
 		roslaunch urXX_moveit_config urXX_moveit_planning_execution.launch
 		roslaunch urXX_moveit_config moveit_rviz.launch config:=true
 
-* Move the robot to a non-singular configuration (singularity handling in compliance is not enabled yet, but the delta-velocity commands are capped, at least)
+* Move the robot to a non-singular configuration (compliance is paused near singularities to avoid large unwanted movements)
 
 * Set up a node which converts the UR force/torque topic to delta-velocity commands and publishes them:
 

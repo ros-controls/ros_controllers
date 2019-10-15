@@ -309,12 +309,15 @@ void PublishCompliantJointVelocities::spin()
 
       svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(reduced_jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
-      // Get the condition number as largest singular value divided by smallest singular value
-      if(fabs(svd_.singularValues().head(1) / svd_.singularValues().tail(1)) > compliance_params_.condition_number_limit)
+      if(fabs(svd_.singularValues()[0] / svd_.singularValues().tail(1)[0] > compliance_params_.condition_number_limit))
       {
         // If condition number is too high set the compliance-adjusted velocities to 0
-        delta_theta_.assign(delta_theta_.size(), 0.0);
-        ROS_WARN_STREAM_NAMED(NODE_NAME, "Jacobian is near singular! Pausing compliant commands.");
+        for (int i = 0; i < delta_theta_.size(); ++i)
+        {
+          delta_theta_[i] = 0.0;
+        }
+        ROS_WARN_STREAM_THROTTLE_NAMED(1, NODE_NAME, "Jacobian is near singular (condition number: " 
+              << svd_.singularValues()[0] / svd_.singularValues().tail(1)[0] << ")! Pausing compliant commands.");
       }
       else
       {

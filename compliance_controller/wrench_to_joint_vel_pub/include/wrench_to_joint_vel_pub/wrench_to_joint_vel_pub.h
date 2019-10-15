@@ -65,7 +65,7 @@ static const char* const NODE_NAME = "wrench_to_joint_vel_pub";
 struct ROSParameters
 {
   double spin_rate, max_allowable_cmd_magnitude, low_pass_filter_param, highest_allowable_force,
-      highest_allowable_torque, joint_limit_margin;
+      highest_allowable_torque, joint_limit_margin, condition_number_limit;
   std::string jacobian_frame_name, force_torque_frame_name, force_torque_topic, move_group_name,
       outgoing_joint_vel_topic;
   std::vector<double> stiffness, damping, deadband, end_condition_wrench;

@@ -428,7 +428,7 @@ namespace four_wheel_steering_controller{
       const double tan_front_steering = tan(curr_cmd_4ws.front_steering);
       const double tan_rear_steering  = tan(curr_cmd_4ws.rear_steering);
 
-      double steering_diff =  steering_track*(tan_front_steering - tan_rear_steering)/2.0;
+      const double steering_diff =  steering_track*(tan_front_steering - tan_rear_steering)/2.0;
       if(fabs(wheel_base_ - fabs(steering_diff)) > 0.001)
       {
         front_left_steering = atan(wheel_base_*tan_front_steering/(wheel_base_-steering_diff));

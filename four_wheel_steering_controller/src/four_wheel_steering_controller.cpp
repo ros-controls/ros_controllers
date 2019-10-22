@@ -383,19 +383,20 @@ namespace four_wheel_steering_controller{
       // Compute wheels velocities:
       if(fabs(curr_cmd_twist.lin_x) > 0.001)
       {
-        double vel_steering_offset = (curr_cmd_twist.ang*wheel_steering_y_offset_)/wheel_radius_;
-        vel_left_front  = copysign(1.0, curr_cmd_twist.lin_x) * sqrt((pow(curr_cmd_twist.lin_x - curr_cmd_twist.ang*steering_track/2,2)
-                                                                           +pow(wheel_base_*curr_cmd_twist.ang/2.0,2)))/wheel_radius_
-                                                        - vel_steering_offset;
-        vel_right_front = copysign(1.0, curr_cmd_twist.lin_x) * sqrt((pow(curr_cmd_twist.lin_x + curr_cmd_twist.ang*steering_track/2,2)
-                                                                           +pow(wheel_base_*curr_cmd_twist.ang/2.0,2)))/wheel_radius_
-                                                        + vel_steering_offset;
-        vel_left_rear = copysign(1.0, curr_cmd_twist.lin_x) * sqrt((pow(curr_cmd_twist.lin_x - curr_cmd_twist.ang*steering_track/2,2)
-                                                                         +pow(wheel_base_*curr_cmd_twist.ang/2.0,2)))/wheel_radius_
-                                                      - vel_steering_offset;
-        vel_right_rear = copysign(1.0, curr_cmd_twist.lin_x) * sqrt((pow(curr_cmd_twist.lin_x + curr_cmd_twist.ang*steering_track/2,2)
-                                                                          +pow(wheel_base_*curr_cmd_twist.ang/2.0,2)))/wheel_radius_
-                                                       + vel_steering_offset;
+        const double vel_steering_offset = (curr_cmd_twist.ang*wheel_steering_y_offset_)/wheel_radius_;
+        const double sign = copysign(1.0, curr_cmd_twist.lin_x);
+        vel_left_front  = sign * std::hypot((curr_cmd_twist.lin_x - curr_cmd_twist.ang*steering_track/2),
+                                            (wheel_base_*curr_cmd_twist.ang/2.0)) / wheel_radius_
+                          - vel_steering_offset;
+        vel_right_front = sign * std::hypot((curr_cmd_twist.lin_x + curr_cmd_twist.ang*steering_track/2),
+                                            (wheel_base_*curr_cmd_twist.ang/2.0)) / wheel_radius_
+                          + vel_steering_offset;
+        vel_left_rear = sign * std::hypot((curr_cmd_twist.lin_x - curr_cmd_twist.ang*steering_track/2),
+                                          (wheel_base_*curr_cmd_twist.ang/2.0)) / wheel_radius_
+                        - vel_steering_offset;
+        vel_right_rear = sign * std::hypot((curr_cmd_twist.lin_x + curr_cmd_twist.ang*steering_track/2),
+                                           (wheel_base_*curr_cmd_twist.ang/2.0)) / wheel_radius_
+                         + vel_steering_offset;
       }
 
       // Compute steering angles
@@ -405,18 +406,14 @@ namespace four_wheel_steering_controller{
                                     (2.0*curr_cmd_twist.lin_x - curr_cmd_twist.ang*steering_track));
         front_right_steering = atan(curr_cmd_twist.ang*wheel_base_ /
                                      (2.0*curr_cmd_twist.lin_x + curr_cmd_twist.ang*steering_track));
-        rear_left_steering = -atan(curr_cmd_twist.ang*wheel_base_ /
-                                    (2.0*curr_cmd_twist.lin_x - curr_cmd_twist.ang*steering_track));
-        rear_right_steering = -atan(curr_cmd_twist.ang*wheel_base_ /
-                                     (2.0*curr_cmd_twist.lin_x + curr_cmd_twist.ang*steering_track));
       }
       else if(fabs(curr_cmd_twist.lin_x) > 0.001)
       {
         front_left_steering = copysign(M_PI_2, curr_cmd_twist.ang);
         front_right_steering = copysign(M_PI_2, curr_cmd_twist.ang);
-        rear_left_steering = copysign(M_PI_2, -curr_cmd_twist.ang);
-        rear_right_steering = copysign(M_PI_2, -curr_cmd_twist.ang);
       }
+      rear_left_steering = -front_left_steering;
+      rear_right_steering = -front_right_steering;
     }
     else
     {
@@ -428,13 +425,16 @@ namespace four_wheel_steering_controller{
       curr_cmd_4ws.rear_steering = clamp(curr_cmd_4ws.rear_steering, -M_PI_2, M_PI_2);
 
       // Compute steering angles
-      double steering_diff =  steering_track*(tan(curr_cmd_4ws.front_steering) - tan(curr_cmd_4ws.rear_steering))/2.0;
+      const double tan_front_steering = tan(curr_cmd_4ws.front_steering);
+      const double tan_rear_steering  = tan(curr_cmd_4ws.rear_steering);
+
+      const double steering_diff =  steering_track*(tan_front_steering - tan_rear_steering)/2.0;
       if(fabs(wheel_base_ - fabs(steering_diff)) > 0.001)
       {
-        front_left_steering = atan(wheel_base_*tan(curr_cmd_4ws.front_steering)/(wheel_base_-steering_diff));
-        front_right_steering = atan(wheel_base_*tan(curr_cmd_4ws.front_steering)/(wheel_base_+steering_diff));
-        rear_left_steering = atan(wheel_base_*tan(curr_cmd_4ws.rear_steering)/(wheel_base_-steering_diff));
-        rear_right_steering = atan(wheel_base_*tan(curr_cmd_4ws.rear_steering)/(wheel_base_+steering_diff));
+        front_left_steering = atan(wheel_base_*tan_front_steering/(wheel_base_-steering_diff));
+        front_right_steering = atan(wheel_base_*tan_front_steering/(wheel_base_+steering_diff));
+        rear_left_steering = atan(wheel_base_*tan_rear_steering/(wheel_base_-steering_diff));
+        rear_right_steering = atan(wheel_base_*tan_rear_steering/(wheel_base_+steering_diff));
       }
 
       // Compute wheels velocities:
@@ -456,21 +456,22 @@ namespace four_wheel_steering_controller{
               / (tan(rear_left_steering) - tan(rear_right_steering));
         }
 
-        double angular_speed_cmd = curr_cmd_4ws.lin * (tan(curr_cmd_4ws.front_steering)-tan(curr_cmd_4ws.rear_steering))/wheel_base_;
-        double vel_steering_offset = (angular_speed_cmd*wheel_steering_y_offset_)/wheel_radius_;
+        const double angular_speed_cmd = curr_cmd_4ws.lin * (tan_front_steering-tan_rear_steering)/wheel_base_;
+        const double vel_steering_offset = (angular_speed_cmd*wheel_steering_y_offset_)/wheel_radius_;
+        const double sign = copysign(1.0, curr_cmd_4ws.lin);
 
-        vel_left_front  = copysign(1.0, curr_cmd_4ws.lin) * sqrt((pow(curr_cmd_4ws.lin - angular_speed_cmd*steering_track/2,2)
-                                                                           +pow(l_front*angular_speed_cmd,2)))/wheel_radius_
-                                                      - vel_steering_offset;
-        vel_right_front = copysign(1.0, curr_cmd_4ws.lin) * sqrt((pow(curr_cmd_4ws.lin + angular_speed_cmd*steering_track/2,2)
-                                                                           +pow(l_front*angular_speed_cmd,2)))/wheel_radius_
-                                                      + vel_steering_offset;
-        vel_left_rear = copysign(1.0, curr_cmd_4ws.lin) * sqrt((pow(curr_cmd_4ws.lin - angular_speed_cmd*steering_track/2,2)
-                                                                         +pow(l_rear*angular_speed_cmd,2)))/wheel_radius_
-                                                    - vel_steering_offset;
-        vel_right_rear = copysign(1.0, curr_cmd_4ws.lin) * sqrt((pow(curr_cmd_4ws.lin + angular_speed_cmd*steering_track/2,2)
-                                                                          +pow(l_rear*angular_speed_cmd,2)))/wheel_radius_
-                                                     + vel_steering_offset;
+        vel_left_front  = sign * std::hypot((curr_cmd_4ws.lin - angular_speed_cmd*steering_track/2),
+                                            (l_front*angular_speed_cmd))/wheel_radius_
+                          - vel_steering_offset;
+        vel_right_front = sign * std::hypot((curr_cmd_4ws.lin + angular_speed_cmd*steering_track/2),
+                                            (l_front*angular_speed_cmd))/wheel_radius_
+                          + vel_steering_offset;
+        vel_left_rear = sign * std::hypot((curr_cmd_4ws.lin - angular_speed_cmd*steering_track/2),
+                                          (l_rear*angular_speed_cmd))/wheel_radius_
+                        - vel_steering_offset;
+        vel_right_rear = sign * std::hypot((curr_cmd_4ws.lin + angular_speed_cmd*steering_track/2),
+                                           (l_rear*angular_speed_cmd))/wheel_radius_
+                         + vel_steering_offset;
       }
     }
 

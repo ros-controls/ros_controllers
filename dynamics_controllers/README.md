@@ -126,7 +126,6 @@ should not depend on a specific controller (at least in principle!).
 
 ### Limitations
 
-There are some limitations for these controllers:
 - They all assume a static base. The main implication is that you cannot
   "serially join" controllers for different parts of the robot.
 - They require proper identification of the Dynamic Parameters.
@@ -143,6 +142,8 @@ There are some limitations for these controllers:
     - Allowing to dynamically modify the `Chain`/`Tree` instances
 - [ ] Support for moving bases. This likely requires to re-implement the
       controllers using another library, such as pinocchio, or to expand KDL.
+      A possible workaround is to add a "floating joint" (in the form of a
+      3T3R chain) as the parent of the base.
 - [ ] Additional parameters such as joint inertia and viscous friction.
 - [ ] Allow multiple sub-controllers to manage different joints.
 
@@ -151,7 +152,7 @@ There are some limitations for these controllers:
 
 - [ ] How should the license be pasted? Some headers contain only WillowGarage,
   some many institutions. Should I put myself as well?
-- [ ] Check CMakeLists.txt (install targets etc).
+- [x] Check CMakeLists.txt (install targets etc).
 - [x] Tell about the KDL version that is needed!
-- [ ] Add documentation as in other ROS-controllers packages.
 - [x] Complete `KdlTreeController` so that proper sub-tree extraction is possible.
+- [ ] Enforce effort limits

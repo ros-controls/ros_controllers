@@ -50,16 +50,44 @@
 
 namespace dynamics_controllers {
 
+/// Base class for dynamics controllers.
+/** This class defines the common interface for dynamics controllers. Such
+  * controllers are supposed to compute the efforts from the acceleration
+  * provided by another "sub-controller".
+  * 
+  * To allow wrapping around the sub-controller, this class creates a "fake
+  * hardware".
+  * It is used to provide the current robot state to the sub-controller and to
+  * retrieve its command.
+  *
+  * To create a specific dynamics controller, simply inherit from this class
+  * and implement the pure virtual methods `initDynamics()` and `computeEfforts()`.
+  */
 class DynamicsControllerBase : public controller_interface::Controller<hardware_interface::EffortJointInterface> {
 public:
   DynamicsControllerBase();
 
+  /// Initializes the controller.
+  /** The method performs the follwing steps:
+    * - call `initDynamics()`
+    * - initialize the fake hardware
+    * - initialize the sub-controller
+    */
   bool init(hardware_interface::EffortJointInterface *hw, ros::NodeHandle& nh) override;
 
+  /// Start the sub-controller.
   void starting(const ros::Time& time) override;
 
+  /// Compute the efforts.
+  /** The method performs the following steps:
+    * - copy the current state of the robot in the fake hardware
+    * - update the sub-controller
+    * - copy the command of the sub-controller in `sub_command_`
+    * - call `computeEfforts()`
+    */
   void update(const ros::Time& time, const ros::Duration& period) override;
 
+  /// Stop the sub-controller.
   void stopping(const ros::Time& time) override;
 
 protected:

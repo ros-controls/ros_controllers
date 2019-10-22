@@ -34,3 +34,15 @@ add_library(${PROJECT_NAME}
 
 # the options are used to force the linker to report undefined symbols as errors
 target_link_libraries(${PROJECT_NAME} ${orocos_kdl_LIBRARIES} ${catkin_LIBRARIES} -Wl,--no-undefined)
+
+# Install the library
+install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+)
+
+install(
+  FILES dynamics_controllers.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

@@ -45,8 +45,19 @@
 #include <dynamics_controllers/dynamics_controller_base.h>
 #include <kdl/chain.hpp>
 #include <kdl/jntarrayacc.hpp>
-#include <kdl/treeidsolver_recursive_newton_euler.hpp>
+#include <kdl/tree.hpp>
+// #include <kdl/treeidsolver_recursive_newton_euler.hpp>
+/* NOTE: the include above was removed and a forward declaration has been added
+  below. This is because currently the solver is available only in the
+  online repo and not in Melodic's version of KDL.
+*/
 
+// forward declaration, will stay here until the solver is officially
+// released in Melodic. See the note above.
+namespace KDL {
+class TreeIdSolver_RNE;
+typedef std::map<std::string,Wrench> WrenchMap;
+}
 
 namespace dynamics_controllers {
 

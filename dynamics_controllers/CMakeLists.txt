@@ -30,6 +30,7 @@ add_library(${PROJECT_NAME}
   src/dynamics_controller_base.cpp
   src/kdl_chain_controller.cpp
   src/kdl_tree_controller.cpp
+  src/kdl/treeidsolver_recursive_newton_euler.cpp # NOTE: this will be removed
 )
 
 # the options are used to force the linker to report undefined symbols as errors

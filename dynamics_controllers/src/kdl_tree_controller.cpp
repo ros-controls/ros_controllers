@@ -43,6 +43,8 @@
 #include <pluginlib/class_list_macros.h>
 #include <kdl/frames_io.hpp>
 #include <kdl_parser/kdl_parser.hpp>
+// NOTE: this will be removed once the solver becomes available in Melodic
+#include "kdl/treeidsolver_recursive_newton_euler.hpp"
 
 
 namespace dynamics_controllers {

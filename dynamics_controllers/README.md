@@ -18,9 +18,6 @@ Currently, there exist two controllers: `KdlChainController` and
 They are both based on KDL's implementation of the Recursive Newton-Euler
 algorithm for the inverse dynamics.
 
-**Note**: as of today, you need to install KDL from source (master branch)
-in order to have the `KdlTreeController`.
-
 
 
 ### Gravity Compensation vs Full Inverse Dynamics

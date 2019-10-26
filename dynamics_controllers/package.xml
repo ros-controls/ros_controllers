@@ -6,6 +6,7 @@
 
   <author email="franco.fusco@ls2n.fr">Franco FUSCO</author>
   <maintainer email="franco.fusco@ls2n.fr">Franco FUSCO</maintainer>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>

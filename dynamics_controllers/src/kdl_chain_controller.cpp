@@ -1,10 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2008, Willow Garage, Inc.
- *  Copyright (c) 2012, hiDOF, Inc.
- *  Copyright (c) 2013, PAL Robotics, S.L.
- *  Copyright (c) 2014, Fraunhofer IPA
+ *  Copyright (c) 2019, Franco Fusco
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without

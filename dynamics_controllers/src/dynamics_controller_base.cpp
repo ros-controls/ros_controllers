@@ -38,6 +38,8 @@
 
 #include <dynamics_controllers/dynamics_controller_base.h>
 #include <xmlrpcpp/XmlRpcException.h>
+#include <urdf/model.h>
+
 
 namespace dynamics_controllers {
 
@@ -161,6 +163,38 @@ bool DynamicsControllerBase::init(hardware_interface::EffortJointInterface *hw, 
       "build the FakeHW instance"
     );
     return false;
+  }
+
+  // Parse the URDF (to get limits)
+  urdf::Model urdf;
+  if (!urdf.initParamWithNodeHandle("robot_description", nh)) {
+    ROS_ERROR("Failed to parse urdf file to obtain effort limits");
+    return false;
+  }
+
+  urdf::JointConstSharedPtr joint_urdf;
+  for(const auto& joint : joint_names_) {
+    // give a warning if the joint is not in the URDF (although this should
+    // never happen) and proceed to the next joint
+    joint_urdf = urdf.getJoint(joint);
+    if (!joint_urdf) {
+      ROS_WARN("Could not find joint '%s' in urdf", joint.c_str());
+      continue;
+    }
+
+    // check if the joint has effort limits
+    has_effort_limits_[joint] = (joint_urdf->limits != nullptr);
+    if(has_effort_limits_[joint]) {
+      auto lim = joint_urdf->limits->effort;
+      if(lim > 0)
+        effort_limits_[joint] = lim;
+      else {
+        ROS_WARN("Joint '%s' has non-positive effort limit %f. It will be "
+          "ignored", joint.c_str(), lim
+        );
+        has_effort_limits_[joint] = false;
+      }
+    }
   }
 
   // retrieve joint handles; will throw an exception on failure (gracefully handled by ControllerManager)
@@ -343,6 +377,7 @@ void DynamicsControllerBase::update(const ros::Time& time, const ros::Duration& 
   // perform sub-class specific dynamics
   try {
     computeEfforts();
+    enforceLimits();
   }
   catch(std::exception& e) {
     ROS_ERROR("Caught exception while computing efforts: %s", e.what());
@@ -370,6 +405,21 @@ void DynamicsControllerBase::stopping(const ros::Time& time) {
   // if the request failed for any controller, stop all of them
   if(!ok) {
     throw std::runtime_error("Could not stop sub-controllers" + ss.str());
+  }
+}
+
+
+void DynamicsControllerBase::enforceLimits() {
+  for(unsigned int i=0; i<joint_names_.size(); i++) {
+    const auto& joint = joint_names_[i];
+    if(!has_effort_limits_[joint])
+      continue;
+    auto cmd = joint_handles_[i].getCommand();
+    const auto& lim = effort_limits_[joint];
+    if(cmd > lim)
+      joint_handles_[i].setCommand(lim);
+    else if(cmd < -lim)
+      joint_handles_[i].setCommand(-lim);
   }
 }
 

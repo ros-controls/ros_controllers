@@ -129,8 +129,15 @@ private:
   /// Simplified replica of the available hardware, to be given to the sub-controllers.
   std::unique_ptr<FakeHW> fake_hw_;
 
+  // Handling control limits
+  std::map<std::string,bool> has_effort_limits_; ///< Tells whether a given joint has effort limits or not.
+  std::map<std::string,double> effort_limits_; ///< Effort limit of each joint.
+
   /// Allows to get a map of controllers names (key) with corresponding types (values).
   static bool getSubControllersMap(ros::NodeHandle&, std::map<std::string,std::string>&);
+
+  /// Enforce joint limits (currently, simply saturate the efforts if needed).
+  void enforceLimits();
 
   /// A fake hardware used to exchange information with a "sub-controller".
   class FakeHW : public hardware_interface::RobotHW {

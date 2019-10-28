@@ -187,4 +187,4 @@ by yourself or to find proper workarounds.
 - [x] Check CMakeLists.txt (install targets etc).
 - [x] Tell about the KDL version that is needed!
 - [x] Complete `KdlTreeController` so that proper sub-tree extraction is possible.
-- [ ] Enforce effort limits
+- [x] Enforce effort limits

@@ -40,7 +40,7 @@
 
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <pluginlib/class_loader.h>
+#include <controller_manager/controller_loader.h>
 #include <stdexcept>
 
 
@@ -123,13 +123,16 @@ protected:
 private:
   class FakeHW; // forward declaration
   /// Used to create runtime instances of the controller.
-  pluginlib::ClassLoader<controller_interface::ControllerBase> controller_loader_;
-  /// Sub-controller instance.
-  std::unique_ptr<controller_interface::ControllerBase> controller_;
-  /// Simplified replica of the available hardware, to be given to the sub-controller.
+  controller_manager::ControllerLoaderInterfaceSharedPtr controller_loader_;
+  /// Sub-controllers instances.
+  std::map<std::string,controller_interface::ControllerBaseSharedPtr> sub_controllers_;
+  /// Simplified replica of the available hardware, to be given to the sub-controllers.
   std::unique_ptr<FakeHW> fake_hw_;
 
-  /// A fake hardware used to excange information with a "sub-controller".
+  /// Allows to get a map of controllers names (key) with corresponding types (values).
+  static bool getSubControllersMap(ros::NodeHandle&, std::map<std::string,std::string>&);
+
+  /// A fake hardware used to exchange information with a "sub-controller".
   class FakeHW : public hardware_interface::RobotHW {
     public:
       /// Generates a hardware that contains state and effort handles for a set of joints.

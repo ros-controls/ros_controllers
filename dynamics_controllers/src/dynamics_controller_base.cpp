@@ -37,6 +37,7 @@
  */
 
 #include <dynamics_controllers/dynamics_controller_base.h>
+#include <xmlrpcpp/XmlRpcException.h>
 
 namespace dynamics_controllers {
 
@@ -79,6 +80,7 @@ void DynamicsControllerBase::FakeHW::copyState(const std::vector<hardware_interf
   }
 }
 
+
 void DynamicsControllerBase::FakeHW::getEfforts(std::vector<double>& joint_effort_command) {
   for(unsigned int j=0; j<joint_effort_command.size(); j++) {
     joint_effort_command[j] = cmd_[j];
@@ -87,17 +89,65 @@ void DynamicsControllerBase::FakeHW::getEfforts(std::vector<double>& joint_effor
 
 
 
+/** The function looks for all parameters available in the provided NodeHandle's
+  * namespace and then stores those nested namespaces (assumed to be
+  * sub-controllers names) which contain a (string) 'type' parameter.
+  */
+bool DynamicsControllerBase::getSubControllersMap(
+  ros::NodeHandle& nh,
+  std::map<std::string,std::string>& controllers_map
+)
+{
+  // this is used to get the list of available controllers
+  XmlRpc::XmlRpcValue controllers;
+  if(!nh.getParam(nh.getNamespace(), controllers)) {
+    ROS_ERROR("Failed to get list of sub-controllers from '%s'",
+      nh.getNamespace().c_str()
+    );
+    return false;
+  }
+
+  if(controllers.size() == 0) {
+    ROS_ERROR("Sub-controllers namespace '%s' does not contain any parameter",
+      nh.getNamespace().c_str()
+    );
+    return false;
+  }
+
+  try {
+    std::string type;
+    for(const auto& c : controllers) {
+      if(!nh.getParam(c.first + "/type", type))
+        ROS_WARN_STREAM("Failed to get type of sub-controller " << c.first);
+      else
+        controllers_map[c.first] = type;
+    }
+  }
+  catch(const XmlRpc::XmlRpcException& ex) {
+    ROS_ERROR("Caught XmlRpc exception while loading sub-controllers map: %s",
+      ex.getMessage().c_str()
+    );
+    return false;
+  }
+
+  return true;
+}
+
+
 
 
 
 DynamicsControllerBase::DynamicsControllerBase()
-  : controller_loader_("controller_interface", "controller_interface::ControllerBase")
+  : controller_loader_(new controller_manager::ControllerLoader<controller_interface::ControllerBase>("controller_interface", "controller_interface::ControllerBase"))
 {
 }
 
 
 bool DynamicsControllerBase::init(hardware_interface::EffortJointInterface *hw, ros::NodeHandle& nh) {
   ROS_DEBUG("Initializing DynamicsControllerBase.");
+
+  // reset sub-controllers
+  sub_controllers_.clear();
 
   // sub-class specific initialization
   if(!initDynamics(nh)) {
@@ -132,75 +182,129 @@ bool DynamicsControllerBase::init(hardware_interface::EffortJointInterface *hw, 
 
   ros::NodeHandle cnh(nh, controller_ns);
   std::string ctype;
-  if(!cnh.getParam("type", ctype)) {
-    ROS_ERROR("Could not deduce type of sub-controller from %s/type", controller_ns.c_str());
-    return false;
+  std::map<std::string,std::string> controllers_map; // name --> type
+  if(cnh.getParam("type", ctype)) {
+    // single (unnamed) sub-controller
+    controllers_map[""] = ctype;
+  }
+  else {
+    // try load multiple controllers from the given namespace
+    if(!getSubControllersMap(cnh, controllers_map))
+      return false;
+    else if(controllers_map.empty()){
+      // if no controller has been found, just exit
+      ROS_ERROR("No controller has been succesfully located in '%s'",
+        cnh.getNamespace().c_str()
+      );
+    }
   }
 
+  // load all controllers
   try {
-    ROS_DEBUG("Generating sub-controller plugin instance of type %s", ctype.c_str());
-    controller_.reset( controller_loader_.createUnmanagedInstance(ctype) );
-    if(controller_ == nullptr)
-      throw std::runtime_error("pluginlib::ClassLoader::createUnmanagedInstance returned 'nullptr'");
+    for(const auto& c : controllers_map) {
+      ROS_DEBUG("Creating sub-controller instance of type %s", c.second.c_str());
+      auto cptr = controller_loader_->createInstance(c.second);
+      if(cptr == nullptr) {
+        std::stringstream ss;
+        ss << "Failed to create sub-controller";
+        if(c.first != "")
+          ss << " '" << c.first << "'";
+        ss << " of type '" << c.second << "'; available controller types are:";
+        auto classes = controller_loader_->getDeclaredClasses();
+        std::for_each(classes.begin(), classes.end(), [&](const std::string& n) {ss << " " << n << ";";});
+        throw std::runtime_error(ss.str());
+      }
+      sub_controllers_[c.first] = cptr;
+    }
   }
   catch(std::exception& ex) {
-    ROS_ERROR("Exception while loading controller of type %s. What: %s", ctype.c_str(), ex.what());
+    ROS_ERROR("Exception while creating sub-controllers. What: %s", ex.what());
     return false;
   }
 
+  // map whose keys are joints (to be claimed) and values are controllers
+  // (claiming the joints) - this is used to check resource acquisition
+  std::map<std::string,std::string> claimed_resources;
+
+  // initialize all sub-controllers
   try {
-    // initializes the sub-controller
-    ROS_DEBUG("Initializing sub-controller");
-    ClaimedResources resources;
-    bool init_ok = controller_->initRequest(fake_hw_.get(), nh, cnh, resources);
+    for(auto& c : sub_controllers_) {
+      ROS_DEBUG("Initializing sub-controller %s", c.first.c_str());
+      ClaimedResources resources;
+      bool init_ok = false;
+      // init the controller - the namespace definition changes if this is the
+      // "unnamed" controller (which directly lives in 'sub_controller')
+      if(c.first == "")
+        init_ok = c.second->initRequest(fake_hw_.get(), nh, cnh, resources);
+      else {
+        ros::NodeHandle _cnh(cnh, c.first);
+        init_ok = c.second->initRequest(fake_hw_.get(), nh, _cnh, resources);
+      }
 
-    if(!init_ok) {
-      ROS_ERROR("Failed to initialize sub-controller of type %s", ctype.c_str());
-      return false;
-    }
+      // if controller init request fails, give an error and exit
+      if(!init_ok) {
+        std::stringstream ss;
+        ss << "Init request failed for sub-controller";
+        if(c.first != "")
+          ss << " " << c.first;
+        throw std::runtime_error(ss.str());
+      }
 
-    // NOTE: I am not sure if the follwing is the correct way of checking that
-    // the sub-controller acquired all joint control resources...
-    // I expect the sub-controller to claim resources only from the
-    // EffortJointInterface of the FakeHW. Thus, give a warning when multiple
-    // interfaces are used. (but it should be impossible, should it?)
-    if(resources.size()!=1) {
-      std::stringstream ss;
-      for(const auto& r : resources)
-        ss << " " << r.hardware_interface;
-      ROS_WARN("Sub-controller claimed resources from multiple hardware "
-        "interfaces, which might lead to problems. Resources were claimed from "
-        "the following interfaces: %s", ss.str().c_str()
-      );
-    }
+      // check that resources were claimed from a single interface (this should
+      // always be true since the controller has only access to the fake hw)
+      if(resources.size() != 1) {
+        std::stringstream ss;
+        ss << "Sub-controller ";
+        if(c.first != "")
+          ss << c.first << " ";
+        ss << "claimed resources from multiple hardware interfaces, which"
+          " might lead to problems. Resources were claimed from the"
+          " following interfaces:";
+        for(const auto& r : resources)
+          ss << " " << r.hardware_interface;
+        ROS_WARN_STREAM(ss.str());
+      }
 
-    // The hardware interface should be the EffortJointInterface
-    if(resources[0].hardware_interface != "hardware_interface::EffortJointInterface") {
-      ROS_WARN("First hardware interface claimed by the sub-controller is %s, "
-        "but hardware_interface::EffortJointInterface was expected. This might "
-        "lead to undefined behavior...", resources[0].hardware_interface.c_str()
-      );
-    }
+      // The hardware interface should be the EffortJointInterface (again, this
+      // should be always true as this is the only interface exposed by FakeHW)
+      if(resources[0].hardware_interface != "hardware_interface::EffortJointInterface") {
+        std::stringstream ss;
+        ss << "First hardware interface claimed by the sub-controller ";
+        if(c.first != "")
+          ss << c.first << " ";
+        ss << "is " << resources[0].hardware_interface << ", but "
+          "hardware_interface::EffortJointInterface was expected. This might "
+          "lead to undefined behavior...";
+        ROS_WARN_STREAM(ss.str());
+      }
 
-    // Check that all joints of the controller have been claimed by the
-    // subcontroller as well.
-    for(const auto& joint : joint_names_) {
-      const auto& res = resources[0].resources;
-      auto it = std::find(res.begin(), res.end(), joint);
-      if(it == res.end()) {
-        ROS_ERROR("Sub-controller did not claim resource %s. Note that this "
-          "controller expects the sub-controller to claim the same resources",
-          joint.c_str()
-        );
-        return false;
+      // check that no resource claimed by this controller is used by any other controller
+      for(const auto& joint : resources[0].resources) {
+        auto it = claimed_resources.find(joint);
+        if(it != claimed_resources.end()) {
+          throw std::runtime_error("Joint " + joint + " cannot be handled both"
+            " by " + it->second + " and " + c.first);
+        }
+        claimed_resources[joint] = c.first;
       }
     }
-
-    ROS_DEBUG("Sub-controller initialized");
   }
   catch(std::exception& ex) {
-    ROS_ERROR("Exception while initializing sub-controller of type %s. What: %s", ctype.c_str(), ex.what());
+    ROS_ERROR("Exception while initializing sub-controllers. What: %s", ex.what());
     return false;
+  }
+
+  // check that all joints used in the dynamic model have been claimed by
+  // subcontrollers as well
+  for(const auto& joint : joint_names_) {
+    auto it = claimed_resources.find(joint);
+    if(it == claimed_resources.end()) {
+      ROS_ERROR("No sub-controller claimed joint %s. Note that this controller"
+        " expects the sub-controller(s) to claim the all the joints used by"
+        " the dyanmic model", joint.c_str()
+      );
+      return false;
+    }
   }
 
   return true;
@@ -208,19 +312,35 @@ bool DynamicsControllerBase::init(hardware_interface::EffortJointInterface *hw, 
 
 
 void DynamicsControllerBase::starting(const ros::Time& time) {
-  // forward the start-request to the low-level controller
-  if(!controller_->startRequest(time)) {
-    ROS_ERROR("Start request to low-level controller failed");
-    throw std::runtime_error("Start request to low-level controller failed");
+  // forward the start-request to the low-level controllers
+  bool ok = true;
+  std::stringstream ss;
+  for(auto& c : sub_controllers_) {
+    if(!c.second->startRequest(time)) {
+      ROS_ERROR("Failed start low-level sub-controller %s", c.first.c_str());
+      ok = false;
+      ss << " " << c.first;
+    }
+  }
+
+  // if the request failed for any controller, stop all of them
+  if(!ok) {
+    for(auto& c : sub_controllers_) {
+      c.second->stopRequest(time);
+    }
+    throw std::runtime_error("Could not start sub-controllers" + ss.str());
   }
 }
 
 
 void DynamicsControllerBase::update(const ros::Time& time, const ros::Duration& period) {
+  // update the sub-controllers
   fake_hw_->copyState(joint_handles_);
-  controller_->update(time, period);
+  for(auto& c : sub_controllers_)
+    c.second->update(time, period);
   fake_hw_->getEfforts(sub_command_);
 
+  // perform sub-class specific dynamics
   try {
     computeEfforts();
   }
@@ -236,10 +356,20 @@ void DynamicsControllerBase::update(const ros::Time& time, const ros::Duration& 
 
 
 void DynamicsControllerBase::stopping(const ros::Time& time) {
-  // forward the stop-request to the low-level controller
-  if(!controller_->stopRequest(time)) {
-    ROS_ERROR("Stop request to low-level controller failed");
-    throw std::runtime_error("Stop request to low-level controller failed");
+  // forward the stop-request to the low-level controllers
+  bool ok = true;
+  std::stringstream ss;
+  for(auto& c : sub_controllers_) {
+    if(!c.second->stopRequest(time)) {
+      ROS_ERROR("Failed stop sub-controller %s", c.first.c_str());
+      ok = false;
+      ss << " " << c.first;
+    }
+  }
+
+  // if the request failed for any controller, stop all of them
+  if(!ok) {
+    throw std::runtime_error("Could not stop sub-controllers" + ss.str());
   }
 }
 

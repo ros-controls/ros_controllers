@@ -230,7 +230,7 @@ bool expandTreeRecursive(KDL::Tree& tree, KDL::SegmentMap::const_iterator root, 
     child = GetTreeElementChildren(root->second)[i];
     // try to add the child
     if (tree.addSegment(GetTreeElementSegment(child->second), hook_name)) {
-      std::cout << "--> Appended segment " << child->first << " to " << hook_name << std::endl;
+      ROS_DEBUG_STREAM("--> Appended segment " << child->first << " to " << hook_name);
       // if child is added, add all the child's children
       if (!expandTreeRecursive(tree, child, child->first)) {
         // if it didn't work, return false

@@ -178,13 +178,3 @@ by yourself or to find proper workarounds.
       Note that some of these parameters are already inside KDL,
       even though they are still not used in many solvers (eg, the damping).
 - [x] Allow multiple sub-controllers to manage different joints.
-
-
-### Personal todo list:
-
-- [x] How should the license be pasted? Some headers contain only WillowGarage,
-  some many institutions. Should I put myself as well?
-- [x] Check CMakeLists.txt (install targets etc).
-- [x] Tell about the KDL version that is needed!
-- [x] Complete `KdlTreeController` so that proper sub-tree extraction is possible.
-- [x] Enforce effort limits

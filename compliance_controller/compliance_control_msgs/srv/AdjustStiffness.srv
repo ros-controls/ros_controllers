@@ -1,0 +1,10 @@
+# The key equation for compliance is:
+# compliance_velocity[i] = wrench[i]/stiffness[i]
+
+# Set stiffness in each dimension.
+# First three elements are Newtons/(m/s), last 3 are N*m/(rad/s).
+# Should be positive.
+# Can be left empty.
+std_msgs/Float64MultiArray stiffness
+---
+bool success

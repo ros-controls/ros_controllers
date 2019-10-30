@@ -19,6 +19,10 @@ Changelog for package position_controllers
 -------------------
 
 0.14.0 (2018-04-27)
+0.13.4 (2018-06-26)
+-------------------
+
+0.13.3 (2018-04-27)
 -------------------
 * migrate to new pluginlib headers
 * Contributors: Mathias Lüdtke

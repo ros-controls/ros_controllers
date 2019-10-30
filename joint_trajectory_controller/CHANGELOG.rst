@@ -44,6 +44,19 @@ Changelog for package joint_trajectory_controller
 * TrajectoryController: Use desired state to calculate hold trajectory (`#297 <https://github.com/ros-controls/ros_controllers/issues/297>`_)
 * Add velocity feedforward term to velocity HardwareInterfaceAdapter (`#227 <https://github.com/ros-controls/ros_controllers/issues/227>`_)
 * Contributors: Chris Lalancette, Mathias Lüdtke, Miguel Prada, agutenkunst
+0.13.4 (2018-06-26)
+-------------------
+* joint_trajectory_controller improve test stability
+* Use a copy of rt_active_goal in update()
+* Changes to allow inheritance from JointTrajectoryController.
+* Contributors: Alexander Gutenkunst, Gennaro Raiola, Kei Okada, Ryosuke Tajima
+
+0.13.3 (2018-04-27)
+-------------------
+* migrate to new pluginlib headers
+* TrajectoryController: Use desired state to calculate hold trajectory (`#297 <https://github.com/ros-controls/ros_controllers/issues/297>`_)
+* Add velocity feedforward term to velocity HardwareInterfaceAdapter (`#227 <https://github.com/ros-controls/ros_controllers/issues/227>`_)
+* Contributors: Mathias Lüdtke, Miguel Prada, agutenkunst
 
 0.13.2 (2017-12-23)
 -------------------

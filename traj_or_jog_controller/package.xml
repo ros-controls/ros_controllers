@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>traj_or_jog_controller</name>
+  <version>0.0.0</version>
+  <description>Controller accepting trajectories or real-time jog commands.</description>
+
+  <maintainer email="andyz@utexas.edu">Andy Zelenak</maintainer>
+
+  <license>BSD</license>
+
+  <author email="andyz@utexas.edu">Andy Zelenak</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>controller_interface</depend>
+  <depend>joint_trajectory_controller</depend>
+  <depend>realtime_tools</depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+
+  <export>
+    <controller_interface plugin="${prefix}/traj_or_jog_controller_plugins.xml"/>
+  </export>
+</package>

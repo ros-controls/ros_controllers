@@ -16,3 +16,6 @@ compliance_library:
   end_condition_wrench: [80, 80, 80, 60, 60, 60] # Safety feature. Halt if force exceeds [N, N, N, Nm, Nm, Nm]
   highest_allowable_force: 88 # Safety feature. Halt if force magnitude exceeds this across all dimensions [N]
   highest_allowable_torque: 50 # Safety feature. Halt if torque magnitude exceeds this across all dimensions [Nm]
+  # Defines which directions (true's) the compliance starts in
+  # Order is [translation-x, translation-y, translation-z, rotation-x, rotation-y, rotation-z]
+  default_compliant_dimensions: [1, 1, 1, 0, 0, 0] 

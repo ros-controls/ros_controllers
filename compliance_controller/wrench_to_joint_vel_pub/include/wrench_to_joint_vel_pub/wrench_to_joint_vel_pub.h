@@ -57,6 +57,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
 #include <wrench_to_joint_vel_pub/compliant_control.h>
+#include <sstream>
 
 namespace wrench_to_joint_vel_pub
 {
@@ -68,7 +69,7 @@ struct ROSParameters
       highest_allowable_torque, joint_limit_margin, condition_number_limit;
   std::string jacobian_frame_name, force_torque_frame_name, force_torque_topic, move_group_name,
       outgoing_joint_vel_topic;
-  std::vector<double> stiffness, damping, deadband, end_condition_wrench;
+  std::vector<double> stiffness, damping, deadband, end_condition_wrench, default_dimensions;
 };
 
 class PublishCompliantJointVelocities
@@ -187,8 +188,8 @@ private:
   // Track degrees of freedom to drop
   // By default, ignore compliance in dimensions 3,4,5
   // i.e. roll/pitch/yaw
-  std::vector<bool> compliant_dofs_{ true, true, true, false, false, false };
-  size_t num_compliant_dofs_ = 3;
+  std::vector<bool> compliant_dofs_;
+  size_t num_output_dofs_; // Tracks the output DOF's (in case it != 6)
 };
 
 }  // namespace wrench_to_joint_vel_pub

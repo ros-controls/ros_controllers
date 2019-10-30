@@ -105,26 +105,40 @@ PublishCompliantJointVelocities::PublishCompliantJointVelocities() : tf_listener
       n_.advertise<compliance_control_msgs::CompliantVelocities>(compliance_params_.outgoing_joint_vel_topic, 1);
 
   joints_sub_ = n_.subscribe("joint_states", 1, &PublishCompliantJointVelocities::jointsCallback, this);
+
+  // Set up initial compliant dimensions
+  num_output_dofs_ = compliance_params_.default_dimensions.size();
+  compliant_dofs_.assign(num_output_dofs_, true);
+  for(size_t i=0; i<num_output_dofs_; ++i)
+  {
+    if(compliance_params_.default_dimensions[i] == 0) compliant_dofs_[i] = false;
+  }
 }
 
 bool PublishCompliantJointVelocities::disableComplianceDimensions(
     compliance_control_msgs::DisableComplianceDimensions::Request& req,
     compliance_control_msgs::DisableComplianceDimensions::Response& res)
 {
-  compliant_dofs_.assign(6, true);
-  num_compliant_dofs_ = 6 - req.dimensions_to_ignore.data.size();
-  for (std::vector<int>::const_iterator it = req.dimensions_to_ignore.data.begin();
-       it != req.dimensions_to_ignore.data.end(); ++it)
+  if(req.dimensions_to_ignore.size() != num_output_dofs_)
   {
-    compliant_dofs_[*it] = false;
+    ROS_ERROR_STREAM("Invalid Request. Manipulator output space is " << num_output_dofs_ 
+        << " DOF, but " << req.dimensions_to_ignore.size() << " dimensions were given.");
+    res.success = false;
+    return false;
   }
 
-  ROS_INFO_STREAM("Compliant Dimensions are now: [" << compliant_dofs_[0] << ", "
-      << compliant_dofs_[1] << ", "
-      << compliant_dofs_[2] << ", "
-      << compliant_dofs_[3] << ", "
-      << compliant_dofs_[4] << ", "
-      << compliant_dofs_[5] << "].");
+  std::stringstream output;
+  output << "Compliant Dimensions are now: [";
+
+  compliant_dofs_.assign(num_output_dofs_, true);
+  for (size_t i = 0; i < num_output_dofs_; ++i)
+  {
+    if(!req.dimensions_to_ignore[i]) compliant_dofs_[i] = false;
+    output << compliant_dofs_[i] << ", ";
+  }
+  output.seekp(-2,output.cur);
+  output << "].";
+  ROS_INFO_STREAM(output.str());
 
   res.success = true;
   return true;
@@ -213,20 +227,17 @@ void PublishCompliantJointVelocities::spin()
       // Another node can sum it with nominal joint velocities to result in spring-like motion
 
       // Input to the compliance calculation is an all-zero nominal velocity
-      std::vector<double> velocity(6);
+      std::vector<double> velocity(num_output_dofs_);
       // Calculate the compliant velocity adjustment
       compliant_control_ptr_->getVelocity(velocity, last_wrench_data_, velocity, ros::Time::now());
 
       // Remove non-compliant dimensions
-      if(num_compliant_dofs_ < 6) // Want to not be compliant in some dimension(s)
+      for (size_t i = 0; i < compliant_dofs_.size(); ++i)
       {
-        for (size_t i = 0; i < compliant_dofs_.size(); ++i)
+        if(!compliant_dofs_[i]) // If we are not compliant:
         {
-          if(!compliant_dofs_[i]) // If we are not compliant:
-          {
-            // It is as easy as setting the compliant velocity to 0, instead of what it was for the impedance law
-            velocity[i] = 0;
-          }
+          // It is as easy as setting the compliant velocity to 0, instead of what it was for the impedance law
+          velocity[i] = 0;
         }
       }
 
@@ -363,6 +374,8 @@ void PublishCompliantJointVelocities::readROSParameters()
                                     compliance_params_.deadband);
   error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/end_condition_wrench",
                                     compliance_params_.end_condition_wrench);
+  error += !rosparam_shortcuts::get("", n_, ros::this_node::getName() + "/compliance_library/default_compliant_dimensions",
+                                    compliance_params_.default_dimensions);
 
   rosparam_shortcuts::shutdownIfError(ros::this_node::getName(), error);
 

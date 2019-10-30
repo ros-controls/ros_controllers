@@ -111,13 +111,20 @@ bool PublishCompliantJointVelocities::disableComplianceDimensions(
     compliance_control_msgs::DisableComplianceDimensions::Request& req,
     compliance_control_msgs::DisableComplianceDimensions::Response& res)
 {
-  dof_to_drop_.clear();
+  compliant_dofs_.assign(6, true);
+  num_compliant_dofs_ = 6 - req.dimensions_to_ignore.data.size();
   for (std::vector<int>::const_iterator it = req.dimensions_to_ignore.data.begin();
        it != req.dimensions_to_ignore.data.end(); ++it)
   {
-    dof_to_drop_.push_back(*it);
-    ROS_INFO_STREAM(dof_to_drop_.back());
+    compliant_dofs_[*it] = false;
   }
+
+  ROS_INFO_STREAM("Compliant Dimensions are now: [" << compliant_dofs_[0] << ", "
+      << compliant_dofs_[1] << ", "
+      << compliant_dofs_[2] << ", "
+      << compliant_dofs_[3] << ", "
+      << compliant_dofs_[4] << ", "
+      << compliant_dofs_[5] << "].");
 
   res.success = true;
   return true;
@@ -210,6 +217,19 @@ void PublishCompliantJointVelocities::spin()
       // Calculate the compliant velocity adjustment
       compliant_control_ptr_->getVelocity(velocity, last_wrench_data_, velocity, ros::Time::now());
 
+      // Remove non-compliant dimensions
+      if(num_compliant_dofs_ < 6) // Want to not be compliant in some dimension(s)
+      {
+        for (size_t i = 0; i < compliant_dofs_.size(); ++i)
+        {
+          if(!compliant_dofs_[i]) // If we are not compliant:
+          {
+            // It is as easy as setting the compliant velocity to 0, instead of what it was for the impedance law
+            velocity[i] = 0;
+          }
+        }
+      }
+
       geometry_msgs::Vector3Stamped translational_velocity;
       translational_velocity.header.frame_id = compliance_params_.force_torque_frame_name;
       translational_velocity.vector.x = velocity[0];
@@ -256,58 +276,7 @@ void PublishCompliantJointVelocities::spin()
       // This Jacobian is w.r.t. to the last link
       Eigen::MatrixXd jacobian = kinematic_state_->getJacobian(joint_model_group_);
 
-      // From the jacobian, drop degrees of freedom that should be disregarded
-      // Skip dimensions that have been checked already:
-      int start_search_at = 0;
-      //  Number of rows that have been successfully transferred to reduced jacobian:
-      int num_rows_filled = 0;
-
-      Eigen::MatrixXd reduced_jacobian(jacobian.rows() - dof_to_drop_.size(), jacobian.cols());
-      Eigen::VectorXd reduced_cartesian_velocity(6 - dof_to_drop_.size());
-
-      // If the user wants to skip compliance in any dimension.
-      // Transfer rows to reduced_jacobian, up to the last index in dof_to_drop_.
-      // Also, remove corresponding rows from the Cartesian command.
-      if (dof_to_drop_.size() > 0)
-      {
-        for (std::size_t dropped_dof_index = 0; dropped_dof_index < dof_to_drop_.size(); ++dropped_dof_index)
-        {
-          for (std::size_t jacobian_row = start_search_at; jacobian_row < 6; ++jacobian_row)
-          {
-            if (start_search_at < dof_to_drop_.size())
-            {
-              if (dof_to_drop_[dropped_dof_index] != start_search_at + num_rows_filled)
-              {
-                reduced_jacobian.row(jacobian_row) = jacobian.row(start_search_at + num_rows_filled);
-                reduced_cartesian_velocity[jacobian_row] = cartesian_velocity[start_search_at + num_rows_filled];
-                ++num_rows_filled;
-                continue;
-              }
-              else
-              {
-                start_search_at = start_search_at + num_rows_filled;
-                num_rows_filled = 0;
-                break;
-              }
-            }
-          }
-        }
-
-        // Transfer remaining rows to reduced_jacobian
-        for (std::size_t index = start_search_at; index < 6 - dof_to_drop_.size(); ++index)
-        {
-          reduced_jacobian.row(index) = jacobian.row(index + dof_to_drop_.size());
-          reduced_cartesian_velocity[index] = cartesian_velocity[index + dof_to_drop_.size()];
-        }
-      }
-      // If user wants to keep compliance in all 6 dimensions
-      else
-      {
-        reduced_jacobian = jacobian;
-        reduced_cartesian_velocity = cartesian_velocity;
-      }
-
-      svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(reduced_jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
+      svd_ = Eigen::JacobiSVD<Eigen::MatrixXd>(jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
       if(fabs(svd_.singularValues()[0] / svd_.singularValues().tail(1)[0] > compliance_params_.condition_number_limit))
       {
@@ -323,7 +292,7 @@ void PublishCompliantJointVelocities::spin()
       {
         matrix_s_ = svd_.singularValues().asDiagonal();
         pseudo_inverse_ = svd_.matrixV() * matrix_s_.inverse() * svd_.matrixU().transpose();
-        delta_theta_ = pseudo_inverse_ * reduced_cartesian_velocity;
+        delta_theta_ = pseudo_inverse_ * cartesian_velocity;
 
         // Check if a command magnitude would be too large.
         double largest_allowable_command = compliance_params_.max_allowable_cmd_magnitude;

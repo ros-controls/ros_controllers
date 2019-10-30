@@ -187,7 +187,8 @@ private:
   // Track degrees of freedom to drop
   // By default, ignore compliance in dimensions 3,4,5
   // i.e. roll/pitch/yaw
-  std::vector<int> dof_to_drop_{ 3, 4, 5 };
+  std::vector<bool> compliant_dofs_{ true, true, true, false, false, false };
+  size_t num_compliant_dofs_ = 3;
 };
 
 }  // namespace wrench_to_joint_vel_pub

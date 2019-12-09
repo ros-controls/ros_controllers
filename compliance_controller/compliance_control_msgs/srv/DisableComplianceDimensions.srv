@@ -1,7 +1,10 @@
 # Turn off compliance along these dimensions.
-# Order matters: [translation-x, translation-y, translation-z, rotation-x, rotation-y, rotation-z]
 # Give 'true' to enable compliance in the direction, 'false' to not be compliant
-# E.g. [true, false, false, true, false, false] would enable compliance in the EEF x translation and roll
-bool[] dimensions_to_ignore
+bool enable_x_translation
+bool enable_y_translation
+bool enable_z_translation
+bool enable_x_rotation
+bool enable_y_rotation
+bool enable_z_rotation
 ---
 bool success

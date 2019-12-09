@@ -39,8 +39,7 @@
 
 #pragma once
 
-#include <compliance_control_msgs/AdjustDamping.h>
-#include <compliance_control_msgs/AdjustStiffness.h>
+#include <compliance_control_msgs/AdjustComplianceParams.h>
 #include <compliance_control_msgs/CompliantVelocities.h>
 #include <compliance_control_msgs/DisableComplianceDimensions.h>
 #include <Eigen/Core>
@@ -107,14 +106,14 @@ private:
   /**
    * A service callback. Adjust stiffness constants.
    */
-  bool adjustStiffness(compliance_control_msgs::AdjustStiffness::Request& req,
-                                   compliance_control_msgs::AdjustStiffness::Response& res);
+  bool adjustStiffness(compliance_control_msgs::AdjustComplianceParams::Request& req,
+                                   compliance_control_msgs::AdjustComplianceParams::Response& res);
 
   /**
    * A service callback. Adjust damping constants.
    */
-  bool adjustDamping(compliance_control_msgs::AdjustDamping::Request& req,
-                                   compliance_control_msgs::AdjustDamping::Response& res);
+  bool adjustDamping(compliance_control_msgs::AdjustComplianceParams::Request& req,
+                                   compliance_control_msgs::AdjustComplianceParams::Response& res);
 
   /**
    * A service callback. Biases (aka tares, aka zeroes) the compliance calculations

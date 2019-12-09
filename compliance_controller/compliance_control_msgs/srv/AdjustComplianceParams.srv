@@ -1,0 +1,14 @@
+# The key equation for compliance is:
+# compliance_velocity[i] = wrench[i]/stiffness[i] - wrench_dot[i]/damping[i]
+
+# Change the stiffness or damping in each dimension.
+# Should be positive.
+# Can be left empty, in which case the value is not changed.
+float64 x_translation_param
+float64 y_translation_param
+float64 z_translation_param
+float64 x_rotation_param
+float64 y_rotation_param
+float64 z_rotation_param
+---
+bool success

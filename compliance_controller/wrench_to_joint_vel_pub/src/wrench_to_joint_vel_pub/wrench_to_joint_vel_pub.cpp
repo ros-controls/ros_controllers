@@ -122,36 +122,44 @@ bool PublishCompliantJointVelocities::disableComplianceDimensions(
     compliance_control_msgs::DisableComplianceDimensions::Request& req,
     compliance_control_msgs::DisableComplianceDimensions::Response& res)
 {
-  if(req.dimensions_to_ignore.size() != num_output_dofs_)
-  {
-    ROS_ERROR_STREAM("Invalid Request. Manipulator output space is " << num_output_dofs_ 
-        << " DOF, but " << req.dimensions_to_ignore.size() << " dimensions were given.");
-    res.success = false;
-    return false;
-  }
-
-  std::stringstream output;
-  output << "Compliant Dimensions are now: [";
-
   compliant_dofs_.assign(num_output_dofs_, true);
-  for (size_t i = 0; i < num_output_dofs_; ++i)
-  {
-    if(!req.dimensions_to_ignore[i]) compliant_dofs_[i] = false;
-    output << compliant_dofs_[i] << ", ";
-  }
-  output.seekp(-2,output.cur);
-  output << "].";
-  ROS_INFO_STREAM(output.str());
+  compliant_dofs_[0] = req.enable_x_translation;
+  compliant_dofs_[1] = req.enable_y_translation;
+  compliant_dofs_[2] = req.enable_z_translation;
+  compliant_dofs_[3] = req.enable_x_rotation;
+  compliant_dofs_[4] = req.enable_y_rotation;
+  compliant_dofs_[5] = req.enable_z_rotation;
+
+  ROS_INFO_STREAM("Compliant Dimensions are now: [" << compliant_dofs_[0] << ", " << 
+                  compliant_dofs_[1] << ", " << compliant_dofs_[2] << ", " <<
+                  compliant_dofs_[3] << ", " << compliant_dofs_[4] << ", " <<
+                  compliant_dofs_[5] << "]");
 
   res.success = true;
   return true;
 }
 
 bool PublishCompliantJointVelocities::adjustStiffness(
-    compliance_control_msgs::AdjustStiffness::Request& req,
-    compliance_control_msgs::AdjustStiffness::Response& res)
+    compliance_control_msgs::AdjustComplianceParams::Request& req,
+    compliance_control_msgs::AdjustComplianceParams::Response& res)
 {
-  const std::vector<double> stiffness = req.stiffness.data;
+  std::vector<double> stiffness;
+  const std::vector<double> current = compliant_control_ptr_->stiffness_;
+
+  // Go thru all dimensions and check for a valid request
+  if(req.x_translation_param > 0.001) stiffness.push_back(req.x_translation_param);
+  else stiffness.push_back(current[0]);
+  if(req.y_translation_param > 0.001) stiffness.push_back(req.y_translation_param);
+  else stiffness.push_back(current[1]);
+  if(req.z_translation_param > 0.001) stiffness.push_back(req.z_translation_param);
+  else stiffness.push_back(current[2]);
+  if(req.x_rotation_param > 0.001) stiffness.push_back(req.x_rotation_param);
+  else stiffness.push_back(current[3]);
+  if(req.y_rotation_param > 0.001) stiffness.push_back(req.y_rotation_param);
+  else stiffness.push_back(current[4]);
+  if(req.z_rotation_param > 0.001) stiffness.push_back(req.z_rotation_param);
+  else stiffness.push_back(current[5]);
+
   if (compliant_control_ptr_->setStiffness(stiffness))
   {
     res.success = true;
@@ -165,10 +173,26 @@ bool PublishCompliantJointVelocities::adjustStiffness(
 }
 
 bool PublishCompliantJointVelocities::adjustDamping(
-    compliance_control_msgs::AdjustDamping::Request& req,
-    compliance_control_msgs::AdjustDamping::Response& res)
+    compliance_control_msgs::AdjustComplianceParams::Request& req,
+    compliance_control_msgs::AdjustComplianceParams::Response& res)
 {
-  const std::vector<double> damping = req.damping.data;
+  std::vector<double> damping;
+  const std::vector<double> current = compliant_control_ptr_->damping_;
+
+  // Go thru all dimensions and check for a valid request
+  if(req.x_translation_param > 0.001) damping.push_back(req.x_translation_param);
+  else damping.push_back(current[0]);
+  if(req.y_translation_param > 0.001) damping.push_back(req.y_translation_param);
+  else damping.push_back(current[1]);
+  if(req.z_translation_param > 0.001) damping.push_back(req.z_translation_param);
+  else damping.push_back(current[2]);
+  if(req.x_rotation_param > 0.001) damping.push_back(req.x_rotation_param);
+  else damping.push_back(current[3]);
+  if(req.y_rotation_param > 0.001) damping.push_back(req.y_rotation_param);
+  else damping.push_back(current[4]);
+  if(req.z_rotation_param > 0.001) damping.push_back(req.z_rotation_param);
+  else damping.push_back(current[5]);
+
   if (compliant_control_ptr_->setDamping(damping))
   {
     res.success = true;
@@ -281,14 +305,15 @@ void PublishCompliantJointVelocities::spin()
 
       geometry_msgs::WrenchStamped debug_wrench; //DEBUG
       debug_wrench.header.stamp = ros::Time::now(); // DEBUG
-      // debug_wrench.wrench.force.x = compliant_control_ptr_->wrench_[0]; //DEBUG
-      // debug_wrench.wrench.force.y = compliant_control_ptr_->wrench_[1]; //DEBUG
-      // debug_wrench.wrench.force.z = compliant_control_ptr_->wrench_[2]; //DEBUG
-      // debug_wrench.wrench.torque.x = compliant_control_ptr_->wrench_[3]; //DEBUG
-      // debug_wrench.wrench.torque.y = compliant_control_ptr_->wrench_[4]; //DEBUG
-      // debug_wrench.wrench.torque.z = compliant_control_ptr_->wrench_[5]; //DEBUG
+      debug_wrench.wrench.force.x = compliant_control_ptr_->wrench_[0]; //DEBUG
+      debug_wrench.wrench.force.y = compliant_control_ptr_->wrench_[1]; //DEBUG
+      debug_wrench.wrench.force.z = compliant_control_ptr_->wrench_[2]; //DEBUG
+      debug_wrench.wrench.torque.x = compliant_control_ptr_->wrench_[3]; //DEBUG
+      debug_wrench.wrench.torque.y = compliant_control_ptr_->wrench_[4]; //DEBUG
+      debug_wrench.wrench.torque.z = compliant_control_ptr_->wrench_[5]; //DEBUG
 
-      debug_wrench = ee_weight_wrench; //DEBUG
+      // debug_wrench = ee_weight_wrench; //DEBUG
+      // debug_wrench.header.stamp = ros::Time::now(); // DEBUG
 
       debug_pub_.publish(debug_wrench); //DEBUG
 

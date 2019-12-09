@@ -96,9 +96,21 @@ private:
    */
   bool toggleCompliance(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
 
+  /**
+   * \brief Provides a service to enable compliance
+   */
+  bool enableCompliance(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
+
+  /**
+   * \brief Provides a service to disabel compliance
+   */
+  bool disableCompliance(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
+
   ros::NodeHandle controller_nh_;
   ros::Subscriber compliance_adjustment_sub_;
   ros::ServiceServer toggle_compliance_service_;
+  ros::ServiceServer enable_compliance_service_;
+  ros::ServiceServer disable_compliance_service_;
 
   // This stamp helps in tracking whether compliance commands are stale.
   // If stale, they will be ignored.

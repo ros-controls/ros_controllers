@@ -117,6 +117,12 @@ bool ComplianceController<SegmentImpl, HardwareInterface>::init(HardwareInterfac
   toggle_compliance_service_ =
       controller_nh_.advertiseService(controller_nh_.getNamespace() + "compliance_controller/toggle_compliance",
                                       &ComplianceController::toggleCompliance, this);
+  enable_compliance_service_ =
+      controller_nh_.advertiseService(controller_nh_.getNamespace() + "compliance_controller/enable_compliance",
+                                      &ComplianceController::enableCompliance, this);
+  disable_compliance_service_ =
+      controller_nh_.advertiseService(controller_nh_.getNamespace() + "compliance_controller/disable_compliance",
+                                      &ComplianceController::disableCompliance, this);
   last_compliance_adjustment_stamp_ = ros::Time::now();
   last_trajectory_update_time_ = ros::Time(0);
   compliance_velocity_adjustment_.data.resize(TrajOrJogController::n_joints_, 0);
@@ -364,6 +370,44 @@ bool ComplianceController<SegmentImpl, HardwareInterface>::toggleCompliance(std_
 
   res.success = true;
   res.message = (compliance_enabled_) ? "enabled" : "disabled";
+
+  compliance_velocity_adjustment_.data.resize(TrajOrJogController::n_joints_, 0);
+  integrated_traj_position_adjustment_.resize(TrajOrJogController::n_joints_, 0);
+
+  JointTrajectoryController::rt_active_goal_.reset();
+  JointTrajectoryController::successful_joint_traj_.reset();
+
+  return true;
+}
+
+// Callback to turn compliance on
+template <class SegmentImpl, class HardwareInterface>
+bool ComplianceController<SegmentImpl, HardwareInterface>::enableCompliance(std_srvs::Trigger::Request& req,
+                                                                            std_srvs::Trigger::Response& res)
+{
+  compliance_enabled_ = true;
+
+  res.success = true;
+  res.message = compliance_enabled_;
+
+  compliance_velocity_adjustment_.data.resize(TrajOrJogController::n_joints_, 0);
+  integrated_traj_position_adjustment_.resize(TrajOrJogController::n_joints_, 0);
+
+  JointTrajectoryController::rt_active_goal_.reset();
+  JointTrajectoryController::successful_joint_traj_.reset();
+
+  return true;
+}
+
+// Callback to turn compliance off
+template <class SegmentImpl, class HardwareInterface>
+bool ComplianceController<SegmentImpl, HardwareInterface>::disableCompliance(std_srvs::Trigger::Request& req,
+                                                                            std_srvs::Trigger::Response& res)
+{
+  compliance_enabled_ = false;
+
+  res.success = true;
+  res.message = compliance_enabled_;
 
   compliance_velocity_adjustment_.data.resize(TrajOrJogController::n_joints_, 0);
   integrated_traj_position_adjustment_.resize(TrajOrJogController::n_joints_, 0);

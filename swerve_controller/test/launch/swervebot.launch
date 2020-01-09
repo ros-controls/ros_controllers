@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<launch>
+	<!-- <arg name="world" default="swervebot"/> -->
+	<arg name="paused" default="false"/>
+	<arg name="use_sim_time" default="true"/>
+	<arg name="gui" default="true"/>
+	<arg name="headless" default="false"/>
+
+	<arg name="debug" default="false"/>
+	<arg name="tune" default="false"/>
+	<arg name="rviz" default="false"/>
+	<arg name="joy" default="false"/>
+	<arg name="keyboard" default="false"/>
+	<arg name="groundtruth" default="true"/>
+	<arg name="plot" default="false"/>
+	<arg name="server" default="false"/>
+	<arg name="save" default="false"/>
+
+	<!-- Start rosbridge server -->
+	<group if="$(arg server)">
+		<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
+			<arg name="port" value="9090"/>
+		</include>
+	</group>
+
+	<!-- Saving the simulation into a rosbag -->
+	<group if="$(arg save)">
+    	<node pkg="rosbag" type="record" name="recorder" args="-a -o $(find swerve_controller)/../../../data/simulations/sim" output="screen"/>
+	</group>
+
+	<!-- Forward parameters in empty_world.launch from gazebo_ros package -->
+		<!-- <arg name="world_name" value="$(find swervebot_gazebo)/worlds/$(arg world).world"/> -->
+	<include file="$(find gazebo_ros)/launch/empty_world.launch">
+		<arg name="debug" value="$(arg debug)" />
+		<arg name="gui" value="$(arg gui)" />
+		<arg name="paused" value="$(arg paused)"/>
+		<arg name="use_sim_time" value="$(arg use_sim_time)"/>
+		<arg name="headless" value="$(arg headless)"/>
+	</include>ros
+
+	<!-- Generate the robot with xacro -->
+	<param name="robot_description"
+		command="xacro '$(find swerve_controller)/test/urdf/swervebot.xacro'" />
+	<param name="swervebot/robot_description"
+		command="xacro '$(find swerve_controller)/test/urdf/swervebot.xacro'" />
+
+	<!-- Spawn the robot into Gazebo -->
+	<node name="spawn_swervebot" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+		args="-urdf -model swervebot -param robot_description -z 1"/>
+
+	<!-- Show in rviz -->
+	<group if="$(arg rviz)">
+		<include file="$(find swerve_controller)/test/launch/swervebot_rviz.launch">
+			<arg name="description" value="false"/>
+		</include>
+	</group>
+
+	<!-- Start the robot low-level controllers -->
+	<include file="$(find swerve_controller)/test/launch/swervebot_control.launch">
+		<arg name="joy" value="$(arg joy)"/>
+		<arg name="keyboard" value="$(arg keyboard)"/>
+		<arg name="groundtruth" value="$(arg groundtruth)"/>
+	</include>
+ 
+	<!-- Plot joints -->
+	<group if="$(arg plot)">
+		<include file="$(find swerve_controller)/test/launch/swervebot_plot.launch" />
+	</group>
+
+	<!-- Parameters tuning -->
+	<group if="$(arg tune)">
+		<node name="param_tuner" pkg="rqt_reconfigure" type="rqt_reconfigure"/>
+	</group>
+
+</launch>
+

@@ -1,0 +1,128 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root version="2.3.8">
+ <tabbed_widget name="Main Window" parent="main_window">
+  <plotmatrix rows="2" columns="2" tab_name="steering positions">
+   <plot row="0" col="0">
+    <range left="0.007000" bottom="0.000009" top="0.000009" right="1.056000"/>
+    <limitY/>
+    <curve G="189" custom_transform="noTransform" B="34" name="/swervebot/joint_states/leg_lf_joint/pos" R="188"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="0">
+    <range left="0.007000" bottom="-0.000794" top="-0.000793" right="1.056000"/>
+    <limitY/>
+    <curve G="201" custom_transform="noTransform" B="56" name="/swervebot/joint_states/leg_lh_joint/pos" R="26"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="0" col="1">
+    <range left="0.007000" bottom="-0.000007" top="0.000006" right="1.056000"/>
+    <limitY/>
+    <curve G="119" custom_transform="noTransform" B="180" name="/swervebot/joint_states/leg_rf_joint/pos" R="31"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="1">
+    <range left="0.007000" bottom="-0.000882" top="-0.000881" right="1.056000"/>
+    <limitY/>
+    <curve G="39" custom_transform="noTransform" B="40" name="/swervebot/joint_states/leg_rh_joint/pos" R="214"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <plotmatrix rows="2" columns="2" tab_name="wheel speeds">
+   <plot row="0" col="0">
+    <range left="0.007000" bottom="-0.000010" top="0.000006" right="1.056000"/>
+    <limitY/>
+    <curve G="76" custom_transform="noTransform" B="193" name="/swervebot/joint_states/wheel_lf_joint/vel" R="241"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="0">
+    <range left="0.007000" bottom="-0.000010" top="0.000006" right="1.056000"/>
+    <limitY/>
+    <curve G="76" custom_transform="noTransform" B="193" name="/swervebot/joint_states/wheel_lf_joint/vel" R="241"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="0" col="1">
+    <range left="0.007000" bottom="-0.000239" top="-0.000223" right="1.056000"/>
+    <limitY/>
+    <curve G="103" custom_transform="noTransform" B="189" name="/swervebot/joint_states/wheel_rf_joint/vel" R="148"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="1">
+    <range left="0.007000" bottom="0.000464" top="0.000469" right="1.056000"/>
+    <limitY/>
+    <curve G="190" custom_transform="noTransform" B="207" name="/swervebot/joint_states/wheel_rh_joint/vel" R="23"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <plotmatrix rows="3" columns="1" tab_name="robot position">
+   <plot row="0" col="0">
+    <range left="0.000000" bottom="0.001960" top="0.001970" right="1.061000"/>
+    <limitY/>
+    <curve G="127" custom_transform="noTransform" B="14" name="/gazebo/link_states/pose.1/position/x" R="255"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="0">
+    <range left="0.000000" bottom="0.003274" top="0.003274" right="1.061000"/>
+    <limitY/>
+    <curve G="76" custom_transform="noTransform" B="193" name="/gazebo/link_states/pose.1/position/y" R="241"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="2" col="0">
+    <range left="0.000000" bottom="-0.000569" top="-0.000569" right="1.061000"/>
+    <limitY/>
+    <curve G="119" custom_transform="noTransform" B="180" name="/gazebo/link_states/pose.1/orientation/z" R="31"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <plotmatrix rows="3" columns="1" tab_name="robot velocity">
+   <plot row="0" col="0">
+    <range left="0.218000" bottom="0.000012" top="0.000012" right="5.218000"/>
+    <limitY/>
+    <curve G="201" custom_transform="noTransform" B="56" name="/gazebo/link_states/twist.1/linear/x" R="26"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="0">
+    <range left="0.218000" bottom="0.000001" top="0.000002" right="5.218000"/>
+    <limitY/>
+    <curve G="127" custom_transform="noTransform" B="14" name="/gazebo/link_states/twist.1/linear/y" R="255"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="2" col="0">
+    <range left="0.218000" bottom="-0.000007" top="0.000001" right="5.218000"/>
+    <limitY/>
+    <curve G="39" custom_transform="noTransform" B="40" name="/gazebo/link_states/twist.1/angular/z" R="214"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <currentPlotMatrix index="3"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad CSV">
+   <default time_axis=""/>
+  </plugin>
+  <plugin ID="DataLoad ROS bags">
+   <use_header_stamp value="false"/>
+   <use_renaming_rules value="true"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+  </plugin>
+  <plugin ID="DataLoad ULog"/>
+  <plugin ID="ROS Topic Subscriber">
+   <use_header_stamp value="false"/>
+   <use_renaming_rules value="true"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+   <selected_topics value="/gazebo/link_states /swervebot/joint_states"/>
+  </plugin>
+  <plugin ID="ROS Topic Re-Publisher" status="idle"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <previouslyLoaded_Datafiles/>
+ <previouslyLoaded_Streamer name="ROS Topic Subscriber"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations/>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>

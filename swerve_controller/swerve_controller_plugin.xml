@@ -1,0 +1,9 @@
+<library path="lib/libswerve_controller">
+
+  <class name="swerve_controller/SwerveController" type="swerve_controller::SwerveController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      The SwerveController tracks Twist messages with X and Y velocities and Z rotation. It expects 4 VelocityJointInterface type and 4 PositionJointInterface type of hardware interfaces.
+    </description>
+  </class>
+
+</library>

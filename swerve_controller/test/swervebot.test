@@ -1,0 +1,13 @@
+<launch>
+    <include file="$(find swerve_controller)/test/launch/swervebot.launch">
+        <arg name="debug" value="false" />
+        <arg name="gui" value="false" />
+        <arg name="rviz" value="false" />
+    </include>
+
+    <!-- Controller test -->
+    <test test-name="swervebot_test" pkg="swerve_controller" type="swerve_controller_test" time-limit="100.0">
+        <remap from="cmd_vel" to="/swervebot/swerve_controller/cmd_vel" />
+        <remap from="odom" to="/swervebot/swerve_controller/odom" />
+    </test>
+</launch>

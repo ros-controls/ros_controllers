@@ -1,0 +1,110 @@
+#! /usr/bin/env python
+
+##########################################################################
+# Software License Agreement (BSD License)
+#
+#  Copyright (c) 2020, Exobotic
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#
+#   * Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#   * Redistributions in binary form must reproduce the above
+#     copyright notice, this list of conditions and the following
+#     disclaimer in the documentation and/or other materials provided
+#     with the distribution.
+#   * Neither the name of Exobotic nor the names of its
+#     contributors may be used to endorse or promote products derived
+#     from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+#  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+#  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+#  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+#  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+#  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+#  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+#  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+#  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+#  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+##########################################################################
+
+import rospy as ros
+import threading
+import time
+
+from std_msgs.msg import Float64
+from geometry_msgs.msg import Twist, Vector3
+from sensor_msgs.msg import Joy
+
+
+class SwerveJoystick():
+
+	def __init__(self, rate=100, vx_i=0.0, vy_i=0.0, omega_i=0.0):
+
+		# Swerve controller
+		self.vx = vx_i
+		self.vy = vy_i
+		self.omega = omega_i
+		self.v_lin_max = 1.5 # m/s
+		self.v_rot_max = 2 # rad/s
+
+		# ROS messages
+		self.rate = ros.Rate(rate)
+		self.joy_sub_name = "joy"
+		self.twist_pub_name = "/swervebot/swerve_controller/cmd_vel"
+		self.twist_pub = None
+		self.twist_pub_data = None
+		self.twist_pub_thread_handle = None
+
+	def __del__(self):
+
+		if self.twist_pub_thread_handle is not None:
+			self.twist_pub_thread_handle.join()
+
+	def init_ros(self):
+
+		# Twist publishers
+		self.twist_pub = ros.Publisher(self.twist_pub_name, Twist, queue_size=1)
+		self.twist_pub_data = Twist()
+
+		# Joystick subscriber
+		self.joy_sub = ros.Subscriber(self.joy_sub_name, Joy, self.joy_thread)
+
+		# Publishing thread
+		self.run()
+
+	def run(self):
+
+		self.twist_pub_thread_handle = threading.Thread(target=self.pub_thread)
+		self.twist_pub_thread_handle.start()
+
+	def pub_thread(self):
+
+		while not ros.is_shutdown():
+
+			self.twist_pub.publish(self.twist_pub_data)
+			self.rate.sleep()
+
+	def joy_thread(self, msg):
+
+		self.vx = msg.axes[1] * self.v_lin_max
+		self.vy = msg.axes[0] * self.v_lin_max
+		self.omega = msg.axes[3] * self.v_rot_max
+
+		self.twist_pub_data = Twist(linear=Vector3(x=self.vx, y=self.vy), angular=Vector3(z=self.omega))
+
+
+if __name__ == "__main__":
+
+	ros.init_node("test_swerve_control")
+	swervebot = SwerveJoystick()
+	swervebot.init_ros()
+
+	while not ros.is_shutdown():
+		time.sleep(1)

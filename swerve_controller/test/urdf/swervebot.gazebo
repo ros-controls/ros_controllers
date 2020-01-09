@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<robot>
+
+	<!-- Gazebo colors and material properties -->
+	<gazebo reference="body">
+		<material>Gazebo/Orange</material>
+	</gazebo>
+	<gazebo reference="leg_lf">
+		<material>Gazebo/Green</material>
+	</gazebo>
+	<gazebo reference="leg_rf">
+		<material>Gazebo/Green</material>
+	</gazebo>
+	<gazebo reference="leg_lh">
+		<material>Gazebo/Green</material>
+	</gazebo>
+	<gazebo reference="leg_rh">
+		<material>Gazebo/Green</material>
+	</gazebo>
+	<gazebo reference="wheel_lf">
+		<material>Gazebo/Black</material>
+	</gazebo>
+	<gazebo reference="wheel_rf">
+		<material>Gazebo/Black</material>
+	</gazebo>
+	<gazebo reference="wheel_lh">
+		<material>Gazebo/Black</material>
+	</gazebo>
+	<gazebo reference="wheel_rh">
+		<material>Gazebo/Black</material>
+	</gazebo>
+
+	<gazebo>
+		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+			<robotNamespace>/swervebot</robotNamespace>
+			<robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+		</plugin>
+	</gazebo>
+
+	<gazebo>
+		<plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
+			<robotNamespace>/swervebot</robotNamespace>
+			<alwaysOn>true</alwaysOn>
+			<updateRate>100.0</updateRate>
+			<bodyName>body</bodyName>
+			<topicName>ground_truth_pose</topicName>
+			<gaussianNoise>0.001</gaussianNoise>
+			<frameName>world</frameName>
+			<xyzOffsets>0 0 0</xyzOffsets>
+			<rpyOffsets>0 0 0</rpyOffsets>
+		</plugin>
+	</gazebo>
+</robot>

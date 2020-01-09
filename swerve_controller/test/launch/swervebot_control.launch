@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<launch>
+
+	<arg name="joy" default="false"/>
+	<arg name="keyboard" default="true"/>
+	<arg name="groundtruth" default="true"/>
+
+	<!-- Load low-level drive controller configuration for the wheels from YAML file to parameter server -->
+	<rosparam file="$(find swerve_controller)/test/config/swervebot_control.yaml" command="load"/>
+
+	<!-- Load the low-level attitude controllers -->
+	<node name="control" pkg="controller_manager" type="spawner" respawn="false"
+		output="screen" ns="/swervebot" args="joint_state_controller swerve_controller"/>
+
+	<!-- Convert joint states to TF transforms for rviz, etc -->
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
+	respawn="false" output="screen">
+	    <rosparam param="publish_frequency">100</rosparam>
+		<remap from="/joint_states" to="/swervebot/joint_states" />
+	</node>
+
+	<!-- Test with the joystick-->
+	<group if="$(arg joy)">
+		<node name="joy" pkg="joy" type="joy_node"/>
+		<node name="joy_test" pkg="swerve_controller" type="joy_test"/>
+	</group>
+
+	<group if="$(arg keyboard)">
+		<node name="keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py">
+			<remap from="/cmd_vel" to="/swervebot/swerve_controller/cmd_vel" />
+		</node>
+	</group>
+
+
+	<!-- Publish ground truth -->
+	<group if="$(arg groundtruth)">
+		<node pkg="swerve_controller" type="tf_ground_truth" name="world_groundtruth_publisher" args="swervebot"/>
+	</group>
+
+</launch>

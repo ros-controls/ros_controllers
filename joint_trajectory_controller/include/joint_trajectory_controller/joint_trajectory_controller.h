@@ -246,7 +246,40 @@ protected:
    */
   void setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh=RealtimeGoalHandlePtr());
 
+  /**
+   * \brief Internal update function.
+   *
+   * Update time data, current states and errors and check tolerances.
+   */
+  void updateStateAndTimeData(const ros::Time& time, const ros::Duration& period);
+
+  /**
+   * \brief Set current active goal to succeeded (if present).
+   *
+   * \note This method is realtime-safe.
+   */
+  void setGoalAsSucceeded();
+
+  /**
+   * \brief Set action feedback (if active goal present).
+   *
+   * \note This method is realtime-safe.
+   */
+  void setActionFeedback();
+
+  /**
+   * \brief Check if all segments finished successfully.
+   */
+  bool allSegmentsCompleted();
+
 };
+
+template <class SegmentImpl, class HardwareInterface>
+inline bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
+allSegmentsCompleted()
+{
+  return successful_joint_traj_.count() == joints_.size();
+}
 
 } // namespace
 

@@ -2,6 +2,9 @@
 Changelog for package gripper_action_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.13.5 (2019-02-09)
 -------------------
 * Use a copy of the pointer in update() to avoid crash by cancelCB()

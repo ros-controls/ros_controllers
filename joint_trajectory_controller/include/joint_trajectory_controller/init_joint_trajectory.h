@@ -242,9 +242,9 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
   const bool has_current_trajectory = options.current_trajectory && !options.current_trajectory->empty();
   const bool has_joint_names        = options.joint_names        && !options.joint_names->empty();
   const bool has_angle_wraparound   = options.angle_wraparound   && !options.angle_wraparound->empty();
-  const bool has_rt_goal_handle     = options.rt_goal_handle != nullptr;
-  const bool has_other_time_base    = options.other_time_base != nullptr;
-  const bool has_default_tolerances = options.default_tolerances != nullptr;
+  const bool has_rt_goal_handle     = options.rt_goal_handle != NULL;
+  const bool has_other_time_base    = options.other_time_base != NULL;
+  const bool has_default_tolerances = options.default_tolerances != NULL;
 
   if (!has_current_trajectory && has_angle_wraparound)
   {

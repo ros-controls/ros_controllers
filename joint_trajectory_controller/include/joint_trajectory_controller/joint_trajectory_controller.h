@@ -270,13 +270,13 @@ protected:
   /**
    * \brief Check if all segments finished successfully.
    */
-  bool allSegmentsCompleted();
+  bool allSegmentsCompleted() const;
 
 };
 
 template <class SegmentImpl, class HardwareInterface>
 inline bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
-allSegmentsCompleted()
+allSegmentsCompleted() const
 {
   return successful_joint_traj_.count() == joints_.size();
 }

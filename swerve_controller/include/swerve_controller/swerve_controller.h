@@ -75,34 +75,15 @@ class SwerveController
     public:
         SwerveController();
 
-        /**
-         * \brief Initialize controller
-         * \param robot_hw      Velocity and position joint interface for the wheels
-         * \param root_nh       Node handle at root namespace
-         * \param controller_nh Node handle inside the controller namespace
-         */
         bool init(hardware_interface::RobotHW* robot_hw,
                              ros::NodeHandle& root_nh,
                              ros::NodeHandle &controller_nh);
 
-        /**
-         * \brief Updates controller, i.e. computes the odometry and sets the new velocity commands
-         * \param time   Current time
-         * \param period Time since the last called to update
-         */
         void update(const ros::Time& time, const ros::Duration& period);
 
-        /**
-         * \brief Starts controller
-         * \param time Current time
-         */
         void starting(const ros::Time& time);
 
-        /**
-         * \brief Stops controller
-         * \param time Current time
-         */
-        void stopping(const ros::Time& /*time*/);
+        void stopping(const ros::Time& time);
 
     private:
         std::string name_;
@@ -171,41 +152,17 @@ class SwerveController
         SpeedLimiter limiter_ang_;
 
     private:
-        /**
-         * \brief Update and publish odometry
-         * \param time   Current time
-         */
+
         void updateOdometry(const ros::Time &time);
-        /**
-         * \brief Compute and publish command
-         * \param time   Current time
-         * \param period Time since the last called to update
-         */
+        
         void updateCommand(const ros::Time& time, const ros::Duration& period);
 
-        /**
-         * \brief Brakes the wheels, i.e. sets the velocity to 0
-         */
         void brake();
 
-        /**
-         * \brief Velocity command callback
-         * \param command Velocity command message (twist)
-         */
         void cmdVelCallback(const geometry_msgs::Twist& command);
 
-
-        /**
-         * \brief Populates this class with the robot physical parameters at init
-         * \param controller_nh Node handle inside the controller namespace
-         */
         bool getPhysicalParams(ros::NodeHandle& controller_nh);
 
-        /**
-         * \brief Sets the odometry publishing fields
-         * \param root_nh Root node handle
-         * \param controller_nh Node handle inside the controller namespace
-         */
         void setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
 };
 

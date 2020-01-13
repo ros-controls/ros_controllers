@@ -42,55 +42,55 @@ from nav_msgs.msg import Odometry
 
 class Link2TF():
 
-	def __init__(self):
+    def __init__(self):
 
-		ros.init_node("tf_world_publisher")
+        ros.init_node("tf_world_publisher")
 
-		self.rate = ros.Rate(100)
-		self.tf_pub = tf.TransformBroadcaster()
-		self.tf_orig = "odom"
-		self.tf_dest = "world"
-		self.world_sub = ros.Subscriber("/swervebot/ground_truth_pose", Odometry, self.update_world)
-		self.odom_sub = ros.Subscriber("/swervebot/swerve_controller/odom", Odometry, self.update_odom)
+        self.rate = ros.Rate(100)
+        self.tf_pub = tf.TransformBroadcaster()
+        self.tf_orig = "odom"
+        self.tf_dest = "world"
+        self.world_sub = ros.Subscriber("/swervebot/ground_truth_pose", Odometry, self.update_world)
+        self.odom_sub = ros.Subscriber("/swervebot/swerve_controller/odom", Odometry, self.update_odom)
 
-		self.world_pose = np.array([0, 0, 0])
-		self.odom_pose = np.array([0, 0, 0])
-		self.world_ori = [0, 0, 0, 0]
-		self.odom_ori = [0, 0, 0, 0]
+        self.world_pose = np.array([0, 0, 0])
+        self.odom_pose = np.array([0, 0, 0])
+        self.world_ori = [0, 0, 0, 0]
+        self.odom_ori = [0, 0, 0, 0]
 
-	def run(self):
+    def run(self):
 
-		while not ros.is_shutdown():
+        while not ros.is_shutdown():
 
-			self.tf_pub.sendTransform(self.world_pose - self.odom_pose, 
-									  tf.transformations.quaternion_multiply(self.world_ori, self.odom_ori),
-									  ros.Time.now(), self.tf_orig, self.tf_dest)
+            self.tf_pub.sendTransform(self.world_pose - self.odom_pose, 
+                                      tf.transformations.quaternion_multiply(self.world_ori, self.odom_ori),
+                                      ros.Time.now(), self.tf_orig, self.tf_dest)
 
-			self.rate.sleep()
+            self.rate.sleep()
 
-	def update_world(self, msg):
+    def update_world(self, msg):
 
-		self.world_pose = np.array([msg.pose.pose.position.x,
-									msg.pose.pose.position.y,
-									msg.pose.pose.position.z])
+        self.world_pose = np.array([msg.pose.pose.position.x,
+                                    msg.pose.pose.position.y,
+                                    msg.pose.pose.position.z])
 
-		self.world_ori = [msg.pose.pose.orientation.x,
-						  msg.pose.pose.orientation.y,
-						  msg.pose.pose.orientation.z,
-						  msg.pose.pose.orientation.w]
+        self.world_ori = [msg.pose.pose.orientation.x,
+                          msg.pose.pose.orientation.y,
+                          msg.pose.pose.orientation.z,
+                          msg.pose.pose.orientation.w]
 
-	def update_odom(self, msg):
+    def update_odom(self, msg):
 
-		self.odom_pose = np.array([msg.pose.pose.position.x,
-								   msg.pose.pose.position.y,
-								   msg.pose.pose.position.z])
+        self.odom_pose = np.array([msg.pose.pose.position.x,
+                                   msg.pose.pose.position.y,
+                                   msg.pose.pose.position.z])
 
-		self.odom_ori = [msg.pose.pose.orientation.x,
-						 msg.pose.pose.orientation.y,
-						 msg.pose.pose.orientation.z,
-						 -msg.pose.pose.orientation.w]
+        self.odom_ori = [msg.pose.pose.orientation.x,
+                         msg.pose.pose.orientation.y,
+                         msg.pose.pose.orientation.z,
+                         -msg.pose.pose.orientation.w]
 
 if __name__ == '__main__':
 
-	l2t = Link2TF()
-	l2t.run()
+    l2t = Link2TF()
+    l2t.run()

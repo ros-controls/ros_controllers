@@ -17,6 +17,7 @@
     <group unless="$(arg description)">
         <node name="rviz" pkg="rviz" type="rviz" args="-d $(find swerve_controller)/test/config/swervebot.rviz -f world"/>
     </group>
+
     <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="odom_trajectory" output="screen">
         <remap from="/trajectory" to="/swervebot/odom_path" />
         <param name="target_frame_name" type="string" value="/world" />
@@ -24,6 +25,7 @@
         <param name="trajectory_update_rate" type="double" value="4" />
         <param name="trajectory_publish_rate" type="double" value="1" />
     </node>
+    
     <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="robot_trajectory" output="screen">
         <remap from="/trajectory" to="/swervebot/body_path" />
         <param name="target_frame_name" type="string" value="/world" />

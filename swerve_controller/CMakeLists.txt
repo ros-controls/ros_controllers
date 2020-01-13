@@ -1,13 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(swerve_controller)
 
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
 # Package dependencies
-set(${PROJECT_NAME}_CATKIN_DEPS
+find_package(catkin REQUIRED COMPONENTS 
     controller_interface
     joint_state_controller
     nav_msgs
@@ -17,8 +12,6 @@ set(${PROJECT_NAME}_CATKIN_DEPS
     realtime_tools
     tf
     urdf_geometry_parser)
-list(SORT ${PROJECT_NAME}_CATKIN_DEPS)
-find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_CATKIN_DEPS})
 
 # Create the package
 catkin_package(
@@ -27,9 +20,8 @@ catkin_package(
   CATKIN_DEPENDS ${${PROJECT_NAME}_CATKIN_DEPS}
 )
 
-# Source and headers for build
-include_directories(include)
-include_directories(${catkin_INCLUDE_DIRS})
+# Source and headers
+include_directories(include ${catkin_INCLUDE_DIRS})
 add_library(${PROJECT_NAME} src/odometry.cpp src/speed_limiter.cpp src/swerve_controller.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 

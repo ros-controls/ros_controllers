@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-	<!-- <arg name="world" default="swervebot"/> -->
 	<arg name="paused" default="false"/>
 	<arg name="use_sim_time" default="true"/>
 	<arg name="gui" default="true"/>
@@ -29,7 +28,6 @@
 	</group>
 
 	<!-- Forward parameters in empty_world.launch from gazebo_ros package -->
-		<!-- <arg name="world_name" value="$(find swervebot_gazebo)/worlds/$(arg world).world"/> -->
 	<include file="$(find gazebo_ros)/launch/empty_world.launch">
 		<arg name="debug" value="$(arg debug)" />
 		<arg name="gui" value="$(arg gui)" />

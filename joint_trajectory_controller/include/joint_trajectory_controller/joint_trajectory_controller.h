@@ -250,7 +250,7 @@ protected:
    * \brief Internal update function.
    * Update time data, current states and errors and check tolerances.
    */
-  virtual void updateStateAndTimeData(const ros::Time& time, const ros::Duration& period);
+  virtual void updateStateAndTimeData(const ros::Time& time, const ros::Duration& period, TimeData& time_data);
 
   /**
    * \brief Set current active goal to succeeded (if present).

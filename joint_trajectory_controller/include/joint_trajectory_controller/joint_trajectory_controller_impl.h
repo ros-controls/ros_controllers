@@ -348,7 +348,10 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 update(const ros::Time& time, const ros::Duration& period)
 {
-  updateStateAndTimeData(time, period);
+  // Prepare time data caching
+  TimeData time_data;
+
+  updateStateAndTimeData(time, period, time_data);
 
   if (allSegmentsCompleted())
   {
@@ -356,12 +359,12 @@ update(const ros::Time& time, const ros::Duration& period)
   }
 
   // Hardware interface adapter: Generate and send commands
-  hw_iface_adapter_.updateCommand(time_data_.readFromRT()->uptime, time_data_.readFromRT()->period,
+  hw_iface_adapter_.updateCommand(time_data.uptime, time_data.period,
                                   desired_state_, state_error_);
 
   setActionFeedback();
 
-  publishState(time_data_.readFromRT()->uptime);
+  publishState(time_data.uptime);
 }
 
 template <class SegmentImpl, class HardwareInterface>
@@ -688,7 +691,7 @@ setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
 
 template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-updateStateAndTimeData(const ros::Time& time, const ros::Duration& period)
+updateStateAndTimeData(const ros::Time& time, const ros::Duration& period, TimeData& time_data)
 {
   // Get currently followed trajectory
   TrajectoryPtr curr_traj_ptr;
@@ -696,7 +699,6 @@ updateStateAndTimeData(const ros::Time& time, const ros::Duration& period)
   Trajectory& curr_traj = *curr_traj_ptr;
 
   // Update time data
-  TimeData time_data;
   time_data.time   = time;                                     // Cache current time
   time_data.period = period;                                   // Cache current control period
   time_data.uptime = time_data_.readFromRT()->uptime + period; // Update controller uptime
@@ -766,7 +768,7 @@ updateStateAndTimeData(const ros::Time& time, const ros::Duration& period)
           ROS_DEBUG_STREAM_THROTTLE_NAMED(1,name_,"Finished executing last segment, checking goal tolerances");
 
         // Controller uptime
-        const ros::Time uptime = time_data_.readFromRT()->uptime;
+        const ros::Time uptime = time_data.uptime;
 
         // Checks that we have ended inside the goal tolerances
         const SegmentTolerancesPerJoint<Scalar>& tolerances = segment_it->getTolerances();

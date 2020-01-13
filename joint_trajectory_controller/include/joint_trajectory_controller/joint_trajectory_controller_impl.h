@@ -359,8 +359,7 @@ update(const ros::Time& time, const ros::Duration& period)
   }
 
   // Hardware interface adapter: Generate and send commands
-  hw_iface_adapter_.updateCommand(time_data.uptime, time_data.period,
-                                  desired_state_, state_error_);
+  updateHardwareInterface(time_data);
 
   setActionFeedback();
 

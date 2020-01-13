@@ -253,6 +253,11 @@ protected:
   virtual void updateStateAndTimeData(const ros::Time& time, const ros::Duration& period, TimeData& time_data);
 
   /**
+   * \brief Update commands on the hardware interface.
+   */
+  virtual void updateHardwareInterface(const TimeData& time_data);
+
+  /**
    * \brief Set current active goal to succeeded (if present).
    * \note This method is realtime-safe.
    */
@@ -270,6 +275,14 @@ protected:
   bool allSegmentsCompleted() const;
 
 };
+
+template <class SegmentImpl, class HardwareInterface>
+inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+updateHardwareInterface(const TimeData& time_data)
+{
+  hw_iface_adapter_.updateCommand(time_data.uptime, time_data.period,
+                                  desired_state_, state_error_);
+}
 
 template <class SegmentImpl, class HardwareInterface>
 inline bool JointTrajectoryController<SegmentImpl, HardwareInterface>::

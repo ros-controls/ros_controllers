@@ -248,21 +248,18 @@ protected:
 
   /**
    * \brief Internal update function.
-   *
    * Update time data, current states and errors and check tolerances.
    */
   void updateStateAndTimeData(const ros::Time& time, const ros::Duration& period);
 
   /**
    * \brief Set current active goal to succeeded (if present).
-   *
    * \note This method is realtime-safe.
    */
   void setGoalAsSucceeded();
 
   /**
    * \brief Set action feedback (if active goal present).
-   *
    * \note This method is realtime-safe.
    */
   void setActionFeedback();

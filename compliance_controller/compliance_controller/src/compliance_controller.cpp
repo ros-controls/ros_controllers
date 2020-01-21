@@ -86,7 +86,7 @@ void ComplianceController<SegmentImpl, HardwareInterface>::update(const ros::Tim
   else
   {
     // Update the base class, JointTrajectoryController
-    if (!stale_compliance_command)
+    if (!stale_compliance_command && !near_joint_limit_ && compliance_enabled_)
     {
       ComplianceController::updateJointTrajControllerWithCompliace(time, period);
     }

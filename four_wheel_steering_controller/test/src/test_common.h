@@ -27,6 +27,9 @@
 
 /// \author Bence Magyar
 
+#pragma once
+
+
 #include <cmath>
 
 #include <gtest/gtest.h>
@@ -131,4 +134,3 @@ inline tf::Quaternion tfQuatFromGeomQuat(const geometry_msgs::Quaternion& quat)
 {
   return tf::Quaternion(quat.x, quat.y, quat.z, quat.w);
 }
-

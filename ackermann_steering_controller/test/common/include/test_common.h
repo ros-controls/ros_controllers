@@ -28,6 +28,9 @@
 /// \author Bence Magyar
 /// \author Masaru Morita
 
+#pragma once
+
+
 #include <algorithm>
 #include <cmath>
 #include <mutex>

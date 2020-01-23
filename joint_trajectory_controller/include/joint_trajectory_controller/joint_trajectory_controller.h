@@ -28,8 +28,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian, Stuart Glaser
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_CONTROLLER_H
-#define JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_CONTROLLER_H
+#pragma once
+
 
 // C++ standard
 #include <cassert>
@@ -119,7 +119,7 @@ namespace joint_trajectory_controller
  * \endcode
  *
  * \tparam HardwareInterface Controller hardware interface. Currently \p hardware_interface::PositionJointInterface,
- * \p hardware_interface::VelocityJointInterface, and \p hardware_interface::EffortJointInterface are supported 
+ * \p hardware_interface::VelocityJointInterface, and \p hardware_interface::EffortJointInterface are supported
  * out-of-the-box.
  */
 template <class SegmentImpl, class HardwareInterface>
@@ -251,5 +251,3 @@ protected:
 } // namespace
 
 #include <joint_trajectory_controller/joint_trajectory_controller_impl.h>
-
-#endif // header guard

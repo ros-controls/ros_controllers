@@ -33,8 +33,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef EFFORT_CONTROLLERS__JOINT_POSITION_CONTROLLER_H
-#define EFFORT_CONTROLLERS__JOINT_POSITION_CONTROLLER_H
+#pragma once
+
 
 /**
    @class effort_controllers::JointPositionController
@@ -103,7 +103,7 @@ public:
    *
    * \returns True if initialization was successful and the controller
    * is ready to be started.
-   */  
+   */
   bool init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n);
 
   /*!
@@ -128,7 +128,7 @@ public:
    * \param time The current time
    */
   void starting(const ros::Time& time);
-  
+
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
    */
@@ -195,5 +195,3 @@ private:
 };
 
 } // namespace
-
-#endif

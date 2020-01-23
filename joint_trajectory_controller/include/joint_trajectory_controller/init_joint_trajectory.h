@@ -27,8 +27,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER_INIT_JOINT_TRAJECTORY_H
-#define JOINT_TRAJECTORY_CONTROLLER_INIT_JOINT_TRAJECTORY_H
+#pragma once
+
 
 // C++ standard
 #include <algorithm>
@@ -524,5 +524,3 @@ Trajectory initJointTrajectory(const trajectory_msgs::JointTrajectory&       msg
 }
 
 } // namespace
-
-#endif // header guard

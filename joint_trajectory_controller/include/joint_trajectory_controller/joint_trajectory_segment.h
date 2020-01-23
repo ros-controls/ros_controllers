@@ -27,8 +27,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_SEGMENT_H
-#define JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_SEGMENT_H
+#pragma once
+
 
 // C++ standard
 #include <cmath>
@@ -241,5 +241,3 @@ Scalar wraparoundJointOffset(const Scalar& prev_position,
 }
 
 } // namespace
-
-#endif // header guard

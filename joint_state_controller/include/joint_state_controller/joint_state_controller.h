@@ -29,8 +29,8 @@
  * Author: Wim Meeussen
  */
 
-#ifndef JOINT_STATE_CONTROLLER_JOINT_STATE_CONTROLLER_H
-#define JOINT_STATE_CONTROLLER_JOINT_STATE_CONTROLLER_H
+#pragma once
+
 
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_state_interface.h>
@@ -99,5 +99,3 @@ private:
 };
 
 }
-
-#endif

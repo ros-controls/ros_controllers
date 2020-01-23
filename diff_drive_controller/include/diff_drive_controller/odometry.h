@@ -39,8 +39,8 @@
  * Author: Paul Mathieu
  */
 
-#ifndef ODOMETRY_H_
-#define ODOMETRY_H_
+#pragma once
+
 
 #include <ros/time.h>
 #include <boost/accumulators/accumulators.hpp>
@@ -208,5 +208,3 @@ namespace diff_drive_controller
     IntegrationFunction integrate_fun_;
   };
 }
-
-#endif /* ODOMETRY_H_ */

@@ -27,8 +27,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_MSG_UTILS_H
-#define JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_MSG_UTILS_H
+#pragma once
+
 
 #include <algorithm>
 #include <iterator>
@@ -166,5 +166,3 @@ findPoint(const trajectory_msgs::JointTrajectory& msg,
 }
 
 } // namespace
-
-#endif // header guard

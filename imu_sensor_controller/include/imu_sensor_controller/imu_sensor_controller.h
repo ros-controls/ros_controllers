@@ -28,8 +28,8 @@
 
 /// \author: Adolfo Rodriguez Tsouroukdissian
 
-#ifndef IMU_SENSOR_CONTROLLER_IMU_SENSOR_CONTROLLER_H
-#define IMU_SENSOR_CONTROLLER_IMU_SENSOR_CONTROLLER_H
+#pragma once
+
 
 #include <controller_interface/controller.h>
 #include <hardware_interface/imu_sensor_interface.h>
@@ -60,5 +60,3 @@ private:
 };
 
 }
-
-#endif

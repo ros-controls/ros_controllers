@@ -28,8 +28,7 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian, Stuart Glaser
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_CONTROLLER_IMP_H
-#define JOINT_TRAJECTORY_CONTROLLER_JOINT_TRAJECTORY_CONTROLLER_IMP_H
+#pragma once
 
 
 namespace joint_trajectory_controller
@@ -812,5 +811,3 @@ setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
 }
 
 } // namespace
-
-#endif // header guard

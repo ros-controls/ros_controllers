@@ -27,8 +27,8 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian
 
-#ifndef GRIPPER_ACTION_CONTROLLER_GRIPPER_ACTION_CONTROLLER_H
-#define GRIPPER_ACTION_CONTROLLER_GRIPPER_ACTION_CONTROLLER_H
+#pragma once
+
 
 // C++ standard
 #include <cassert>
@@ -80,14 +80,14 @@ public:
     double position_; // Last commanded position
     double max_effort_; // Max allowed effort
   };
-  
+
   GripperActionController();
-  
+
   /** \name Non Real-Time Safe Functions
    *\{*/
   bool init(HardwareInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
   /*\}*/
-  
+
   /** \name Real-Time Safe Functions
    *\{*/
   /** \brief Holds the current position. */
@@ -95,7 +95,7 @@ public:
 
   /** \brief Cancels the active action goal, if any. */
   void stopping(const ros::Time& time);
-  
+
   void update(const ros::Time& time, const ros::Duration& period);
   /*\}*/
 
@@ -112,8 +112,8 @@ private:
 
   typedef HardwareInterfaceAdapter<HardwareInterface> HwIfaceAdapter;
 
-  bool                                          update_hold_position_; 
-  
+  bool                                          update_hold_position_;
+
   bool                                         verbose_;            ///< Hard coded verbose flag to help in debugging
   std::string                                  name_;               ///< Controller name.
   hardware_interface::JointHandle joint_;                          ///< Handles to controlled joints.
@@ -153,5 +153,3 @@ private:
 } // namespace
 
 #include <gripper_action_controller/gripper_action_controller_impl.h>
-
-#endif // header guard

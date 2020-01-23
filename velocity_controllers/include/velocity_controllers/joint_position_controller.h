@@ -40,8 +40,8 @@
  Desc: Velocity-based position controller using basic PID loop
 */
 
-#ifndef VELOCITY_CONTROLLERS__JOINT_POSITION_CONTROLLER_H
-#define VELOCITY_CONTROLLERS__JOINT_POSITION_CONTROLLER_H
+#pragma once
+
 
 /**
    @class velocity_controllers::JointPositionController
@@ -135,7 +135,7 @@ public:
    * \param time The current time
    */
   void starting(const ros::Time& time);
-  
+
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
    */
@@ -202,5 +202,3 @@ private:
 };
 
 } // namespace
-
-#endif

@@ -28,8 +28,8 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian
 
-#ifndef GRIPPER_ACTION_CONTROLLER_HARDWARE_INTERFACE_ADAPTER_H
-#define GRIPPER_ACTION_CONTROLLER_HARDWARE_INTERFACE_ADAPTER_H
+#pragma once
+
 
 #include <cassert>
 #include <string>
@@ -145,13 +145,13 @@ public:
       ROS_WARN_STREAM("Failed to initialize PID gains from ROS parameter server.");
       return false;
     }
-  
+
     return true;
   }
 
   void starting(const ros::Time& time)
   {
-    if (!joint_handle_ptr_) 
+    if (!joint_handle_ptr_)
     {
       return;
     }
@@ -185,5 +185,3 @@ private:
   PidPtr pid_;
   hardware_interface::JointHandle* joint_handle_ptr_;
 };
-
-#endif // header guard

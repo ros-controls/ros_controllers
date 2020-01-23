@@ -27,8 +27,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER_TOLERANCES_H
-#define JOINT_TRAJECTORY_CONTROLLER_TOLERANCES_H
+#pragma once
+
 
 // C++ standard
 #include <cassert>
@@ -314,5 +314,3 @@ SegmentTolerances<Scalar> getSegmentTolerances(const ros::NodeHandle& nh,
 }
 
 } // namespace
-
-#endif // header guard

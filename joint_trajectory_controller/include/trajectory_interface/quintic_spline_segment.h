@@ -28,8 +28,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian, Stuart Glaser, Mrinal Kalakrishnan
 
-#ifndef TRAJECTORY_INTERFACE_QUINTIC_SPLINE_SEGMENT_H
-#define TRAJECTORY_INTERFACE_QUINTIC_SPLINE_SEGMENT_H
+#pragma once
+
 
 #include <array>
 #include <iterator>
@@ -407,5 +407,3 @@ sampleWithTimeBounds(const SplineCoefficients& coefficients, const Scalar& durat
 }
 
 } // namespace
-
-#endif // header guard

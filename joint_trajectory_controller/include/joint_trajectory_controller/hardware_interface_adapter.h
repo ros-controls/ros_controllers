@@ -27,8 +27,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER_HARDWARE_INTERFACE_ADAPTER_H
-#define JOINT_TRAJECTORY_CONTROLLER_HARDWARE_INTERFACE_ADAPTER_H
+#pragma once
+
 
 #include <cassert>
 #include <string>
@@ -356,5 +356,3 @@ public:
 private:
   std::vector<hardware_interface::PosVelAccJointHandle>* joint_handles_ptr_;
 };
-
-#endif // header guard

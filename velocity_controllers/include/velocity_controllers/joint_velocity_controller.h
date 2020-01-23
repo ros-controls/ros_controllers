@@ -34,8 +34,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef VELOCITY_CONTROLLERS_JOINT_VELOCITY_CONTROLLER_H
-#define VELOCITY_CONTROLLERS_JOINT_VELOCITY_CONTROLLER_H
+#pragma once
+
 
 #include <forward_command_controller/forward_command_controller.h>
 
@@ -59,5 +59,3 @@ typedef forward_command_controller::ForwardCommandController<hardware_interface:
         JointVelocityController;
 
 }
-
-#endif

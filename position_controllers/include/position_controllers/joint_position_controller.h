@@ -34,8 +34,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef POSITION_CONTROLLERS_JOINT_POSITION_CONTROLLER_H
-#define POSITION_CONTROLLERS_JOINT_POSITION_CONTROLLER_H
+#pragma once
+
 
 #include <forward_command_controller/forward_command_controller.h>
 
@@ -58,5 +58,3 @@ namespace position_controllers
 typedef forward_command_controller::ForwardCommandController<hardware_interface::PositionJointInterface>
         JointPositionController;
 }
-
-#endif

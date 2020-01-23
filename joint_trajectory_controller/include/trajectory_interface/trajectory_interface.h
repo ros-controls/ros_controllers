@@ -27,8 +27,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef TRAJECTORY_INTERFACE_TRAJECTORY_INTERFACE_H
-#define TRAJECTORY_INTERFACE_TRAJECTORY_INTERFACE_H
+#pragma once
+
 
 #include <algorithm>
 #include <iterator>
@@ -152,5 +152,3 @@ inline typename Trajectory::const_iterator sample(const Trajectory&             
 }
 
 } // namespace
-
-#endif // header guard

@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) 2013, PAL Robotics S.L.
 // Copyright (c) 2008, Willow Garage, Inc.
@@ -29,8 +28,8 @@
 
 /// \author Adolfo Rodriguez Tsouroukdissian
 
-#ifndef TRAJECTORY_INTERFACE_POS_VEL_ACC_STATE_H
-#define TRAJECTORY_INTERFACE_POS_VEL_ACC_STATE_H
+#pragma once
+
 
 #include <vector>
 
@@ -73,5 +72,3 @@ struct PosVelAccState
 };
 
 } // namespace
-
-#endif // header guard

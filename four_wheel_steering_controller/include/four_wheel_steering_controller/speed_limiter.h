@@ -36,8 +36,8 @@
  * Author: Enrique Fernández
  */
 
-#ifndef SPEED_LIMITER_H
-#define SPEED_LIMITER_H
+#pragma once
+
 
 namespace four_wheel_steering_controller
 {
@@ -133,5 +133,3 @@ namespace four_wheel_steering_controller
   };
 
 } // namespace four_wheel_steering_controller
-
-#endif // SPEED_LIMITER_H

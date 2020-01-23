@@ -27,8 +27,8 @@
 
 /// \author Sachin Chitta, Adolfo Rodriguez Tsouroukdissian, Stu Glaser
 
-#ifndef GRIPPER_ACTION_CONTROLLER_GRIPPER_ACTION_CONTROLLER_IMPL_H
-#define GRIPPER_ACTION_CONTROLLER_GRIPPER_ACTION_CONTROLLER_IMPL_H
+#pragma once
+
 
 namespace gripper_action_controller
 {
@@ -39,7 +39,7 @@ std::string getLeafNamespace(const ros::NodeHandle& nh)
   const std::string complete_ns = nh.getNamespace();
   std::size_t id   = complete_ns.find_last_of("/");
   return complete_ns.substr(id + 1);
-}  
+}
 
 urdf::ModelSharedPtr getUrdf(const ros::NodeHandle& nh, const std::string& param_name)
 {
@@ -89,7 +89,7 @@ std::vector<urdf::JointConstSharedPtr> getUrdfJoints(const urdf::Model& urdf, co
 template <class HardwareInterface>
 inline void GripperActionController<HardwareInterface>::
 starting(const ros::Time& time)
-{  
+{
   command_struct_rt_.position_ = joint_.getPosition();
   command_struct_rt_.max_effort_ = default_max_effort_;
   command_.initRT(command_struct_rt_);
@@ -98,7 +98,7 @@ starting(const ros::Time& time)
   hw_iface_adapter_.starting(ros::Time(0.0));
   last_movement_time_ = time;
 }
- 
+
 template <class HardwareInterface>
 inline void GripperActionController<HardwareInterface>::
 stopping(const ros::Time& time)
@@ -111,7 +111,7 @@ inline void GripperActionController<HardwareInterface>::
 preemptActiveGoal()
 {
   RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
-   
+
   // Cancels the currently active goal
   if (current_active_goal)
   {
@@ -134,45 +134,45 @@ bool GripperActionController<HardwareInterface>::init(HardwareInterface* hw,
 						      ros::NodeHandle&   controller_nh)
 {
   using namespace internal;
-  
+
   // Cache controller node handle
   controller_nh_ = controller_nh;
-  
+
   // Controller name
   name_ = getLeafNamespace(controller_nh_);
-  
+
   // Action status checking update rate
   double action_monitor_rate = 20.0;
   controller_nh_.getParam("action_monitor_rate", action_monitor_rate);
   action_monitor_period_ = ros::Duration(1.0 / action_monitor_rate);
   ROS_DEBUG_STREAM_NAMED(name_, "Action status changes will be monitored at " << action_monitor_rate << "Hz.");
-  
+
   // Controlled joint
   controller_nh_.getParam("joint", joint_name_);
-  if (joint_name_.empty()) 
+  if (joint_name_.empty())
   {
     ROS_ERROR_STREAM_NAMED(name_, "Could not find joint name on param server");
     return false;
   }
-  
+
   // URDF joints
   urdf::ModelSharedPtr urdf = getUrdf(root_nh, "robot_description");
-  if (!urdf) 
+  if (!urdf)
   {
     return false;
   }
-  
+
   std::vector<std::string> joint_names;
   joint_names.push_back(joint_name_);
   std::vector<urdf::JointConstSharedPtr> urdf_joints = getUrdfJoints(*urdf, joint_names);
-  if (urdf_joints.empty()) 
+  if (urdf_joints.empty())
   {
     return false;
   }
-  
+
   // Initialize members
   // Joint handle
-  try 
+  try
   {
     joint_ = hw->getHandle(joint_name_);
   }
@@ -186,17 +186,17 @@ bool GripperActionController<HardwareInterface>::init(HardwareInterface* hw,
   ROS_DEBUG_STREAM_NAMED(name_, "Initialized controller '" << name_ << "' with:" <<
 			 "\n- Hardware interface type: '" << this->getHardwareInterfaceType() << "'" <<
 			 "\n");
-  
+
   // Default tolerances
   controller_nh_.param<double>("goal_tolerance", goal_tolerance_, 0.01);
   goal_tolerance_ = fabs(goal_tolerance_);
-  // Max allowable effort 
+  // Max allowable effort
   controller_nh_.param<double>("max_effort", default_max_effort_, 0.0);
   default_max_effort_ = fabs(default_max_effort_);
   // Stall - stall velocity threshold, stall timeout
   controller_nh_.param<double>("stall_velocity_threshold", stall_velocity_threshold_, 0.001);
   controller_nh_.param<double>("stall_timeout", stall_timeout_, 1.0);
-  
+
   // Hardware interface adapter
   hw_iface_adapter_.init(joint_, controller_nh_);
 
@@ -215,7 +215,7 @@ bool GripperActionController<HardwareInterface>::init(HardwareInterface* hw,
 					boost::bind(&GripperActionController::goalCB,   this, _1),
 					boost::bind(&GripperActionController::cancelCB, this, _1),
 					false));
-  action_server_->start();    
+  action_server_->start();
   return true;
 }
 
@@ -230,12 +230,12 @@ update(const ros::Time& time, const ros::Duration& period)
 
   double error_position = command_struct_rt_.position_ - current_position;
   double error_velocity = - current_velocity;
-    
+
   checkForSuccess(time, error_position, current_position, current_velocity);
 
   // Hardware interface adapter: Generate and send commands
   computed_command_ = hw_iface_adapter_.updateCommand(time, period,
-						      command_struct_rt_.position_, 0.0, 
+						      command_struct_rt_.position_, 0.0,
 						      error_position, error_velocity, command_struct_rt_.max_effort_);
 }
 
@@ -244,7 +244,7 @@ void GripperActionController<HardwareInterface>::
 goalCB(GoalHandle gh)
 {
   ROS_DEBUG_STREAM_NAMED(name_,"Recieved new action goal");
-  
+
   // Precondition: Running controller
   if (!this->isRunning())
   {
@@ -271,7 +271,7 @@ goalCB(GoalHandle gh)
   pre_alloc_result_->stalled = false;
 
   last_movement_time_ = ros::Time::now();
-    
+
   // Setup goal status checking timer
   goal_handle_timer_ = controller_nh_.createTimer(action_monitor_period_,
                                                   &RealtimeGoalHandle::runNonRealtime,
@@ -285,17 +285,17 @@ void GripperActionController<HardwareInterface>::
 cancelCB(GoalHandle gh)
 {
   RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
-  
+
   // Check that cancel request refers to currently active goal (if any)
   if (current_active_goal && current_active_goal->gh_ == gh)
   {
     // Reset current goal
     rt_active_goal_.reset();
-    
+
     // Enter hold current position mode
     setHoldPosition(ros::Time(0.0));
     ROS_DEBUG_NAMED(name_, "Canceling active action goal because cancel callback recieved from actionlib.");
-    
+
     // Mark the current goal as canceled
     current_active_goal->gh_.setCanceled();
   }
@@ -348,5 +348,3 @@ checkForSuccess(const ros::Time& time, double error_position, double current_pos
 }
 
 } // namespace
-
-#endif // header guard

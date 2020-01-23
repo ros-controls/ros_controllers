@@ -36,6 +36,9 @@
  * Author: Masaru Morita, Bence Magyar, Enrique Fernández
  */
 
+#pragma once
+
+
 #include <ackermann_steering_controller/odometry.h>
 #include <controller_interface/controller.h>
 #include <controller_interface/multi_interface_controller.h>

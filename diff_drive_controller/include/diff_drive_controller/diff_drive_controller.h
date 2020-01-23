@@ -36,6 +36,9 @@
  * Author: Bence Magyar, Enrique Fernández
  */
 
+#pragma once
+
+
 #include <control_msgs/JointTrajectoryControllerState.h>
 #include <controller_interface/controller.h>
 #include <diff_drive_controller/DiffDriveControllerConfig.h>
@@ -231,7 +234,7 @@ namespace diff_drive_controller{
 
     /// Dynamic Reconfigure server
     typedef dynamic_reconfigure::Server<DiffDriveControllerConfig> ReconfigureServer;
-    
+
     std::shared_ptr<ReconfigureServer> dyn_reconf_server_;
 
   private:

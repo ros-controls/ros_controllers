@@ -1,5 +1,8 @@
 // NOTE: The contents of this file have been taken largely from the ros_control wiki tutorials
 
+#pragma once
+
+
 // ROS
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>

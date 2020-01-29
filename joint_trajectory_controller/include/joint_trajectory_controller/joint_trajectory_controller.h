@@ -39,7 +39,7 @@
 
 // Boost
 #include <boost/shared_ptr.hpp>
-#include <boost/dynamic_bitset.hpp>
+#include <boost/optional.hpp>
 
 // ROS
 #include <ros/node_handle.h>
@@ -142,7 +142,7 @@ public:
   /** \brief Cancels the active action goal, if any. */
   void stopping(const ros::Time& /*time*/);
 
-  void update(const ros::Time& time, const ros::Duration& period);
+  void update(const ros::Time& current_time, const ros::Duration& current_control_period);
   /*\}*/
 
 protected:
@@ -176,6 +176,9 @@ protected:
   typedef HardwareInterfaceAdapter<HardwareInterface, typename Segment::State> HwIfaceAdapter;
   typedef typename HardwareInterface::ResourceHandleType JointHandle;
 
+  typedef control_msgs::FollowJointTrajectoryResult TrajectoryResult;
+  typedef control_msgs::FollowJointTrajectoryResult::_error_code_type TrajectoryResultError;
+
   bool                      verbose_;            ///< Hard coded verbose flag to help in debugging
   std::string               name_;               ///< Controller name.
   std::vector<JointHandle>  joints_;             ///< Handles to controlled joints.
@@ -200,7 +203,6 @@ protected:
   typename Segment::State desired_state_;         ///< Preallocated workspace variable.
   typename Segment::State state_error_;           ///< Preallocated workspace variable.
   typename Segment::State desired_joint_state_;   ///< Preallocated workspace variable.
-  typename Segment::State state_joint_error_;     ///< Preallocated workspace variable.
 
   realtime_tools::RealtimeBuffer<TimeData> time_data_;
 
@@ -208,7 +210,6 @@ protected:
   ros::Duration action_monitor_period_;
 
   typename Segment::Time stop_trajectory_duration_;  ///< Duration for stop ramp. If zero, the controller stops at the actual position.
-  boost::dynamic_bitset<> successful_joint_traj_;
   bool allow_partial_joints_goal_;
 
   // ROS API
@@ -234,7 +235,7 @@ protected:
    * \note This method is realtime-safe and is meant to be called from \ref update, as it shares data with it without
    * any locking.
    */
-  void publishState(const ros::Time& time);
+  void publishState(const ros::Time& time, const ros::Time& current_time);
 
   /**
    * \brief Hold the current position.
@@ -246,6 +247,45 @@ protected:
    */
   void setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh=RealtimeGoalHandlePtr());
 
+private:
+  TimeData createUpdatedTimeData(const ros::Time& current_time, const ros::Duration& current_control_period);
+
+  void setActionFeedbackForGoal(RealtimeGoalHandle *const goal, const ros::Time& current_time) const;
+
+  void updateStatesWithRegardToJoint(const unsigned int& joint_index);
+
+  bool isSegmentActive(const RealtimeGoalHandle *const segment_goal) const;
+
+  boost::optional<TrajectoryResultError> checkTolerancesForJoint(const unsigned int& joint_index,
+                                                const typename TrajectoryPerJoint::const_iterator& traj_end,
+                                                const typename TrajectoryPerJoint::const_iterator& segment,
+                                                const ros::Time& uptime) const;
+
+  void verboseOutputForJoint(const unsigned int& joint_index,
+                             const typename TrajectoryPerJoint::const_iterator& last_segment,
+                             const typename TrajectoryPerJoint::const_iterator& segment,
+                             const boost::optional<TrajectoryResultError>& error_code,
+                             const ros::Time& uptime) const;
+
+private:
+  static bool isSegmentFinished(const typename TrajectoryPerJoint::const_iterator& segment,
+                                const ros::Time& uptime);
+
+  static boost::optional<TrajectoryResultError> checkSegmentTolerances(const typename Segment::State& state_error,
+                                                      const typename TrajectoryPerJoint::const_iterator& segment,
+                                                      const unsigned int& joint_index);
+
+  static boost::optional<TrajectoryResultError> checkGoalTolerances(const typename Segment::State& state_error,
+                                                   const typename TrajectoryPerJoint::const_iterator& segment,
+                                                   const unsigned int& joint_index,
+                                                   const ros::Time& uptime);
+
+  static bool isGoalTimeReached(const typename TrajectoryPerJoint::const_iterator& segment,
+                                const ros::Time& uptime);
+
+  static void setGoalAsSucceeded(RealtimeGoalHandle *const goal);
+  static void markGoalAsAborted(RealtimeGoalHandle *const goal,
+                                const TrajectoryResultError& error_code);
 };
 
 } // namespace

@@ -161,41 +161,51 @@ inline bool checkStateTolerance(const State&                                    
 /**
  * \param state_error State error to check.
  * \param state_tolerance State tolerances to check \p state_error against.
- * \param show_errors If the joint that violate its tolerance should be output to console. NOT REALTIME if true
  * \return True if \p state_error fulfills \p state_tolerance.
  */
 template <class State>
-inline bool checkStateTolerancePerJoint(const State&                                   state_error,
+inline bool checkStateToleranceForJoint(const State&                                   state_error,
                                         const StateTolerances<typename State::Scalar>& state_tolerance,
-                                        bool show_errors = false)
+                                        const unsigned int&                            joint_index)
 {
-
   using std::abs;
-
-  const bool is_valid = !(state_tolerance.position     > 0.0 && abs(state_error.position[0])     > state_tolerance.position) &&
-                        !(state_tolerance.velocity     > 0.0 && abs(state_error.velocity[0])     > state_tolerance.velocity) &&
-                        !(state_tolerance.acceleration > 0.0 && abs(state_error.acceleration[0]) > state_tolerance.acceleration);
-
-  if (!is_valid)
-  {
-    if( show_errors )
-    {
-      ROS_ERROR_STREAM_NAMED("tolerances","Path state tolerances failed:");
-
-      if (state_tolerance.position     > 0.0 && abs(state_error.position[0])     > state_tolerance.position)
-        ROS_ERROR_STREAM_NAMED("tolerances","Position Error: " << state_error.position[0] <<
-          " Position Tolerance: " << state_tolerance.position);
-      if (state_tolerance.velocity     > 0.0 && abs(state_error.velocity[0])     > state_tolerance.velocity)
-        ROS_ERROR_STREAM_NAMED("tolerances","Velocity Error: " << state_error.velocity[0] <<
-          " Velocity Tolerance: " << state_tolerance.velocity);
-      if (state_tolerance.acceleration > 0.0 && abs(state_error.acceleration[0]) > state_tolerance.acceleration)
-        ROS_ERROR_STREAM_NAMED("tolerances","Acceleration Error: " << state_error.acceleration[0] <<
-          " Acceleration Tolerance: " << state_tolerance.acceleration);
-    }
-    return false;
-  }
-  return true;
+  return !(state_tolerance.position     > 0.0 && abs(state_error.position[joint_index])     > state_tolerance.position) &&
+         !(state_tolerance.velocity     > 0.0 && abs(state_error.velocity[joint_index])     > state_tolerance.velocity) &&
+         !(state_tolerance.acceleration > 0.0 && abs(state_error.acceleration[joint_index]) > state_tolerance.acceleration);
 }
+
+/**
+ * \brief Outputs the violated tolerances for the given joint using the ROS logging mechanism.
+ *
+ * \note NOT A REALTIME FUNCTION
+ */
+template <class State>
+inline void printStateToleranceErrorForJoint(const State&                                   state_error,
+                                             const StateTolerances<typename State::Scalar>& state_tolerance,
+                                             const unsigned int&                            joint_index)
+{
+  ROS_ERROR_STREAM_NAMED("tolerances", "Path tolerances failed for joint: " << joint_index);
+
+  if (state_tolerance.position > 0.0 && abs(state_error.position[joint_index]) > state_tolerance.position)
+  {
+    ROS_ERROR_STREAM_NAMED("tolerances","Position Error: " << state_error.position[joint_index] <<
+      " Position Tolerance: " << state_tolerance.position);
+  }
+
+  if (state_tolerance.velocity > 0.0 && abs(state_error.velocity[joint_index]) > state_tolerance.velocity)
+  {
+    ROS_ERROR_STREAM_NAMED("tolerances","Velocity Error: " << state_error.velocity[joint_index] <<
+      " Velocity Tolerance: " << state_tolerance.velocity);
+  }
+
+  if (state_tolerance.acceleration > 0.0 && abs(state_error.acceleration[joint_index]) > state_tolerance.acceleration)
+  {
+    ROS_ERROR_STREAM_NAMED("tolerances","Acceleration Error: " << state_error.acceleration[joint_index] <<
+      " Acceleration Tolerance: " << state_tolerance.acceleration);
+  }
+}
+
+
 
 /**
  * \brief Update data in \p tols from data in \p msg_tol.

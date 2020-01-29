@@ -311,9 +311,6 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   desired_state_       = typename Segment::State(n_joints);
   state_error_         = typename Segment::State(n_joints);
   desired_joint_state_ = typename Segment::State(1);
-  state_joint_error_   = typename Segment::State(1);
-
-  successful_joint_traj_ = boost::dynamic_bitset<>(joints_.size());
 
   // Initialize trajectory with all joints
   typename Segment::State current_joint_state_ = typename Segment::State(1);
@@ -346,147 +343,79 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
 
 template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-update(const ros::Time& time, const ros::Duration& period)
+update(const ros::Time& current_time, const ros::Duration& current_control_period)
 {
   // Get currently followed trajectory
   TrajectoryPtr curr_traj_ptr;
   curr_trajectory_box_.get(curr_traj_ptr);
   Trajectory& curr_traj = *curr_traj_ptr;
 
-  // Update time data
-  TimeData time_data;
-  time_data.time   = time;                                     // Cache current time
-  time_data.period = period;                                   // Cache current control period
-  time_data.uptime = time_data_.readFromRT()->uptime + period; // Update controller uptime
-  time_data_.writeFromNonRT(time_data); // TODO: Grrr, we need a lock-free data structure here!
+  TimeData updated_time_data { createUpdatedTimeData(current_time, current_control_period) };
+  time_data_.writeFromNonRT(updated_time_data); // TODO: Grrr, we need a lock-free data structure here!
 
-  // NOTE: It is very important to execute the two above code blocks in the specified sequence: first get current
-  // trajectory, then update time data. Hopefully the following paragraph sheds a bit of light on the rationale.
-  // The non-rt thread responsible for processing new commands enqueues trajectories that can start at the _next_
-  // control cycle (eg. zero start time) or later (eg. when we explicitly request a start time in the future).
-  // If we reverse the order of the two blocks above, and update the time data first; it's possible that by the time we
+  // NOTE: If we reverse the order of the two blocks above, and update the time data first; it's possible that by the time we
   // fetch the currently followed trajectory, it has been updated by the non-rt thread with something that starts in the
   // next control cycle, leaving the current cycle without a valid trajectory.
 
-  // Update current state and state error
-  for (unsigned int i = 0; i < joints_.size(); ++i)
+  bool all_segments_completed {true};
+  for (unsigned int joint_index = 0; joint_index < joints_.size(); ++joint_index)
   {
-    current_state_.position[i] = joints_[i].getPosition();
-    current_state_.velocity[i] = joints_[i].getVelocity();
-    // There's no acceleration data available in a joint handle
+    const TrajectoryPerJoint& joint_traj {curr_traj[joint_index]};
 
-    typename TrajectoryPerJoint::const_iterator segment_it = sample(curr_traj[i], time_data.uptime.toSec(), desired_joint_state_);
-    if (curr_traj[i].end() == segment_it)
+    typename TrajectoryPerJoint::const_iterator segment = sample(joint_traj,
+                                                                 updated_time_data.uptime.toSec(),
+                                                                 desired_joint_state_);
+    if (joint_traj.end() == segment)
     {
       // Non-realtime safe, but should never happen under normal operation
       ROS_ERROR_NAMED(name_,
                       "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
       return;
     }
-    desired_state_.position[i] = desired_joint_state_.position[0];
-    desired_state_.velocity[i] = desired_joint_state_.velocity[0];
-    desired_state_.acceleration[i] = desired_joint_state_.acceleration[0]; ;
 
-    state_joint_error_.position[0] = angles::shortest_angular_distance(current_state_.position[i],desired_joint_state_.position[0]);
-    state_joint_error_.velocity[0] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
-    state_joint_error_.acceleration[0] = 0.0;
+    updateStatesWithRegardToJoint(joint_index);
 
-    state_error_.position[i] = angles::shortest_angular_distance(current_state_.position[i],desired_joint_state_.position[0]);
-    state_error_.velocity[i] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
-    state_error_.acceleration[i] = 0.0;
-
-    //Check tolerances
-    const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
-    if (rt_segment_goal && rt_segment_goal == rt_active_goal_)
+    const RealtimeGoalHandlePtr rt_segment_goal = segment->getGoalHandle();
+    if ( !isSegmentActive(rt_segment_goal.get()) )
     {
-      // Check tolerances
-      if (time_data.uptime.toSec() < segment_it->endTime())
-      {
-        // Currently executing a segment: check path tolerances
-        const SegmentTolerancesPerJoint<Scalar>& joint_tolerances = segment_it->getTolerances();
-        if (!checkStateTolerancePerJoint(state_joint_error_, joint_tolerances.state_tolerance))
-        {
-          if (verbose_)
-          {
-            ROS_ERROR_STREAM_NAMED(name_,"Path tolerances failed for joint: " << joint_names_[i]);
-            checkStateTolerancePerJoint(state_joint_error_, joint_tolerances.state_tolerance, true);
-          }
-          rt_segment_goal->preallocated_result_->error_code =
-          control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
-          rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
-          rt_active_goal_.reset();
-          successful_joint_traj_.reset();
-        }
-      }
-      else if (segment_it == --curr_traj[i].end())
-      {
-        if (verbose_)
-          ROS_DEBUG_STREAM_THROTTLE_NAMED(1,name_,"Finished executing last segment, checking goal tolerances");
+      continue;
+    }
 
-        // Controller uptime
-        const ros::Time uptime = time_data_.readFromRT()->uptime;
+    const typename TrajectoryPerJoint::const_iterator last_segment { --joint_traj.end() };
+    boost::optional<TrajectoryResultError> error_code { checkTolerancesForJoint(joint_index,
+                                                                                last_segment, segment,
+                                                                                updated_time_data.uptime) };
 
-        // Checks that we have ended inside the goal tolerances
-        const SegmentTolerancesPerJoint<Scalar>& tolerances = segment_it->getTolerances();
-        const bool inside_goal_tolerances = checkStateTolerancePerJoint(state_joint_error_, tolerances.goal_state_tolerance);
+    if (error_code)
+    {
+      markGoalAsAborted(rt_segment_goal.get(), *error_code);
+      rt_active_goal_.reset();
+      all_segments_completed = false;
+    }
 
-        if (inside_goal_tolerances)
-        {
-          successful_joint_traj_[i] = 1;
-        }
-        else if (uptime.toSec() < segment_it->endTime() + tolerances.goal_time_tolerance)
-        {
-          // Still have some time left to meet the goal state tolerances
-        }
-        else
-        {
-          if (verbose_)
-          {
-            ROS_ERROR_STREAM_NAMED(name_,"Goal tolerances failed for joint: "<< joint_names_[i]);
-            // Check the tolerances one more time to output the errors that occurs
-            checkStateTolerancePerJoint(state_joint_error_, tolerances.goal_state_tolerance, true);
-          }
-
-          rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
-          rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
-          rt_active_goal_.reset();
-          successful_joint_traj_.reset();
-        }
-      }
+    if (verbose_)
+    {
+      verboseOutputForJoint(joint_index, last_segment, segment, error_code, updated_time_data.uptime);
     }
   }
 
-  //If there is an active goal and all segments finished successfully then set goal as succeeded
+  hw_iface_adapter_.updateCommand(updated_time_data.uptime, updated_time_data.period, desired_state_, state_error_);
+
   RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
-  if (current_active_goal && successful_joint_traj_.count() == joints_.size())
-  {
-    current_active_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
-    current_active_goal->setSucceeded(current_active_goal->preallocated_result_);
-    current_active_goal.reset(); // do not publish feedback
-    rt_active_goal_.reset();
-    successful_joint_traj_.reset();
-  }
-
-  // Hardware interface adapter: Generate and send commands
-  hw_iface_adapter_.updateCommand(time_data.uptime, time_data.period,
-                                  desired_state_, state_error_);
-
-  // Set action feedback
   if (current_active_goal)
   {
-    current_active_goal->preallocated_feedback_->header.stamp          = time_data_.readFromRT()->time;
-    current_active_goal->preallocated_feedback_->desired.positions     = desired_state_.position;
-    current_active_goal->preallocated_feedback_->desired.velocities    = desired_state_.velocity;
-    current_active_goal->preallocated_feedback_->desired.accelerations = desired_state_.acceleration;
-    current_active_goal->preallocated_feedback_->actual.positions      = current_state_.position;
-    current_active_goal->preallocated_feedback_->actual.velocities     = current_state_.velocity;
-    current_active_goal->preallocated_feedback_->error.positions       = state_error_.position;
-    current_active_goal->preallocated_feedback_->error.velocities      = state_error_.velocity;
-    current_active_goal->setFeedback( current_active_goal->preallocated_feedback_ );
+    if (all_segments_completed)
+    {
+      setGoalAsSucceeded(current_active_goal.get());
+      rt_active_goal_.reset();
+    }
+    else
+    {
+      setActionFeedbackForGoal(current_active_goal.get(), updated_time_data.time);
+    }
   }
 
-  // Publish state
-  publishState(time_data.uptime);
+  publishState(updated_time_data.uptime, updated_time_data.time);
 }
 
 template <class SegmentImpl, class HardwareInterface>
@@ -722,26 +651,28 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
 
 template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
-publishState(const ros::Time& time)
+publishState(const ros::Time& uptime, const ros::Time& current_time)
 {
-  // Check if it's time to publish
-  if (!state_publisher_period_.isZero() && last_state_publish_time_ + state_publisher_period_ < time)
+  // Is it time to publish?
+  if (state_publisher_period_.isZero() || !(last_state_publish_time_ + state_publisher_period_ < uptime) )
   {
-    if (state_publisher_ && state_publisher_->trylock())
-    {
-      last_state_publish_time_ += state_publisher_period_;
+    return;
+  }
 
-      state_publisher_->msg_.header.stamp          = time_data_.readFromRT()->time;
-      state_publisher_->msg_.desired.positions     = desired_state_.position;
-      state_publisher_->msg_.desired.velocities    = desired_state_.velocity;
-      state_publisher_->msg_.desired.accelerations = desired_state_.acceleration;
-      state_publisher_->msg_.actual.positions      = current_state_.position;
-      state_publisher_->msg_.actual.velocities     = current_state_.velocity;
-      state_publisher_->msg_.error.positions       = state_error_.position;
-      state_publisher_->msg_.error.velocities      = state_error_.velocity;
+  if (state_publisher_ && state_publisher_->trylock())
+  {
+    last_state_publish_time_ += state_publisher_period_;
 
-      state_publisher_->unlockAndPublish();
-    }
+    state_publisher_->msg_.header.stamp          = current_time;
+    state_publisher_->msg_.desired.positions     = desired_state_.position;
+    state_publisher_->msg_.desired.velocities    = desired_state_.velocity;
+    state_publisher_->msg_.desired.accelerations = desired_state_.acceleration;
+    state_publisher_->msg_.actual.positions      = current_state_.position;
+    state_publisher_->msg_.actual.velocities     = current_state_.velocity;
+    state_publisher_->msg_.error.positions       = state_error_.position;
+    state_publisher_->msg_.error.velocities      = state_error_.velocity;
+
+    state_publisher_->unlockAndPublish();
   }
 }
 
@@ -810,6 +741,163 @@ setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
   }
   curr_trajectory_box_.set(hold_trajectory_ptr_);
 }
+
+template <class SegmentImpl, class HardwareInterface>
+inline bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
+isSegmentFinished(const typename TrajectoryPerJoint::const_iterator& segment,
+                  const ros::Time& uptime)
+{
+  return uptime.toSec() >= segment->endTime();
+}
+
+template <class SegmentImpl, class HardwareInterface>
+inline bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
+isSegmentActive(const RealtimeGoalHandle *const segment_goal) const
+{
+  return segment_goal && segment_goal == rt_active_goal_.get();
+}
+
+
+template <class SegmentImpl, class HardwareInterface>
+boost::optional<typename JointTrajectoryController<SegmentImpl, HardwareInterface>::TrajectoryResultError> JointTrajectoryController<SegmentImpl, HardwareInterface>::
+checkSegmentTolerances(const typename Segment::State& state_error,
+                       const typename TrajectoryPerJoint::const_iterator& segment,
+                       const unsigned int& joint_index)
+{
+  return checkStateToleranceForJoint(state_error, segment->getTolerances().state_tolerance, joint_index) ?
+         boost::none : boost::optional<TrajectoryResultError>(TrajectoryResult::PATH_TOLERANCE_VIOLATED);
+}
+
+template <class SegmentImpl, class HardwareInterface>
+boost::optional<typename JointTrajectoryController<SegmentImpl, HardwareInterface>::TrajectoryResultError> JointTrajectoryController<SegmentImpl, HardwareInterface>::
+checkGoalTolerances(const typename Segment::State& state_error,
+                    const typename TrajectoryPerJoint::const_iterator& segment,
+                    const unsigned int& joint_index,
+                    const ros::Time& uptime)
+{
+  return (checkStateToleranceForJoint(state_error, segment->getTolerances().goal_state_tolerance, joint_index)
+          || !isGoalTimeReached(segment, uptime))?
+          boost::none : boost::optional<TrajectoryResultError>(TrajectoryResult::GOAL_TOLERANCE_VIOLATED);
+}
+
+template <class SegmentImpl, class HardwareInterface>
+bool JointTrajectoryController<SegmentImpl, HardwareInterface>::
+isGoalTimeReached(const typename TrajectoryPerJoint::const_iterator& segment, const ros::Time& uptime)
+{
+  return uptime.toSec() >= segment->endTime() + segment->getTolerances().goal_time_tolerance;
+}
+
+template <class SegmentImpl, class HardwareInterface>
+inline typename JointTrajectoryController<SegmentImpl, HardwareInterface>::TimeData
+JointTrajectoryController<SegmentImpl, HardwareInterface>::
+createUpdatedTimeData(const ros::Time& current_time, const ros::Duration& current_control_period)
+{
+  TimeData time_data;
+  time_data.time   = current_time;
+  time_data.period = current_control_period;
+  time_data.uptime = time_data_.readFromRT()->uptime + current_control_period;
+
+  return time_data;
+}
+
+template <class SegmentImpl, class HardwareInterface>
+void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+setActionFeedbackForGoal(RealtimeGoalHandle *const goal, const ros::Time& current_time) const
+{
+  assert(goal);
+
+  goal->preallocated_feedback_->header.stamp          = current_time;
+  goal->preallocated_feedback_->desired.positions     = desired_state_.position;
+  goal->preallocated_feedback_->desired.velocities    = desired_state_.velocity;
+  goal->preallocated_feedback_->desired.accelerations = desired_state_.acceleration;
+  goal->preallocated_feedback_->actual.positions      = current_state_.position;
+  goal->preallocated_feedback_->actual.velocities     = current_state_.velocity;
+  goal->preallocated_feedback_->error.positions       = state_error_.position;
+  goal->preallocated_feedback_->error.velocities      = state_error_.velocity;
+
+  goal->setFeedback( goal->preallocated_feedback_ );
+}
+
+template <class SegmentImpl, class HardwareInterface>
+void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+updateStatesWithRegardToJoint(const unsigned int& joint_index)
+{
+  current_state_.position[joint_index] = joints_[joint_index].getPosition();
+  current_state_.velocity[joint_index] = joints_[joint_index].getVelocity();
+  // There's no acceleration data available in a joint handle
+
+  desired_state_.position[joint_index] = desired_joint_state_.position[0];
+  desired_state_.velocity[joint_index] = desired_joint_state_.velocity[0];
+  desired_state_.acceleration[joint_index] = desired_joint_state_.acceleration[0];
+
+  state_error_.position[joint_index] = angles::shortest_angular_distance(current_state_.position[joint_index],
+                                                                         desired_joint_state_.position[0]);
+
+  state_error_.velocity[joint_index] = desired_joint_state_.velocity[0] - current_state_.velocity[joint_index];
+  state_error_.acceleration[joint_index] = 0.0;
+}
+
+template <class SegmentImpl, class HardwareInterface>
+inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+setGoalAsSucceeded(RealtimeGoalHandle *const goal)
+{
+  goal->preallocated_result_->error_code = TrajectoryResult::SUCCESSFUL;
+  goal->setSucceeded(goal->preallocated_result_);
+}
+
+template <class SegmentImpl, class HardwareInterface>
+inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+markGoalAsAborted(RealtimeGoalHandle *const goal,
+                  const JointTrajectoryController<SegmentImpl, HardwareInterface>::TrajectoryResultError& error_code)
+{
+  goal->preallocated_result_->error_code = error_code;
+  goal->setAborted(goal->preallocated_result_);
+}
+
+template <class SegmentImpl, class HardwareInterface>
+boost::optional<typename JointTrajectoryController<SegmentImpl, HardwareInterface>::TrajectoryResultError> JointTrajectoryController<SegmentImpl, HardwareInterface>::
+checkTolerancesForJoint(const unsigned int& joint_index,
+                        const typename TrajectoryPerJoint::const_iterator& last_segment,
+                        const typename TrajectoryPerJoint::const_iterator& segment,
+                        const ros::Time& uptime) const
+{
+  if (!isSegmentFinished(segment, uptime))
+  {
+    return checkSegmentTolerances(state_error_, segment, joint_index);
+  }
+
+  if (segment == last_segment)
+  {
+    return checkGoalTolerances(state_error_, segment, joint_index, uptime);
+  }
+
+  return boost::none;
+}
+
+template <class SegmentImpl, class HardwareInterface>
+inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+verboseOutputForJoint(const unsigned int& joint_index,
+                      const typename TrajectoryPerJoint::const_iterator& last_segment,
+                      const typename TrajectoryPerJoint::const_iterator& segment,
+                      const boost::optional<typename JointTrajectoryController<SegmentImpl, HardwareInterface>::TrajectoryResultError>& error_code,
+                      const ros::Time& uptime) const
+{
+  if (isSegmentFinished(segment, uptime) && (segment == last_segment))
+  {
+    ROS_DEBUG_STREAM_THROTTLE_NAMED(1, name_, "Finished executing last segment.");
+  }
+
+  if (error_code)
+  {
+    const StateTolerances<Scalar>& tolerance = (*error_code == TrajectoryResult::PATH_TOLERANCE_VIOLATED)?
+          segment->getTolerances().state_tolerance :
+          segment->getTolerances().goal_state_tolerance;
+
+    ROS_ERROR_STREAM_NAMED(name_,"Tolerances violated for joint: "<< joint_names_[joint_index]);
+    printStateToleranceErrorForJoint(state_error_, tolerance, joint_index);
+ }
+}
+
 
 } // namespace
 

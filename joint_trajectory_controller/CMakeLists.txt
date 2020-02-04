@@ -20,6 +20,7 @@ find_package(catkin
     realtime_tools
     control_msgs
     trajectory_msgs
+    pluginlib
 )
 
 # Declare catkin package

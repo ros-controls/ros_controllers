@@ -21,6 +21,7 @@ find_package(catkin
       trajectory_msgs
       urdf
       xacro
+      pluginlib
 )
 
 catkin_package(

@@ -26,6 +26,7 @@
   <depend>trajectory_msgs</depend>
   <depend>urdf</depend>
   <depend>xacro</depend>
+  <depend>pluginlib</depend>
 
   <export>
     <controller_interface plugin="${prefix}/ros_control_plugins.xml"/>

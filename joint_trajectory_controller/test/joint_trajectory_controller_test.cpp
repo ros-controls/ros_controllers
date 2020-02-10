@@ -51,15 +51,20 @@
 // Floating-point value comparison threshold
 const double EPS = 0.01;
 
+static constexpr double WAIT_TIME_CONNECTIONS_S{10.0};
+static constexpr double WAIT_TIME_CONTROLLER_STATE_S{5.0};
+static constexpr double WAIT_TIME_ACTION_GOAL_STATE_S{5.0};
+
 using actionlib::SimpleClientGoalState;
+using testing::AssertionResult;
+using testing::AssertionFailure;
+using testing::AssertionSuccess;
 
 class JointTrajectoryControllerTest : public ::testing::Test
 {
 public:
   JointTrajectoryControllerTest()
     : nh("rrbot_controller"),
-      short_timeout(1.0),
-      long_timeout(10.0),
       controller_state(),
       stop_trajectory_duration(0.0)
   {
@@ -159,9 +164,6 @@ protected:
   ActionGoal                       traj_home_goal;
   ActionGoal                       traj_goal;
 
-  ros::Duration short_timeout;
-  ros::Duration long_timeout;
-
   ros::Publisher     smoothing_pub;
   ros::Publisher     delay_pub;
   ros::Publisher     upper_bound_pub;
@@ -200,30 +202,59 @@ protected:
     return controller_state;
   }
 
-  bool waitForNextState(const ros::Duration& timeout)
+  AssertionResult waitForNextState(const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONTROLLER_STATE_S))
   {
     ros::Time start_time = ros::Time::now();
     ros::Time state_time = getState()->header.stamp;
     while ( getState()->header.stamp <= state_time && ros::ok() )
     {
-      if (timeout >= ros::Duration(0.0) && (ros::Time::now() - start_time) > timeout) {return false;} // Timed-out
-      ros::Duration(0.1).sleep();
-    }
-  }
-
-  bool waitForInitializedState(const ros::Duration& timeout = ros::Duration(5.0))
-  {
-    bool init_ok = false;
-    ros::Time start_time = ros::Time::now();
-    while (!init_ok && (ros::Time::now() - start_time) < timeout)
-    {
+      if ((ros::Time::now() - start_time) > timeout)
       {
-        std::lock_guard<std::mutex> lock(mutex);
-        init_ok = controller_state && !controller_state->joint_names.empty();
+        return AssertionFailure() << "Timed out after " << timeout.toSec()
+                                  << "s waiting for next controller-state message.";
       }
       ros::Duration(0.1).sleep();
     }
-    return init_ok;
+    return AssertionSuccess();
+  }
+
+  AssertionResult waitForInitializedState(const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONNECTIONS_S))
+  {
+    ros::Time start_time = ros::Time::now();
+    auto check_state = [this](){ std::lock_guard<std::mutex> lock(mutex);
+                                 return (controller_state && !controller_state->joint_names.empty()); };
+    while ( !check_state() && ros::ok() )
+    {
+      if ((ros::Time::now() - start_time) > timeout)
+      {
+        return AssertionFailure() << "Timed out after " << timeout.toSec()
+                                  << "s waiting for controller-state to be initialized.";
+      }
+      ros::Duration(0.1).sleep();
+    }
+    return AssertionSuccess();
+  }
+
+  AssertionResult waitForQueryStateService(const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONNECTIONS_S))
+  {
+    ros::Time start_time = ros::Time::now();
+    if (!query_state_service.waitForExistence(timeout))
+    {
+      return AssertionFailure() << "Timed out after " << timeout.toSec()
+                                << "s waiting for existence of wuery-state service.";
+    }
+    return AssertionSuccess();
+  }
+
+  AssertionResult waitForActionServer(const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONNECTIONS_S))
+  {
+    ros::Time start_time = ros::Time::now();
+    if (!action_client->waitForServer(timeout))
+    {
+      return AssertionFailure() << "Timed out after " << timeout.toSec()
+                                << "s waiting for connection to action server.";
+    }
+    return AssertionSuccess();
   }
 
   std::vector<double> getMinActualVelocity()
@@ -248,9 +279,9 @@ protected:
     }
   }
 
-  static bool waitForActionGoalState(const ActionClientPtr& action_client,
-                                     const actionlib::SimpleClientGoalState& state,
-                                     const ros::Duration& timeout)
+  AssertionResult waitForActionGoalState(const ActionClientPtr& action_client,
+                                         const actionlib::SimpleClientGoalState& state,
+                                         const ros::Duration& timeout = ros::Duration(WAIT_TIME_ACTION_GOAL_STATE_S))
   {
     using ros::Time;
     using ros::Duration;
@@ -258,10 +289,14 @@ protected:
     Time start_time = Time::now();
     while (action_client->getState() != state && ros::ok())
     {
-      if (timeout >= Duration(0.0) && (Time::now() - start_time) > timeout) {return false;} // Timed-out
+      if ((ros::Time::now() - start_time) > timeout)
+      {
+        return AssertionFailure() << "Timed out after " << timeout.toSec()
+                                  << "s waiting for action goal state " << state.getText();
+      }
       ros::Duration(0.1).sleep();
     }
-    return true;
+    return AssertionSuccess();
   }
 
   bool reloadController(const std::string& name)
@@ -320,7 +355,7 @@ TEST_F(JointTrajectoryControllerTest, stateTopicConsistency)
 
 TEST_F(JointTrajectoryControllerTest, queryStateServiceConsistency)
 {
-  query_state_service.waitForExistence(ros::Duration(2.0));
+  ASSERT_TRUE(waitForQueryStateService());
   ASSERT_TRUE(query_state_service.isValid());
 
   control_msgs::QueryTrajectoryState srv;
@@ -343,7 +378,7 @@ TEST_F(JointTrajectoryControllerTest, queryStateServiceConsistency)
 TEST_F(JointTrajectoryControllerTest, invalidMessages)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Invalid size (No partial joints goals allowed)
   {
@@ -361,7 +396,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
 
     bad_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
     action_client->sendGoal(bad_goal);
-    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED));
     EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS);
   }
 
@@ -372,7 +407,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
 
     bad_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
     action_client->sendGoal(bad_goal);
-    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED));
     EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS);
   }
 
@@ -383,7 +418,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
 
     bad_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
     action_client->sendGoal(bad_goal);
-    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED));
     EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_GOAL);
   }
 
@@ -394,7 +429,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
 
     bad_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
     action_client->sendGoal(bad_goal);
-    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED));
     EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_GOAL);
   }
 
@@ -404,7 +439,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
     bad_goal.trajectory.points[2].time_from_start = bad_goal.trajectory.points[1].time_from_start;
 
     action_client->sendGoal(bad_goal);
-    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED));
     EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_GOAL);
   }
 
@@ -414,7 +449,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
   {
     ActionGoal empty_goal;
     action_client->sendGoal(empty_goal);
-    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED, long_timeout));
+    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED));
     EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::INVALID_JOINTS);
   }
 }
@@ -461,14 +496,14 @@ TEST_F(JointTrajectoryControllerTest, topicSingleTraj)
 TEST_F(JointTrajectoryControllerTest, actionSingleTraj)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
 
   // Wait until done
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
   EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::SUCCESSFUL);
   ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations
 
@@ -493,7 +528,7 @@ TEST_F(JointTrajectoryControllerTest, actionSingleTraj)
 TEST_F(JointTrajectoryControllerTest, jointReordering)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Message joints are ordered differently than in controller
   ActionGoal reorder_goal = traj_home_goal;
@@ -504,7 +539,7 @@ TEST_F(JointTrajectoryControllerTest, jointReordering)
 
   reorder_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(reorder_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
   ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations
 
   // Validate state topic values
@@ -518,12 +553,12 @@ TEST_F(JointTrajectoryControllerTest, jointReordering)
 TEST_F(JointTrajectoryControllerTest, jointWraparound)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Trajectory goals that trigger wrapping. Between the first and second goals:
   // - First joint command has a wraparound of -2 loops
@@ -553,13 +588,13 @@ TEST_F(JointTrajectoryControllerTest, jointWraparound)
   action_client->sendGoal(goal1);
 
   // Wait until done
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
   ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations
 
   // Send trajectory
   goal2.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(goal2);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Validate state topic values
   StateConstPtr state = getState();
@@ -570,12 +605,12 @@ TEST_F(JointTrajectoryControllerTest, jointWraparound)
 TEST_F(JointTrajectoryControllerTest, jointWraparoundPiSingularity)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Trajectory goals that trigger wrapping.
   // When moving a wrapping joint pi radians (eg. from -pi/2 to pi/2), numeric errors can make the controller think
@@ -605,13 +640,13 @@ TEST_F(JointTrajectoryControllerTest, jointWraparoundPiSingularity)
   action_client->sendGoal(goal1);
 
   // Wait until done
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
   ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations
 
   // Send trajectory
   goal2.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(goal2);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Validate state topic values
   StateConstPtr state = getState();
@@ -652,12 +687,12 @@ TEST_F(JointTrajectoryControllerTest, topicReplacesTopicTraj)
 TEST_F(JointTrajectoryControllerTest, actionReplacesActionTraj)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   ros::Duration wait_duration = traj.points.front().time_from_start;
   wait_duration.sleep(); // Wait until ~first waypoint
@@ -665,11 +700,11 @@ TEST_F(JointTrajectoryControllerTest, actionReplacesActionTraj)
   // Send another trajectory that preempts the previous one
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client2->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::ACTIVE,    short_timeout));
-  ASSERT_TRUE(waitForActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::ACTIVE));
+  ASSERT_TRUE(waitForActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED));
 
   // Wait until done
-  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::SUCCEEDED));
   ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations
 
   // Check that we're back home
@@ -685,7 +720,7 @@ TEST_F(JointTrajectoryControllerTest, actionReplacesActionTraj)
 TEST_F(JointTrajectoryControllerTest, actionReplacesTopicTraj)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Send trajectory
   traj.header.stamp = ros::Time(0); // Start immediately
@@ -696,10 +731,10 @@ TEST_F(JointTrajectoryControllerTest, actionReplacesTopicTraj)
   // Send another trajectory that preempts the previous one
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE,    short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   // Wait until done
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
   ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations
 
   // Check that we're back home
@@ -715,12 +750,12 @@ TEST_F(JointTrajectoryControllerTest, actionReplacesTopicTraj)
 TEST_F(JointTrajectoryControllerTest, topicReplacesActionTraj)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   ros::Duration wait_duration = traj.points.front().time_from_start;
   wait_duration.sleep(); // Wait until ~first waypoint
@@ -729,7 +764,7 @@ TEST_F(JointTrajectoryControllerTest, topicReplacesActionTraj)
   traj_home.header.stamp = ros::Time(0); // Start immediately
   traj_pub.publish(traj_home);
 
-  ASSERT_TRUE(waitForActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED));
 
   wait_duration = traj_home.points.back().time_from_start + ros::Duration(0.5);
   wait_duration.sleep(); // Wait until done
@@ -749,12 +784,12 @@ TEST_F(JointTrajectoryControllerTest, topicReplacesActionTraj)
 TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsTopicTraj)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Start state
   StateConstPtr start_state = getState();
@@ -789,12 +824,12 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsTopicTraj)
 TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTraj)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Start state
   StateConstPtr start_state = getState();
@@ -802,16 +837,16 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTraj)
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
   ros::Duration wait_duration = traj.points.front().time_from_start;
   wait_duration.sleep(); // Wait until ~first waypoint
 
   // Send an empty trajectory that preempts the previous one and stops the robot where it is
   trajectory_msgs::JointTrajectory traj_empty;
   traj_pub.publish(traj_empty);
-  ASSERT_TRUE(waitForActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED));
   // make sure that stateCB received the newer topics than when we confirmed with waitForActionGoalState function
-  waitForNextState(short_timeout);
+  ASSERT_TRUE(waitForNextState());
 
   // Check that we're not on the start state
   StateConstPtr state1 = getState();
@@ -834,12 +869,12 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelay)
   // check stop ramp for trajectory duration > 0
   if(stop_trajectory_duration > 0)
   {
-    ASSERT_TRUE(action_client->waitForServer(long_timeout));
+    ASSERT_TRUE(waitForActionServer());
 
     // Go to home configuration, we need known initial conditions
     traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
     action_client->sendGoal(traj_home_goal);
-    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
     // Make robot respond with a delay
     {
@@ -853,7 +888,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelay)
     // Send trajectory
     traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
     action_client->sendGoal(traj_goal);
-    EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+    EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
     ros::Duration wait_duration = traj.points.front().time_from_start * 0.5;
     wait_duration.sleep(); // Wait until half of first segment
@@ -861,7 +896,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelay)
     ActionGoal empty_goal;
     empty_goal.trajectory.joint_names = joint_names;
     action_client->sendGoal(empty_goal);
-    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, short_timeout));
+    ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
     // Velocity should be continuous so all axes >= 0
     std::vector<double> minVelocity = getMinActualVelocity();
@@ -887,12 +922,12 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelay)
 TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZero)
 {
   // check set position = actual position for stop_duration == 0
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Make robot respond with a delay and clip position at a wall
   std_msgs::Float64 upper_bound;
@@ -909,7 +944,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   ros::Duration wait_duration = traj.points.front().time_from_start * 0.5;
   wait_duration.sleep(); // Wait until half of first segment
@@ -917,7 +952,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
   ActionGoal empty_goal;
   empty_goal.trajectory.joint_names = joint_names;
   action_client->sendGoal(empty_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   StateConstPtr state1 = getState();
 
@@ -949,12 +984,12 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
 TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Start state
   StateConstPtr start_state = getState();
@@ -969,10 +1004,10 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
   ActionGoal empty_goal;
   empty_goal.trajectory.joint_names = traj.joint_names;
   action_client->sendGoal(empty_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
   // make sure that stateCB received the newer topics than when we confirmed with waitForActionGoalState function
-  waitForNextState(short_timeout);
+  ASSERT_TRUE(waitForNextState());
 
   // Check that we're not on the start state
   StateConstPtr state1 = getState();
@@ -993,12 +1028,12 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
 TEST_F(JointTrajectoryControllerTest, emptyActionCancelsActionTraj)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Start state
   StateConstPtr start_state = getState();
@@ -1006,7 +1041,7 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsActionTraj)
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
   ros::Duration wait_duration = traj.points.front().time_from_start;
   wait_duration.sleep(); // Wait until ~first waypoint
 
@@ -1014,9 +1049,9 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsActionTraj)
   ActionGoal empty_goal;
   empty_goal.trajectory.joint_names = traj.joint_names;
   action_client2->sendGoal(empty_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED, short_timeout));
-  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::ACTIVE, short_timeout));
-  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::SUCCEEDED, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED));
+  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::ACTIVE));
+  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::SUCCEEDED));
 
   // Check that we're not on the start state
   StateConstPtr state1 = getState();
@@ -1034,23 +1069,23 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsActionTraj)
   }
 
   // Check that new action succeeds after being accepted
-  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::SUCCEEDED, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::SUCCEEDED));
 }
 
 TEST_F(JointTrajectoryControllerTest, cancelActionGoal)
 {
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   ros::Duration wait_duration = traj.points.front().time_from_start;
   wait_duration.sleep(); // Wait until ~first waypoint
 
   action_client->cancelGoal();
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::PREEMPTED, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::PREEMPTED));
 }
 
 // Ignore old trajectory points ////////////////////////////////////////////////////////////////////////////////////////
@@ -1073,7 +1108,7 @@ TEST_F(JointTrajectoryControllerTest, ignoreOldTopicTraj)
   wait_duration.sleep(); // Wait until first trajectory is done
 
   // make sure that stateCB received the newer topics than when we confirmed with waitForActionGoalState function
-  waitForNextState(short_timeout);
+  ASSERT_TRUE(waitForNextState());
   // Check that we're at the original trajectory end (NOT back home)
   StateConstPtr state = getState();
   for (unsigned int i = 0; i < n_joints; ++i)
@@ -1087,12 +1122,12 @@ TEST_F(JointTrajectoryControllerTest, ignoreOldTopicTraj)
 TEST_F(JointTrajectoryControllerTest, ignorePreemptOfOldActionTraj)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   ros::Duration wait_duration = traj.points.front().time_from_start;
   wait_duration.sleep(); // Wait until ~first waypoint
@@ -1100,10 +1135,10 @@ TEST_F(JointTrajectoryControllerTest, ignorePreemptOfOldActionTraj)
   // Send another trajectory with all points occuring in the past. Should not preempts the previous one
   traj_home_goal.trajectory.header.stamp = ros::Time::now() - traj_home.points.back().time_from_start - ros::Duration(0.5);
   action_client2->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::REJECTED,  short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::REJECTED));
 
   // Wait until done
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
   ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations
 
   // Check that we're at the original trajectory end (NOT back home)
@@ -1119,25 +1154,25 @@ TEST_F(JointTrajectoryControllerTest, ignorePreemptOfOldActionTraj)
 TEST_F(JointTrajectoryControllerTest, ignoreSingleOldActionTraj)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Send trajectory
   traj_home_goal.trajectory.header.stamp = ros::Time::now() - ros::Duration(10000);
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED,  short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::REJECTED));
 }
 
 TEST_F(JointTrajectoryControllerTest, ignorePartiallyOldActionTraj)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Send trajectory
   ActionGoal first_goal = traj_goal;
   first_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   first_goal.trajectory.points.pop_back();           // Remove last point
   action_client->sendGoal(first_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   ros::Duration wait_duration = first_goal.trajectory.points.front().time_from_start;
   wait_duration.sleep(); // Wait until ~first waypoint
@@ -1145,11 +1180,11 @@ TEST_F(JointTrajectoryControllerTest, ignorePartiallyOldActionTraj)
   // Send another trajectory with only the last point not occuring in the past. Only the last point should be executed
   traj_goal.trajectory.header.stamp = ros::Time::now() - traj.points.back().time_from_start + ros::Duration(1.0);
   action_client2->sendGoal(traj_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED, short_timeout));
-  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::ACTIVE,    short_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED));
+  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::ACTIVE));
 
   // Wait until done
-  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client2, SimpleClientGoalState::SUCCEEDED));
   ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations
 
   // Check that we're at the trajectory end
@@ -1170,46 +1205,46 @@ TEST_F(JointTrajectoryControllerTest, ignorePartiallyOldActionTraj)
 TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   // Wait until done
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Disable velocity feedforward
   ros::param::set("/rrbot_controller/velocity_ff/joint1", 0.0);
   ros::param::set("/rrbot_controller/velocity_ff/joint2", 0.0);
   ASSERT_TRUE(reloadController("rrbot_controller"));
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, long_timeout));
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   // Wait until done
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ABORTED, long_timeout));
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ABORTED));
   EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED);
 
   // Re-enable velocity feedforward
   ros::param::set("/rrbot_controller/velocity_ff/joint1", 1.0);
   ros::param::set("/rrbot_controller/velocity_ff/joint2", 1.0);
   ASSERT_TRUE(reloadController("rrbot_controller"));
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 }
 
 #endif // TEST_VELOCITY_FF
@@ -1219,12 +1254,12 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
 TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Make robot respond with a delay
   {
@@ -1237,10 +1272,10 @@ TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   // Wait until done
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ABORTED, long_timeout));
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ABORTED));
   EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED);
 
   // Restore perfect control
@@ -1255,12 +1290,12 @@ TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
 TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
 {
   ASSERT_TRUE(waitForInitializedState());
-  ASSERT_TRUE(action_client->waitForServer(long_timeout));
+  ASSERT_TRUE(waitForActionServer());
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED, long_timeout));
+  ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Make robot respond with a delay
   {
@@ -1282,10 +1317,10 @@ TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE, short_timeout));
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   // Wait until done
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ABORTED, long_timeout));
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ABORTED));
   EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED);
 
   // Restore perfect control

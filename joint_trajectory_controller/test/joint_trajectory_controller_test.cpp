@@ -528,6 +528,7 @@ TEST_F(JointTrajectoryControllerTest, actionSingleTraj)
   action_client->sendGoal(traj_goal);
 
   // Wait until done
+  traj_goal.trajectory.points.back().time_from_start.sleep();
   ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
   EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::SUCCESSFUL);
   ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations

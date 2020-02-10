@@ -18,6 +18,7 @@
   <buildtool_depend>catkin</buildtool_depend>
   <depend>controller_interface</depend> 
   <depend>forward_command_controller</depend> 
+  <depend>pluginlib</depend>
 
   <export>
     <controller_interface plugin="${prefix}/position_controllers_plugins.xml"/>

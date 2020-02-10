@@ -24,6 +24,7 @@
   <depend>forward_command_controller</depend>
   <depend>realtime_tools</depend>
   <depend>urdf</depend>
+  <depend>pluginlib</depend>
 
   <export>
     <controller_interface plugin="${prefix}/velocity_controllers_plugins.xml"/>

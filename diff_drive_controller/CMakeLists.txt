@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
     realtime_tools
     tf
     urdf
+    pluginlib
 )
 
 generate_dynamic_reconfigure_options(cfg/DiffDriveController.cfg)

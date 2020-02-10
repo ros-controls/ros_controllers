@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   forward_command_controller
   realtime_tools
   urdf
+  pluginlib
 )
 
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})

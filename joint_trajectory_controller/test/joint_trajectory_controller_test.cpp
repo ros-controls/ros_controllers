@@ -51,9 +51,10 @@
 // Floating-point value comparison threshold
 const double EPS = 0.01;
 
-static constexpr double WAIT_TIME_CONNECTIONS_S{10.0};
-static constexpr double WAIT_TIME_CONTROLLER_STATE_S{5.0};
-static constexpr double WAIT_TIME_ACTION_GOAL_STATE_S{5.0};
+static constexpr double WAIT_TIME_CONNECTIONS_S       {10.0};
+static constexpr double WAIT_TIME_CONTROLLER_STATE_S  {5.0};
+static constexpr double WAIT_TIME_ACTION_GOAL_STATE_S {5.0};
+static constexpr double WAIT_TIME_TRAJ_START_S        {5.0};
 
 using actionlib::SimpleClientGoalState;
 using testing::AssertionResult;
@@ -212,6 +213,29 @@ protected:
       {
         return AssertionFailure() << "Timed out after " << timeout.toSec()
                                   << "s waiting for next controller-state message.";
+      }
+      ros::Duration(0.1).sleep();
+    }
+    return AssertionSuccess();
+  }
+
+  AssertionResult waitForTrajectoryStart(const ros::Duration& timeout = ros::Duration(WAIT_TIME_TRAJ_START_S))
+  {
+    ros::Time start_time{ros::Time::now()};
+    StateConstPtr start_state{getState()};
+    auto near_start_state = [this, &start_state]()
+    {
+      StateConstPtr current_state{getState()};
+      return std::equal(start_state->desired.positions.begin(),
+                        start_state->desired.positions.end(),
+                        current_state->desired.positions.begin(),
+                        [](const double& a, const double& b){return (std::abs(b-a) < EPS);});
+    };
+    while ( near_start_state() && ros::ok() )
+    {
+      if ((ros::Time::now() - start_time) > timeout)
+      {
+        return AssertionFailure() << "Timed out after " << timeout.toSec() << "s waiting for trajectory to start.";
       }
       ros::Duration(0.1).sleep();
     }
@@ -463,10 +487,11 @@ TEST_F(JointTrajectoryControllerTest, topicSingleTraj)
   // Send trajectory
   traj.header.stamp = ros::Time(0); // Start immediately
   traj_pub.publish(traj);
-  ros::Duration wait_duration = traj.points.back().time_from_start + ros::Duration(0.5);
-  wait_duration.sleep(); // Wait until done
+  ASSERT_TRUE(waitForTrajectoryStart());
+  traj.points.back().time_from_start.sleep(); // Wait until done
 
   // Validate state topic values
+  ASSERT_TRUE(waitForNextState());
   StateConstPtr state = getState();
   for (unsigned int i = 0; i < n_joints; ++i)
   {

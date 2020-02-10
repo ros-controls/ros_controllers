@@ -211,7 +211,7 @@ protected:
     }
   }
 
-  bool initState(const ros::Duration& timeout = ros::Duration(5.0))
+  bool waitForInitializedState(const ros::Duration& timeout = ros::Duration(5.0))
   {
     bool init_ok = false;
     ros::Time start_time = ros::Time::now();
@@ -296,7 +296,7 @@ protected:
 TEST_F(JointTrajectoryControllerTest, stateTopicConsistency)
 {
   // Get current controller state
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   StateConstPtr state = getState();
 
   // Checks that are valid for all state messages
@@ -342,7 +342,7 @@ TEST_F(JointTrajectoryControllerTest, queryStateServiceConsistency)
 
 TEST_F(JointTrajectoryControllerTest, invalidMessages)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Invalid size (No partial joints goals allowed)
@@ -423,7 +423,7 @@ TEST_F(JointTrajectoryControllerTest, invalidMessages)
 
 TEST_F(JointTrajectoryControllerTest, topicSingleTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
 
   // Send trajectory
   traj.header.stamp = ros::Time(0); // Start immediately
@@ -460,7 +460,7 @@ TEST_F(JointTrajectoryControllerTest, topicSingleTraj)
 
 TEST_F(JointTrajectoryControllerTest, actionSingleTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Send trajectory
@@ -492,7 +492,7 @@ TEST_F(JointTrajectoryControllerTest, actionSingleTraj)
 
 TEST_F(JointTrajectoryControllerTest, jointReordering)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Message joints are ordered differently than in controller
@@ -517,7 +517,7 @@ TEST_F(JointTrajectoryControllerTest, jointReordering)
 
 TEST_F(JointTrajectoryControllerTest, jointWraparound)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Go to home configuration, we need known initial conditions
@@ -569,7 +569,7 @@ TEST_F(JointTrajectoryControllerTest, jointWraparound)
 
 TEST_F(JointTrajectoryControllerTest, jointWraparoundPiSingularity)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Go to home configuration, we need known initial conditions
@@ -625,7 +625,7 @@ TEST_F(JointTrajectoryControllerTest, jointWraparoundPiSingularity)
 
 TEST_F(JointTrajectoryControllerTest, topicReplacesTopicTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
 
   // Send trajectory
   traj.header.stamp = ros::Time(0); // Start immediately
@@ -651,7 +651,7 @@ TEST_F(JointTrajectoryControllerTest, topicReplacesTopicTraj)
 
 TEST_F(JointTrajectoryControllerTest, actionReplacesActionTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Send trajectory
@@ -684,7 +684,7 @@ TEST_F(JointTrajectoryControllerTest, actionReplacesActionTraj)
 
 TEST_F(JointTrajectoryControllerTest, actionReplacesTopicTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Send trajectory
@@ -714,7 +714,7 @@ TEST_F(JointTrajectoryControllerTest, actionReplacesTopicTraj)
 
 TEST_F(JointTrajectoryControllerTest, topicReplacesActionTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Send trajectory
@@ -748,7 +748,7 @@ TEST_F(JointTrajectoryControllerTest, topicReplacesActionTraj)
 
 TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsTopicTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Go to home configuration, we need known initial conditions
@@ -788,7 +788,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsTopicTraj)
 
 TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Go to home configuration, we need known initial conditions
@@ -948,7 +948,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
 
 TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Go to home configuration, we need known initial conditions
@@ -992,7 +992,7 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
 
 TEST_F(JointTrajectoryControllerTest, emptyActionCancelsActionTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Go to home configuration, we need known initial conditions
@@ -1057,7 +1057,7 @@ TEST_F(JointTrajectoryControllerTest, cancelActionGoal)
 
 TEST_F(JointTrajectoryControllerTest, ignoreOldTopicTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
 
   // Send trajectory
   traj.header.stamp = ros::Time(0); // Start immediately
@@ -1086,7 +1086,7 @@ TEST_F(JointTrajectoryControllerTest, ignoreOldTopicTraj)
 
 TEST_F(JointTrajectoryControllerTest, ignorePreemptOfOldActionTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Send trajectory
@@ -1118,7 +1118,7 @@ TEST_F(JointTrajectoryControllerTest, ignorePreemptOfOldActionTraj)
 
 TEST_F(JointTrajectoryControllerTest, ignoreSingleOldActionTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Send trajectory
@@ -1129,7 +1129,7 @@ TEST_F(JointTrajectoryControllerTest, ignoreSingleOldActionTraj)
 
 TEST_F(JointTrajectoryControllerTest, ignorePartiallyOldActionTraj)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Send trajectory
@@ -1169,7 +1169,7 @@ TEST_F(JointTrajectoryControllerTest, ignorePartiallyOldActionTraj)
 
 TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Go to home configuration, we need known initial conditions
@@ -1218,7 +1218,7 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
 
 TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Go to home configuration, we need known initial conditions
@@ -1254,7 +1254,7 @@ TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
 
 TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
 {
-  ASSERT_TRUE(initState());
+  ASSERT_TRUE(waitForInitializedState());
   ASSERT_TRUE(action_client->waitForServer(long_timeout));
 
   // Go to home configuration, we need known initial conditions

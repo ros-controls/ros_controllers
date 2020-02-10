@@ -207,7 +207,7 @@ protected:
     while ( getState()->header.stamp <= state_time && ros::ok() )
     {
       if (timeout >= ros::Duration(0.0) && (ros::Time::now() - start_time) > timeout) {return false;} // Timed-out
-      ros::Duration(0.001).sleep();
+      ros::Duration(0.1).sleep();
     }
   }
 
@@ -259,7 +259,7 @@ protected:
     while (action_client->getState() != state && ros::ok())
     {
       if (timeout >= Duration(0.0) && (Time::now() - start_time) > timeout) {return false;} // Timed-out
-      ros::Duration(0.01).sleep();
+      ros::Duration(0.1).sleep();
     }
     return true;
   }

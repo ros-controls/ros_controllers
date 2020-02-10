@@ -348,6 +348,11 @@ protected:
     if(!start_controller.response.ok) return false;
     return true;
   }
+
+  static void sleepTrajectoryDuration(const trajectory_msgs::JointTrajectory &traj)
+  {
+    traj.points.back().time_from_start.sleep();
+  }
 };
 
 // Controller state ROS API ////////////////////////////////////////////////////////////////////////////////////////////
@@ -488,7 +493,7 @@ TEST_F(JointTrajectoryControllerTest, topicSingleTraj)
   traj.header.stamp = ros::Time(0); // Start immediately
   traj_pub.publish(traj);
   ASSERT_TRUE(waitForTrajectoryStart());
-  traj.points.back().time_from_start.sleep(); // Wait until done
+  sleepTrajectoryDuration(traj);
 
   // Validate state topic values
   ASSERT_TRUE(waitForNextState());
@@ -527,8 +532,7 @@ TEST_F(JointTrajectoryControllerTest, actionSingleTraj)
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_goal);
 
-  // Wait until done
-  traj_goal.trajectory.points.back().time_from_start.sleep();
+  sleepTrajectoryDuration(traj_goal.trajectory);
   ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
   EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::SUCCESSFUL);
   ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations
@@ -565,8 +569,8 @@ TEST_F(JointTrajectoryControllerTest, jointReordering)
 
   reorder_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(reorder_goal);
+  sleepTrajectoryDuration(reorder_goal.trajectory);
   ASSERT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
-  ros::Duration(0.5).sleep(); // Allows values to settle to within EPS, especially accelerations
 
   // Validate state topic values
   StateConstPtr state = getState();

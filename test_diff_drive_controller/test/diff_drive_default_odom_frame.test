@@ -1,0 +1,19 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
+
+  <!-- Do not specific an odom_frame_id -->
+  <!-- <rosparam>
+    diffbot_controller:
+      odom_frame_id: odom
+  </rosparam> -->
+
+  <!-- Controller test -->
+  <test test-name="diff_drive_default_odom_frame_test"
+        pkg="diff_drive_controller"
+        type="diff_drive_default_odom_frame_test"
+        time-limit="80.0">
+    <remap from="cmd_vel" to="diffbot_controller/cmd_vel" />
+    <remap from="odom" to="diffbot_controller/odom" />
+  </test>
+</launch>

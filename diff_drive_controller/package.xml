@@ -24,12 +24,6 @@
   <depend>urdf</depend>
   <depend>pluginlib</depend>
 
-  <test_depend>controller_manager</test_depend>
-  <test_depend>rosgraph_msgs</test_depend>
-  <test_depend>rostest</test_depend>
-  <test_depend>std_srvs</test_depend>
-  <test_depend>xacro</test_depend>
-
   <export>
     <controller_interface plugin="${prefix}/diff_drive_controller_plugins.xml"/>
   </export>

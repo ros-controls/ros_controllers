@@ -1,0 +1,38 @@
+<package format="2">
+  <name>test_diff_drive_controller</name>
+  <version>0.15.0</version>
+  <description>Tests for the diff_drive_controller package.</description>
+  <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
+  <maintainer email="enrique.fernandez.perdomo@gmail.com">Enrique Fernandez</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">https://github.com/ros-controls/ros_controllers/wiki</url>
+  <url type="bugtracker">https://github.com/ros-controls/ros_controllers/issues</url>
+  <url type="repository">https://github.com/ros-controls/ros_controllers</url>
+
+  <author email="bence.magyar@pal-robotics.com">Bence Magyar</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>control_msgs</build_depend>
+  <build_depend>controller_manager</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>hardware_interface</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>realtime_tools</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rosgraph_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>std_srvs</build_depend>
+  <build_depend>tf</build_depend>
+
+  <test_depend>diff_drive_controller</test_depend>
+  <!-- <test_depend>gazebo</test_depend> -->
+  <!-- <test_depend>gazebo_worlds</test_depend> -->
+  <test_depend>rostest</test_depend>
+  <test_depend>rostopic</test_depend>
+  <test_depend>rqt_plot</test_depend>
+  <test_depend>xacro</test_depend>
+</package>

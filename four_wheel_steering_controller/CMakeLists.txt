@@ -39,29 +39,3 @@ install(TARGETS ${PROJECT_NAME}
 
 install(FILES four_wheel_steering_controller_plugins.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
-if(CATKIN_ENABLE_TESTING)
-  find_package(catkin REQUIRED COMPONENTS rosgraph_msgs rostest std_srvs controller_manager tf)
-  include_directories(${catkin_INCLUDE_DIRS})
-
-  add_executable(four_wheel_steering test/src/four_wheel_steering.cpp)
-  target_link_libraries(four_wheel_steering ${catkin_LIBRARIES})
-
-  add_dependencies(tests four_wheel_steering)
-
-  add_rostest_gtest(four_wheel_steering_controller_twist_cmd_test
-                    test/four_wheel_steering_controller_twist_cmd.test
-                    test/src/four_wheel_steering_twist_cmd_test.cpp)
-  target_link_libraries(four_wheel_steering_controller_twist_cmd_test ${catkin_LIBRARIES})
-
-  add_rostest_gtest(four_wheel_steering_controller_4ws_cmd_test
-                    test/four_wheel_steering_controller_4ws_cmd.test
-                    test/src/four_wheel_steering_4ws_cmd_test.cpp)
-  target_link_libraries(four_wheel_steering_controller_4ws_cmd_test ${catkin_LIBRARIES})
-
-  add_rostest_gtest(four_wheel_steering_wrong_config_test
-                    test/four_wheel_steering_wrong_config.test
-                    test/src/four_wheel_steering_wrong_config.cpp)
-  target_link_libraries(four_wheel_steering_wrong_config_test ${catkin_LIBRARIES})
-
-endif()

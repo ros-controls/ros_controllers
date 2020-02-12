@@ -3,13 +3,13 @@
 <!--
 Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF-Controller%20Example
 -->
-  <xacro:include filename="$(find ackermann_steering_controller)/test/common/urdf/wheel.xacro"/>
+  <xacro:include filename="$(find test_ackermann_steering_controller)/test/common/urdf/wheel.xacro"/>
 
   <xacro:property name="deg_to_rad" value="0.01745329251994329577"/>
 
   <!-- Constants for robot dimensions -->
-  <xacro:property name="length" value="0.5" /> 
-  <xacro:property name="width" value="0.3" /> 
+  <xacro:property name="length" value="0.5" />
+  <xacro:property name="width" value="0.3" />
   <xacro:property name="wheel_radius" value="0.11" /> <!-- Link 1 -->
   <xacro:property name="thickness" value="0.086" /> <!-- Link 2 -->
   <xacro:property name="axel_offset" value="0.05" /> <!-- Space btw top of beam and the each joint -->
@@ -58,7 +58,7 @@ Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF
   </joint>
 
   <!-- joints for ackermann_steering_controller -->
-  <front_steer name="front" parent="base" radius="${wheel_radius}" thickness="${thickness}" 
+  <front_steer name="front" parent="base" radius="${wheel_radius}" thickness="${thickness}"
       length="${length}" width="${width}" axel_offset="${axel_offset}" steer_height="${wheel_radius+steer_offset}">
     <origin xyz="${length/2-axel_offset} 0 0" rpy="${-90 * deg_to_rad} 0 0"/>
   </front_steer>
@@ -67,11 +67,11 @@ Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF
   </rear_wheel>
 
   <!-- Wheels -->
-  <front_wheel_lr name="front_right" parent="base" radius="${wheel_radius}" thickness="${thickness}" 
+  <front_wheel_lr name="front_right" parent="base" radius="${wheel_radius}" thickness="${thickness}"
       length="${length}" width="${width}" axel_offset="${axel_offset}" right_left="1" steer_height="${wheel_radius+steer_offset}">
     <origin xyz="${length/2-axel_offset} ${width/2+axel_offset} 0" rpy="${-90 * deg_to_rad} 0 0"/>
   </front_wheel_lr>
-  <front_wheel_lr name="front_left" parent="base" radius="${wheel_radius}" thickness="${thickness}" 
+  <front_wheel_lr name="front_left" parent="base" radius="${wheel_radius}" thickness="${thickness}"
       length="${length}" width="${width}" axel_offset="${axel_offset}" right_left="-1" steer_height="${wheel_radius+steer_offset}">
     <origin xyz="${length/2-axel_offset} ${-width/2-axel_offset} 0" rpy="${-90 * deg_to_rad} 0 0"/>
   </front_wheel_lr>

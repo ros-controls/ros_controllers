@@ -1,18 +1,18 @@
 <launch>
   <!-- Load ackermann_steering_bot model -->
   <param name="robot_description"
-         command="$(find xacro)/xacro '$(find ackermann_steering_controller)/test/common/urdf/ackermann_steering_bot.xacro' --inorder" />
+         command="$(find xacro)/xacro '$(find test_ackermann_steering_controller)/test/common/urdf/ackermann_steering_bot.xacro' --inorder" />
 
   <!-- Load controller config -->
-  <rosparam command="load" file="$(find ackermann_steering_controller)/test/common/config/ackermann_steering_bot_controllers.yaml" />
+  <rosparam command="load" file="$(find test_ackermann_steering_controller)/test/common/config/ackermann_steering_bot_controllers.yaml" />
 
   <!-- Load ackermann_steering_bot config -->
-  <rosparam command="load" file="$(find ackermann_steering_controller)/test/common/config/ackermann_steering_bot_hw_sim.yaml" />
+  <rosparam command="load" file="$(find test_ackermann_steering_controller)/test/common/config/ackermann_steering_bot_hw_sim.yaml" />
 
   <!-- Start ackermann_steering_bot -->
-  <node name="ackermann_steering_controller_ackermann_steering_bot"
-        pkg="ackermann_steering_controller"
-        type="ackermann_steering_controller_ackermann_steering_bot"/>
+  <node name="ackermann_steering_bot"
+        pkg="test_ackermann_steering_controller"
+        type="ackermann_steering_bot"/>
 
   <!-- Spawn controller -->
   <node name="controller_spawner"

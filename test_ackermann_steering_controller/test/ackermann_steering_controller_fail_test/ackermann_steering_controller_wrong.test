@@ -1,13 +1,13 @@
 <launch>
   <!-- Load common test stuff -->
-  <include file="$(find ackermann_steering_controller)/test/common/launch/ackermann_steering_common.launch" />
+  <include file="$(find test_ackermann_steering_controller)/test/common/launch/ackermann_steering_common.launch" />
 
   <!-- Override with wrong controller configuration -->
-  <rosparam command="load" file="$(find ackermann_steering_controller)/test/ackermann_steering_controller_fail_test/ackermann_steering_bot_wrong.yaml" />
+  <rosparam command="load" file="$(find test_ackermann_steering_controller)/test/ackermann_steering_controller_fail_test/ackermann_steering_bot_wrong.yaml" />
 
   <!-- Controller test -->
   <test test-name="ackermann_steering_controller_fail_test"
-        pkg="ackermann_steering_controller"
+        pkg="test_ackermann_steering_controller"
         type="ackermann_steering_controller_fail_test"
         time-limit="10.0">
     <remap from="cmd_vel" to="ackermann_steering_bot_controller/cmd_vel" />

@@ -7,7 +7,7 @@
   <xacro:property name="steering_link_xz" value="0.1" />
   <xacro:property name="steering_link_mass" value="5.0" />
 
-  <xacro:include filename="$(find four_wheel_steering_controller)/test/urdf/wheel.xacro" />
+  <xacro:include filename="$(find test_four_wheel_steering_controller)/test/urdf/wheel.xacro" />
 
   <xacro:macro name="wheel_steered" params="wheel_prefix parent_link wheel_origin_y left_right *joint_origin ">
     <link name="${wheel_prefix}_steering">
@@ -58,4 +58,3 @@
   </xacro:macro>
 
 </robot>
-

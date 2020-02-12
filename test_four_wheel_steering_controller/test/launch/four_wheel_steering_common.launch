@@ -4,15 +4,15 @@
 
   <!-- Load four_wheel_steering model -->
   <param name="robot_description"
-         command="$(find xacro)/xacro --inorder '$(find four_wheel_steering_controller)/test/urdf/four_wheel_steering.urdf.xacro'" />
+         command="$(find xacro)/xacro --inorder '$(find test_four_wheel_steering_controller)/test/urdf/four_wheel_steering.urdf.xacro'" />
 
   <!-- Start four_wheel_steering -->
   <node name="four_wheel_steering"
-      pkg="four_wheel_steering_controller"
+      pkg="test_four_wheel_steering_controller"
       type="four_wheel_steering" output="screen"/>
 
   <!-- Load controller config -->
-  <rosparam command="load" file="$(find four_wheel_steering_controller)/test/config/four_wheel_steering_controller_twist_cmd.yaml" />
+  <rosparam command="load" file="$(find test_four_wheel_steering_controller)/test/config/four_wheel_steering_controller_twist_cmd.yaml" />
 
   <!-- Spawn controller -->
   <node name="controller_spawner"
@@ -39,6 +39,6 @@
         type="rqt_plot"
         args="/four_wheel_steering_controller/odom/twist/twist/linear/x" />-->
 
-  <!--<node name="rviz" pkg="rviz" type="rviz" args="-d $(find four_wheel_steering_controller)/test/config/view_odom.rviz"/>-->
+  <!--<node name="rviz" pkg="rviz" type="rviz" args="-d $(find test_four_wheel_steering_controller)/test/config/view_odom.rviz"/>-->
 
 </launch>

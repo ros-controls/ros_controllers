@@ -2,8 +2,8 @@
 
 <robot name="four_wheel_steering_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <xacro:include filename="$(find four_wheel_steering_controller)/test/urdf/chassis.xacro" />
-  <xacro:include filename="$(find four_wheel_steering_controller)/test/urdf/wheel_steered.xacro" />
+  <xacro:include filename="$(find test_four_wheel_steering_controller)/test/urdf/chassis.xacro" />
+  <xacro:include filename="$(find test_four_wheel_steering_controller)/test/urdf/wheel_steered.xacro" />
 
   <xacro:property name="M_PI" value="3.14159"/>
 

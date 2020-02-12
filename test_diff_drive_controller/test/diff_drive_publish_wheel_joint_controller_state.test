@@ -1,6 +1,6 @@
 <launch>
   <!-- Load common test stuff -->
-  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
+  <include file="$(find test_diff_drive_controller)/test/diff_drive_common.launch" />
 
   <!-- default value -->
    <rosparam>
@@ -10,7 +10,7 @@
 
   <!-- Controller test -->
   <test test-name="diff_drive_publish_wheel_joint_controller_state__test"
-        pkg="diff_drive_controller"
+        pkg="test_diff_drive_controller"
         type="diff_drive_publish_wheel_joint_controller_state_test"
         time-limit="30.0">
     <remap from="cmd_vel" to="diffbot_controller/cmd_vel" />

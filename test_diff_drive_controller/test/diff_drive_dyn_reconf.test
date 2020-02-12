@@ -1,6 +1,6 @@
 <launch>
   <!-- Load common test stuff -->
-  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
+  <include file="$(find test_diff_drive_controller)/test/diff_drive_common.launch" />
 
   <!-- Make sure to disable odom tf -->
   <rosparam>
@@ -10,7 +10,7 @@
 
   <!-- Controller test -->
   <test test-name="diff_drive_dyn_reconf_test"
-        pkg="diff_drive_controller"
+        pkg="test_diff_drive_controller"
         type="diff_drive_dyn_reconf_test"
         time-limit="80.0">
     <remap from="cmd_vel" to="diffbot_controller/cmd_vel" />

@@ -4,15 +4,15 @@
 
   <!-- Load diffbot model -->
   <param name="robot_description"
-         command="$(find xacro)/xacro '$(find diff_drive_controller)/test/diffbot.xacro' --inorder" />
+         command="$(find xacro)/xacro '$(find test_diff_drive_controller)/test/diffbot.xacro' --inorder" />
 
   <!-- Start diffbot -->
   <node name="diffbot"
-      pkg="diff_drive_controller"
+      pkg="test_diff_drive_controller"
       type="diffbot"/>
 
   <!-- Load controller config -->
-  <rosparam command="load" file="$(find diff_drive_controller)/test/diffbot_controllers.yaml" />
+  <rosparam command="load" file="$(find test_diff_drive_controller)/test/diffbot_controllers.yaml" />
 
   <!-- Spawn controller -->
   <node name="controller_spawner"

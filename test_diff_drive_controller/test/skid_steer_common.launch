@@ -4,15 +4,15 @@
 
   <!-- Load skidsteerbot model -->
   <param name="robot_description"
-         command="$(find xacro)/xacro '$(find diff_drive_controller)/test/skidsteerbot.xacro' --inorder" />
+         command="$(find xacro)/xacro '$(find test_diff_drive_controller)/test/skidsteerbot.xacro' --inorder" />
 
   <!-- Start skidsteerbot -->
   <node name="skidsteerbot"
-      pkg="diff_drive_controller"
+      pkg="test_diff_drive_controller"
       type="skidsteerbot"/>
 
   <!-- Load controller config -->
-  <rosparam command="load" file="$(find diff_drive_controller)/test/skidsteerbot_controllers.yaml" />
+  <rosparam command="load" file="$(find test_diff_drive_controller)/test/skidsteerbot_controllers.yaml" />
 
   <!-- Spawn controller -->
   <node name="controller_spawner"

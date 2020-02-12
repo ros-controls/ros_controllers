@@ -2,6 +2,7 @@
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2017, Irstea
+ *  Copyright (c) 2013, PAL Robotics, S.L.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -140,9 +141,9 @@ namespace four_wheel_steering_controller{
     ros::Subscriber sub_command_four_wheel_steering_;
 
     /// Odometry related:
-    boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
-    boost::shared_ptr<realtime_tools::RealtimePublisher<four_wheel_steering_msgs::FourWheelSteeringStamped> > odom_4ws_pub_;
-    boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<four_wheel_steering_msgs::FourWheelSteeringStamped> > odom_4ws_pub_;
+    std::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
     Odometry odometry_;
 
     /// Wheel separation (or track), distance between left and right wheels (from the midpoint of the wheel width):

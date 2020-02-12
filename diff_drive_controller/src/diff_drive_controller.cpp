@@ -33,20 +33,14 @@
  *********************************************************************/
 
 /*
- * Author: Bence Magyar
+ * Author: Bence Magyar, Enrique Fernández
  */
 
 #include <cmath>
-
-#include <tf/transform_datatypes.h>
-
-#include <urdf_parser/urdf_parser.h>
-
-#include <urdf/urdfdom_compatibility.h>
-
-#include <boost/assign.hpp>
-
 #include <diff_drive_controller/diff_drive_controller.h>
+#include <tf/transform_datatypes.h>
+#include <urdf/urdfdom_compatibility.h>
+#include <urdf_parser/urdf_parser.h>
 
 static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3& vec2)
 {
@@ -164,6 +158,7 @@ namespace diff_drive_controller{
     , enable_odom_tf_(true)
     , wheel_joints_size_(0)
     , publish_cmd_(false)
+    , publish_wheel_joint_controller_state_(false)
   {
   }
 
@@ -177,7 +172,7 @@ namespace diff_drive_controller{
 
     // Get joint names from the parameter server
     std::vector<std::string> left_wheel_names, right_wheel_names;
-    if (!getWheelNames(controller_nh, "left_wheel", left_wheel_names) or
+    if (!getWheelNames(controller_nh, "left_wheel", left_wheel_names) ||
         !getWheelNames(controller_nh, "right_wheel", right_wheel_names))
     {
       return false;
@@ -279,6 +274,9 @@ namespace diff_drive_controller{
     // Publish limited velocity:
     controller_nh.param("publish_cmd", publish_cmd_, publish_cmd_);
 
+    // Publish wheel data:
+    controller_nh.param("publish_wheel_joint_controller_state", publish_wheel_joint_controller_state_, publish_wheel_joint_controller_state_);
+
     // If either parameter is not available, we need to look up the value in the URDF
     bool lookup_wheel_separation = !controller_nh.getParam("wheel_separation", wheel_separation_);
     bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius_);
@@ -308,6 +306,40 @@ namespace diff_drive_controller{
     if (publish_cmd_)
     {
       cmd_vel_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped>(controller_nh, "cmd_vel_out", 100));
+    }
+
+    // Wheel joint controller state:
+    if (publish_wheel_joint_controller_state_)
+    {
+      controller_state_pub_.reset(new realtime_tools::RealtimePublisher<control_msgs::JointTrajectoryControllerState>(controller_nh, "wheel_joint_controller_state", 100));
+
+      const size_t num_wheels = wheel_joints_size_ * 2;
+
+      controller_state_pub_->msg_.joint_names.resize(num_wheels);
+
+      controller_state_pub_->msg_.desired.positions.resize(num_wheels);
+      controller_state_pub_->msg_.desired.velocities.resize(num_wheels);
+      controller_state_pub_->msg_.desired.accelerations.resize(num_wheels);
+      controller_state_pub_->msg_.desired.effort.resize(num_wheels);
+
+      controller_state_pub_->msg_.actual.positions.resize(num_wheels);
+      controller_state_pub_->msg_.actual.velocities.resize(num_wheels);
+      controller_state_pub_->msg_.actual.accelerations.resize(num_wheels);
+      controller_state_pub_->msg_.actual.effort.resize(num_wheels);
+
+      controller_state_pub_->msg_.error.positions.resize(num_wheels);
+      controller_state_pub_->msg_.error.velocities.resize(num_wheels);
+      controller_state_pub_->msg_.error.accelerations.resize(num_wheels);
+      controller_state_pub_->msg_.error.effort.resize(num_wheels);
+
+      for (size_t i = 0; i < wheel_joints_size_; ++i)
+      {
+        controller_state_pub_->msg_.joint_names[i] = left_wheel_names[i];
+        controller_state_pub_->msg_.joint_names[i + wheel_joints_size_] = right_wheel_names[i];
+      }
+
+      vel_left_previous_.resize(wheel_joints_size_, 0.0);
+      vel_right_previous_.resize(wheel_joints_size_, 0.0);
     }
 
     // Get the joint object to use in the realtime loop
@@ -342,7 +374,7 @@ namespace diff_drive_controller{
     config.publish_rate = publish_rate;
     config.enable_odom_tf = enable_odom_tf_;
 
-    dyn_reconf_server_ = boost::make_shared<ReconfigureServer>(controller_nh);
+    dyn_reconf_server_ = std::make_shared<ReconfigureServer>(controller_nh);
     dyn_reconf_server_->updateConfig(config);
     dyn_reconf_server_->setCallback(boost::bind(&DiffDriveController::reconfCallback, this, _1, _2));
 
@@ -459,6 +491,9 @@ namespace diff_drive_controller{
       left_wheel_joints_[i].setCommand(vel_left);
       right_wheel_joints_[i].setCommand(vel_right);
     }
+
+    publishWheelData(time, period, curr_cmd, ws, lwr, rwr);
+    time_previous_ = time;
   }
 
   void DiffDriveController::starting(const ros::Time& time)
@@ -467,6 +502,7 @@ namespace diff_drive_controller{
 
     // Register starting time used to keep fixed rate
     last_state_publish_time_ = time;
+    time_previous_ = time;
 
     odometry_.init(time);
   }
@@ -659,24 +695,24 @@ namespace diff_drive_controller{
     odom_pub_->msg_.header.frame_id = odom_frame_id_;
     odom_pub_->msg_.child_frame_id = base_frame_id_;
     odom_pub_->msg_.pose.pose.position.z = 0;
-    odom_pub_->msg_.pose.covariance = boost::assign::list_of
-        (static_cast<double>(pose_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(pose_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(pose_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(pose_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(pose_cov_list[5]));
+    odom_pub_->msg_.pose.covariance = {
+        static_cast<double>(pose_cov_list[0]), 0., 0., 0., 0., 0.,
+        0., static_cast<double>(pose_cov_list[1]), 0., 0., 0., 0.,
+        0., 0., static_cast<double>(pose_cov_list[2]), 0., 0., 0.,
+        0., 0., 0., static_cast<double>(pose_cov_list[3]), 0., 0.,
+        0., 0., 0., 0., static_cast<double>(pose_cov_list[4]), 0.,
+        0., 0., 0., 0., 0., static_cast<double>(pose_cov_list[5]) };
     odom_pub_->msg_.twist.twist.linear.y  = 0;
     odom_pub_->msg_.twist.twist.linear.z  = 0;
     odom_pub_->msg_.twist.twist.angular.x = 0;
     odom_pub_->msg_.twist.twist.angular.y = 0;
-    odom_pub_->msg_.twist.covariance = boost::assign::list_of
-        (static_cast<double>(twist_cov_list[0])) (0)  (0)  (0)  (0)  (0)
-        (0)  (static_cast<double>(twist_cov_list[1])) (0)  (0)  (0)  (0)
-        (0)  (0)  (static_cast<double>(twist_cov_list[2])) (0)  (0)  (0)
-        (0)  (0)  (0)  (static_cast<double>(twist_cov_list[3])) (0)  (0)
-        (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[4])) (0)
-        (0)  (0)  (0)  (0)  (0)  (static_cast<double>(twist_cov_list[5]));
+    odom_pub_->msg_.twist.covariance = {
+        static_cast<double>(twist_cov_list[0]), 0., 0., 0., 0., 0.,
+        0., static_cast<double>(twist_cov_list[1]), 0., 0., 0., 0.,
+        0., 0., static_cast<double>(twist_cov_list[2]), 0., 0., 0.,
+        0., 0., 0., static_cast<double>(twist_cov_list[3]), 0., 0.,
+        0., 0., 0., 0., static_cast<double>(twist_cov_list[4]), 0.,
+        0., 0., 0., 0., 0., static_cast<double>(twist_cov_list[5]) };
     tf_odom_pub_.reset(new realtime_tools::RealtimePublisher<tf::tfMessage>(root_nh, "/tf", 100));
     tf_odom_pub_->msg_.transforms.resize(1);
     tf_odom_pub_->msg_.transforms[0].transform.translation.z = 0.0;
@@ -711,6 +747,77 @@ namespace diff_drive_controller{
 
     publish_period_ = ros::Duration(1.0 / dynamic_params.publish_rate);
     enable_odom_tf_ = dynamic_params.enable_odom_tf;
+  }
+
+  void DiffDriveController::publishWheelData(const ros::Time& time, const ros::Duration& period, Commands& curr_cmd,
+          double wheel_separation, double left_wheel_radius, double right_wheel_radius)
+  {
+    if (publish_wheel_joint_controller_state_ && controller_state_pub_->trylock())
+    {
+      const double cmd_dt(period.toSec());
+
+      // Compute desired wheels velocities, that is before applying limits:
+      const double vel_left_desired  = (curr_cmd.lin - curr_cmd.ang * wheel_separation / 2.0) / left_wheel_radius;
+      const double vel_right_desired = (curr_cmd.lin + curr_cmd.ang * wheel_separation / 2.0) / right_wheel_radius;
+      controller_state_pub_->msg_.header.stamp = time;
+
+      for (size_t i = 0; i < wheel_joints_size_; ++i)
+      {
+        const double control_duration = (time - time_previous_).toSec();
+
+        const double left_wheel_acc = (left_wheel_joints_[i].getVelocity() - vel_left_previous_[i]) / control_duration;
+        const double right_wheel_acc = (right_wheel_joints_[i].getVelocity() - vel_right_previous_[i]) / control_duration;
+
+        // Actual
+        controller_state_pub_->msg_.actual.positions[i]     = left_wheel_joints_[i].getPosition();
+        controller_state_pub_->msg_.actual.velocities[i]    = left_wheel_joints_[i].getVelocity();
+        controller_state_pub_->msg_.actual.accelerations[i] = left_wheel_acc;
+        controller_state_pub_->msg_.actual.effort[i]        = left_wheel_joints_[i].getEffort();
+
+        controller_state_pub_->msg_.actual.positions[i + wheel_joints_size_]     = right_wheel_joints_[i].getPosition();
+        controller_state_pub_->msg_.actual.velocities[i + wheel_joints_size_]    = right_wheel_joints_[i].getVelocity();
+        controller_state_pub_->msg_.actual.accelerations[i + wheel_joints_size_] = right_wheel_acc;
+        controller_state_pub_->msg_.actual.effort[i+ wheel_joints_size_]         = right_wheel_joints_[i].getEffort();
+
+        // Desired
+        controller_state_pub_->msg_.desired.positions[i]    += vel_left_desired * cmd_dt;
+        controller_state_pub_->msg_.desired.velocities[i]    = vel_left_desired;
+        controller_state_pub_->msg_.desired.accelerations[i] = (vel_left_desired - vel_left_desired_previous_) * cmd_dt;
+        controller_state_pub_->msg_.desired.effort[i]        = std::numeric_limits<double>::quiet_NaN();
+
+        controller_state_pub_->msg_.desired.positions[i + wheel_joints_size_]    += vel_right_desired * cmd_dt;
+        controller_state_pub_->msg_.desired.velocities[i + wheel_joints_size_]    = vel_right_desired;
+        controller_state_pub_->msg_.desired.accelerations[i + wheel_joints_size_] = (vel_right_desired - vel_right_desired_previous_) * cmd_dt;
+        controller_state_pub_->msg_.desired.effort[i+ wheel_joints_size_]         = std::numeric_limits<double>::quiet_NaN();
+
+        // Error
+        controller_state_pub_->msg_.error.positions[i]     = controller_state_pub_->msg_.desired.positions[i] -
+                                                                              controller_state_pub_->msg_.actual.positions[i];
+        controller_state_pub_->msg_.error.velocities[i]    = controller_state_pub_->msg_.desired.velocities[i] -
+                                                                              controller_state_pub_->msg_.actual.velocities[i];
+        controller_state_pub_->msg_.error.accelerations[i] = controller_state_pub_->msg_.desired.accelerations[i] -
+                                                                              controller_state_pub_->msg_.actual.accelerations[i];
+        controller_state_pub_->msg_.error.effort[i]        = controller_state_pub_->msg_.desired.effort[i] -
+                                                                              controller_state_pub_->msg_.actual.effort[i];
+
+        controller_state_pub_->msg_.error.positions[i + wheel_joints_size_]     = controller_state_pub_->msg_.desired.positions[i + wheel_joints_size_] -
+                                                                                                   controller_state_pub_->msg_.actual.positions[i + wheel_joints_size_];
+        controller_state_pub_->msg_.error.velocities[i + wheel_joints_size_]    = controller_state_pub_->msg_.desired.velocities[i + wheel_joints_size_] -
+                                                                                                   controller_state_pub_->msg_.actual.velocities[i + wheel_joints_size_];
+        controller_state_pub_->msg_.error.accelerations[i + wheel_joints_size_] = controller_state_pub_->msg_.desired.accelerations[i + wheel_joints_size_] -
+                                                                                                   controller_state_pub_->msg_.actual.accelerations[i + wheel_joints_size_];
+        controller_state_pub_->msg_.error.effort[i+ wheel_joints_size_]         = controller_state_pub_->msg_.desired.effort[i + wheel_joints_size_] -
+                                                                                                   controller_state_pub_->msg_.actual.effort[i + wheel_joints_size_];
+
+        // Save previous velocities to compute acceleration
+        vel_left_previous_[i] = left_wheel_joints_[i].getVelocity();
+        vel_right_previous_[i] = right_wheel_joints_[i].getVelocity();
+        vel_left_desired_previous_ = vel_left_desired;
+        vel_right_desired_previous_ = vel_right_desired;
+      }
+
+      controller_state_pub_->unlockAndPublish();
+    }
   }
 
 } // namespace diff_drive_controller

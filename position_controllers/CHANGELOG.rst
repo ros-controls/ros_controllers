@@ -2,6 +2,14 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.15.0 (2019-03-26)
+-------------------
+* fix install destination for libraries (`#403 <https://github.com/ros-controls/ros_controllers/issues/403>`_)
+* Contributors: James Xu
+
+0.14.3 (2019-02-09)
+-------------------
+
 0.14.2 (2018-10-23)
 -------------------
 * Update maintainers

@@ -1,6 +1,6 @@
 <package format="2">
   <name>ros_controllers</name>
-  <version>0.14.2</version>
+  <version>0.15.0</version>
   <description>Library of ros controllers</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -17,6 +17,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <exec_depend>ackermann_steering_controller</exec_depend>
   <exec_depend>diff_drive_controller</exec_depend>
   <exec_depend>effort_controllers</exec_depend>
   <exec_depend>force_torque_sensor_controller</exec_depend>

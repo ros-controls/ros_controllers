@@ -66,18 +66,17 @@
 
 */
 
-#include <ros/node_handle.h>
-#include <urdf/model.h>
+#include <control_msgs/JointControllerState.h>
+#include <control_msgs/JointControllerState.h>
 #include <control_toolbox/pid.h>
-#include <boost/scoped_ptr.hpp>
-#include <boost/thread/condition.hpp>
-#include <realtime_tools/realtime_publisher.h>
-#include <hardware_interface/joint_command_interface.h>
 #include <controller_interface/controller.h>
-#include <control_msgs/JointControllerState.h>
-#include <std_msgs/Float64.h>
-#include <control_msgs/JointControllerState.h>
+#include <hardware_interface/joint_command_interface.h>
+#include <memory>
 #include <realtime_tools/realtime_buffer.h>
+#include <realtime_tools/realtime_publisher.h>
+#include <ros/node_handle.h>
+#include <std_msgs/Float64.h>
+#include <urdf/model.h>
 
 namespace velocity_controllers
 {
@@ -182,7 +181,7 @@ private:
   int loop_count_;
   control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
 
-  boost::scoped_ptr<
+  std::unique_ptr<
     realtime_tools::RealtimePublisher<
       control_msgs::JointControllerState> > controller_state_publisher_ ;
 

@@ -86,9 +86,11 @@ namespace effort_controllers
 
     for(unsigned int i=0; i<n_joints_; i++)
     {
+      const auto& joint_name = joint_names_[i];
+
       try
       {
-        joints_.push_back(hw->getHandle(joint_names_[i]));  
+        joints_.push_back(hw->getHandle(joint_name));
       }
       catch (const hardware_interface::HardwareInterfaceException& e)
       {
@@ -96,18 +98,18 @@ namespace effort_controllers
         return false;
       }
 
-      urdf::JointConstSharedPtr joint_urdf = urdf.getJoint(joint_names_[i]);
+      urdf::JointConstSharedPtr joint_urdf = urdf.getJoint(joint_name);
       if (!joint_urdf)
       {
-        ROS_ERROR("Could not find joint '%s' in urdf", joint_names_[i].c_str());
+        ROS_ERROR("Could not find joint '%s' in urdf", joint_name.c_str());
         return false;
       }
       joint_urdfs_.push_back(joint_urdf);
 
       // Load PID Controller using gains set on parameter server
-      if (!pid_controllers_[i].init(ros::NodeHandle(n, joint_names_[i] + "/pid")))
+      if (!pid_controllers_[i].init(ros::NodeHandle(n, joint_name + "/pid")))
       {
-        ROS_ERROR_STREAM("Failed to load PID parameters from " << joint_names_[i] + "/pid");
+        ROS_ERROR_STREAM("Failed to load PID parameters from " << joint_name + "/pid");
         return false;
       }
     }

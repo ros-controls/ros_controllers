@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(four_wheel_steering_controller)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
 set(${PROJECT_NAME}_CATKIN_DEPS
     controller_interface
@@ -26,10 +29,11 @@ include_directories(
 add_library(${PROJECT_NAME} src/four_wheel_steering_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
+# Install library
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
   )
 
 install(FILES four_wheel_steering_controller_plugins.xml
@@ -37,6 +41,7 @@ install(FILES four_wheel_steering_controller_plugins.xml
 
 if(CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS rosgraph_msgs rostest std_srvs controller_manager tf)
+  include_directories(${catkin_INCLUDE_DIRS})
 
   add_executable(four_wheel_steering test/src/four_wheel_steering.cpp)
   target_link_libraries(four_wheel_steering ${catkin_LIBRARIES})

@@ -121,51 +121,53 @@ namespace joint_state_controller
 
     for(std::size_t i = 0; i < list.size(); ++i)
     {
-      if (list[i].getType() != XmlRpc::XmlRpcValue::TypeStruct)
+      XmlRpc::XmlRpcValue& elem = list[i];
+
+      if (elem.getType() != XmlRpc::XmlRpcValue::TypeStruct)
       {
-        ROS_ERROR_STREAM("Extra joint specification is not a struct, but rather '" << list[i].getType() <<
+        ROS_ERROR_STREAM("Extra joint specification is not a struct, but rather '" << elem.getType() <<
                          "'. Ignoring.");
         continue;
       }
 
-      if (!list[i].hasMember("name"))
+      if (!elem.hasMember("name"))
       {
         ROS_ERROR_STREAM("Extra joint does not specify name. Ignoring.");
         continue;
       }
 
-      const std::string name = list[i]["name"];
+      const std::string name = elem["name"];
       if (std::find(msg.name.begin(), msg.name.end(), name) != msg.name.end())
       {
         ROS_WARN_STREAM("Joint state interface already contains specified extra joint '" << name << "'.");
         continue;
       }
 
-      const bool has_pos = list[i].hasMember("position");
-      const bool has_vel = list[i].hasMember("velocity");
-      const bool has_eff = list[i].hasMember("effort");
+      const bool has_pos = elem.hasMember("position");
+      const bool has_vel = elem.hasMember("velocity");
+      const bool has_eff = elem.hasMember("effort");
 
       const XmlRpc::XmlRpcValue::Type typeDouble = XmlRpc::XmlRpcValue::TypeDouble;
-      if (has_pos && list[i]["position"].getType() != typeDouble)
+      if (has_pos && elem["position"].getType() != typeDouble)
       {
         ROS_ERROR_STREAM("Extra joint '" << name << "' does not specify a valid default position. Ignoring.");
         continue;
       }
-      if (has_vel && list[i]["velocity"].getType() != typeDouble)
+      if (has_vel && elem["velocity"].getType() != typeDouble)
       {
         ROS_ERROR_STREAM("Extra joint '" << name << "' does not specify a valid default velocity. Ignoring.");
         continue;
       }
-      if (has_eff && list[i]["effort"].getType() != typeDouble)
+      if (has_eff && elem["effort"].getType() != typeDouble)
       {
         ROS_ERROR_STREAM("Extra joint '" << name << "' does not specify a valid default effort. Ignoring.");
         continue;
       }
 
       // State of extra joint
-      const double pos = has_pos ? static_cast<double>(list[i]["position"]) : 0.0;
-      const double vel = has_vel ? static_cast<double>(list[i]["velocity"]) : 0.0;
-      const double eff = has_eff ? static_cast<double>(list[i]["effort"])   : 0.0;
+      const double pos = has_pos ? static_cast<double>(elem["position"]) : 0.0;
+      const double vel = has_vel ? static_cast<double>(elem["velocity"]) : 0.0;
+      const double eff = has_eff ? static_cast<double>(elem["effort"])   : 0.0;
 
       // Add extra joints to message
       msg.name.push_back(name);

@@ -2,6 +2,21 @@
 Changelog for package four_wheel_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.15.0 (2019-03-26)
+-------------------
+* Default all controller builds to C++14
+* boost::chrono -> std::chrono
+* Adjust missing bsd note
+* boost::assign -> C++ initializer list
+* boost::shared_ptr -> std::shared_ptr
+* fix install destination for libraries (`#403 <https://github.com/ros-controls/ros_controllers/issues/403>`_)
+* Contributors: Bence Magyar, Gennaro Raiola, James Xu
+
+0.14.3 (2019-02-09)
+-------------------
+* Minor change in one of the ROS_INFO_STREAM
+* Contributors: Jan-Felix Klein
+
 0.14.2 (2018-10-23)
 -------------------
 

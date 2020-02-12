@@ -38,16 +38,15 @@
 #ifndef EFFORT_CONTROLLERS_JOINT_GROUP_POSITION_CONTROLLER_H
 #define EFFORT_CONTROLLERS_JOINT_GROUP_POSITION_CONTROLLER_H
 
-#include <ros/node_handle.h>
-#include <urdf/model.h>
-#include <control_toolbox/pid.h>
-#include <boost/scoped_ptr.hpp>
-#include <realtime_tools/realtime_publisher.h>
-#include <hardware_interface/joint_command_interface.h>
-#include <controller_interface/controller.h>
-#include <std_msgs/Float64MultiArray.h>
 #include <control_msgs/JointControllerState.h>
+#include <control_toolbox/pid.h>
+#include <controller_interface/controller.h>
+#include <hardware_interface/joint_command_interface.h>
 #include <realtime_tools/realtime_buffer.h>
+#include <realtime_tools/realtime_publisher.h>
+#include <ros/node_handle.h>
+#include <std_msgs/Float64MultiArray.h>
+#include <urdf/model.h>
 
 namespace effort_controllers
 {

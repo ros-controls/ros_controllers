@@ -4,15 +4,15 @@
 
   <!-- Load RRbot model -->
   <param name="robot_description"
-      command="$(find xacro)/xacro '$(find joint_trajectory_controller)/test/rrbot.xacro'" />
+      command="$(find xacro)/xacro '$(find test_joint_trajectory_controller)/test/rrbot.xacro'" />
 
   <!-- Start RRbot -->
   <node name="rrbot"
-      pkg="joint_trajectory_controller"
+      pkg="test_joint_trajectory_controller"
       type="rrbot"/>
 
   <!-- Load controller config -->
-  <rosparam command="load" file="$(find joint_trajectory_controller)/test/rrbot_vel_controllers.yaml" />
+  <rosparam command="load" file="$(find test_joint_trajectory_controller)/test/rrbot_vel_controllers.yaml" />
 
   <!-- Spawn controller -->
   <node name="controller_spawner"
@@ -34,7 +34,7 @@
 
   <!-- Controller test -->
   <test test-name="joint_trajectory_controller_vel_test"
-        pkg="joint_trajectory_controller"
+        pkg="test_joint_trajectory_controller"
         type="joint_trajectory_controller_vel_test"
         args='--gtest_filter="$(arg gtest_filter)"'
         time-limit="120.0"/>

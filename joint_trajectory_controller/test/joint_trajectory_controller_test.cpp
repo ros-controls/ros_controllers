@@ -28,6 +28,7 @@
 /// \author Adolfo Rodriguez Tsouroukdissian
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <functional>
 #include <limits>
@@ -41,6 +42,7 @@
 
 #include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Empty.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <control_msgs/JointTrajectoryControllerState.h>
 #include <control_msgs/QueryTrajectoryState.h>
@@ -65,7 +67,7 @@ class JointTrajectoryControllerTest : public ::testing::Test
 {
 public:
   JointTrajectoryControllerTest()
-    : nh("rrbot_controller"),
+    : controller_nh("rrbot_controller"),
       controller_state(),
       stop_trajectory_duration(0.0)
   {
@@ -108,38 +110,49 @@ public:
     traj_home_goal.trajectory = traj_home;
     traj_goal.trajectory      = traj;
 
+    ros::NodeHandle nh{};
+
     // Smoothing publisher (determines how well the robot follows a trajectory)
-    smoothing_pub = ros::NodeHandle().advertise<std_msgs::Float64>("smoothing", 1);
+    smoothing_pub = nh.advertise<std_msgs::Float64>("smoothing", 1);
 
     // Delay publisher (allows to simulate a delay of one cycle in the hardware interface)
-    delay_pub = ros::NodeHandle().advertise<std_msgs::Bool>("delay", 1);
+    delay_pub = nh.advertise<std_msgs::Bool>("delay", 1);
 
     // Upper bound publisher (allows to simulate a wall)
-    upper_bound_pub = ros::NodeHandle().advertise<std_msgs::Float64>("upper_bound", 1);
+    upper_bound_pub = nh.advertise<std_msgs::Float64>("upper_bound", 1);
 
     // Trajectory publisher
-    traj_pub = nh.advertise<trajectory_msgs::JointTrajectory>("command", 1);
+    traj_pub = controller_nh.advertise<trajectory_msgs::JointTrajectory>("command", 1);
 
     // State subscriber
-    state_sub = nh.subscribe<control_msgs::JointTrajectoryControllerState>("state",
+    state_sub = controller_nh.subscribe<control_msgs::JointTrajectoryControllerState>("state",
                                                                            1,
                                                                            &JointTrajectoryControllerTest::stateCB,
                                                                            this);
 
+    // Robot ready subscriber (gets notified about successful parameter update)
+    robot_ready_sub = nh.subscribe<std_msgs::Empty>("parameter_updated",
+                                                    1,
+                                                    &JointTrajectoryControllerTest::robotReadyCB,
+                                                    this);
+
     // Query state service client
-    query_state_service = nh.serviceClient<control_msgs::QueryTrajectoryState>("query_state");
+    query_state_service = controller_nh.serviceClient<control_msgs::QueryTrajectoryState>("query_state");
 
     // Controller management services
-    load_controller_service = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
-    unload_controller_service = nh.serviceClient<controller_manager_msgs::UnloadController>("/controller_manager/unload_controller");
-    switch_controller_service = nh.serviceClient<controller_manager_msgs::SwitchController>("/controller_manager/switch_controller");
+    {
+      using namespace controller_manager_msgs;
+      load_controller_service = controller_nh.serviceClient<LoadController>("/controller_manager/load_controller");
+      unload_controller_service = controller_nh.serviceClient<UnloadController>("/controller_manager/unload_controller");
+      switch_controller_service = controller_nh.serviceClient<SwitchController>("/controller_manager/switch_controller");
+    }
 
     // Action client
-    const std::string action_server_name = nh.getNamespace() + "/follow_joint_trajectory";
+    const std::string action_server_name = controller_nh.getNamespace() + "/follow_joint_trajectory";
     action_client.reset(new ActionClient(action_server_name));
     action_client2.reset(new ActionClient(action_server_name));
 
-    nh.getParam("stop_trajectory_duration", stop_trajectory_duration);
+    controller_nh.getParam("stop_trajectory_duration", stop_trajectory_duration);
   }
 
   ~JointTrajectoryControllerTest()
@@ -172,7 +185,7 @@ protected:
   typedef control_msgs::JointTrajectoryControllerStateConstPtr StateConstPtr;
 
   std::mutex mutex;
-  ros::NodeHandle nh;
+  ros::NodeHandle controller_nh;
 
   unsigned int n_joints;
   std::vector<std::string> joint_names;
@@ -188,6 +201,7 @@ protected:
   ros::Publisher     upper_bound_pub;
   ros::Publisher     traj_pub;
   ros::Subscriber    state_sub;
+  ros::Subscriber    robot_ready_sub;
   ros::ServiceClient query_state_service;
   ros::ServiceClient load_controller_service;
   ros::ServiceClient unload_controller_service;
@@ -201,6 +215,13 @@ protected:
   std::vector<double> controller_max_actual_velocity;
 
   double stop_trajectory_duration;
+
+  std::atomic_bool robot_ready{false};
+
+  void robotReadyCB(const std_msgs::EmptyConstPtr& msg)
+  {
+    robot_ready = true;
+  }
 
   void stateCB(const StateConstPtr& state)
   {
@@ -219,6 +240,13 @@ protected:
   {
     std::lock_guard<std::mutex> lock(mutex);
     return controller_state;
+  }
+
+  AssertionResult waitForRobotReady(const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONNECTIONS_S))
+  {
+    AssertionResult result = waitForEvent([this](){return robot_ready.load();}, "robot ready (after parameter update)", timeout);
+    robot_ready = false;
+    return result;
   }
 
   AssertionResult waitForInitializedState(const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONNECTIONS_S))
@@ -885,7 +913,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelay)
       std_msgs::Bool delay;
       delay.data = true;
       delay_pub.publish(delay);
-      ros::Duration(0.5).sleep();
+      ASSERT_TRUE(waitForRobotReady());
     }
     resetActualVelocityObserver();
 
@@ -915,7 +943,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelay)
       std_msgs::Bool delay;
       delay.data = false;
       delay_pub.publish(delay);
-      ros::Duration(0.5).sleep();
+      EXPECT_TRUE(waitForRobotReady());
     }
   }
   else
@@ -934,9 +962,11 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
     std_msgs::Bool delay;
     delay.data = true;
     delay_pub.publish(delay);
+    ASSERT_TRUE(waitForRobotReady());
+
     upper_bound.data = traj_goal.trajectory.points.front().positions.front() / 3.;
-    upper_bound_pub.publish(upper_bound);
-    ros::Duration(0.5).sleep();
+    upper_bound_pub.publish(upper_bound);    
+    ASSERT_TRUE(waitForRobotReady());
   }
   resetActualVelocityObserver();
 
@@ -975,9 +1005,10 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
     delay.data = false;
     delay_pub.publish(delay);
     std_msgs::Float64 upper_bound;
+    EXPECT_TRUE(waitForRobotReady());
     upper_bound.data = std::numeric_limits<double>::infinity();
     upper_bound_pub.publish(upper_bound);
-    ros::Duration(0.5).sleep();
+    EXPECT_TRUE(waitForRobotReady());
   }
 }
 
@@ -1211,7 +1242,7 @@ TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
     std_msgs::Float64 smoothing;
     smoothing.data = 0.9;
     smoothing_pub.publish(smoothing);
-    ros::Duration(0.5).sleep();
+    ASSERT_TRUE(waitForRobotReady());
   }
 
   // Send trajectory
@@ -1230,7 +1261,7 @@ TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
     std_msgs::Float64 smoothing;
     smoothing.data = 0.0;
     smoothing_pub.publish(smoothing);
-    ros::Duration(0.5).sleep();
+    EXPECT_TRUE(waitForRobotReady());
   }
 }
 
@@ -1241,7 +1272,7 @@ TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
     std_msgs::Float64 smoothing;
     smoothing.data = 0.95;
     smoothing_pub.publish(smoothing);
-    ros::Duration(0.5).sleep();
+    ASSERT_TRUE(waitForRobotReady());
   }
 
   // Disable path constraints
@@ -1269,7 +1300,7 @@ TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
     std_msgs::Float64 smoothing;
     smoothing.data = 0.0;
     smoothing_pub.publish(smoothing);
-    ros::Duration(0.5).sleep();
+    EXPECT_TRUE(waitForRobotReady());
   }
 }
 

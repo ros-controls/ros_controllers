@@ -31,6 +31,7 @@
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Empty.h>
 
 // ros_control
 #include <controller_manager/controller_manager.h>
@@ -80,17 +81,22 @@ public:
 
     registerInterface(&jnt_vel_interface_);
 
+    ros::NodeHandle nh{};
+
     // Smoothing subscriber
-    smoothing_sub_ = ros::NodeHandle().subscribe("smoothing", 1, &RRbot::smoothingCB, this);
+    smoothing_sub_ = nh.subscribe("smoothing", 1, &RRbot::smoothingCB, this);
     smoothing_.initRT(0.0);
 
     // Delay subscriber: delay==0 yields direct control, one cycle delay otherwise
-    delay_sub_ = ros::NodeHandle().subscribe("delay", 1, &RRbot::delayCB, this);
+    delay_sub_ = nh.subscribe("delay", 1, &RRbot::delayCB, this);
     delay_.initRT(false);
 
     // Upper bound subscriber: set positions greater than this value are clipped
-    upper_bound_sub_ = ros::NodeHandle().subscribe("upper_bound", 1, &RRbot::upper_boundCB, this);
+    upper_bound_sub_ = nh.subscribe("upper_bound", 1, &RRbot::upper_boundCB, this);
     upper_bound_.initRT(std::numeric_limits<double>::infinity());
+
+    // Notification publisher: notify that a parameter has been updated successfully.
+    notify_ready_pub_ = nh.advertise<std_msgs::Empty>("parameter_updated", 1);
   }
 
   ros::Time getTime() const {return ros::Time::now();}
@@ -188,16 +194,33 @@ private:
   std::string next_active_interface_[2];
 
   realtime_tools::RealtimeBuffer<double> smoothing_;
-  void smoothingCB(const std_msgs::Float64& smoothing) {smoothing_.writeFromNonRT(smoothing.data);}
+  void smoothingCB(const std_msgs::Float64& smoothing)
+  {
+    smoothing_.writeFromNonRT(smoothing.data);
+    std_msgs::Empty msg;
+    notify_ready_pub_.publish(msg);
+  }
   ros::Subscriber smoothing_sub_;
 
   realtime_tools::RealtimeBuffer<bool> delay_;
-  void delayCB(const std_msgs::Bool& delay) {delay_.writeFromNonRT(delay.data);}
+  void delayCB(const std_msgs::Bool& delay)
+  {
+    delay_.writeFromNonRT(delay.data);
+    std_msgs::Empty msg;
+    notify_ready_pub_.publish(msg);
+  }
   ros::Subscriber delay_sub_;
 
   realtime_tools::RealtimeBuffer<double> upper_bound_;
-  void upper_boundCB(const std_msgs::Float64& upper_bound) {upper_bound_.writeFromNonRT(upper_bound.data);}
+  void upper_boundCB(const std_msgs::Float64& upper_bound)
+  {
+    upper_bound_.writeFromNonRT(upper_bound.data);
+    std_msgs::Empty msg;
+    notify_ready_pub_.publish(msg);
+  }
   ros::Subscriber upper_bound_sub_;
+
+  ros::Publisher notify_ready_pub_;
 };
 
 int main(int argc, char **argv)

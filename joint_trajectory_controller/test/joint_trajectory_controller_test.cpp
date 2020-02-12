@@ -78,6 +78,7 @@ public:
 
     controller_min_actual_velocity.resize(n_joints);
     controller_max_actual_velocity.resize(n_joints);
+    controller_max_desired_position.resize(n_joints);
 
     trajectory_msgs::JointTrajectoryPoint point;
     point.positions.resize(n_joints, 0.0);
@@ -213,6 +214,7 @@ protected:
   StateConstPtr controller_state;
   std::vector<double> controller_min_actual_velocity;
   std::vector<double> controller_max_actual_velocity;
+  std::vector<double> controller_max_desired_position;
 
   double stop_trajectory_duration;
 
@@ -233,6 +235,9 @@ protected:
                    [](double a, double b){return std::min(a, b);});
     std::transform(controller_max_actual_velocity.begin(), controller_max_actual_velocity.end(),
                    state->actual.velocities.begin(), controller_max_actual_velocity.begin(),
+                   [](double a, double b){return std::max(a, b);});
+    std::transform(controller_max_desired_position.begin(), controller_max_desired_position.end(),
+                   state->desired.positions.begin(), controller_max_desired_position.begin(),
                    [](double a, double b){return std::max(a, b);});
   }
 
@@ -308,6 +313,15 @@ protected:
     {
       controller_min_actual_velocity[i] = std::numeric_limits<double>::infinity();
       controller_max_actual_velocity[i] = -std::numeric_limits<double>::infinity();
+    }
+  }
+
+  void resetDesiredPositionObserver()
+  {
+    std::lock_guard<std::mutex> lock(mutex);
+    for(size_t i = 0; i < controller_max_desired_position.size(); ++i)
+    {
+      controller_max_desired_position[i] = -std::numeric_limits<double>::infinity();
     }
   }
 
@@ -917,19 +931,22 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelay)
     }
     resetActualVelocityObserver();
 
-    // Send trajectory
+    // Send trajectory (avoid changing sign of velocity -> stretch first segment)
     traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+    traj_goal.trajectory.points.resize(1);
+    traj_goal.trajectory.points.at(0).time_from_start = ros::Duration(4.0);
     action_client->sendGoal(traj_goal);
     EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
-    ros::Duration wait_duration = traj.points.front().time_from_start * 0.5;
+    ros::Duration wait_duration = traj_goal.trajectory.points.front().time_from_start * 0.5;
     wait_duration.sleep(); // Wait until half of first segment
 
-    ActionGoal empty_goal;
-    empty_goal.trajectory.joint_names = joint_names;
-    action_client->sendGoal(empty_goal);
+    trajectory_msgs::JointTrajectory traj_empty;
+    traj_pub.publish(traj_empty);
     ASSERT_TRUE(waitForActionResult(action_client));
-    EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
+    EXPECT_TRUE(checkActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED));
+
+    EXPECT_TRUE(waitForStop());
 
     // Velocity should be continuous so all axes >= 0
     std::vector<double> minVelocity = getMinActualVelocity();
@@ -968,35 +985,43 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
     upper_bound_pub.publish(upper_bound);    
     ASSERT_TRUE(waitForRobotReady());
   }
-  resetActualVelocityObserver();
 
-  // Send trajectory
+  resetDesiredPositionObserver();
+
+  // Increase path tolerance
+  double old_path_tolerance;
+  ASSERT_TRUE(ros::param::get("/rrbot_controller/constraints/joint1/trajectory", old_path_tolerance));
+  ros::param::set("/rrbot_controller/constraints/joint1/trajectory", 1.0);
+  ASSERT_TRUE(reloadController("rrbot_controller"));
+  ASSERT_TRUE(waitForActionServer());
+
+  // Send trajectory (only first segment)
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  traj_goal.trajectory.points.resize(1);
   action_client->sendGoal(traj_goal);
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
+  EXPECT_TRUE(waitForTrajectoryExecution());
 
-  ros::Duration wait_duration = traj.points.front().time_from_start * 0.5;
+  ros::Duration wait_duration = traj_goal.trajectory.points.front().time_from_start * 0.5;
   wait_duration.sleep(); // Wait until half of first segment
 
-  ActionGoal empty_goal;
-  empty_goal.trajectory.joint_names = joint_names;
-  action_client->sendGoal(empty_goal);
+  trajectory_msgs::JointTrajectory traj_empty;
+  traj_pub.publish(traj_empty);
   ASSERT_TRUE(waitForActionResult(action_client));
-  EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
+  EXPECT_TRUE(checkActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED));
 
-  StateConstPtr state1 = getState();
+  EXPECT_TRUE(waitForStop());
 
   if(stop_trajectory_duration == 0.0)
   {
     // Here we expect that the desired position is equal to the actual position of the robot,
     // which is given through upper_bound by construction.
-    EXPECT_NEAR(state1->desired.positions[0], upper_bound.data, EPS); // first joint
+    EXPECT_NEAR(controller_max_desired_position[0], upper_bound.data, EPS); // first joint
   }
   else
   {
     // stop ramp should be calculated using the desired position
     // so it is greater than the upper bound
-    EXPECT_GT(state1->desired.positions[0], upper_bound.data); // first joint
+    EXPECT_GT(controller_max_desired_position[0], upper_bound.data); // first joint
   }
 
   // Restore perfect control
@@ -1010,6 +1035,11 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
     upper_bound_pub.publish(upper_bound);
     EXPECT_TRUE(waitForRobotReady());
   }
+
+  // Restore path tolerance
+  ros::param::set("/rrbot_controller/constraints/joint1/trajectory", old_path_tolerance);
+  ASSERT_TRUE(reloadController("rrbot_controller"));
+  ASSERT_TRUE(waitForActionServer());
 }
 
 TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)

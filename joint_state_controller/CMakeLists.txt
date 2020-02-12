@@ -20,15 +20,6 @@ include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 add_library(${PROJECT_NAME} src/joint_state_controller.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
-if(CATKIN_ENABLE_TESTING)
-  find_package(rostest REQUIRED)
-
-  add_rostest_gtest(joint_state_controller_test
-                    test/joint_state_controller.test
-                    test/joint_state_controller_test.cpp)
-  target_link_libraries(joint_state_controller_test ${PROJECT_NAME})
-endif()
-
 # Install
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})

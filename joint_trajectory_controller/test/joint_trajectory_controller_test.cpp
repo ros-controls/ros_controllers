@@ -52,11 +52,9 @@
 // Floating-point value comparison threshold
 const double EPS = 0.01;
 
-static constexpr double WAIT_TIME_CONNECTIONS_S       {10.0};
-static constexpr double WAIT_TIME_CONTROLLER_STATE_S  {5.0};
-static constexpr double WAIT_TIME_ACTION_GOAL_STATE_S {5.0};
-static constexpr double WAIT_TIME_TRAJ_START_S        {5.0};
-static constexpr double WAIT_TIME_TRAJ_POINT_S        {5.0};
+static constexpr double WAIT_TIME_CONNECTIONS_S  {10.0};
+static constexpr double WAIT_TIME_ACTION_RESULT_S {5.0};
+static constexpr double WAIT_TIME_TRAJ_EXECUTION_S{5.0};
 
 using actionlib::SimpleClientGoalState;
 using testing::AssertionResult;
@@ -254,7 +252,7 @@ protected:
   }
 
   AssertionResult waitForActionResult(const ActionClientPtr& action_client,
-                                      const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONNECTIONS_S))
+                                      const ros::Duration& timeout = ros::Duration(WAIT_TIME_ACTION_RESULT_S))
   {
     if (!action_client->waitForResult())
     {
@@ -285,7 +283,7 @@ protected:
     }
   }
 
-  AssertionResult waitForTrajectoryExecution(const ros::Duration& timeout = ros::Duration(WAIT_TIME_TRAJ_START_S))
+  AssertionResult waitForTrajectoryExecution(const ros::Duration& timeout = ros::Duration(WAIT_TIME_TRAJ_EXECUTION_S))
   {
     StateConstPtr start_state{getState()};
     auto executing = [this, &start_state]()
@@ -313,7 +311,7 @@ protected:
            vectorsAlmostEqual(current_state->desired.accelerations, zero_vec);
   }
 
-  AssertionResult waitForStop(const ros::Duration& timeout = ros::Duration(WAIT_TIME_TRAJ_POINT_S))
+  AssertionResult waitForStop(const ros::Duration& timeout = ros::Duration(WAIT_TIME_TRAJ_EXECUTION_S))
   {
     return waitForEvent(std::bind(&JointTrajectoryControllerTest::checkStopped, this), "stop", timeout);
   }
@@ -357,7 +355,7 @@ protected:
 
   static bool waitForActionGoalState(const ActionClientPtr& action_client,
                                      const actionlib::SimpleClientGoalState& state,
-                                     const ros::Duration& timeout = ros::Duration(WAIT_TIME_ACTION_GOAL_STATE_S))
+                                     const ros::Duration& timeout = ros::Duration(WAIT_TIME_ACTION_RESULT_S))
   {
     return waitForEvent(std::bind(checkActionGoalState, action_client, state),
                         "action goal state " + state.getText(),

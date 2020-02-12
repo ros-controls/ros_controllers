@@ -1,6 +1,6 @@
 <package format="2">
-  <name>joint_trajectory_controller</name>
-  <description> Controller for executing joint-space trajectories on a group of joints. </description>
+  <name>test_joint_trajectory_controller</name>
+  <description>Tests for the joint_trajectory_controller package.</description>
   <version>0.15.0</version>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
@@ -17,21 +17,17 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>cmake_modules</build_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>control_msgs</build_depend>
+  <build_depend>controller_manager</build_depend>
+  <build_depend>controller_manager_msgs</build_depend>
+  <build_depend>hardware_interface</build_depend>
+  <build_depend>joint_trajectory_controller</build_depend>
+  <build_depend>realtime_tools</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
 
-  <depend>actionlib</depend>
-  <depend>angles</depend>
-  <depend>control_msgs</depend>
-  <depend>control_toolbox</depend>
-  <depend>controller_interface</depend>
-  <depend>hardware_interface</depend>
-  <depend>realtime_tools</depend>
-  <depend>roscpp</depend>
-  <depend>trajectory_msgs</depend>
-  <depend>urdf</depend>
-  <depend>pluginlib</depend>
-
-  <export>
-    <controller_interface plugin="${prefix}/ros_control_plugins.xml"/>
-  </export>
+  <test_depend>rostest</test_depend>
+  <test_depend>rqt_plot</test_depend>
+  <test_depend>xacro</test_depend>
 </package>

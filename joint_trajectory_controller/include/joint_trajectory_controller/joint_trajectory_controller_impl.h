@@ -90,14 +90,14 @@ urdf::ModelSharedPtr getUrdf(const ros::NodeHandle& nh, const std::string& param
       ROS_ERROR_STREAM("Failed to parse URDF contained in '" << param_name << "' parameter (namespace: " <<
         nh.getNamespace() << ").");
       return urdf::ModelSharedPtr();
-    }        
+    }
   }
   // Check for robot_description in root
   else if (!urdf->initParam("robot_description"))
   {
     ROS_ERROR_STREAM("Failed to parse URDF contained in '" << param_name << "' parameter");
     return urdf::ModelSharedPtr();
-  }  
+  }
   return urdf;
 }
 

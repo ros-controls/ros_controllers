@@ -244,14 +244,14 @@ class JointTrajectoryController(Plugin):
             ns = self._cm_ns.rsplit('/', 1)[0]
             if ns not in self._cm_checked:
                 try:
-                    for _jnt, _lims in get_joint_limits(description=rospy.get_param('{}/robot_description'.format(ns))).iteritems():
-                            self._robot_joint_limits[_jnt] = _lims
+                    for jnt, lims in get_joint_limits(description=rospy.get_param('{}/robot_description'.format(ns))).iteritems():
+                            self._robot_joint_limits[jnt] = lims
                     self._cm_checked.add(ns)
                 except KeyError:
                     rospy.loginfo('Could not find a valid robot_description parameter in namespace {}'.format(ns))
                     try:
-                       for _jnt, _lims in  get_joint_limits(description=rospy.get_param('robot_description')).iteritems():
-                            self._robot_joint_limits[_jnt] = _lims
+                       for jnt, lims in  get_joint_limits(description=rospy.get_param('robot_description')).iteritems():
+                            self._robot_joint_limits[jnt] = lims
                     except KeyError:
                         rospy.loginfo('Could not find robot_description parameter')
         valid_jtc = []
@@ -319,7 +319,7 @@ class JointTrajectoryController(Plugin):
         self._joint_names = next(_jtc_joint_names(x) for x in running_jtc
                                  if x.name == self._jtc_name)
         for name in self._joint_names:
-            self._joint_pos[name] = dict()
+            self._joint_pos[name] = {}
 
         # Update joint display
         try:

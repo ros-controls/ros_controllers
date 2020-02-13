@@ -235,7 +235,7 @@ protected:
   StateConstPtr getState()
   {
     std::lock_guard<std::mutex> lock(mutex);
-    return controller_state;
+    return boost::make_shared<const control_msgs::JointTrajectoryControllerState>(*controller_state);
   }
 
   AssertionResult waitForRobotReady(const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONNECTIONS_S))
@@ -278,7 +278,7 @@ protected:
   AssertionResult waitForActionResult(const ActionClientPtr& action_client,
                                       const ros::Duration& timeout = ros::Duration(WAIT_TIME_ACTION_RESULT_S))
   {
-    if (!action_client->waitForResult())
+    if (!action_client->waitForResult(timeout))
     {
       return AssertionFailure() << "Timed out after " << timeout.toSec() << "s waiting for action result.";
     }

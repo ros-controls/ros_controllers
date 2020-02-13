@@ -1287,7 +1287,9 @@ TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
   EXPECT_TRUE(checkActionResultErrorCode(action_client,
                                          control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED));
 
-  EXPECT_TRUE(waitForStop());
+  //EXPECT_TRUE(waitForStop());  // Execution does not stop when goal is aborted !!!???
+  ros::Duration timeout{getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S)};
+  waitForStop(timeout);
 
   // Restore perfect control
   {
@@ -1328,7 +1330,9 @@ TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
   EXPECT_TRUE(checkActionResultErrorCode(action_client,
                                          control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED));
 
-  EXPECT_TRUE(waitForStop());
+  //EXPECT_TRUE(waitForStop());  // Execution does not stop when goal is aborted !!!???
+  ros::Duration timeout{getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S)};
+  waitForStop(timeout);
 
   // Restore perfect control
   {

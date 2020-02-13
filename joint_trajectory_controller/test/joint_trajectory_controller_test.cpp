@@ -364,7 +364,7 @@ protected:
 
   static ros::Duration getTrajectoryDuration(const trajectory_msgs::JointTrajectory &traj)
   {
-    traj.points.back().time_from_start;
+    return traj.points.back().time_from_start;
   }
 
   static bool checkActionGoalState(const ActionClientPtr& action_client,

@@ -52,7 +52,8 @@
 #include <controller_manager_msgs/SwitchController.h>
 
 // Floating-point value comparison threshold
-const double EPS = 0.01;
+static constexpr double JOINT_STATES_COMPARISON_EPS = 0.01;
+static constexpr double EPS = 1e-9;
 
 static constexpr double WAIT_TIME_CONNECTIONS_S  {10.0};
 static constexpr double WAIT_TIME_ACTION_RESULT_S {5.0};
@@ -429,7 +430,7 @@ protected:
 
   static bool trajectoryPointsAlmostEqual(const trajectory_msgs::JointTrajectoryPoint& p1,
                                           const trajectory_msgs::JointTrajectoryPoint& p2,
-                                          const double& tolerance = EPS)
+                                          const double& tolerance = JOINT_STATES_COMPARISON_EPS)
   {
     return vectorsAlmostEqual(p1.positions, p2.positions, tolerance) &&
            vectorsAlmostEqual(p1.velocities, p2.velocities, tolerance) &&
@@ -438,7 +439,7 @@ protected:
 
   static bool vectorsAlmostEqual(const std::vector<double>& vec1,
                                  const std::vector<double>& vec2,
-                                 const double& tolerance = EPS)
+                                 const double& tolerance = JOINT_STATES_COMPARISON_EPS)
   {
     return std::equal(vec1.begin(),
                       vec1.end(),
@@ -589,7 +590,7 @@ TEST_F(JointTrajectoryControllerTest, topicSingleTraj)
   ASSERT_TRUE(waitForTrajectoryExecution());
   sleepForTrajectoryDuration(traj);
 
-  ASSERT_TRUE(waitForStop()); // Allows values to settle to within EPS, especially accelerations
+  ASSERT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Validate state topic values
   StateConstPtr state = getState();
@@ -624,7 +625,7 @@ TEST_F(JointTrajectoryControllerTest, actionSingleTraj)
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
   EXPECT_TRUE(checkActionResultErrorCode(action_client, control_msgs::FollowJointTrajectoryResult::SUCCESSFUL));
 
-  EXPECT_TRUE(waitForStop()); // Allows values to settle to within EPS, especially accelerations
+  EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Validate state topic values
   StateConstPtr state = getState();
@@ -654,12 +655,16 @@ TEST_F(JointTrajectoryControllerTest, jointReordering)
   ASSERT_TRUE(waitForActionResult(action_client));
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
-  EXPECT_TRUE(waitForStop()); // Allows values to settle to within EPS, especially accelerations
+  EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Validate state topic values
   StateConstPtr state = getState();
-  EXPECT_NEAR(reorder_goal.trajectory.points.back().positions[0],     state->desired.positions[1], EPS);
-  EXPECT_NEAR(reorder_goal.trajectory.points.back().positions[1],     state->desired.positions[0], EPS);
+  EXPECT_NEAR(reorder_goal.trajectory.points.back().positions[0],
+              state->desired.positions[1],
+              JOINT_STATES_COMPARISON_EPS);
+  EXPECT_NEAR(reorder_goal.trajectory.points.back().positions[1],
+              state->desired.positions[0],
+              JOINT_STATES_COMPARISON_EPS);
 }
 
 // Joint wraparound ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -704,12 +709,16 @@ TEST_F(JointTrajectoryControllerTest, jointWraparound)
   ASSERT_TRUE(waitForActionResult(action_client));
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
-  EXPECT_TRUE(waitForStop()); // Allows values to settle to within EPS, especially accelerations
+  EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Validate state topic values
   StateConstPtr state = getState();
-  EXPECT_NEAR(goal1.trajectory.points[0].positions[0] + 0.25 * M_PI, state->desired.positions[0], EPS);
-  EXPECT_NEAR(goal1.trajectory.points[0].positions[1] - 0.25 * M_PI, state->desired.positions[1], EPS);
+  EXPECT_NEAR(goal1.trajectory.points[0].positions[0] + 0.25 * M_PI,
+              state->desired.positions[0],
+              JOINT_STATES_COMPARISON_EPS);
+  EXPECT_NEAR(goal1.trajectory.points[0].positions[1] - 0.25 * M_PI,
+              state->desired.positions[1],
+              JOINT_STATES_COMPARISON_EPS);
 }
 
 TEST_F(JointTrajectoryControllerTest, jointWraparoundPiSingularity)
@@ -752,13 +761,13 @@ TEST_F(JointTrajectoryControllerTest, jointWraparoundPiSingularity)
   ASSERT_TRUE(waitForActionResult(action_client));
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
-  EXPECT_TRUE(waitForStop()); // Allows values to settle to within EPS, especially accelerations
+  EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Validate state topic values
   StateConstPtr state = getState();
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-    EXPECT_NEAR(goal2.trajectory.points[0].positions[i], state->desired.positions[i], EPS);
+    EXPECT_NEAR(goal2.trajectory.points[0].positions[i], state->desired.positions[i], JOINT_STATES_COMPARISON_EPS);
   }
 }
 
@@ -1011,17 +1020,17 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
 
   EXPECT_TRUE(waitForStop());
 
-  if(stop_trajectory_duration == 0.0)
+  if(stop_trajectory_duration < EPS)
   {
     // Here we expect that the desired position is equal to the actual position of the robot,
     // which is given through upper_bound by construction.
-    EXPECT_NEAR(controller_max_desired_position[0], upper_bound.data, EPS); // first joint
+    EXPECT_NEAR(controller_max_desired_position[0], upper_bound.data, JOINT_STATES_COMPARISON_EPS);
   }
   else
   {
     // stop ramp should be calculated using the desired position
     // so it is greater than the upper bound
-    EXPECT_GT(controller_max_desired_position[0], upper_bound.data); // first joint
+    EXPECT_GT(controller_max_desired_position[0], upper_bound.data);
   }
 
   // Restore perfect control
@@ -1208,7 +1217,7 @@ TEST_F(JointTrajectoryControllerTest, ignorePartiallyOldActionTraj)
   ASSERT_TRUE(waitForActionResult(action_client2));
   EXPECT_TRUE(checkActionGoalState(action_client2, SimpleClientGoalState::SUCCEEDED));
 
-  EXPECT_TRUE(waitForStop()); // Allows values to settle to within EPS, especially accelerations
+  EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Check that we're at the trajectory end
   EXPECT_TRUE(checkPointReached(traj_goal.trajectory.points.back()));

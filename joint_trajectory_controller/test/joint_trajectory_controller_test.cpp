@@ -941,7 +941,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelay)
     std::vector<double> minVelocity = getMinActualVelocity();
     for(size_t i = 0; i < minVelocity.size(); ++i)
     {
-      EXPECT_GE(minVelocity[i], 0.);
+      EXPECT_GE(minVelocity[i], -EPS);
     }
 
     // Restore perfect control

@@ -1287,6 +1287,8 @@ TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
   EXPECT_TRUE(checkActionResultErrorCode(action_client,
                                          control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED));
 
+  EXPECT_TRUE(waitForStop());
+
   // Restore perfect control
   {
     std_msgs::Float64 smoothing;
@@ -1325,6 +1327,8 @@ TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
   EXPECT_TRUE(checkActionResultErrorCode(action_client,
                                          control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED));
+
+  EXPECT_TRUE(waitForStop());
 
   // Restore perfect control
   {

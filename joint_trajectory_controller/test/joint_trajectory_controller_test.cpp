@@ -55,9 +55,9 @@
 static constexpr double JOINT_STATES_COMPARISON_EPS = 0.01;
 static constexpr double EPS = 1e-9;
 
-static constexpr double WAIT_TIME_CONNECTIONS_S  {10.0};
-static constexpr double WAIT_TIME_ACTION_RESULT_S {5.0};
-static constexpr double WAIT_TIME_TRAJ_EXECUTION_S{5.0};
+static constexpr double TIMEOUT_CONNECTIONS_S  {10.0};
+static constexpr double TIMEOUT_ACTION_RESULT_S {5.0};
+static constexpr double TIMEOUT_TRAJ_EXECUTION_S{5.0};
 
 using actionlib::SimpleClientGoalState;
 using testing::AssertionResult;
@@ -172,8 +172,9 @@ public:
     {
       traj_home_goal.trajectory.header.stamp = ros::Time(0);
       action_client->sendGoal(traj_home_goal);
-      sleepForTrajectoryDuration(traj_home_goal.trajectory);
-      ASSERT_TRUE(waitForActionResult(action_client));
+
+      auto timeout{getTrajectoryDuration(traj_home_goal.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+      ASSERT_TRUE(waitForActionResult(action_client, timeout));
       EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
     }
   }
@@ -238,14 +239,14 @@ protected:
     return boost::make_shared<const control_msgs::JointTrajectoryControllerState>(*controller_state);
   }
 
-  AssertionResult waitForRobotReady(const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONNECTIONS_S))
+  AssertionResult waitForRobotReady(const ros::Duration& timeout = ros::Duration(TIMEOUT_CONNECTIONS_S))
   {
     AssertionResult result = waitForEvent([this](){return robot_ready.load();}, "robot ready (after parameter update)", timeout);
     robot_ready = false;
     return result;
   }
 
-  AssertionResult waitForInitializedState(const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONNECTIONS_S))
+  AssertionResult waitForInitializedState(const ros::Duration& timeout = ros::Duration(TIMEOUT_CONNECTIONS_S))
   {
     auto state_initialized = [this]()
     {
@@ -255,7 +256,7 @@ protected:
     return waitForEvent(state_initialized, "controller-state initialized", timeout);
   }
 
-  AssertionResult waitForQueryStateService(const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONNECTIONS_S))
+  AssertionResult waitForQueryStateService(const ros::Duration& timeout = ros::Duration(TIMEOUT_CONNECTIONS_S))
   {
     if (!query_state_service.waitForExistence(timeout))
     {
@@ -265,7 +266,7 @@ protected:
     return AssertionSuccess();
   }
 
-  AssertionResult waitForActionServer(const ros::Duration& timeout = ros::Duration(WAIT_TIME_CONNECTIONS_S))
+  AssertionResult waitForActionServer(const ros::Duration& timeout = ros::Duration(TIMEOUT_CONNECTIONS_S))
   {
     if (!action_client->waitForServer(timeout))
     {
@@ -276,7 +277,7 @@ protected:
   }
 
   AssertionResult waitForActionResult(const ActionClientPtr& action_client,
-                                      const ros::Duration& timeout = ros::Duration(WAIT_TIME_ACTION_RESULT_S))
+                                      const ros::Duration& timeout = ros::Duration(TIMEOUT_ACTION_RESULT_S))
   {
     if (!action_client->waitForResult(timeout))
     {
@@ -302,7 +303,7 @@ protected:
     }
   }
 
-  AssertionResult waitForTrajectoryExecution(const ros::Duration& timeout = ros::Duration(WAIT_TIME_TRAJ_EXECUTION_S))
+  AssertionResult waitForTrajectoryExecution(const ros::Duration& timeout = ros::Duration(TIMEOUT_TRAJ_EXECUTION_S))
   {
     StateConstPtr start_state{getState()};
     auto executing = [this, &start_state]()
@@ -330,7 +331,7 @@ protected:
            vectorsAlmostEqual(current_state->desired.accelerations, zero_vec);
   }
 
-  AssertionResult waitForStop(const ros::Duration& timeout = ros::Duration(WAIT_TIME_TRAJ_EXECUTION_S))
+  AssertionResult waitForStop(const ros::Duration& timeout = ros::Duration(TIMEOUT_TRAJ_EXECUTION_S))
   {
     return waitForEvent(std::bind(&JointTrajectoryControllerTest::checkStopped, this), "stop", timeout);
   }
@@ -361,9 +362,9 @@ protected:
     return true;
   }
 
-  static void sleepForTrajectoryDuration(const trajectory_msgs::JointTrajectory &traj)
+  static ros::Duration getTrajectoryDuration(const trajectory_msgs::JointTrajectory &traj)
   {
-    traj.points.back().time_from_start.sleep();
+    traj.points.back().time_from_start;
   }
 
   static bool checkActionGoalState(const ActionClientPtr& action_client,
@@ -374,7 +375,7 @@ protected:
 
   static bool waitForActionGoalState(const ActionClientPtr& action_client,
                                      const actionlib::SimpleClientGoalState& state,
-                                     const ros::Duration& timeout = ros::Duration(WAIT_TIME_ACTION_RESULT_S))
+                                     const ros::Duration& timeout = ros::Duration(TIMEOUT_ACTION_RESULT_S))
   {
     return waitForEvent(std::bind(checkActionGoalState, action_client, state),
                         "action goal state " + state.getText(),
@@ -564,9 +565,9 @@ TEST_F(JointTrajectoryControllerTest, topicSingleTraj)
   traj.header.stamp = ros::Time(0); // Start immediately
   traj_pub.publish(traj);
   ASSERT_TRUE(waitForTrajectoryExecution());
-  sleepForTrajectoryDuration(traj);
 
-  ASSERT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
+  auto timeout{getTrajectoryDuration(traj) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S)};
+  ASSERT_TRUE(waitForStop(timeout)); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Validate state topic values
   StateConstPtr state = getState();
@@ -596,8 +597,8 @@ TEST_F(JointTrajectoryControllerTest, actionSingleTraj)
   action_client->sendGoal(traj_goal);
   EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
-  sleepForTrajectoryDuration(traj_goal.trajectory);
-  ASSERT_TRUE(waitForActionResult(action_client));
+  auto timeout{getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+  ASSERT_TRUE(waitForActionResult(action_client, timeout));
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
   EXPECT_TRUE(checkActionResultErrorCode(action_client, control_msgs::FollowJointTrajectoryResult::SUCCESSFUL));
 
@@ -627,8 +628,9 @@ TEST_F(JointTrajectoryControllerTest, jointReordering)
 
   reorder_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(reorder_goal);
-  sleepForTrajectoryDuration(reorder_goal.trajectory);
-  ASSERT_TRUE(waitForActionResult(action_client));
+
+  auto timeout{getTrajectoryDuration(reorder_goal.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+  ASSERT_TRUE(waitForActionResult(action_client, timeout));
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
@@ -674,15 +676,16 @@ TEST_F(JointTrajectoryControllerTest, jointWraparound)
   goal1.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(goal1);
 
-  sleepForTrajectoryDuration(goal1.trajectory);
-  ASSERT_TRUE(waitForActionResult(action_client));
+  auto timeout{getTrajectoryDuration(goal1.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+  ASSERT_TRUE(waitForActionResult(action_client, timeout));
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Send trajectory
   goal2.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(goal2);
-  sleepForTrajectoryDuration(goal2.trajectory);
-  ASSERT_TRUE(waitForActionResult(action_client));
+  
+  auto timeout2{getTrajectoryDuration(goal2.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+  ASSERT_TRUE(waitForActionResult(action_client, timeout2));
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
@@ -726,15 +729,16 @@ TEST_F(JointTrajectoryControllerTest, jointWraparoundPiSingularity)
   goal1.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(goal1);
 
-  sleepForTrajectoryDuration(goal1.trajectory);
-  ASSERT_TRUE(waitForActionResult(action_client));
+  auto timeout{getTrajectoryDuration(goal1.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+  ASSERT_TRUE(waitForActionResult(action_client, timeout));
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Send trajectory
   goal2.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(goal2);
-  sleepForTrajectoryDuration(goal2.trajectory);
-  ASSERT_TRUE(waitForActionResult(action_client));
+  
+  auto timeout2{getTrajectoryDuration(goal2.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+  ASSERT_TRUE(waitForActionResult(action_client, timeout2));
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
@@ -762,9 +766,9 @@ TEST_F(JointTrajectoryControllerTest, topicReplacesTopicTraj)
   // Send another trajectory that preempts the previous one
   traj_home.header.stamp = ros::Time(0); // Start immediately
   traj_pub.publish(traj_home);
-  sleepForTrajectoryDuration(traj_home);
 
-  EXPECT_TRUE(waitForStop());
+  auto timeout{getTrajectoryDuration(traj) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S)};
+  EXPECT_TRUE(waitForStop(timeout));
 
   // Check that we're back home
   EXPECT_TRUE(checkPointReached(traj_home.points.back()));
@@ -788,8 +792,8 @@ TEST_F(JointTrajectoryControllerTest, actionReplacesActionTraj)
   EXPECT_TRUE(checkActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED));
 
   // Wait until done
-  sleepForTrajectoryDuration(traj_home_goal.trajectory);
-  ASSERT_TRUE(waitForActionResult(action_client2));
+  auto timeout{getTrajectoryDuration(traj_home_goal.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+  ASSERT_TRUE(waitForActionResult(action_client2, timeout));
   EXPECT_TRUE(checkActionGoalState(action_client2, SimpleClientGoalState::SUCCEEDED));
 
   EXPECT_TRUE(waitForStop());
@@ -814,8 +818,8 @@ TEST_F(JointTrajectoryControllerTest, actionReplacesTopicTraj)
   EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   // Wait until done
-  sleepForTrajectoryDuration(traj_home_goal.trajectory);
-  ASSERT_TRUE(waitForActionResult(action_client));
+  auto timeout{getTrajectoryDuration(traj_home_goal.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+  ASSERT_TRUE(waitForActionResult(action_client, timeout));
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   EXPECT_TRUE(waitForStop());
@@ -840,9 +844,9 @@ TEST_F(JointTrajectoryControllerTest, topicReplacesActionTraj)
 
   ASSERT_TRUE(waitForActionResult(action_client));
   EXPECT_TRUE(checkActionGoalState(action_client,  SimpleClientGoalState::PREEMPTED));
-  sleepForTrajectoryDuration(traj_home);
 
-  EXPECT_TRUE(waitForStop());
+  auto timeout{getTrajectoryDuration(traj) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S)};
+  EXPECT_TRUE(waitForStop(timeout));
 
   // Check that we're back home
   EXPECT_TRUE(checkPointReached(traj_home.points.back()));
@@ -1190,8 +1194,8 @@ TEST_F(JointTrajectoryControllerTest, ignorePartiallyOldActionTraj)
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::PREEMPTED));
 
   // Wait until done
-  sleepForTrajectoryDuration(traj_goal.trajectory);
-  ASSERT_TRUE(waitForActionResult(action_client2));
+  auto timeout{getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+  ASSERT_TRUE(waitForActionResult(action_client2, timeout));
   EXPECT_TRUE(checkActionGoalState(action_client2, SimpleClientGoalState::SUCCEEDED));
 
   EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
@@ -1213,14 +1217,16 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
   EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
   // Wait until done
-  sleepForTrajectoryDuration(traj_goal.trajectory);
+  auto timeout{getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+  ASSERT_TRUE(waitForActionResult(action_client, timeout));
   EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Go to home configuration, we need known initial conditions
   traj_home_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
   action_client->sendGoal(traj_home_goal);
-  sleepForTrajectoryDuration(traj_home_goal.trajectory);
-  ASSERT_TRUE(waitForActionResult(action_client));
+  
+  auto timeout2{getTrajectoryDuration(traj_home_goal.trajectory) + ros::Duration(TIMEOUT_ACTION_RESULT_S)};
+  ASSERT_TRUE(waitForActionResult(action_client, timeout2));
   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::SUCCEEDED));
 
   // Disable velocity feedforward

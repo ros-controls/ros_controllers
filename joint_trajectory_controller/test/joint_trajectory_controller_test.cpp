@@ -77,9 +77,7 @@ public:
     joint_names[0] = "joint1";
     joint_names[1] = "joint2";
 
-    controller_min_actual_velocity.resize(n_joints);
-    controller_max_actual_velocity.resize(n_joints);
-    controller_max_desired_position.resize(n_joints);
+    controller_min_actual_velocity.resize(n_joints, std::numeric_limits<double>::infinity());
 
     trajectory_msgs::JointTrajectoryPoint point;
     point.positions.resize(n_joints, 0.0);
@@ -167,8 +165,8 @@ public:
    */
   void SetUp() override
   {
-    ASSERT_TRUE(waitForInitializedState());
     ASSERT_TRUE(waitForActionServer());
+    ASSERT_TRUE(waitForInitializedState());
 
     if (!checkPointReached(traj_home.points.back()))
     {
@@ -214,8 +212,6 @@ protected:
 
   StateConstPtr controller_state;
   std::vector<double> controller_min_actual_velocity;
-  std::vector<double> controller_max_actual_velocity;
-  std::vector<double> controller_max_desired_position;
 
   double stop_trajectory_duration;
 
@@ -234,12 +230,6 @@ protected:
     std::transform(controller_min_actual_velocity.begin(), controller_min_actual_velocity.end(),
                    state->actual.velocities.begin(), controller_min_actual_velocity.begin(),
                    [](double a, double b){return std::min(a, b);});
-    std::transform(controller_max_actual_velocity.begin(), controller_max_actual_velocity.end(),
-                   state->actual.velocities.begin(), controller_max_actual_velocity.begin(),
-                   [](double a, double b){return std::max(a, b);});
-    std::transform(controller_max_desired_position.begin(), controller_max_desired_position.end(),
-                   state->desired.positions.begin(), controller_max_desired_position.begin(),
-                   [](double a, double b){return std::max(a, b);});
   }
 
   StateConstPtr getState()
@@ -301,28 +291,14 @@ protected:
     return controller_min_actual_velocity;
   }
 
-  std::vector<double> getMaxActualVelocity()
+  void resetControllerStateObserver()
   {
     std::lock_guard<std::mutex> lock(mutex);
-    return controller_max_actual_velocity;
-  }
+    controller_state.reset();
 
-  void resetActualVelocityObserver()
-  {
-    std::lock_guard<std::mutex> lock(mutex);
     for(size_t i = 0; i < controller_min_actual_velocity.size(); ++i)
     {
       controller_min_actual_velocity[i] = std::numeric_limits<double>::infinity();
-      controller_max_actual_velocity[i] = -std::numeric_limits<double>::infinity();
-    }
-  }
-
-  void resetDesiredPositionObserver()
-  {
-    std::lock_guard<std::mutex> lock(mutex);
-    for(size_t i = 0; i < controller_max_desired_position.size(); ++i)
-    {
-      controller_max_desired_position[i] = -std::numeric_limits<double>::infinity();
     }
   }
 
@@ -938,7 +914,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelay)
       delay_pub.publish(delay);
       ASSERT_TRUE(waitForRobotReady());
     }
-    resetActualVelocityObserver();
+    resetControllerStateObserver();
 
     // Send trajectory (avoid changing sign of velocity -> stretch first segment)
     traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
@@ -995,14 +971,15 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
     ASSERT_TRUE(waitForRobotReady());
   }
 
-  resetDesiredPositionObserver();
-
   // Increase path tolerance
   double old_path_tolerance;
   ASSERT_TRUE(ros::param::get("/rrbot_controller/constraints/joint1/trajectory", old_path_tolerance));
   ros::param::set("/rrbot_controller/constraints/joint1/trajectory", 1.0);
   ASSERT_TRUE(reloadController("rrbot_controller"));
+
+  resetControllerStateObserver();
   ASSERT_TRUE(waitForActionServer());
+  ASSERT_TRUE(waitForInitializedState());
 
   // Send trajectory (only first segment)
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
@@ -1020,17 +997,18 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
 
   EXPECT_TRUE(waitForStop());
 
+  StateConstPtr state = getState();
   if(stop_trajectory_duration < EPS)
   {
     // Here we expect that the desired position is equal to the actual position of the robot,
     // which is given through upper_bound by construction.
-    EXPECT_NEAR(controller_max_desired_position[0], upper_bound.data, JOINT_STATES_COMPARISON_EPS);
+    EXPECT_NEAR(state->desired.positions[0], upper_bound.data, JOINT_STATES_COMPARISON_EPS);
   }
   else
   {
     // stop ramp should be calculated using the desired position
     // so it is greater than the upper bound
-    EXPECT_GT(controller_max_desired_position[0], upper_bound.data);
+    EXPECT_GT(state->desired.positions[0], upper_bound.data);
   }
 
   // Restore perfect control
@@ -1048,7 +1026,6 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
   // Restore path tolerance
   ros::param::set("/rrbot_controller/constraints/joint1/trajectory", old_path_tolerance);
   ASSERT_TRUE(reloadController("rrbot_controller"));
-  ASSERT_TRUE(waitForActionServer());
 }
 
 TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
@@ -1250,7 +1227,10 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
   ros::param::set("/rrbot_controller/velocity_ff/joint1", 0.0);
   ros::param::set("/rrbot_controller/velocity_ff/joint2", 0.0);
   ASSERT_TRUE(reloadController("rrbot_controller"));
+
+  resetControllerStateObserver();
   ASSERT_TRUE(waitForActionServer());
+  ASSERT_TRUE(waitForInitializedState());
 
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
@@ -1267,7 +1247,6 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
   ros::param::set("/rrbot_controller/velocity_ff/joint1", 1.0);
   ros::param::set("/rrbot_controller/velocity_ff/joint2", 1.0);
   ASSERT_TRUE(reloadController("rrbot_controller"));
-  ASSERT_TRUE(waitForActionServer());
 }
 
 #endif // TEST_VELOCITY_FF

@@ -333,7 +333,7 @@ protected:
 
   AssertionResult waitForStop(const ros::Duration& timeout = ros::Duration(TIMEOUT_TRAJ_EXECUTION_S))
   {
-    return waitForEvent(std::bind(&JointTrajectoryControllerTest::checkStopped, this), "stop", timeout);
+    return waitForEvent(std::bind(&JointTrajectoryControllerTest::checkStopped, this), "stop", timeout, 3U);
   }
 
   bool reloadController(const std::string& name)
@@ -390,19 +390,26 @@ protected:
 
   static AssertionResult waitForEvent(const std::function<bool()>& check_event,
                                       const std::string& event_description,
-                                      const ros::Duration& timeout)
+                                      const ros::Duration& timeout,
+                                      unsigned int repeat = 1)
   {
+    unsigned int count{0};
     ros::Time start_time{ros::Time::now()};
-    while ( !check_event() && ros::ok() )
+    while (ros::ok())
     {
+      count = check_event() ? (count+1) : 0;
       if ((ros::Time::now() - start_time) > timeout)
       {
         return AssertionFailure() << "Timed out after " << timeout.toSec() << "s waiting for "
                                   << event_description << ".";
       }
       ros::Duration(0.1).sleep();
+      if (count == repeat)
+      {
+        return AssertionSuccess();
+      }
     }
-    return AssertionSuccess();
+    return AssertionFailure() << "ROS shutdown.";
   }
 
   static bool trajectoryPointsAlmostEqual(const trajectory_msgs::JointTrajectoryPoint& p1,

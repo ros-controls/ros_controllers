@@ -25,6 +25,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import print_function
 import os
 import rospy
 import rospkg
@@ -39,9 +40,9 @@ from controller_manager_msgs.utils\
     import ControllerLister, ControllerManagerLister
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-from double_editor import DoubleEditor
-from joint_limits_urdf import get_joint_limits
-from update_combo import update_combo
+from .double_editor import DoubleEditor
+from .joint_limits_urdf import get_joint_limits
+from .update_combo import update_combo
 
 # TODO:
 # - Better UI suppor for continuous joints (see DoubleEditor TODO)
@@ -326,7 +327,7 @@ class JointTrajectoryController(Plugin):
         except:
             # TODO: Can we do better than swallow the exception?
             from sys import exc_info
-            print 'Unexpected error:', exc_info()[0]
+            print('Unexpected error:', exc_info()[0])
 
         # Enter monitor mode (sending commands disabled)
         self._on_jtc_enabled(False)

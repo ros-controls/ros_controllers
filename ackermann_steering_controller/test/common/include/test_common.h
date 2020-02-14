@@ -28,7 +28,10 @@
 /// \author Bence Magyar
 /// \author Masaru Morita
 
+#include <algorithm>
 #include <cmath>
+#include <mutex>
+#include <string>
 
 #include <gtest/gtest.h>
 
@@ -39,6 +42,7 @@
 #include <tf/tf.h>
 
 #include <std_srvs/Empty.h>
+#include <controller_manager_msgs/ListControllers.h>
 
 // Floating-point value comparison threshold
 const double EPS = 0.01;
@@ -58,6 +62,8 @@ public:
   , odom_sub(nh.subscribe("odom", 100, &AckermannSteeringControllerTest::odomCallback, this))
   , start_srv(nh.serviceClient<std_srvs::Empty>("start"))
   , stop_srv(nh.serviceClient<std_srvs::Empty>("stop"))
+  , list_ctrls_srv(nh.serviceClient<controller_manager_msgs::ListControllers>("/controller_manager/list_controllers"))
+  , ctrl_name("ackermann_steering_bot_controller")
   {
   }
 
@@ -66,9 +72,42 @@ public:
     odom_sub.shutdown();
   }
 
-  nav_msgs::Odometry getLastOdom(){ return last_odom; }
+  nav_msgs::Odometry getLastOdom()
+  {
+    std::lock_guard<std::mutex> lock(odom_mutex);
+    return last_odom;
+  }
+
+  bool isLastOdomValid()
+  {
+    try
+    {
+      auto odom = getLastOdom();
+      tf::assertQuaternionValid(odom.pose.pose.orientation);
+    }
+    catch (const tf::InvalidArgument& exception)
+    {
+      return false;
+    }
+    return true;
+  }
+
   void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
-  bool isControllerAlive(){ return (odom_sub.getNumPublishers() > 0) && (cmd_pub.getNumSubscribers() > 0); }
+
+  bool isControllerAlive()
+  {
+    controller_manager_msgs::ListControllers srv;
+    list_ctrls_srv.call(srv);
+
+    auto ctrl_list = srv.response.controller;
+    auto is_running = [this](const controller_manager_msgs::ControllerState& ctrl)
+    {
+      return ctrl.name == ctrl_name && ctrl.state == "running";
+    };
+    bool running = std::any_of(ctrl_list.begin(), ctrl_list.end(), is_running);
+    bool subscribing = cmd_pub.getNumSubscribers() > 0;
+    return running && subscribing;
+  }
 
   void start(){ std_srvs::Empty srv; start_srv.call(srv); }
   void stop(){ std_srvs::Empty srv; stop_srv.call(srv); }
@@ -82,12 +121,18 @@ private:
   ros::ServiceClient start_srv;
   ros::ServiceClient stop_srv;
 
+  ros::ServiceClient list_ctrls_srv;
+  std::string ctrl_name;
+
+  std::mutex odom_mutex;
+
   void odomCallback(const nav_msgs::Odometry& odom)
   {
     ROS_INFO_STREAM("Callback reveived: pos.x: " << odom.pose.pose.position.x
                      << ", orient.z: " << odom.pose.pose.orientation.z
                      << ", lin_est: " << odom.twist.twist.linear.x
                      << ", ang_est: " << odom.twist.twist.angular.z);
+    std::lock_guard<std::mutex> lock(odom_mutex);
     last_odom = odom;
   }
 };

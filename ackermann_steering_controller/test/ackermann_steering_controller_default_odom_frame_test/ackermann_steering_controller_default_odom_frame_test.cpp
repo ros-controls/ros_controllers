@@ -49,7 +49,7 @@ TEST_F(AckermannSteeringControllerTest, testOdomFrame)
 TEST_F(AckermannSteeringControllerTest, testOdomTopic)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while(!isControllerAlive() || !isLastOdomValid())
   {
     ros::Duration(0.1).sleep();
   }

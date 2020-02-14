@@ -1266,82 +1266,84 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
 
 // Tolerance checking //////////////////////////////////////////////////////////////////////////////////////////////////
 
-TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
-{
-  // Make robot respond with a delay
-  {
-    std_msgs::Float64 smoothing;
-    smoothing.data = 0.9;
-    smoothing_pub.publish(smoothing);
-    ASSERT_TRUE(waitForRobotReady());
-  }
+// Disabled for now due to https://github.com/ros-controls/ros_controllers/issues/48
 
-  // Send trajectory
-  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
-  action_client->sendGoal(traj_goal);
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
+// TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
+// {
+//   // Make robot respond with a delay
+//   {
+//     std_msgs::Float64 smoothing;
+//     smoothing.data = 0.9;
+//     smoothing_pub.publish(smoothing);
+//     ASSERT_TRUE(waitForRobotReady());
+//   }
 
-  // Wait until done
-  ASSERT_TRUE(waitForActionResult(action_client));
-  EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
-  EXPECT_TRUE(checkActionResultErrorCode(action_client,
-                                         control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED));
+//   // Send trajectory
+//   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+//   action_client->sendGoal(traj_goal);
+//   EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
-  //EXPECT_TRUE(waitForStop());  // Execution does not stop when goal is aborted !!!???
-  ros::Duration timeout{getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S)};
-  waitForStop(timeout);
+//   // Wait until done
+//   ASSERT_TRUE(waitForActionResult(action_client));
+//   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
+//   EXPECT_TRUE(checkActionResultErrorCode(action_client,
+//                                          control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED));
 
-  // Restore perfect control
-  {
-    std_msgs::Float64 smoothing;
-    smoothing.data = 0.0;
-    smoothing_pub.publish(smoothing);
-    EXPECT_TRUE(waitForRobotReady());
-  }
-}
+//   //EXPECT_TRUE(waitForStop());  // Execution does not stop when goal is aborted !!!???
+//   ros::Duration timeout{getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S)};
+//   waitForStop(timeout);
 
-TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
-{
-  // Make robot respond with a delay
-  {
-    std_msgs::Float64 smoothing;
-    smoothing.data = 0.95;
-    smoothing_pub.publish(smoothing);
-    ASSERT_TRUE(waitForRobotReady());
-  }
+//   // Restore perfect control
+//   {
+//     std_msgs::Float64 smoothing;
+//     smoothing.data = 0.0;
+//     smoothing_pub.publish(smoothing);
+//     EXPECT_TRUE(waitForRobotReady());
+//   }
+// }
 
-  // Disable path constraints
-  traj_goal.path_tolerance.resize(2);
-  traj_goal.path_tolerance[0].name     = "joint1";
-  traj_goal.path_tolerance[0].position = -1.0;
-  traj_goal.path_tolerance[0].velocity = -1.0;
-  traj_goal.path_tolerance[1].name     = "joint2";
-  traj_goal.path_tolerance[1].position = -1.0;
-  traj_goal.path_tolerance[1].velocity = -1.0;
+// TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
+// {
+//   // Make robot respond with a delay
+//   {
+//     std_msgs::Float64 smoothing;
+//     smoothing.data = 0.95;
+//     smoothing_pub.publish(smoothing);
+//     ASSERT_TRUE(waitForRobotReady());
+//   }
 
-  // Send trajectory
-  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
-  action_client->sendGoal(traj_goal);
-  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
+//   // Disable path constraints
+//   traj_goal.path_tolerance.resize(2);
+//   traj_goal.path_tolerance[0].name     = "joint1";
+//   traj_goal.path_tolerance[0].position = -1.0;
+//   traj_goal.path_tolerance[0].velocity = -1.0;
+//   traj_goal.path_tolerance[1].name     = "joint2";
+//   traj_goal.path_tolerance[1].position = -1.0;
+//   traj_goal.path_tolerance[1].velocity = -1.0;
 
-  // Wait until done
-  ASSERT_TRUE(waitForActionResult(action_client));
-  EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
-  EXPECT_TRUE(checkActionResultErrorCode(action_client,
-                                         control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED));
+//   // Send trajectory
+//   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+//   action_client->sendGoal(traj_goal);
+//   EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
-  //EXPECT_TRUE(waitForStop());  // Execution does not stop when goal is aborted !!!???
-  ros::Duration timeout{getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S)};
-  waitForStop(timeout);
+//   // Wait until done
+//   ASSERT_TRUE(waitForActionResult(action_client));
+//   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
+//   EXPECT_TRUE(checkActionResultErrorCode(action_client,
+//                                          control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED));
 
-  // Restore perfect control
-  {
-    std_msgs::Float64 smoothing;
-    smoothing.data = 0.0;
-    smoothing_pub.publish(smoothing);
-    EXPECT_TRUE(waitForRobotReady());
-  }
-}
+//   //EXPECT_TRUE(waitForStop());  // Execution does not stop when goal is aborted !!!???
+//   ros::Duration timeout{getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S)};
+//   waitForStop(timeout);
+
+//   // Restore perfect control
+//   {
+//     std_msgs::Float64 smoothing;
+//     smoothing.data = 0.0;
+//     smoothing_pub.publish(smoothing);
+//     EXPECT_TRUE(waitForRobotReady());
+//   }
+// }
 
 int main(int argc, char** argv)
 {

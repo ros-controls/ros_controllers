@@ -94,7 +94,7 @@ template <class State>
 class HardwareInterfaceAdapter<hardware_interface::PositionJointInterface, State>
 {
 public:
-  HardwareInterfaceAdapter() : joint_handles_ptr_(0) {}
+  HardwareInterfaceAdapter() : joint_handles_ptr_(nullptr) {}
 
   bool init(std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& /*controller_nh*/)
   {
@@ -144,7 +144,7 @@ template <class State>
 class ClosedLoopHardwareInterfaceAdapter
 {
 public:
-  ClosedLoopHardwareInterfaceAdapter() : joint_handles_ptr_(0) {}
+  ClosedLoopHardwareInterfaceAdapter() : joint_handles_ptr_(nullptr) {}
 
   bool init(std::vector<hardware_interface::JointHandle>& joint_handles, ros::NodeHandle& controller_nh)
   {
@@ -290,7 +290,7 @@ template <class State>
 class HardwareInterfaceAdapter<hardware_interface::PosVelJointInterface, State>
 {
 public:
-  HardwareInterfaceAdapter() : joint_handles_ptr_(0) {}
+  HardwareInterfaceAdapter() : joint_handles_ptr_(nullptr) {}
 
   bool init(std::vector<hardware_interface::PosVelJointHandle>& joint_handles, ros::NodeHandle& /*controller_nh*/)
   {
@@ -327,7 +327,7 @@ template <class State>
 class HardwareInterfaceAdapter<hardware_interface::PosVelAccJointInterface, State>
 {
 public:
-  HardwareInterfaceAdapter() : joint_handles_ptr_(0) {}
+  HardwareInterfaceAdapter() : joint_handles_ptr_(nullptr) {}
 
   bool init(std::vector<hardware_interface::PosVelAccJointHandle>& joint_handles, ros::NodeHandle& /*controller_nh*/)
   {

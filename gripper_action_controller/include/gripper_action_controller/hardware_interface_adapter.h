@@ -78,7 +78,7 @@ template<>
 class HardwareInterfaceAdapter<hardware_interface::PositionJointInterface>
 {
 public:
-  HardwareInterfaceAdapter() : joint_handle_ptr_(0) {}
+  HardwareInterfaceAdapter() : joint_handle_ptr_(nullptr) {}
 
   bool init(hardware_interface::JointHandle& joint_handle, ros::NodeHandle& controller_nh)
   {
@@ -128,7 +128,7 @@ template<>
 class HardwareInterfaceAdapter<hardware_interface::EffortJointInterface>
 {
 public:
-  HardwareInterfaceAdapter() : joint_handle_ptr_(0) {}
+  HardwareInterfaceAdapter() : joint_handle_ptr_(nullptr) {}
 
   bool init(hardware_interface::JointHandle& joint_handle, ros::NodeHandle& controller_nh)
   {

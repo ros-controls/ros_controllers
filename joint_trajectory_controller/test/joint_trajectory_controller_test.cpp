@@ -183,6 +183,7 @@ protected:
   typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> ActionClient;
   typedef std::shared_ptr<ActionClient> ActionClientPtr;
   typedef control_msgs::FollowJointTrajectoryGoal ActionGoal;
+  typedef control_msgs::JointTrajectoryControllerState State;
   typedef control_msgs::JointTrajectoryControllerStateConstPtr StateConstPtr;
 
   std::mutex mutex;
@@ -233,10 +234,10 @@ protected:
                    [](double a, double b){return std::min(a, b);});
   }
 
-  StateConstPtr getState()
+  const State getState()
   {
     std::lock_guard<std::mutex> lock(mutex);
-    return boost::make_shared<const control_msgs::JointTrajectoryControllerState>(*controller_state);
+    return *controller_state;
   }
 
   AssertionResult waitForRobotReady(const ros::Duration& timeout = ros::Duration(TIMEOUT_CONNECTIONS_S))
@@ -305,30 +306,30 @@ protected:
 
   AssertionResult waitForTrajectoryExecution(const ros::Duration& timeout = ros::Duration(TIMEOUT_TRAJ_EXECUTION_S))
   {
-    StateConstPtr start_state{getState()};
+    State start_state{getState()};
     auto executing = [this, &start_state]()
     {
-      StateConstPtr current_state{getState()};
-      return !vectorsAlmostEqual(start_state->desired.positions, current_state->desired.positions);
+      State current_state{getState()};
+      return !vectorsAlmostEqual(start_state.desired.positions, current_state.desired.positions);
     };
     return waitForEvent(executing, "trajectory execution", timeout);
   }
 
   bool checkPointReached(const trajectory_msgs::JointTrajectoryPoint& point)
   {
-    StateConstPtr current_state{getState()};
-    return trajectoryPointsAlmostEqual(current_state->desired, point) &&
-           vectorsAlmostEqual(current_state->actual.positions, point.positions) &&
-           vectorsAlmostEqual(current_state->actual.velocities, point.velocities);
+    State current_state{getState()};
+    return trajectoryPointsAlmostEqual(current_state.desired, point) &&
+           vectorsAlmostEqual(current_state.actual.positions, point.positions) &&
+           vectorsAlmostEqual(current_state.actual.velocities, point.velocities);
   }
 
   bool checkStopped()
   {
     std::vector<double> zero_vec(n_joints, 0.0);
-    StateConstPtr current_state{getState()};
-    return vectorsAlmostEqual(current_state->actual.velocities, zero_vec) &&
-           vectorsAlmostEqual(current_state->desired.velocities, zero_vec) && 
-           vectorsAlmostEqual(current_state->desired.accelerations, zero_vec);
+    State current_state{getState()};
+    return vectorsAlmostEqual(current_state.actual.velocities, zero_vec) &&
+           vectorsAlmostEqual(current_state.desired.velocities, zero_vec) &&
+           vectorsAlmostEqual(current_state.desired.accelerations, zero_vec);
   }
 
   AssertionResult waitForStop(const ros::Duration& timeout = ros::Duration(TIMEOUT_TRAJ_EXECUTION_S))
@@ -437,25 +438,25 @@ protected:
 TEST_F(JointTrajectoryControllerTest, stateTopicConsistency)
 {
   // Get current controller state
-  StateConstPtr state = getState();
+  State state = getState();
 
   // Checks that are valid for all state messages
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-    EXPECT_EQ(joint_names[i], state->joint_names[i]);
+    EXPECT_EQ(joint_names[i], state.joint_names[i]);
   }
 
-  EXPECT_EQ(n_joints, state->desired.positions.size());
-  EXPECT_EQ(n_joints, state->desired.velocities.size());
-  EXPECT_EQ(n_joints, state->desired.accelerations.size());
+  EXPECT_EQ(n_joints, state.desired.positions.size());
+  EXPECT_EQ(n_joints, state.desired.velocities.size());
+  EXPECT_EQ(n_joints, state.desired.accelerations.size());
 
-  EXPECT_EQ(n_joints, state->actual.positions.size());
-  EXPECT_EQ(n_joints, state->actual.velocities.size());
-  EXPECT_TRUE(state->actual.accelerations.empty());
+  EXPECT_EQ(n_joints, state.actual.positions.size());
+  EXPECT_EQ(n_joints, state.actual.velocities.size());
+  EXPECT_TRUE(state.actual.accelerations.empty());
 
-  EXPECT_EQ(n_joints, state->error.positions.size());
-  EXPECT_EQ(n_joints, state->error.velocities.size());
-  EXPECT_TRUE(state->error.accelerations.empty());
+  EXPECT_EQ(n_joints, state.error.positions.size());
+  EXPECT_EQ(n_joints, state.error.velocities.size());
+  EXPECT_TRUE(state.error.accelerations.empty());
 }
 
 TEST_F(JointTrajectoryControllerTest, queryStateServiceConsistency)
@@ -577,24 +578,24 @@ TEST_F(JointTrajectoryControllerTest, topicSingleTraj)
   ASSERT_TRUE(waitForStop(timeout)); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Validate state topic values
-  StateConstPtr state = getState();
+  State state = getState();
 
-  EXPECT_TRUE(trajectoryPointsAlmostEqual(traj.points.back(), state->desired));
-  EXPECT_TRUE(vectorsAlmostEqual(traj.points.back().positions, state->actual.positions));
-  EXPECT_TRUE(vectorsAlmostEqual(traj.points.back().velocities, state->actual.velocities));
+  EXPECT_TRUE(trajectoryPointsAlmostEqual(traj.points.back(), state.desired));
+  EXPECT_TRUE(vectorsAlmostEqual(traj.points.back().positions, state.actual.positions));
+  EXPECT_TRUE(vectorsAlmostEqual(traj.points.back().velocities, state.actual.velocities));
 
   std::vector<double> zero_vec(n_joints, 0.0);
-  EXPECT_TRUE(vectorsAlmostEqual(state->error.positions, zero_vec));
-  EXPECT_TRUE(vectorsAlmostEqual(state->error.velocities, zero_vec));
+  EXPECT_TRUE(vectorsAlmostEqual(state.error.positions, zero_vec));
+  EXPECT_TRUE(vectorsAlmostEqual(state.error.velocities, zero_vec));
 
   // Validate query state service
   control_msgs::QueryTrajectoryState srv;
   srv.request.time = ros::Time::now();
   ASSERT_TRUE(query_state_service.call(srv));
 
-  EXPECT_TRUE(vectorsAlmostEqual(state->desired.positions, srv.response.position));
-  EXPECT_TRUE(vectorsAlmostEqual(state->desired.velocities, srv.response.velocity));
-  EXPECT_TRUE(vectorsAlmostEqual(state->desired.accelerations, srv.response.acceleration));
+  EXPECT_TRUE(vectorsAlmostEqual(state.desired.positions, srv.response.position));
+  EXPECT_TRUE(vectorsAlmostEqual(state.desired.velocities, srv.response.velocity));
+  EXPECT_TRUE(vectorsAlmostEqual(state.desired.accelerations, srv.response.acceleration));
 }
 
 TEST_F(JointTrajectoryControllerTest, actionSingleTraj)
@@ -612,15 +613,15 @@ TEST_F(JointTrajectoryControllerTest, actionSingleTraj)
   EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Validate state topic values
-  StateConstPtr state = getState();
+  State state = getState();
 
-  EXPECT_TRUE(trajectoryPointsAlmostEqual(traj.points.back(), state->desired));
-  EXPECT_TRUE(vectorsAlmostEqual(traj.points.back().positions, state->actual.positions));
-  EXPECT_TRUE(vectorsAlmostEqual(traj.points.back().velocities, state->actual.velocities));
+  EXPECT_TRUE(trajectoryPointsAlmostEqual(traj.points.back(), state.desired));
+  EXPECT_TRUE(vectorsAlmostEqual(traj.points.back().positions, state.actual.positions));
+  EXPECT_TRUE(vectorsAlmostEqual(traj.points.back().velocities, state.actual.velocities));
 
   std::vector<double> zero_vec(n_joints, 0.0);
-  EXPECT_TRUE(vectorsAlmostEqual(state->error.positions, zero_vec));
-  EXPECT_TRUE(vectorsAlmostEqual(state->error.velocities, zero_vec));
+  EXPECT_TRUE(vectorsAlmostEqual(state.error.positions, zero_vec));
+  EXPECT_TRUE(vectorsAlmostEqual(state.error.velocities, zero_vec));
 }
 
 // Joint reordering ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -643,12 +644,12 @@ TEST_F(JointTrajectoryControllerTest, jointReordering)
   EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Validate state topic values
-  StateConstPtr state = getState();
+  State state = getState();
   EXPECT_NEAR(reorder_goal.trajectory.points.back().positions[0],
-              state->desired.positions[1],
+              state.desired.positions[1],
               JOINT_STATES_COMPARISON_EPS);
   EXPECT_NEAR(reorder_goal.trajectory.points.back().positions[1],
-              state->desired.positions[0],
+              state.desired.positions[0],
               JOINT_STATES_COMPARISON_EPS);
 }
 
@@ -698,12 +699,12 @@ TEST_F(JointTrajectoryControllerTest, jointWraparound)
   EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Validate state topic values
-  StateConstPtr state = getState();
+  State state = getState();
   EXPECT_NEAR(goal1.trajectory.points[0].positions[0] + 0.25 * M_PI,
-              state->desired.positions[0],
+              state.desired.positions[0],
               JOINT_STATES_COMPARISON_EPS);
   EXPECT_NEAR(goal1.trajectory.points[0].positions[1] - 0.25 * M_PI,
-              state->desired.positions[1],
+              state.desired.positions[1],
               JOINT_STATES_COMPARISON_EPS);
 }
 
@@ -751,10 +752,10 @@ TEST_F(JointTrajectoryControllerTest, jointWraparoundPiSingularity)
   EXPECT_TRUE(waitForStop()); // Allows values to settle within JOINT_STATES_COMPARISON_EPS, especially accelerations
 
   // Validate state topic values
-  StateConstPtr state = getState();
+  State state = getState();
   for (unsigned int i = 0; i < n_joints; ++i)
   {
-    EXPECT_NEAR(goal2.trajectory.points[0].positions[i], state->desired.positions[i], JOINT_STATES_COMPARISON_EPS);
+    EXPECT_NEAR(goal2.trajectory.points[0].positions[i], state.desired.positions[i], JOINT_STATES_COMPARISON_EPS);
   }
 }
 
@@ -864,7 +865,7 @@ TEST_F(JointTrajectoryControllerTest, topicReplacesActionTraj)
 TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsTopicTraj)
 {
   // Start state
-  StateConstPtr start_state = getState();
+  State start_state = getState();
 
   // Send trajectory
   traj.header.stamp = ros::Time(0); // Start immediately
@@ -881,15 +882,15 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsTopicTraj)
   EXPECT_TRUE(waitForStop());
 
   // Check that we're not on the start state
-  StateConstPtr current_state = getState();
-  EXPECT_FALSE(vectorsAlmostEqual(start_state->actual.positions, current_state->actual.positions))
+  State current_state = getState();
+  EXPECT_FALSE(vectorsAlmostEqual(start_state.actual.positions, current_state.actual.positions))
     << "Failed to move away from start state.";
 }
 
 TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTraj)
 {
   // Start state
-  StateConstPtr start_state = getState();
+  State start_state = getState();
 
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
@@ -908,8 +909,8 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTraj)
   EXPECT_TRUE(waitForStop());
 
   // Check that we're not on the start state
-  StateConstPtr current_state = getState();
-  EXPECT_FALSE(vectorsAlmostEqual(start_state->actual.positions, current_state->actual.positions))
+  State current_state = getState();
+  EXPECT_FALSE(vectorsAlmostEqual(start_state.actual.positions, current_state.actual.positions))
     << "Failed to move away from start state.";
 }
 
@@ -1008,18 +1009,18 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
 
   EXPECT_TRUE(waitForStop());
 
-  StateConstPtr state = getState();
+  State state = getState();
   if(stop_trajectory_duration < EPS)
   {
     // Here we expect that the desired position is equal to the actual position of the robot,
     // which is given through upper_bound by construction.
-    EXPECT_NEAR(state->desired.positions[0], upper_bound.data, JOINT_STATES_COMPARISON_EPS);
+    EXPECT_NEAR(state.desired.positions[0], upper_bound.data, JOINT_STATES_COMPARISON_EPS);
   }
   else
   {
     // stop ramp should be calculated using the desired position
     // so it is greater than the upper bound
-    EXPECT_GT(state->desired.positions[0], upper_bound.data);
+    EXPECT_GT(state.desired.positions[0], upper_bound.data);
   }
 
   // Restore perfect control
@@ -1042,7 +1043,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
 TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
 {
   // Start state
-  StateConstPtr start_state = getState();
+  State start_state = getState();
 
   // Send trajectory
   traj.header.stamp = ros::Time(0); // Start immediately
@@ -1063,15 +1064,15 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsTopicTraj)
   EXPECT_TRUE(waitForStop());
 
   // Check that we're not on the start state
-  StateConstPtr current_state = getState();
-  EXPECT_FALSE(vectorsAlmostEqual(start_state->actual.positions, current_state->actual.positions))
+  State current_state = getState();
+  EXPECT_FALSE(vectorsAlmostEqual(start_state.actual.positions, current_state.actual.positions))
     << "Failed to move away from start state.";
 }
 
 TEST_F(JointTrajectoryControllerTest, emptyActionCancelsActionTraj)
 {
   // Start state
-  StateConstPtr start_state = getState();
+  State start_state = getState();
 
   // Send trajectory
   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
@@ -1095,8 +1096,8 @@ TEST_F(JointTrajectoryControllerTest, emptyActionCancelsActionTraj)
   EXPECT_TRUE(waitForStop());
 
   // Check that we're not on the start state
-  StateConstPtr current_state = getState();
-  EXPECT_FALSE(vectorsAlmostEqual(start_state->actual.positions, current_state->actual.positions))
+  State current_state = getState();
+  EXPECT_FALSE(vectorsAlmostEqual(start_state.actual.positions, current_state.actual.positions))
     << "Failed to move away from start state.";
 }
 

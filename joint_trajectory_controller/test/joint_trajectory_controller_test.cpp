@@ -51,18 +51,16 @@
 #include <controller_manager_msgs/UnloadController.h>
 #include <controller_manager_msgs/SwitchController.h>
 
-// Floating-point value comparison threshold
-static constexpr double JOINT_STATES_COMPARISON_EPS = 0.01;
-static constexpr double EPS = 1e-9;
-
-static constexpr double TIMEOUT_CONNECTIONS_S = 10.0;
-static constexpr double TIMEOUT_ACTION_RESULT_S = 5.0;
-static constexpr double TIMEOUT_TRAJ_EXECUTION_S = 5.0;
+#include "test_common.h"
 
 using actionlib::SimpleClientGoalState;
 using testing::AssertionResult;
 using testing::AssertionFailure;
 using testing::AssertionSuccess;
+
+using namespace joint_trajectory_controller_tests;
+
+static constexpr double TIMEOUT_TRAJ_EXECUTION_S = 5.0;
 
 class JointTrajectoryControllerTest : public ::testing::Test
 {
@@ -165,7 +163,7 @@ public:
    */
   void SetUp() override
   {
-    ASSERT_TRUE(waitForActionServer());
+    ASSERT_TRUE(waitForActionServer(action_client));
     ASSERT_TRUE(waitForInitializedState());
 
     if (!checkPointReached(traj_home.points.back()))
@@ -267,26 +265,6 @@ protected:
     return AssertionSuccess();
   }
 
-  AssertionResult waitForActionServer(const ros::Duration& timeout = ros::Duration(TIMEOUT_CONNECTIONS_S))
-  {
-    if (!action_client->waitForServer(timeout))
-    {
-      return AssertionFailure() << "Timed out after " << timeout.toSec()
-                                << "s waiting for connection to action server.";
-    }
-    return AssertionSuccess();
-  }
-
-  AssertionResult waitForActionResult(const ActionClientPtr& action_client,
-                                      const ros::Duration& timeout = ros::Duration(TIMEOUT_ACTION_RESULT_S))
-  {
-    if (!action_client->waitForResult(timeout))
-    {
-      return AssertionFailure() << "Timed out after " << timeout.toSec() << "s waiting for action result.";
-    }
-    return AssertionSuccess();
-  }
-
   std::vector<double> getMinActualVelocity()
   {
     std::lock_guard<std::mutex> lock(mutex);
@@ -361,75 +339,6 @@ protected:
     if(!switch_controller_service.call(start_controller)) return false;
     if(!start_controller.response.ok) return false;
     return true;
-  }
-
-  static ros::Duration getTrajectoryDuration(const trajectory_msgs::JointTrajectory &traj)
-  {
-    return traj.points.back().time_from_start;
-  }
-
-  static bool checkActionGoalState(const ActionClientPtr& action_client,
-                                   const actionlib::SimpleClientGoalState& state)
-  {
-    return action_client->getState() == state;
-  }
-
-  static bool waitForActionGoalState(const ActionClientPtr& action_client,
-                                     const actionlib::SimpleClientGoalState& state,
-                                     const ros::Duration& timeout = ros::Duration(TIMEOUT_ACTION_RESULT_S))
-  {
-    return waitForEvent(std::bind(checkActionGoalState, action_client, state),
-                        "action goal state " + state.getText(),
-                        timeout);
-  }
-
-  static bool checkActionResultErrorCode(const ActionClientPtr& action_client,
-                                         const control_msgs::FollowJointTrajectoryResult::_error_code_type& error_code)
-  {
-    return action_client->getResult()->error_code == error_code;
-  }
-
-  static AssertionResult waitForEvent(const std::function<bool()>& check_event,
-                                      const std::string& event_description,
-                                      const ros::Duration& timeout,
-                                      unsigned int repeat = 1)
-  {
-    unsigned int count = 0;
-    ros::Time start_time = ros::Time::now();
-    while (ros::ok())
-    {
-      count = check_event() ? (count+1) : 0;
-      if ((ros::Time::now() - start_time) > timeout)
-      {
-        return AssertionFailure() << "Timed out after " << timeout.toSec() << "s waiting for "
-                                  << event_description << ".";
-      }
-      ros::Duration(0.1).sleep();
-      if (count == repeat)
-      {
-        return AssertionSuccess();
-      }
-    }
-    return AssertionFailure() << "ROS shutdown.";
-  }
-
-  static bool trajectoryPointsAlmostEqual(const trajectory_msgs::JointTrajectoryPoint& p1,
-                                          const trajectory_msgs::JointTrajectoryPoint& p2,
-                                          const double& tolerance = JOINT_STATES_COMPARISON_EPS)
-  {
-    return vectorsAlmostEqual(p1.positions, p2.positions, tolerance) &&
-           vectorsAlmostEqual(p1.velocities, p2.velocities, tolerance) &&
-           vectorsAlmostEqual(p1.accelerations, p2.accelerations, tolerance);
-  }
-
-  static bool vectorsAlmostEqual(const std::vector<double>& vec1,
-                                 const std::vector<double>& vec2,
-                                 const double& tolerance = JOINT_STATES_COMPARISON_EPS)
-  {
-    return std::equal(vec1.begin(),
-                      vec1.end(),
-                      vec2.begin(),
-                      [&tolerance](const double& a, const double& b){return (std::abs(b-a) < tolerance);});
   }
 };
 
@@ -990,7 +899,7 @@ TEST_F(JointTrajectoryControllerTest, emptyTopicCancelsActionTrajWithDelayStopZe
   ASSERT_TRUE(reloadController("rrbot_controller"));
 
   resetControllerStateObserver();
-  ASSERT_TRUE(waitForActionServer());
+  ASSERT_TRUE(waitForActionServer(action_client));
   ASSERT_TRUE(waitForInitializedState());
 
   // Send trajectory (only first segment)
@@ -1243,7 +1152,7 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
   ASSERT_TRUE(reloadController("rrbot_controller"));
 
   resetControllerStateObserver();
-  ASSERT_TRUE(waitForActionServer());
+  ASSERT_TRUE(waitForActionServer(action_client));
   ASSERT_TRUE(waitForInitializedState());
 
   // Send trajectory

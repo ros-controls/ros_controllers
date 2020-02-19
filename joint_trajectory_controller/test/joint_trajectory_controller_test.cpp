@@ -1267,84 +1267,86 @@ TEST_F(JointTrajectoryControllerTest, jointVelocityFeedForward)
 
 // Tolerance checking //////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Disabled for now due to https://github.com/ros-controls/ros_controllers/issues/48
+TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
+{
+  // Make robot respond with a delay
+  {
+    std_msgs::Float64 smoothing;
+    smoothing.data = 0.9;
+    smoothing_pub.publish(smoothing);
+    ASSERT_TRUE(waitForRobotReady());
+  }
 
-// TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
-// {
-//   // Make robot respond with a delay
-//   {
-//     std_msgs::Float64 smoothing;
-//     smoothing.data = 0.9;
-//     smoothing_pub.publish(smoothing);
-//     ASSERT_TRUE(waitForRobotReady());
-//   }
+  // Send trajectory
+  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_goal);
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
-//   // Send trajectory
-//   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
-//   action_client->sendGoal(traj_goal);
-//   EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
+  // Wait until done
+  ASSERT_TRUE(waitForActionResult(action_client));
+  EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
+  EXPECT_TRUE(checkActionResultErrorCode(action_client,
+                                         control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED));
 
-//   // Wait until done
-//   ASSERT_TRUE(waitForActionResult(action_client));
-//   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
-//   EXPECT_TRUE(checkActionResultErrorCode(action_client,
-//                                          control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED));
+  // Controller continues execution, see https://github.com/ros-controls/ros_controllers/issues/48
+  // Make sure to restore an error-less state for the tests to continue
 
-//   //EXPECT_TRUE(waitForStop());  // Execution does not stop when goal is aborted !!!???
-//   ros::Duration timeout = getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S);
-//   waitForStop(timeout);
+  // Restore perfect control
+  {
+    std_msgs::Float64 smoothing;
+    smoothing.data = 0.0;
+    smoothing_pub.publish(smoothing);
+    EXPECT_TRUE(waitForRobotReady());
+  }
 
-//   // Restore perfect control
-//   {
-//     std_msgs::Float64 smoothing;
-//     smoothing.data = 0.0;
-//     smoothing_pub.publish(smoothing);
-//     EXPECT_TRUE(waitForRobotReady());
-//   }
-// }
+  ros::Duration timeout = getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S);
+  EXPECT_TRUE(waitForStop(timeout));
+}
 
-// TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
-// {
-//   // Make robot respond with a delay
-//   {
-//     std_msgs::Float64 smoothing;
-//     smoothing.data = 0.95;
-//     smoothing_pub.publish(smoothing);
-//     ASSERT_TRUE(waitForRobotReady());
-//   }
+TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
+{
+  // Make robot respond with a delay
+  {
+    std_msgs::Float64 smoothing;
+    smoothing.data = 0.95;
+    smoothing_pub.publish(smoothing);
+    ASSERT_TRUE(waitForRobotReady());
+  }
 
-//   // Disable path constraints
-//   traj_goal.path_tolerance.resize(2);
-//   traj_goal.path_tolerance[0].name     = "joint1";
-//   traj_goal.path_tolerance[0].position = -1.0;
-//   traj_goal.path_tolerance[0].velocity = -1.0;
-//   traj_goal.path_tolerance[1].name     = "joint2";
-//   traj_goal.path_tolerance[1].position = -1.0;
-//   traj_goal.path_tolerance[1].velocity = -1.0;
+  // Disable path constraints
+  traj_goal.path_tolerance.resize(2);
+  traj_goal.path_tolerance[0].name     = "joint1";
+  traj_goal.path_tolerance[0].position = -1.0;
+  traj_goal.path_tolerance[0].velocity = -1.0;
+  traj_goal.path_tolerance[1].name     = "joint2";
+  traj_goal.path_tolerance[1].position = -1.0;
+  traj_goal.path_tolerance[1].velocity = -1.0;
 
-//   // Send trajectory
-//   traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
-//   action_client->sendGoal(traj_goal);
-//   EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
+  // Send trajectory
+  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  action_client->sendGoal(traj_goal);
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
 
-//   // Wait until done
-//   ASSERT_TRUE(waitForActionResult(action_client));
-//   EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
-//   EXPECT_TRUE(checkActionResultErrorCode(action_client,
-//                                          control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED));
+  // Wait until done
+  ASSERT_TRUE(waitForActionResult(action_client));
+  EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
+  EXPECT_TRUE(checkActionResultErrorCode(action_client,
+                                         control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED));
 
-//   //EXPECT_TRUE(waitForStop());  // Execution does not stop when goal is aborted !!!???
-//   ros::Duration timeout = getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S);
-//   waitForStop(timeout);
+  // Controller continues execution, see https://github.com/ros-controls/ros_controllers/issues/48
+  // Make sure to restore an error-less state for the tests to continue
 
-//   // Restore perfect control
-//   {
-//     std_msgs::Float64 smoothing;
-//     smoothing.data = 0.0;
-//     smoothing_pub.publish(smoothing);
-//     EXPECT_TRUE(waitForRobotReady());
-//   }
-// }
+  // Restore perfect control
+  {
+    std_msgs::Float64 smoothing;
+    smoothing.data = 0.0;
+    smoothing_pub.publish(smoothing);
+    EXPECT_TRUE(waitForRobotReady());
+  }
+
+  ros::Duration timeout = getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S);
+  EXPECT_TRUE(waitForStop(timeout));
+}
 
 int main(int argc, char** argv)
 {

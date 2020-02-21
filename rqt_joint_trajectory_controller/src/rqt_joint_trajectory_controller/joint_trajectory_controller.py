@@ -121,6 +121,8 @@ class JointTrajectoryController(Plugin):
                                'joint_trajectory_controller.ui')
         loadUi(ui_file, self._widget)
         self._widget.setObjectName('JointTrajectoryControllerUi')
+        ns = rospy.get_namespace()[1:-1]
+        self._widget.controller_group.setTitle('ns: ' + ns)
 
         # Setup speed scaler
         speed_scaling = DoubleEditor(1.0, 100.0)
@@ -361,6 +363,7 @@ class JointTrajectoryController(Plugin):
         # Clear joint widgets
         # NOTE: Implementation is a workaround for:
         # https://bugreports.qt-project.org/browse/QTBUG-15990 :(
+					
         layout = self._widget.joint_group.layout()
         if layout is not None:
             while layout.count():

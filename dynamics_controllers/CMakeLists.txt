@@ -11,6 +11,7 @@ find_package(orocos_kdl REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   controller_interface
   kdl_parser
+  pluginlib
 )
 
 # Declare catkin package
@@ -22,6 +23,7 @@ catkin_package(
   CATKIN_DEPENDS
     controller_interface
     kdl_parser
+    pluginlib
 )
 
 include_directories(include ${orocos_kdl_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})

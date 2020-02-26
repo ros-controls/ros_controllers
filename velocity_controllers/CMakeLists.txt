@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   forward_command_controller
   realtime_tools
   urdf
+  pluginlib
 )
 
 # Declare catkin package

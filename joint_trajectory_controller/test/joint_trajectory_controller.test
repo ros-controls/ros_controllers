@@ -37,5 +37,5 @@
         pkg="joint_trajectory_controller"
         type="joint_trajectory_controller_test"
         args='--gtest_filter="$(arg gtest_filter)"'
-        time-limit="85.0"/>
+        time-limit="250.0"/>
 </launch>

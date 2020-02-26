@@ -13,8 +13,3 @@
 
 # OSX Files
 .DS_Store
-
-# We had to disable manifest.xml in all packages because of a package naming conflict
-# See issue https://github.com/ros-controls/ros_control/issues/101#issuecomment-21781620
-# and issue http://answers.gazebosim.org/question/4134/installing-gazebo-19-on-ros-groovy/?answer=4138#post-id-4138
-manifest.xml

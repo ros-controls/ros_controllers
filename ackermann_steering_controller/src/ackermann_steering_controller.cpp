@@ -59,7 +59,7 @@ static bool isCylinder(const urdf::LinkConstSharedPtr& link)
 {
   if (!link)
   {
-    ROS_ERROR("Link == NULL.");
+    ROS_ERROR("Link pointer is null.");
     return false;
   }
 

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2015, Locus Robotics Corp.
+// Copyright (C) 2013, PAL Robotics S.L.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -8,7 +8,7 @@
 //   * Redistributions in binary form must reproduce the above copyright
 //     notice, this list of conditions and the following disclaimer in the
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of PAL Robotics, Inc. nor the names of its
+//   * Neither the name of PAL Robotics S.L. nor the names of its
 //     contributors may be used to endorse or promote products derived from
 //     this software without specific prior written permission.
 //
@@ -25,50 +25,41 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-/// \author Eric Tappan
-/// \author Masaru Morita
+/// \author Immanuel Martini
 
-#include "../common/include/test_common.h"
-#include <tf/transform_listener.h>
+#include <functional>
+#include <string>
 
-// TEST CASES
-TEST_F(AckermannSteeringControllerTest, testOdomFrame)
+#include <ros/ros.h>
+
+#include <gtest/gtest.h>
+
+#include "test_common.h"
+
+namespace joint_trajectory_controller_tests
 {
-  // wait for ROS
-  while(!isControllerAlive())
+AssertionResult waitForEvent(const std::function<bool()>& check_event,
+                             const std::string& event_description,
+                             const ros::Duration& timeout,
+                             unsigned int repeat)
+{
+  unsigned int count = 0;
+  ros::Time start_time = ros::Time::now();
+  while (ros::ok())
   {
+    count = check_event() ? (count+1) : 0;
+    if ((ros::Time::now() - start_time) > timeout)
+    {
+      return AssertionFailure() << "Timed out after " << timeout.toSec() << "s waiting for "
+                                << event_description << ".";
+    }
     ros::Duration(0.1).sleep();
+    if (count == repeat)
+    {
+      return AssertionSuccess();
+    }
   }
-  // set up tf listener
-  tf::TransformListener listener;
-  ros::Duration(2.0).sleep();
-  // check the original odom frame doesn't exist
-  EXPECT_TRUE(listener.frameExists("odom"));
+  return AssertionFailure() << "ROS shutdown.";
 }
 
-TEST_F(AckermannSteeringControllerTest, testOdomTopic)
-{
-  // wait for ROS
-  while(!isControllerAlive() || !isLastOdomValid())
-  {
-    ros::Duration(0.1).sleep();
-  }
-
-  // get an odom message
-  nav_msgs::Odometry odom_msg = getLastOdom();
-  // check its frame_id
-  ASSERT_STREQ(odom_msg.header.frame_id.c_str(), "odom");
-}
-
-int main(int argc, char** argv)
-{
-  testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "ackermann_steering_controller_default_odom_frame_test");
-
-  ros::AsyncSpinner spinner(1);
-  spinner.start();
-  int ret = RUN_ALL_TESTS();
-  spinner.stop();
-  ros::shutdown();
-  return ret;
-}
+}  // joint_trajectory_controller_tests

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(position_controllers)
 
 # Load catkin and all dependencies required for this package
-find_package(catkin REQUIRED COMPONENTS controller_interface forward_command_controller)
+find_package(catkin REQUIRED COMPONENTS controller_interface forward_command_controller pluginlib)
 
 # Declare catkin project
 catkin_package(

@@ -29,6 +29,7 @@
   <depend>roscpp</depend>
   <depend>trajectory_msgs</depend>
   <depend>urdf</depend>
+  <depend>pluginlib</depend>
 
   <test_depend>rostest</test_depend>
   <test_depend>controller_manager</test_depend>

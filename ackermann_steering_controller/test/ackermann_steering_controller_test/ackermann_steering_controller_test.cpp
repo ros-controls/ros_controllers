@@ -35,7 +35,7 @@
 TEST_F(AckermannSteeringControllerTest, testForward)
 {
   // wait for ROS
-  while(!isControllerAlive())
+  while(!isControllerAlive() || !isLastOdomValid())
   {
     ros::Duration(0.1).sleep();
   }

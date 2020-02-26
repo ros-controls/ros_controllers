@@ -52,13 +52,13 @@ static double euclideanOfVectors(const urdf::Vector3& vec1, const urdf::Vector3&
 /*
 * \brief Check that a link exists and has a geometry collision.
 * \param link The link
-* \return true if the link has a collision element with geometry 
+* \return true if the link has a collision element with geometry
 */
 static bool hasCollisionGeometry(const urdf::LinkConstSharedPtr& link)
 {
   if (!link)
   {
-    ROS_ERROR("Link == NULL.");
+    ROS_ERROR("Link pointer is null.");
     return false;
   }
 
@@ -136,7 +136,7 @@ static bool getWheelRadius(const urdf::LinkConstSharedPtr& wheel_link, double& w
     wheel_radius = (static_cast<urdf::Sphere*>(wheel_link->collision->geometry.get()))->radius;
     return true;
   }
-  
+
   ROS_ERROR_STREAM("Wheel link " << wheel_link->name << " is NOT modeled as a cylinder or sphere!");
   return false;
 }

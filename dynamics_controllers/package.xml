@@ -12,6 +12,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>controller_interface</depend>
+  <depend>controller_manager</depend>
   <depend>pluginlib</depend>
   <depend>orocos_kdl</depend>
   <depend>kdl_parser</depend>

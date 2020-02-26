@@ -10,6 +10,7 @@ find_package(orocos_kdl REQUIRED)
 # Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
   controller_interface
+  controller_manager
   kdl_parser
   pluginlib
 )

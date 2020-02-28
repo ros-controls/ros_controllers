@@ -138,12 +138,24 @@ namespace effort_controllers
         // Compute position error
         if (joint_urdfs_[i]->type == urdf::Joint::REVOLUTE)
         {
-         angles::shortest_angular_distance_with_limits(
-            current_position,
-            command_position,
-            joint_urdfs_[i]->limits->lower,
-            joint_urdfs_[i]->limits->upper,
-            error);
+          if(joint_urdfs_[i]->limits->upper - joint_urdfs_[i]->limits->lower >= 2*M_PI)
+          {
+            angles::shortest_angular_distance_with_large_limits(
+              current_position,
+              command_position,
+              joint_urdfs_[i]->limits->lower,
+              joint_urdfs_[i]->limits->upper,
+              error);
+          }
+          else
+          {
+            angles::shortest_angular_distance_with_limits(
+              current_position,
+              command_position,
+              joint_urdfs_[i]->limits->lower,
+              joint_urdfs_[i]->limits->upper,
+              error);
+          }
         }
         else if (joint_urdfs_[i]->type == urdf::Joint::CONTINUOUS)
         {
@@ -165,9 +177,9 @@ namespace effort_controllers
   void JointGroupPositionController::commandCB(const std_msgs::Float64MultiArrayConstPtr& msg)
   {
     if(msg->data.size()!=n_joints_)
-    { 
+    {
       ROS_ERROR_STREAM("Dimension of command (" << msg->data.size() << ") does not match number of joints (" << n_joints_ << ")! Not executing!");
-      return; 
+      return;
     }
     commands_buffer_.writeFromNonRT(msg->data);
   }

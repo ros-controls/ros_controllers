@@ -2,8 +2,8 @@
 Changelog for package gripper_action_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.15.1 (2020-03-09)
+-------------------
 * Use nullptr
 * add missing pluginlib deps.
 * Contributors: Bence Magyar, Matt Reynolds, Sean Yen

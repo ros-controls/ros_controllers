@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.15.1 (2020-03-09)
+-------------------
 * Fix instabilities in JTC unittests
 * Add test_common.h
 * Re-enable tolerance tests

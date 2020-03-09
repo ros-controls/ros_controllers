@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.15.1 (2020-03-09)
+-------------------
 * Use nullptr
 * add missing pluginlib deps.
 * Update null link pointer error message

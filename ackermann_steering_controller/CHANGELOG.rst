@@ -2,8 +2,8 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.15.1 (2020-03-09)
+-------------------
 * Fix test for ackermann_steering_controller
 * Use nullptr (`#447 <https://github.com/ros-controls/ros_controllers/issues/447>`_)
 * Update null link pointer error message

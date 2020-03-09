@@ -2,8 +2,8 @@
 Changelog for package four_wheel_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.15.1 (2020-03-09)
+-------------------
 * add missing pluginlib deps
 * Use C++11 `std::this_thread::sleep_for`.
 * add include directories for tests in {ackermann/four_wheel}_steering_controller

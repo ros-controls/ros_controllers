@@ -2,6 +2,23 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix instabilities in JTC unittests
+* Add test_common.h
+* Re-enable tolerance tests
+* Make initialization of variables consistent
+* Let getState() return by value
+* Use nullptr (`#447 <https://github.com/ros-controls/ros_controllers/issues/447>`_)
+* Comment out tolerance check tests until `#48 <https://github.com/ros-controls/ros_controllers/issues/48>`_ is solved.
+* Execution does not stop when goal gets aborted
+* Fix how we assert that controller is running
+* Introduce EPS for general double comparison
+* Make stopramp tests more stable
+* add missing pluginlib deps. (`#451 <https://github.com/ros-controls/ros_controllers/issues/451>`_)
+* Print error messages for all exceptions
+* Contributors: Bence Magyar, Ian Frosst, Immanuel Martini, Matt Reynolds, Sean Yen
+
 0.15.0 (2019-03-26)
 -------------------
 * Default all controller builds to C++14

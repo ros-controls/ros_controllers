@@ -2,6 +2,12 @@
 Changelog for package gripper_action_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use nullptr
+* add missing pluginlib deps.
+* Contributors: Bence Magyar, Matt Reynolds, Sean Yen
+
 0.15.0 (2019-03-26)
 -------------------
 * Default all controller builds to C++14

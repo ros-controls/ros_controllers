@@ -2,6 +2,15 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix test for ackermann_steering_controller
+* Use nullptr (`#447 <https://github.com/ros-controls/ros_controllers/issues/447>`_)
+* Update null link pointer error message
+* removed cyclic debug output from ackermann_steering_bot
+* add include directories for tests in {ackermann/four_wheel}_steering_controller
+* Contributors: Bence Magyar, Immanuel Martini, Mathias Lüdtke, Matt Reynolds
+
 0.15.0 (2019-03-26)
 -------------------
 * Default all controller builds to C++14

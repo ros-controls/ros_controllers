@@ -2,6 +2,13 @@
 Changelog for package four_wheel_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* add missing pluginlib deps
+* Use C++11 `std::this_thread::sleep_for`.
+* add include directories for tests in {ackermann/four_wheel}_steering_controller
+* Contributors: Davide Faconti, Mathias Lüdtke, Sean Yen
+
 0.15.0 (2019-03-26)
 -------------------
 * Default all controller builds to C++14

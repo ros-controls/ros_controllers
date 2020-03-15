@@ -33,11 +33,9 @@
 #include <limits>
 
 // TEST CASES
-TEST_F(DiffDriveControllerTest, testNaN)
-{
+TEST_F(DiffDriveControllerTest, testNaN) {
   // wait for ROS
-  while(!isControllerAlive())
-  {
+  while (!isControllerAlive()) {
     ros::Duration(0.1).sleep();
   }
   // zero everything before test
@@ -57,12 +55,12 @@ TEST_F(DiffDriveControllerTest, testNaN)
 
   nav_msgs::Odometry odom = getLastOdom();
 
-  EXPECT_NE(std::isnan(odom.twist.twist.linear.x), true);
-  EXPECT_NE(std::isnan(odom.twist.twist.angular.z), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.position.x), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.position.y), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.orientation.z), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.orientation.w), true);
+  EXPECT_FALSE(std::isnan(odom.twist.twist.linear.x));
+  EXPECT_FALSE(std::isnan(odom.twist.twist.angular.z));
+  EXPECT_FALSE(std::isnan(odom.pose.pose.position.x));
+  EXPECT_FALSE(std::isnan(odom.pose.pose.position.y));
+  EXPECT_FALSE(std::isnan(odom.pose.pose.orientation.z));
+  EXPECT_FALSE(std::isnan(odom.pose.pose.orientation.w));
 
   // start robot
   start();
@@ -70,19 +68,17 @@ TEST_F(DiffDriveControllerTest, testNaN)
 
   odom = getLastOdom();
 
-  EXPECT_NE(std::isnan(odom.twist.twist.linear.x), true);
-  EXPECT_NE(std::isnan(odom.twist.twist.angular.z), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.position.x), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.position.y), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.orientation.z), true);
-  EXPECT_NE(std::isnan(odom.pose.pose.orientation.w), true);
+  EXPECT_FALSE(std::isnan(odom.twist.twist.linear.x));
+  EXPECT_FALSE(std::isnan(odom.twist.twist.angular.z));
+  EXPECT_FALSE(std::isnan(odom.pose.pose.position.x));
+  EXPECT_FALSE(std::isnan(odom.pose.pose.position.y));
+  EXPECT_FALSE(std::isnan(odom.pose.pose.orientation.z));
+  EXPECT_FALSE(std::isnan(odom.pose.pose.orientation.w));
 }
 
-TEST_F(DiffDriveControllerTest, testNaNCmd)
-{
+TEST_F(DiffDriveControllerTest, testNaNCmd) {
   // wait for ROS
-  while(!isControllerAlive())
-  {
+  while (!isControllerAlive()) {
     ros::Duration(0.1).sleep();
   }
   // zero everything before test
@@ -93,29 +89,27 @@ TEST_F(DiffDriveControllerTest, testNaNCmd)
   ros::Duration(0.1).sleep();
 
   // send NaN
-  for(int i = 0; i < 10; ++i)
-  {
+  for (int i = 0; i < 10; ++i) {
     geometry_msgs::Twist cmd_vel;
     cmd_vel.linear.x = NAN;
     cmd_vel.angular.z = NAN;
     publish(cmd_vel);
     geometry_msgs::TwistStamped odom_msg = getLastCmdVelOut();
-    EXPECT_EQ(std::isnan(odom_msg.twist.linear.x), false);
-    EXPECT_EQ(std::isnan(odom_msg.twist.angular.z), false);
+    EXPECT_FALSE(std::isnan(odom_msg.twist.linear.x));
+    EXPECT_FALSE(std::isnan(odom_msg.twist.angular.z));
     ros::Duration(0.1).sleep();
   }
 
   nav_msgs::Odometry odom = getLastOdom();
-  EXPECT_EQ(odom.twist.twist.linear.x, 0.0);
-  EXPECT_EQ(odom.pose.pose.position.x, 0.0);
-  EXPECT_EQ(odom.pose.pose.position.y, 0.0);
+  EXPECT_DOUBLE_EQ(odom.twist.twist.linear.x, 0.0);
+  EXPECT_DOUBLE_EQ(odom.pose.pose.position.x, 0.0);
+  EXPECT_DOUBLE_EQ(odom.pose.pose.position.y, 0.0);
 
   geometry_msgs::TwistStamped odom_msg = getLastCmdVelOut();
-  EXPECT_EQ(fabs(odom_msg.twist.linear.x), 0);
+  EXPECT_DOUBLE_EQ(odom_msg.twist.linear.x, 0.0);
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
   ros::init(argc, argv, "diff_drive_nan_test");
 

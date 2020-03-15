@@ -2,6 +2,11 @@
   <!-- Load common test stuff -->
   <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
 
+  <rosparam>
+    diffbot_controller:
+      publish_cmd: True
+  </rosparam>
+
   <!-- Controller test -->
   <test test-name="diff_drive_nan_test"
         pkg="diff_drive_controller"
@@ -9,5 +14,6 @@
         time-limit="80.0">
     <remap from="cmd_vel" to="diffbot_controller/cmd_vel" />
     <remap from="odom" to="diffbot_controller/odom" />
+    <remap from="cmd_vel_out" to="diffbot_controller/cmd_vel_out" />
   </test>
 </launch>

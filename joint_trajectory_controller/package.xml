@@ -34,6 +34,7 @@
   <test_depend>rostest</test_depend>
   <test_depend>controller_manager</test_depend>
   <test_depend>xacro</test_depend>
+  <test_depend>code_coverage</test_depend>
 
   <export>
     <controller_interface plugin="${prefix}/ros_control_plugins.xml"/>

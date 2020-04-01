@@ -138,7 +138,7 @@ namespace effort_controllers
         // Compute position error
         if (joint_urdfs_[i]->type == urdf::Joint::REVOLUTE)
         {
-         angles::shortest_angular_distance_with_limits(
+          angles::shortest_angular_distance_with_large_limits(
             current_position,
             command_position,
             joint_urdfs_[i]->limits->lower,

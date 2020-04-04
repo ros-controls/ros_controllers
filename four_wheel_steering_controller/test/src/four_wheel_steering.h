@@ -61,26 +61,7 @@ public:
 
   void read()
   {
-    std::ostringstream os;
-    for (unsigned int i = 0; i < 3; ++i)
-    {
-      os << joints_[i].velocity_command << ", ";
-    }
-    os << joints_[3].velocity_command;
-
-    ROS_DEBUG_STREAM("Commands for joints: " << os.str());
-
-    os.str("");
-    for (unsigned int i = 0; i < 3; ++i)
-    {
-      os << steering_joints_[i].position_command << ", ";
-    }
-    os << steering_joints_[3].position_command;
-    ROS_DEBUG_STREAM("Commands for steering joints: " << os.str());
-  }
-
-  void write()
-  {
+    // Read the joint state of the robot into the hardware interface
     if (running_)
     {
       for (unsigned int i = 0; i < 4; ++i)
@@ -109,6 +90,28 @@ public:
         steering_joints_[i].velocity = std::numeric_limits<double>::quiet_NaN();
       }
     }
+  }
+
+  void write()
+  {
+    // Write the commands to the joints
+    std::ostringstream os;
+    for (unsigned int i = 0; i < 3; ++i)
+    {
+      os << joints_[i].velocity_command << ", ";
+    }
+    os << joints_[3].velocity_command;
+
+    ROS_DEBUG_STREAM("Commands for joints: " << os.str());
+
+    os.str("");
+    for (unsigned int i = 0; i < 3; ++i)
+    {
+      os << steering_joints_[i].position_command << ", ";
+    }
+    os << steering_joints_[3].position_command;
+    ROS_DEBUG_STREAM("Commands for steering joints: " << os.str());
+
   }
 
   bool start_callback(std_srvs::Empty::Request& /*req*/, std_srvs::Empty::Response& /*res*/)

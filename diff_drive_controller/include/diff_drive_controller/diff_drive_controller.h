@@ -234,8 +234,8 @@ namespace diff_drive_controller{
 
     /// Dynamic Reconfigure server
     typedef dynamic_reconfigure::Server<DiffDriveControllerConfig> ReconfigureServer;
-
     std::shared_ptr<ReconfigureServer> dyn_reconf_server_;
+    boost::recursive_mutex dyn_reconf_server_mutex_;
 
   private:
     /**

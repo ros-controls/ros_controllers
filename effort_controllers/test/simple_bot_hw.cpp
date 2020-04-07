@@ -26,8 +26,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 // ROS
+#include <chrono>
+#include <thread>
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>
+#include <rosgraph_msgs/Clock.h>
 
 // ros_control
 #include <controller_manager/controller_manager.h>
@@ -79,19 +82,30 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "simple_bot_hw");
   ros::NodeHandle nh;
   SimpleBot bot;
+  ros::Publisher clock_publisher = nh.advertise<rosgraph_msgs::Clock>("/clock", 1);
+  nh.setParam("/use_sim_time", true);
   controller_manager::ControllerManager cm(&bot, nh);
   ros::AsyncSpinner spinner(2);
   spinner.start();
 
   ros::Rate rate(1./bot.period);
   ros::Duration period(bot.period);
+  double sim_time = 0;
 
   // main "simulation"
   while(ros::ok()) {
+    auto begin = std::chrono::system_clock::now();
     bot.read();
-    cm.update(ros::Time::now(), period);
+    cm.update(ros::Time(sim_time), period);
     bot.write();
-    rate.sleep();
+    auto end = std::chrono::system_clock::now();
+    double elapsed = std::chrono::duration_cast<std::chrono::duration<double> >((end - begin)).count();
+    if(bot.period > elapsed)
+      std::this_thread::sleep_for(std::chrono::duration<double>(bot.period - elapsed));
+    rosgraph_msgs::Clock clock;
+    clock.clock = ros::Time(sim_time);
+    clock_publisher.publish(clock);
+    sim_time += bot.period;
   }
 
   spinner.stop();

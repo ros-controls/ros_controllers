@@ -59,7 +59,7 @@ install(FILES effort_controllers_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 if(CATKIN_ENABLE_TESTING)
-  find_package(catkin REQUIRED COMPONENTS controller_manager rostest)
+  find_package(catkin REQUIRED COMPONENTS controller_manager rosgraph_msgs rostest)
   include_directories(include ${catkin_INCLUDE_DIRS})
 
   add_executable(simple_bot_hw test/simple_bot_hw.cpp)

@@ -182,24 +182,12 @@ void JointPositionController::update(const ros::Time& time, const ros::Duration&
   // Compute position error
   if (joint_urdf_->type == urdf::Joint::REVOLUTE)
   {
-    if(joint_urdf_->limits->upper - joint_urdf_->limits->lower >= 2*M_PI)
-    {
-      angles::shortest_angular_distance_with_large_limits(
-        current_position,
-        command_position,
-        joint_urdf_->limits->lower,
-        joint_urdf_->limits->upper,
-        error);
-    }
-    else
-    {
-      angles::shortest_angular_distance_with_limits(
-        current_position,
-        command_position,
-        joint_urdf_->limits->lower,
-        joint_urdf_->limits->upper,
-        error);
-    }
+    angles::shortest_angular_distance_with_large_limits(
+      current_position,
+      command_position,
+      joint_urdf_->limits->lower,
+      joint_urdf_->limits->upper,
+      error);
   }
   else if (joint_urdf_->type == urdf::Joint::CONTINUOUS)
   {

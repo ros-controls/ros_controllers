@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<robot name="simple_bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <link name="world"/>
+
+  <link name="simple_bot">
+    <visual>
+      <geometry>
+        <box size="1 0.1 0.1"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="joint" type="revolute">
+    <parent link="world"/>
+    <child link="simple_bot"/>
+    <axis xyz="0 0 1"/>
+    <origin xyz="0 0 1"/>
+    <limit lower="-6.3" upper="6.3" effort="${1e6}" velocity="${1e4}"/>
+  </joint>
+
+  <transmission name="transimssion">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="motor">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+</robot>

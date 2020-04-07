@@ -1,0 +1,9 @@
+<launch>
+  <!-- Start the simulated hardware -->
+  <include file="$(find effort_controllers)/test/simple_bot_hw.launch" />
+
+  <!-- Test the position controller -->
+  <test time-limit="50.0" test-name="effort_position_controller_test" pkg="effort_controllers" type="effort_position_controller_test">
+    <remap from="command" to="/position_controller/command"/>
+  </test>
+</launch>

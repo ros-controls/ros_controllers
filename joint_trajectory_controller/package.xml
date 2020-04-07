@@ -1,7 +1,7 @@
 <package format="2">
   <name>joint_trajectory_controller</name>
   <description> Controller for executing joint-space trajectories on a group of joints. </description>
-  <version>0.15.0</version>
+  <version>0.15.1</version>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="mathias.luedtke@ipa.fraunhofer.de">Mathias Lüdtke</maintainer>
@@ -34,6 +34,7 @@
   <test_depend>rostest</test_depend>
   <test_depend>controller_manager</test_depend>
   <test_depend>xacro</test_depend>
+  <test_depend>code_coverage</test_depend>
 
   <export>
     <controller_interface plugin="${prefix}/ros_control_plugins.xml"/>

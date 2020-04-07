@@ -2,6 +2,12 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.15.1 (2020-03-09)
+-------------------
+* Fix tipo joint_state_plugin.xml (`#435 <https://github.com/ros-controls/ros_controllers/issues/435>`_)
+  - Remove "is" from "The joint state controller is publishes"
+* Contributors: Caio Amaral
+
 0.15.0 (2019-03-26)
 -------------------
 * Default all controller builds to C++14

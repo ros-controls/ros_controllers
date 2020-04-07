@@ -2,6 +2,9 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.15.1 (2020-03-09)
+-------------------
+
 0.15.0 (2019-03-26)
 -------------------
 * Default all controller builds to C++14

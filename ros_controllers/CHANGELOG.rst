@@ -2,6 +2,11 @@
 Changelog for package ros_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.15.1 (2020-03-09)
+-------------------
+* Remove rqt_joint_trajectory_controller from metapackage (`#443 <https://github.com/ros-controls/ros_controllers/issues/443>`_)
+* Contributors: Matt Reynolds
+
 0.15.0 (2019-03-26)
 -------------------
 

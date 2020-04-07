@@ -2,6 +2,15 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.15.1 (2020-03-09)
+-------------------
+* Use nullptr
+* add missing pluginlib deps.
+* Update null link pointer error message
+* Revert cmake include catkin_INCLUDE_DIRS as system
+* Use C++11 `std::this_thread::sleep_for`.
+* Contributors: Bence Magyar, Enrique Fernandez Perdomo, Matt Reynolds, Sean Yen
+
 0.15.0 (2019-03-26)
 -------------------
 * Default all controller builds to C++14

@@ -2,6 +2,11 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.15.1 (2020-03-09)
+-------------------
+* add missing pluginlib deps. (`#451 <https://github.com/ros-controls/ros_controllers/issues/451>`_)
+* Contributors: Sean Yen
+
 0.15.0 (2019-03-26)
 -------------------
 * fix install destination for libraries (`#403 <https://github.com/ros-controls/ros_controllers/issues/403>`_)

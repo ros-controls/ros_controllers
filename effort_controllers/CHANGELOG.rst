@@ -2,6 +2,12 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.15.1 (2020-03-09)
+-------------------
+* add missing pluginlib deps.
+* effort_controllers: fix minor typo in setGains doc
+* Contributors: G.A. vd. Hoorn, Sean Yen
+
 0.15.0 (2019-03-26)
 -------------------
 * Default all controller builds to C++14

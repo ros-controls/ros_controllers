@@ -39,7 +39,7 @@
 class SimpleBot : public hardware_interface::RobotHW
 {
 public:
-  static constexpr double period = 0.001;
+  static constexpr double period = 0.01;
 
   SimpleBot()
   : pos_(0)

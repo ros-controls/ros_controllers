@@ -21,7 +21,7 @@ protected:
     position = msg.position[0];
   }
 
-  bool waitToReachTarget(double target, double precision=5e-3) {
+  bool waitToReachTarget(double target, double precision=1e-2) {
     position = 1e3*precision + target; // make position != target
     ros::Rate rate(20);
     std_msgs::Float64 cmd;

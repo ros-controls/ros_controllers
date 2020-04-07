@@ -57,3 +57,18 @@ install(TARGETS ${PROJECT_NAME}
 
 install(FILES effort_controllers_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(catkin REQUIRED COMPONENTS controller_manager rostest)
+  include_directories(include ${catkin_INCLUDE_DIRS})
+
+  add_executable(simple_bot_hw test/simple_bot_hw.cpp)
+  target_link_libraries(simple_bot_hw ${catkin_LIBRARIES})
+  add_dependencies(tests simple_bot_hw)
+
+  add_rostest_gtest(effort_position_controller_test
+    test/effort_position_controller.test
+    test/simple_bot_goto_position.cpp
+  )
+  target_link_libraries(effort_position_controller_test ${catkin_LIBRARIES})
+endif()

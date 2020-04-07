@@ -1,4 +1,7 @@
 <launch>
+  <!-- Make sure simulated time is used -->
+  <param name="use_sim_time" value="true"/>
+
   <!-- URDF -->
   <param name="robot_description" command="$(find xacro)/xacro '$(find effort_controllers)/test/simple_bot.xacro'"/>
 

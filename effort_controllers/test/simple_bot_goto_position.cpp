@@ -21,16 +21,19 @@ protected:
     position = msg.position[0];
   }
 
-  bool waitToReachTarget(double target, double precision=1e-2) {
+  bool waitToReachTarget(double target, double precision=1e-2, double timeout=20) {
     position = 1e3*precision + target; // make position != target
     ros::Rate rate(20);
     std_msgs::Float64 cmd;
     cmd.data = target;
+    ros::Time start = ros::Time::now();
 
     while(ros::ok()) {
       pub.publish(cmd);
       if(std::fabs(target-position) < precision)
         return true;
+      if( (ros::Time::now()-start).toSec() > timeout )
+        return false;
       rate.sleep();
     }
 
@@ -52,6 +55,10 @@ protected:
 
 TEST_F(SimpleBotFixture, TestPosition) {
   ros::Duration(1.0).sleep();
+
+  ASSERT_TRUE(load.waitForExistence(ros::Duration(20)));
+  ASSERT_TRUE(unload.waitForExistence(ros::Duration(20)));
+  ASSERT_TRUE(start.waitForExistence(ros::Duration(20)));
 
   controller_manager_msgs::SwitchController switch_srv;
   switch_srv.request.start_controllers.push_back("position_controller");

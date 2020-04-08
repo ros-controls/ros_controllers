@@ -21,7 +21,7 @@ protected:
     position = msg.position[0];
   }
 
-  bool waitToReachTarget(double target, double precision=1e-2, double timeout=20) {
+  bool waitToReachTarget(double target, std::string& err, double precision=5e-2, double timeout=20) {
     position = 1e3*precision + target; // make position != target
     ros::Rate rate(20);
     std_msgs::Float64 cmd;
@@ -32,11 +32,14 @@ protected:
       pub.publish(cmd);
       if(std::fabs(target-position) < precision)
         return true;
-      if( (ros::Time::now()-start).toSec() > timeout )
+      if( (ros::Time::now()-start).toSec() > timeout ) {
+        err = "Timed out, target = " + std::to_string(target) + ", current = " + std::to_string(position);
         return false;
+      }
       rate.sleep();
     }
 
+    err = "ROS shutdwon, target = " + std::to_string(target) + ", current = " + std::to_string(position);
     return false;
   }
 
@@ -75,9 +78,10 @@ TEST_F(SimpleBotFixture, TestPosition) {
   ASSERT_TRUE(start.call(switch_srv));
   ASSERT_TRUE(switch_srv.response.ok);
 
-  ASSERT_TRUE(waitToReachTarget(1.0));
-  ASSERT_TRUE(waitToReachTarget(-1.0));
-  ASSERT_TRUE(waitToReachTarget(0.0));
+  std::string err;
+  ASSERT_TRUE(waitToReachTarget(1.0, err)) << err;
+  ASSERT_TRUE(waitToReachTarget(-1.0, err)) << err;
+  ASSERT_TRUE(waitToReachTarget(0.0, err)) << err;
 
   switch_srv.request.stop_controllers = switch_srv.request.start_controllers;
   switch_srv.request.start_controllers.clear();

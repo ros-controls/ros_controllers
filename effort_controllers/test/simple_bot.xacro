@@ -16,7 +16,7 @@
     <child link="simple_bot"/>
     <axis xyz="0 0 1"/>
     <origin xyz="0 0 1"/>
-    <limit lower="-6.3" upper="6.3" effort="${1e6}" velocity="${1e4}"/>
+    <limit lower="-6.3" upper="6.3" effort="10" velocity="2"/>
   </joint>
 
   <transmission name="transimssion">

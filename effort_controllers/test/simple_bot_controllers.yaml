@@ -5,4 +5,4 @@ joint_state_controller:
 position_controller:
   type: effort_controllers/JointPositionController
   joint: joint
-  pid: {p: 1.0, d: 2.05, i: 0.0}
+  pid: {p: 0.25, d: 1.0, i: 0.0}

@@ -11,6 +11,8 @@
   <!-- Robot hardware -->
   <node name="simple_bot_hw" pkg="effort_controllers" type="simple_bot_hw"/>
 
+  <!-- Start controllers -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen" args="position_controller joint_state_controller" />
   <!-- Just to see the robot in RViz for "visual debugging" -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 </launch>

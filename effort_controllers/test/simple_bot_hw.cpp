@@ -48,6 +48,7 @@ public:
   : pos_(0)
   , vel_(0)
   , eff_(0)
+  , max_eff_(10)
   {
     // joint state interface
     hardware_interface::JointStateHandle state_handle("joint", &pos_, &vel_, &eff_);
@@ -68,12 +69,17 @@ public:
   void write() {
     // store current command
     eff_ = cmd_;
+    if(std::fabs(eff_) > max_eff_) {
+      ROS_WARN("Large effort command received: %f; cutting down to % f", eff_, max_eff_);
+      eff_ = eff_ > 0 ? max_eff_ : -max_eff_;
+    }
   }
 
 private:
   hardware_interface::JointStateInterface state_interface_;
   hardware_interface::EffortJointInterface effort_interface_;
   double cmd_, pos_, vel_, eff_;
+  double max_eff_;
 };
 
 

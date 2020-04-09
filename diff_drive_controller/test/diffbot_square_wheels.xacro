@@ -55,12 +55,12 @@ Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF
 
 
   <!-- Wheels -->
-  <square_wheel name="wheel_0" parent="base" radius="${wheel_radius}">
+  <xacro:square_wheel name="wheel_0" parent="base" radius="${wheel_radius}">
     <origin xyz="${width/2+axel_offset} 0 0" rpy="${-90 * deg_to_rad} 0 0"/>
-  </square_wheel>
-  <square_wheel name="wheel_1" parent="base" radius="${wheel_radius}">
+  </xacro:square_wheel>
+  <xacro:square_wheel name="wheel_1" parent="base" radius="${wheel_radius}">
     <origin xyz="${-width/2+axel_offset} 0 0" rpy="${-90 * deg_to_rad} 0 0"/>
-  </square_wheel>
+  </xacro:square_wheel>
 
 
   <!-- Colour -->

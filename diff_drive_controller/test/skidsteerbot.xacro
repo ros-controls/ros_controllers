@@ -58,24 +58,24 @@ Robot model taken from http://wiki.ros.org/pr2_mechanism/Tutorials/SImple%20URDF
 
 
   <!-- Wheels -->
-  <wheel name="wheel_0" parent="base" radius="${wheel_radius}" thickness="${thickness}">
+  <xacro:wheel name="wheel_0" parent="base" radius="${wheel_radius}" thickness="${thickness}">
     <origin xyz="${width/2+axel_offset} ${y_offset} 0" rpy="${-90 * deg_to_rad} 0 0"/>
-  </wheel>
-  <wheel name="wheel_1" parent="base" radius="${wheel_radius}" thickness="${thickness}">
+  </xacro:wheel>
+  <xacro:wheel name="wheel_1" parent="base" radius="${wheel_radius}" thickness="${thickness}">
     <origin xyz="${width/2+axel_offset} 0 0" rpy="${-90 * deg_to_rad} 0 0"/>
-  </wheel>
-  <wheel name="wheel_2" parent="base" radius="${wheel_radius}" thickness="${thickness}">
+  </xacro:wheel>
+  <xacro:wheel name="wheel_2" parent="base" radius="${wheel_radius}" thickness="${thickness}">
     <origin xyz="${width/2+axel_offset} ${-y_offset} 0" rpy="${-90 * deg_to_rad} 0 0"/>
-  </wheel>
-  <wheel name="wheel_3" parent="base" radius="${wheel_radius}" thickness="${thickness}">
+  </xacro:wheel>
+  <xacro:wheel name="wheel_3" parent="base" radius="${wheel_radius}" thickness="${thickness}">
     <origin xyz="${-width/2+axel_offset} ${y_offset} 0" rpy="${-90 * deg_to_rad} 0 0"/>
-  </wheel>
-  <wheel name="wheel_4" parent="base" radius="${wheel_radius}" thickness="${thickness}">
+  </xacro:wheel>
+  <xacro:wheel name="wheel_4" parent="base" radius="${wheel_radius}" thickness="${thickness}">
     <origin xyz="${-width/2+axel_offset} 0 0" rpy="${-90 * deg_to_rad} 0 0"/>
-  </wheel>
-  <wheel name="wheel_5" parent="base" radius="${wheel_radius}" thickness="${thickness}">
+  </xacro:wheel>
+  <xacro:wheel name="wheel_5" parent="base" radius="${wheel_radius}" thickness="${thickness}">
     <origin xyz="${-width/2+axel_offset} ${-y_offset} 0" rpy="${-90 * deg_to_rad} 0 0"/>
-  </wheel>
+  </xacro:wheel>
 
 
   <!-- Colour -->

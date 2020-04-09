@@ -4,12 +4,12 @@
 
   <!-- Override robot_description with sphere wheel urdf -->
   <param name="robot_description"
-         command="$(find xacro)/xacro '$(find diff_drive_controller)/test/diffbot_sphere_wheels.xacro' --inorder" />
+         command="$(find xacro)/xacro '$(find diff_drive_controller)/test/diffbot_sphere_wheels.xacro'" />
   <!-- Set allow_multiple_publishers to false -->
   <param name="diffbot_controller/allow_multiple_cmd_vel_publishers" value="false"/>
 
   <node name="cmd_vel_publisher" pkg="rostopic" type="rostopic" args="pub -r 2 /diffbot_controller/cmd_vel geometry_msgs/Twist '{linear: {x: 1.0}}'" />
-  
+
   <node name="cmd_vel_publisher2" pkg="rostopic" type="rostopic" args="pub -r 2 /diffbot_controller/cmd_vel geometry_msgs/Twist '{linear: {x: 2.0}}'" />
 
   <!-- Controller test -->

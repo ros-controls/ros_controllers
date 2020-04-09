@@ -4,7 +4,7 @@
 
   <!-- load robot -->
   <param name="robot_description"
-      command="$(find xacro)/xacro '$(find ackermann_steering_controller)/test/common/urdf/ackermann_steering_bot.xacro' --inorder" />
+      command="$(find xacro)/xacro '$(find ackermann_steering_controller)/test/common/urdf/ackermann_steering_bot.xacro'" />
 
   <!-- Load controller config -->
   <rosparam command="load" file="$(find ackermann_steering_controller)/test/common/config/ackermann_steering_bot_controllers.yaml" />

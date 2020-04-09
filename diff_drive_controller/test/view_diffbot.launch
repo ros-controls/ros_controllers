@@ -4,7 +4,7 @@
 
   <!-- load robot -->
   <param name="robot_description"
-         command="$(find xacro)/xacro '$(find diff_drive_controller)/test/diffbot.xacro' --inorder" />
+         command="$(find xacro)/xacro '$(find diff_drive_controller)/test/diffbot.xacro'" />
 
   <!-- Start diffbot -->
   <node name="diffbot"
@@ -23,4 +23,3 @@
   <node name="spawn_single_link" pkg="gazebo" type="spawn_model" args="-urdf -param robot_description -model diffbot -z 0.5" respawn="false" output="screen" />
 
 </launch>
-

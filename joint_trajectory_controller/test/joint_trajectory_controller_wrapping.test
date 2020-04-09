@@ -4,7 +4,7 @@
 
   <!-- Load RRbot model -->
   <param name="robot_description"
-      command="$(find xacro)/xacro.py '$(find joint_trajectory_controller)/test/rrbot.xacro'" />
+      command="$(find xacro)/xacro '$(find joint_trajectory_controller)/test/rrbot.xacro'" />
 
   <!-- Start RRbot -->
   <node name="rrbot_wrapping"

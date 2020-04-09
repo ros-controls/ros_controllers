@@ -27,8 +27,8 @@
 
 /// \author Immanuel Martini
 
-#ifndef JOINT_TRAJECTORY_CONTROLLER_TEST_COMMON_H
-#define JOINT_TRAJECTORY_CONTROLLER_TEST_COMMON_H
+#pragma once
+
 
 #include <ros/ros.h>
 
@@ -144,5 +144,3 @@ AssertionResult waitForActionGoalState(const std::shared_ptr<SimpleActionClient<
 }
 
 }  // namespace joint_trajectory_controller_tests
-
-#endif  // JOINT_TRAJECTORY_CONTROLLER_TEST_COMMON_H

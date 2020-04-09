@@ -4,7 +4,7 @@
 
   <!-- Load four_wheel_steering model -->
   <param name="robot_description"
-         command="$(find xacro)/xacro --inorder '$(find four_wheel_steering_controller)/test/urdf/four_wheel_steering.urdf.xacro'" />
+         command="$(find xacro)/xacro '$(find four_wheel_steering_controller)/test/urdf/four_wheel_steering.urdf.xacro'" />
 
   <!-- Start four_wheel_steering -->
   <node name="four_wheel_steering"

@@ -4,7 +4,7 @@
 
   <!-- Override robot_description with bad urdf -->
   <param name="robot_description"
-      command="$(find xacro)/xacro '$(find ackermann_steering_controller)/test/common/urdf/ackermann_steering_bot_sphere_wheels.xacro' --inorder" />
+      command="$(find xacro)/xacro '$(find ackermann_steering_controller)/test/common/urdf/ackermann_steering_bot_sphere_wheels.xacro'" />
   <!-- Don't provide the radius parameter, so the controller should break -->
   <!-- <param name="diffbot_controller/wheel_radius" value="0.11"/> -->
 

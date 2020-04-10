@@ -59,16 +59,35 @@ install(FILES effort_controllers_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 if(CATKIN_ENABLE_TESTING)
-  find_package(catkin REQUIRED COMPONENTS controller_manager rosgraph_msgs rostest)
-  include_directories(include ${catkin_INCLUDE_DIRS})
+  find_package(rostest REQUIRED)
+  find_package(controller_manager REQUIRED)
+  find_package(controller_manager_msgs REQUIRED)
+  find_package(rosgraph_msgs REQUIRED)
+  find_package(sensor_msgs REQUIRED)
+  find_package(std_msgs REQUIRED)
+
+  include_directories(
+    ${controller_manager_INCLUDE_DIRS}
+    ${hardware_interface_INCLUDE_DIRS}
+    ${rosgraph_msgs_INCLUDE_DIRS}
+    ${sensor_msgs_INCLUDE_DIRS}
+    ${std_msgs_INCLUDE_DIRS}
+  )
 
   add_executable(simple_bot_hw test/simple_bot_hw.cpp)
-  target_link_libraries(simple_bot_hw ${catkin_LIBRARIES})
+  target_link_libraries(simple_bot_hw
+    ${catkin_LIBRARIES}
+    ${controller_manager_LIBRARIES}
+    ${hardware_interface_LIBRARIES}
+  )
   add_dependencies(tests simple_bot_hw)
 
   add_rostest_gtest(effort_position_controller_test
     test/effort_position_controller.test
     test/simple_bot_goto_position.cpp
   )
-  target_link_libraries(effort_position_controller_test ${catkin_LIBRARIES})
+  target_link_libraries(
+    effort_position_controller_test
+    ${catkin_LIBRARIES}
+  )
 endif()

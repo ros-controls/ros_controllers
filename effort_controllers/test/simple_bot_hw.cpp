@@ -64,6 +64,7 @@ public:
   , vel_(0.0)
   , eff_(0.0)
   , max_eff_(10.0)
+  , cmd_(0.0)
   {
     // joint state interface
     hardware_interface::JointStateHandle state_handle("joint", &pos_, &vel_, &eff_);

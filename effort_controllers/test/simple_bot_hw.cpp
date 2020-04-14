@@ -1,8 +1,6 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2008, Willow Garage, Inc.
- *  Copyright (c) 2012, hiDOF, Inc.
  *  Copyright (c) 2020, Franco Fusco.
  *  All rights reserved.
  *
@@ -34,9 +32,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/*
- Author: Franco Fusco
-*/
 
 #include <chrono>
 #include <cmath>

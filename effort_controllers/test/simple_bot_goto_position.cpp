@@ -1,8 +1,6 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2008, Willow Garage, Inc.
- *  Copyright (c) 2012, hiDOF, Inc.
  *  Copyright (c) 2020, Franco Fusco.
  *  All rights reserved.
  *
@@ -34,9 +32,6 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/*
- Author: Franco Fusco
-*/
 
 #include <gtest/gtest.h>
 #include <ros/ros.h>
@@ -90,9 +85,9 @@ protected:
 TEST_F(SimpleBotFixture, TestPosition) {
   ros::Duration(1.0).sleep();
   std::string err;
-  ASSERT_TRUE(waitToReachTarget(1.0, err)) << err;
-  ASSERT_TRUE(waitToReachTarget(-1.0, err)) << err;
-  ASSERT_TRUE(waitToReachTarget(0.0, err)) << err;
+  EXPECT_TRUE(waitToReachTarget(1.0, err)) << err;
+  EXPECT_TRUE(waitToReachTarget(-1.0, err)) << err;
+  EXPECT_TRUE(waitToReachTarget(0.0, err)) << err;
 }
 
 

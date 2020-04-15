@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(imu_sensor_controller)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  CATKIN_DEPENDS 
+  CATKIN_DEPENDS
     controller_interface
     hardware_interface
     pluginlib
@@ -25,7 +25,7 @@ catkin_package(
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME}
-  src/imu_sensor_controller.cpp 
+  src/imu_sensor_controller.cpp
   include/imu_sensor_controller/imu_sensor_controller.h)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(force_torque_sensor_controller)
 
 # Load catkin and all dependencies required for this package
@@ -27,7 +27,7 @@ catkin_package(
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME}
-  src/force_torque_sensor_controller.cpp 
+  src/force_torque_sensor_controller.cpp
   include/force_torque_sensor_controller/force_torque_sensor_controller.h
 )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})

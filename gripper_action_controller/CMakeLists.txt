@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(gripper_action_controller)
 
 # Default to C++14
@@ -6,7 +6,7 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
 endif()
 
-find_package(catkin 
+find_package(catkin
   REQUIRED COMPONENTS
       actionlib
       angles
@@ -27,12 +27,12 @@ find_package(catkin
 catkin_package(
 INCLUDE_DIRS include
 LIBRARIES gripper_action_controller
-CATKIN_DEPENDS 
-  actionlib 
-  cmake_modules 
-  controller_interface 
-  control_msgs 
-  hardware_interface 
+CATKIN_DEPENDS
+  actionlib
+  cmake_modules
+  controller_interface
+  control_msgs
+  hardware_interface
   realtime_tools
   trajectory_msgs
 )

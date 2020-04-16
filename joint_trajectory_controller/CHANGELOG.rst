@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.16.0 (2020-04-16)
+-------------------
 * Bump CMake version to prevent CMP0048
 * Add #pragma once to new joint_trajectory_controller test
 * Replace header guard with #pragma once

@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.16.0 (2020-04-16)
+-------------------
 * Fix warning dynamic_reconfigure
 * Bump CMake version to prevent CMP0048
 * Add missing header guards

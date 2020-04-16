@@ -2,8 +2,8 @@
 Changelog for package imu_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.16.0 (2020-04-16)
+-------------------
 * Bump CMake version to prevent CMP0048
 * Replace header guard with #pragma once
 * Contributors: Matt Reynolds

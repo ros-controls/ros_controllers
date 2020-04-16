@@ -2,8 +2,8 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.16.0 (2020-04-16)
+-------------------
 * Added test for position controller
 * Solving issues with large rotational limits
 * Bump CMake version to prevent CMP0048

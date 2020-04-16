@@ -2,8 +2,8 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.16.0 (2020-04-16)
+-------------------
 * Assuming lower limits are smaller than upper limits
 * Solving issues with large rotational limits
 * Bump CMake version to prevent CMP0048

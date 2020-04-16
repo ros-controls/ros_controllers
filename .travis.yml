@@ -1,26 +1,25 @@
 # This config file for Travis CI utilizes ros-industrial/industrial_ci package.
 # For more info for the package, see https://github.com/ros-industrial/industrial_ci/blob/master/README.rst
-dist: trusty
+language: generic
 services:
   - docker
-language: generic
+
 notifications:
   email:
-    on_success: change
-    on_failure: change
     recipients:
       - enrique.fernandez.perdomo@gmail.com
       - bence.magyar.robotics@gmail.com
       - gm130s@gmail.com
+    on_success: change #[always|never|change] # default: change
+    on_failure: change #[always|never|change] # default: always
+
 env:
-  global:
-    - CATKIN_PARALLEL_TEST_JOBS=-p1
-    - ROS_PARALLEL_TEST_JOBS=-j1
   matrix:
     - ROS_DISTRO=melodic  ROS_REPO=ros
     - ROS_DISTRO=melodic  ROS_REPO=ros-testing
-    - ROS_DISTRO=melodic  UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall
+    - ROS_DISTRO=melodic  UPSTREAM_WORKSPACE='https://raw.githubusercontent.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall -ros_controllers'
+
 install:
-  - git clone --depth=1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci
+  - git clone --quiet --depth 1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci -b master
 script:
   - .industrial_ci/travis.sh

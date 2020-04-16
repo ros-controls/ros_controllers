@@ -2,6 +2,20 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Bump CMake version to prevent CMP0048
+* Add missing header guards
+* Replace header guard with #pragma once
+* Prefix every xacro tag with 'xacro:'
+* Modernize xacro
+  - Remove '--inorder'
+  - Use 'xacro' over 'xacro.py'
+* swap implementations of read and write methods
+  Follows the intended use of hardware_interface::RobotHW,
+  see its documentation for details
+* Contributors: Franz, Matt Reynolds
+
 0.15.1 (2020-03-09)
 -------------------
 * Fix test for ackermann_steering_controller

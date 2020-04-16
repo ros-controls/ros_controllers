@@ -2,6 +2,12 @@
 Changelog for package position_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Bump CMake version to prevent CMP0048
+* Replace header guard with #pragma once
+* Contributors: Matt Reynolds
+
 0.15.1 (2020-03-09)
 -------------------
 * add missing pluginlib deps. (`#451 <https://github.com/ros-controls/ros_controllers/issues/451>`_)

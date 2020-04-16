@@ -2,6 +2,16 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added test for position controller
+* Solving issues with large rotational limits
+* Bump CMake version to prevent CMP0048
+* Replace header guard with #pragma once
+* fix minor typo in documentation of setGains method
+  Changes Get to Set of setGains method documentation
+* Contributors: Bence Magyar, F Pucher, Franco Fusco, Matt Reynolds
+
 0.15.1 (2020-03-09)
 -------------------
 * add missing pluginlib deps.

@@ -2,6 +2,24 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix warning dynamic_reconfigure
+* Bump CMake version to prevent CMP0048
+* Add missing header guards
+* Replace header guard with #pragma once
+* Prefix every xacro tag with 'xacro:'
+* Modernize xacro
+  - Remove '--inorder'
+  - Use 'xacro' over 'xacro.py'
+* switch implementation of read and write methods of Diffbot class
+* Refactor nan test
+  EXPECT_NE(x, bool) -> EXPECT_TRUE/FALSE(x)
+  EXPECT_EQ(x, double) -> EXPECT_DOUBLE_EQ(x, double)
+  + clang default reformat
+* Check for nan cmd_vel
+* Contributors: Anas Abou Allaban, Bence Magyar, Franz, Matt Reynolds, Raffaello Bonghi
+
 0.15.1 (2020-03-09)
 -------------------
 * Use nullptr

@@ -2,6 +2,17 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Bump CMake version to prevent CMP0048
+* Add #pragma once to new joint_trajectory_controller test
+* Replace header guard with #pragma once
+* Modernize xacro
+  - Remove '--inorder'
+  - Use 'xacro' over 'xacro.py'
+* Add code_coverage target to CMakeLists.txt
+* Contributors: Bence Magyar, Immanuel Martini, Matt Reynolds
+
 0.15.1 (2020-03-09)
 -------------------
 * Fix instabilities in JTC unittests

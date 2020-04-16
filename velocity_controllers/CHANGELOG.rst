@@ -2,6 +2,14 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Assuming lower limits are smaller than upper limits
+* Solving issues with large rotational limits
+* Bump CMake version to prevent CMP0048
+* Replace header guard with #pragma once
+* Contributors: Franco Fusco, Matt Reynolds
+
 0.15.1 (2020-03-09)
 -------------------
 * add missing pluginlib deps. (`#451 <https://github.com/ros-controls/ros_controllers/issues/451>`_)

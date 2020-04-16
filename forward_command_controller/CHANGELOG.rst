@@ -2,6 +2,12 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Bump CMake version to prevent CMP0048
+* Replace header guard with #pragma once
+* Contributors: Matt Reynolds
+
 0.15.1 (2020-03-09)
 -------------------
 

@@ -87,6 +87,19 @@ if(CATKIN_ENABLE_TESTING)
   catkin_add_gtest(init_joint_trajectory_test test/init_joint_trajectory_test.cpp)
   target_link_libraries(init_joint_trajectory_test ${catkin_LIBRARIES})
 
+  catkin_add_gtest(trajectory_builder_test test/trajectory_builder_test.cpp)
+  target_link_libraries(trajectory_builder_test ${catkin_LIBRARIES})
+
+  catkin_add_gtest(hold_trajectory_builder_test
+                   test/hold_trajectory_builder_test.cpp
+                   test/test_common.cpp)
+  target_link_libraries(hold_trajectory_builder_test ${catkin_LIBRARIES})
+
+  catkin_add_gtest(stop_trajectory_builder_test
+                   test/stop_trajectory_builder_test.cpp
+                   test/test_common.cpp)
+  target_link_libraries(stop_trajectory_builder_test ${catkin_LIBRARIES})
+
   add_rostest_gtest(tolerances_test
                   test/tolerances.test
                   test/tolerances_test.cpp)

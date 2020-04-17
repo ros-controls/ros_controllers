@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add extension point in update function
+* Refactor trajectory building
+* Contributors: Pilz GmbH and Co. KG
+
 0.16.0 (2020-04-16)
 -------------------
 * Bump CMake version to prevent CMP0048

@@ -31,7 +31,6 @@
 
   <!--Tests-->
   <test_depend>controller_manager</test_depend>
-  <test_depend>gazebo_ros</test_depend>
   <test_depend>geometry_msgs</test_depend>
   <test_depend>rosunit</test_depend>
   <test_depend>rostest</test_depend>

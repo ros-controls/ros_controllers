@@ -60,7 +60,7 @@ if (CATKIN_ENABLE_TESTING)
     rosunit
     std_msgs
     std_srvs
-    gazebo_ros
+    tf
     xacro
   )
   include_directories(${catkin_INCLUDE_DIRS})

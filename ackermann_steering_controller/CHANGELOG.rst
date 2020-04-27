@@ -2,8 +2,8 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.16.1 (2020-04-27)
+-------------------
 * Remove gazebo_ros test dependency
 * Contributors: Bence Magyar
 

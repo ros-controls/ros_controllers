@@ -198,11 +198,13 @@ protected:
 
   typename Segment::State current_state_;         ///< Preallocated workspace variable.
   typename Segment::State desired_state_;         ///< Preallocated workspace variable.
+  typename Segment::State old_desired_state_;     ///< Preallocated workspace variable.
   typename Segment::State state_error_;           ///< Preallocated workspace variable.
   typename Segment::State desired_joint_state_;   ///< Preallocated workspace variable.
   typename Segment::State state_joint_error_;     ///< Preallocated workspace variable.
 
   realtime_tools::RealtimeBuffer<TimeData> time_data_;
+  TimeData old_time_data_;
 
   ros::Duration state_publisher_period_;
   ros::Duration action_monitor_period_;

@@ -367,13 +367,11 @@ update(const ros::Time& time, const ros::Duration& period)
   // fetch the currently followed trajectory, it has been updated by the non-rt thread with something that starts in the
   // next control cycle, leaving the current cycle without a valid trajectory.
 
+  updateStates(time_data.uptime, curr_traj_ptr.get());
+
   // Update current state and state error
   for (unsigned int i = 0; i < getNumberOfJoints(); ++i)
   {
-    current_state_.position[i] = joints_[i].getPosition();
-    current_state_.velocity[i] = joints_[i].getVelocity();
-    // There's no acceleration data available in a joint handle
-
     typename TrajectoryPerJoint::const_iterator segment_it = sample(curr_traj[i], time_data.uptime.toSec(), desired_joint_state_);
     if (curr_traj[i].end() == segment_it)
     {
@@ -382,17 +380,6 @@ update(const ros::Time& time, const ros::Duration& period)
                       "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
       return;
     }
-    desired_state_.position[i] = desired_joint_state_.position[0];
-    desired_state_.velocity[i] = desired_joint_state_.velocity[0];
-    desired_state_.acceleration[i] = desired_joint_state_.acceleration[0]; ;
-
-    state_joint_error_.position[0] = angles::shortest_angular_distance(current_state_.position[i],desired_joint_state_.position[0]);
-    state_joint_error_.velocity[0] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
-    state_joint_error_.acceleration[0] = 0.0;
-
-    state_error_.position[i] = angles::shortest_angular_distance(current_state_.position[i],desired_joint_state_.position[0]);
-    state_error_.velocity[i] = desired_joint_state_.velocity[0] - current_state_.velocity[i];
-    state_error_.acceleration[i] = 0.0;
 
     //Check tolerances
     const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
@@ -802,6 +789,32 @@ inline unsigned int JointTrajectoryController<SegmentImpl, HardwareInterface>::
 getNumberOfJoints() const
 {
   return joints_.size();
+}
+
+template <class SegmentImpl, class HardwareInterface>
+void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+updateStates(const ros::Time& sample_time, const Trajectory* const traj)
+{
+  for (unsigned int joint_index = 0; joint_index < getNumberOfJoints(); ++joint_index)
+  {
+    sample( (*traj)[joint_index], sample_time.toSec(), desired_joint_state_);
+
+    current_state_.position[joint_index] = joints_[joint_index].getPosition();
+    current_state_.velocity[joint_index] = joints_[joint_index].getVelocity();
+    // There's no acceleration data available in a joint handle
+
+    desired_state_.position[joint_index] = desired_joint_state_.position[0];
+    desired_state_.velocity[joint_index] = desired_joint_state_.velocity[0];
+    desired_state_.acceleration[joint_index] = desired_joint_state_.acceleration[0]; ;
+
+    state_joint_error_.position[0] = angles::shortest_angular_distance(current_state_.position[joint_index],desired_joint_state_.position[0]);
+    state_joint_error_.velocity[0] = desired_joint_state_.velocity[0] - current_state_.velocity[joint_index];
+    state_joint_error_.acceleration[0] = 0.0;
+
+    state_error_.position[joint_index] = state_joint_error_.position[0];
+    state_error_.velocity[joint_index] = state_joint_error_.velocity[0];
+    state_error_.acceleration[joint_index] = 0.0;
+  }
 }
 
 template <class SegmentImpl, class HardwareInterface>

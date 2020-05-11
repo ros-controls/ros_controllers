@@ -271,6 +271,17 @@ protected:
 
 private:
   /**
+   * @brief Allows derived classes to perform additional checks
+   * and to e.g. replace the newly calculated desired value before
+   * the hardware interface is finally updated.
+   *
+   * @param curr_traj The trajectory that is executed during the current update.
+   * @param time_data Updated time data.
+   */
+  virtual void updateFuncExtensionPoint(const Trajectory& curr_traj, const TimeData& time_data);
+
+private:
+  /**
    * @brief Updates the pre-allocated feedback of the current active goal (if any)
    * based on the current state values.
    *

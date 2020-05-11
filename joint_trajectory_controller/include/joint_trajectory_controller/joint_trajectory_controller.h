@@ -73,6 +73,8 @@
 #include <joint_trajectory_controller/joint_trajectory_segment.h>
 #include <joint_trajectory_controller/init_joint_trajectory.h>
 #include <joint_trajectory_controller/hardware_interface_adapter.h>
+#include <joint_trajectory_controller/hold_trajectory_builder.h>
+#include <joint_trajectory_controller/stop_trajectory_builder.h>
 
 namespace joint_trajectory_controller
 {
@@ -203,6 +205,8 @@ protected:
   typename Segment::State desired_joint_state_;   ///< Preallocated workspace variable.
   typename Segment::State state_joint_error_;     ///< Preallocated workspace variable.
 
+  std::unique_ptr<TrajectoryBuilder<SegmentImpl> > hold_traj_builder_;
+
   realtime_tools::RealtimeBuffer<TimeData> time_data_;
   TimeData old_time_data_;
 
@@ -268,6 +272,13 @@ protected:
    * update-function.
    */
   void updateStates(const ros::Time& sample_time, const Trajectory* const traj);
+
+protected:
+  /**
+   * @brief Returns a trajectory consisting of joint trajectories with one pre-allocated
+   * segment.
+   */
+  static TrajectoryPtr createHoldTrajectory(const unsigned int& number_of_joints);
 
 private:
   /**

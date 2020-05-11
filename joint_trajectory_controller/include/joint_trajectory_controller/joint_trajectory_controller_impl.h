@@ -307,6 +307,7 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
 
   // Preeallocate resources
   current_state_       = typename Segment::State(n_joints);
+  old_desired_state_   = typename Segment::State(n_joints);
   desired_state_       = typename Segment::State(n_joints);
   state_error_         = typename Segment::State(n_joints);
   desired_joint_state_ = typename Segment::State(1);
@@ -352,11 +353,13 @@ update(const ros::Time& time, const ros::Duration& period)
   curr_trajectory_box_.get(curr_traj_ptr);
   Trajectory& curr_traj = *curr_traj_ptr;
 
+  old_time_data_ = *(time_data_.readFromRT());
+
   // Update time data
   TimeData time_data;
   time_data.time   = time;                                     // Cache current time
   time_data.period = period;                                   // Cache current control period
-  time_data.uptime = time_data_.readFromRT()->uptime + period; // Update controller uptime
+  time_data.uptime = old_time_data_.uptime + period; // Update controller uptime
   time_data_.writeFromNonRT(time_data); // TODO: Grrr, we need a lock-free data structure here!
 
   // NOTE: It is very important to execute the two above code blocks in the specified sequence: first get current
@@ -795,6 +798,8 @@ template <class SegmentImpl, class HardwareInterface>
 void JointTrajectoryController<SegmentImpl, HardwareInterface>::
 updateStates(const ros::Time& sample_time, const Trajectory* const traj)
 {
+  old_desired_state_ = desired_state_;
+
   for (unsigned int joint_index = 0; joint_index < getNumberOfJoints(); ++joint_index)
   {
     sample( (*traj)[joint_index], sample_time.toSec(), desired_joint_state_);

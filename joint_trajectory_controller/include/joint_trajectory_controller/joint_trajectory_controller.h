@@ -252,6 +252,21 @@ protected:
    */
   unsigned int getNumberOfJoints() const;
 
+  /**
+   * @brief Updates the states by sampling the specified trajectory for each joint
+   * at the specified sampling time.
+   *
+   * The current state is updated based on the values transmitted by the
+   * corresponding JointHandles.
+   *
+   * @param sample_time Time point at which the joint trajectories have to be sampled.
+   * @param traj Trajectory containing all joint trajectories currently under execution.
+   *
+   * @note This function is NOT thread safe but intended to be used in the
+   * update-function.
+   */
+  void updateStates(const ros::Time& sample_time, const Trajectory* const traj);
+
 private:
   /**
    * @brief Updates the pre-allocated feedback of the current active goal (if any)

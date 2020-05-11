@@ -139,7 +139,7 @@ starting(const ros::Time& time)
   time_data_.initRT(time_data);
 
   // Initialize the desired_state with the current state on startup
-  for (unsigned int i = 0; i < joints_.size(); ++i)
+  for (unsigned int i = 0; i < getNumberOfJoints(); ++i)
   {
     desired_state_.position[i] = joints_[i].getPosition();
     desired_state_.velocity[i] = joints_[i].getVelocity();
@@ -276,7 +276,7 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
 
   assert(joints_.size() == angle_wraparound_.size());
   ROS_DEBUG_STREAM_NAMED(name_, "Initialized controller '" << name_ << "' with:" <<
-                         "\n- Number of joints: " << joints_.size() <<
+                         "\n- Number of joints: " << getNumberOfJoints() <<
                          "\n- Hardware interface type: '" << this->getHardwareInterfaceType() << "'" <<
                          "\n- Trajectory segment type: '" << hardware_interface::internal::demangledTypeName<SegmentImpl>() << "'");
 
@@ -312,7 +312,7 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   desired_joint_state_ = typename Segment::State(1);
   state_joint_error_   = typename Segment::State(1);
 
-  successful_joint_traj_ = boost::dynamic_bitset<>(joints_.size());
+  successful_joint_traj_ = boost::dynamic_bitset<>(getNumberOfJoints());
 
   // Initialize trajectory with all joints
   typename Segment::State current_joint_state_ = typename Segment::State(1);
@@ -368,7 +368,7 @@ update(const ros::Time& time, const ros::Duration& period)
   // next control cycle, leaving the current cycle without a valid trajectory.
 
   // Update current state and state error
-  for (unsigned int i = 0; i < joints_.size(); ++i)
+  for (unsigned int i = 0; i < getNumberOfJoints(); ++i)
   {
     current_state_.position[i] = joints_[i].getPosition();
     current_state_.velocity[i] = joints_[i].getVelocity();
@@ -457,7 +457,7 @@ update(const ros::Time& time, const ros::Duration& period)
 
   //If there is an active goal and all segments finished successfully then set goal as succeeded
   RealtimeGoalHandlePtr current_active_goal(rt_active_goal_);
-  if (current_active_goal && successful_joint_traj_.count() == joints_.size())
+  if (current_active_goal && successful_joint_traj_.count() == getNumberOfJoints())
   {
     current_active_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::SUCCESSFUL;
     current_active_goal->setSucceeded(current_active_goal->preallocated_result_);
@@ -682,7 +682,7 @@ queryStateService(control_msgs::QueryTrajectoryState::Request&  req,
 
   typename Segment::State response_point = typename Segment::State(joint_names_.size());
 
-  for (unsigned int i = 0; i < joints_.size(); ++i)
+  for (unsigned int i = 0; i < getNumberOfJoints(); ++i)
   {
     typename Segment::State state;
     typename TrajectoryPerJoint::const_iterator segment_it = sample(curr_traj[i], sample_time.toSec(), state);
@@ -795,6 +795,13 @@ setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
     }
   }
   curr_trajectory_box_.set(hold_trajectory_ptr_);
+}
+
+template <class SegmentImpl, class HardwareInterface>
+inline unsigned int JointTrajectoryController<SegmentImpl, HardwareInterface>::
+getNumberOfJoints() const
+{
+  return joints_.size();
 }
 
 template <class SegmentImpl, class HardwareInterface>

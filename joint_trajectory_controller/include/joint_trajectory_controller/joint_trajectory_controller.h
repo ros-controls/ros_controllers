@@ -246,6 +246,12 @@ protected:
    */
   void setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh=RealtimeGoalHandlePtr());
 
+protected:
+  /**
+   * @brief Returns the number of joints of the robot.
+   */
+  unsigned int getNumberOfJoints() const;
+
 private:
   /**
    * @brief Updates the pre-allocated feedback of the current active goal (if any)

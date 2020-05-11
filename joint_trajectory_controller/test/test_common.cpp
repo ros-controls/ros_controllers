@@ -62,4 +62,12 @@ AssertionResult waitForEvent(const std::function<bool()>& check_event,
   return AssertionFailure() << "ROS shutdown.";
 }
 
+void initDefaultTrajectory(unsigned int number_of_joints, std::vector<TrajectoryPerJoint>& trajectory)
+{
+  Segment::State state{1};
+  Segment segment(0.0, state, 1.0, state);
+  TrajectoryPerJoint joint_traj{segment};
+  trajectory.resize(number_of_joints, joint_traj);
+}
+
 }  // joint_trajectory_controller_tests

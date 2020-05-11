@@ -95,6 +95,11 @@ if(CATKIN_ENABLE_TESTING)
                    test/test_common.cpp)
   target_link_libraries(hold_trajectory_builder_test ${catkin_LIBRARIES})
 
+  catkin_add_gtest(stop_trajectory_builder_test
+                   test/stop_trajectory_builder_test.cpp
+                   test/test_common.cpp)
+  target_link_libraries(stop_trajectory_builder_test ${catkin_LIBRARIES})
+
   add_rostest_gtest(tolerances_test
                   test/tolerances.test
                   test/tolerances_test.cpp)

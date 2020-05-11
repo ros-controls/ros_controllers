@@ -456,6 +456,8 @@ update(const ros::Time& time, const ros::Duration& period)
     successful_joint_traj_.reset();
   }
 
+  updateFuncExtensionPoint(curr_traj, time_data);
+
   // Hardware interface adapter: Generate and send commands
   hw_iface_adapter_.updateCommand(time_data.uptime, time_data.period,
                                   desired_state_, state_error_);
@@ -785,6 +787,13 @@ setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh)
     }
   }
   curr_trajectory_box_.set(hold_trajectory_ptr_);
+}
+
+template <class SegmentImpl, class HardwareInterface>
+inline void JointTrajectoryController<SegmentImpl, HardwareInterface>::
+updateFuncExtensionPoint(const Trajectory& curr_traj, const TimeData& time_data)
+{
+  // To be implemented by derived class
 }
 
 template <class SegmentImpl, class HardwareInterface>

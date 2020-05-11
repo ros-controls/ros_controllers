@@ -40,6 +40,10 @@
 #include <trajectory_msgs/JointTrajectory.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 
+#include <joint_trajectory_controller/joint_trajectory_segment.h>
+#include <trajectory_interface/quintic_spline_segment.h>
+
+
 namespace joint_trajectory_controller_tests
 {
 
@@ -85,6 +89,12 @@ inline bool trajectoryPointsAlmostEqual(const trajectory_msgs::JointTrajectoryPo
          vectorsAlmostEqual(p1.velocities, p2.velocities, tolerance) &&
          vectorsAlmostEqual(p1.accelerations, p2.accelerations, tolerance);
 }
+
+using QuinticSplineSegment = trajectory_interface::QuinticSplineSegment<double>;
+using Segment = joint_trajectory_controller::JointTrajectorySegment<QuinticSplineSegment>;
+using TrajectoryPerJoint = std::vector<Segment>;
+
+void initDefaultTrajectory(unsigned int number_of_joints, std::vector<TrajectoryPerJoint>& trajectory);
 
 /////////////////////////////
 // action client functions //

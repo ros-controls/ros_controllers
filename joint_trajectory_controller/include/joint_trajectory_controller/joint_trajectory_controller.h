@@ -246,6 +246,16 @@ protected:
    */
   void setHoldPosition(const ros::Time& time, RealtimeGoalHandlePtr gh=RealtimeGoalHandlePtr());
 
+private:
+  /**
+   * @brief Updates the pre-allocated feedback of the current active goal (if any)
+   * based on the current state values.
+   *
+   * @note This function is NOT thread safe but intended to be used in the
+   * update-function.
+   */
+  void setActionFeedback();
+
 };
 
 } // namespace

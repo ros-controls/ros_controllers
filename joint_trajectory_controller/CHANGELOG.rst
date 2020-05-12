@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.17.0 (2020-05-12)
+-------------------
 * Add extension point in update function to allow derived classes to perform e.g. additional checks.
 * The stop- and hold-trajectory creation is moved into separate classes,
   to allow derived classes to re-use the stop- and hold-trajectory

@@ -1244,6 +1244,17 @@ TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
   EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ABORTED, long_timeout));
   EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED);
 
+  // Check that we're not moving
+  StateConstPtr state1 = getState();
+  ros::Duration(0.5).sleep(); // Wait
+  StateConstPtr state2 =  getState();
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+    EXPECT_NEAR(state1->desired.positions[i],     state2->desired.positions[i],     EPS);
+    EXPECT_NEAR(state1->desired.velocities[i],    state2->desired.velocities[i],    EPS);
+    EXPECT_NEAR(state1->desired.accelerations[i], state2->desired.accelerations[i], EPS);
+  }
+
   // Restore perfect control
   {
     std_msgs::Float64 smoothing;
@@ -1266,7 +1277,7 @@ TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
   // Make robot respond with a delay
   {
     std_msgs::Float64 smoothing;
-    smoothing.data = 0.95;
+    smoothing.data = 0.98;
     smoothing_pub.publish(smoothing);
     ros::Duration(0.5).sleep();
   }
@@ -1289,12 +1300,22 @@ TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
   EXPECT_TRUE(waitForState(action_client, SimpleClientGoalState::ABORTED, long_timeout));
   EXPECT_EQ(action_client->getResult()->error_code, control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED);
 
+  // Check that we're not moving after restoring perfect control
+  StateConstPtr state1 = getState();
+
   // Restore perfect control
   {
     std_msgs::Float64 smoothing;
     smoothing.data = 0.0;
     smoothing_pub.publish(smoothing);
     ros::Duration(0.5).sleep();
+  }
+
+  StateConstPtr state2 =  getState();
+  for (unsigned int i = 0; i < n_joints; ++i)
+  {
+    EXPECT_NEAR(state1->actual.positions[i],     state2->actual.positions[i],     EPS);
+    EXPECT_NEAR(state1->actual.velocities[i],    state2->actual.velocities[i],    EPS);
   }
 }
 

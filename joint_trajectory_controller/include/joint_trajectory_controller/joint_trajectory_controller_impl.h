@@ -417,6 +417,10 @@ update(const ros::Time& time, const ros::Duration& period)
             ROS_ERROR_STREAM_NAMED(name_,"Path tolerances failed for joint: " << joint_names_[i]);
             checkStateTolerancePerJoint(state_joint_error_, joint_tolerances.state_tolerance, true);
           }
+
+          // If we violate path tolerance then hold current position
+          setHoldPosition(time_data.uptime, rt_active_goal_);
+
           rt_segment_goal->preallocated_result_->error_code =
           control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
@@ -452,6 +456,9 @@ update(const ros::Time& time, const ros::Duration& period)
             // Check the tolerances one more time to output the errors that occurs
             checkStateTolerancePerJoint(state_joint_error_, tolerances.goal_state_tolerance, true);
           }
+
+          // If we violate goal tolerances then hold current position
+          setHoldPosition(time_data.uptime, rt_active_goal_);
 
           rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);

@@ -13,7 +13,7 @@ install(DIRECTORY resource
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
-install(PROGRAMS
+catkin_install_python(PROGRAMS
   scripts/rqt_joint_trajectory_controller
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

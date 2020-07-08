@@ -18,6 +18,10 @@ swervebot:
         lh_steering: "leg_lh_joint"
         rh_steering: "leg_rh_joint"
 
+        # Range of motion of steering motors
+        min_steering_angle: -1.58
+        max_steering_angle: 1.58
+
         # Other
         publish_rate: 50
         enable_odom_tf: true

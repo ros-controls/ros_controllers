@@ -59,7 +59,7 @@
 namespace swerve_controller
 {
 
-/**
+    /**
  * This class makes some assumptions on the model of the robot:
  *  - the rotation axes of wheels are collinear
  *  - the wheels are identical in radius
@@ -68,22 +68,22 @@ namespace swerve_controller
  *  - a wheel collision geometry is a cylinder in the urdf
  *  - a wheel joint frame center's vertical projection on the floor must lie within the contact patch
  */
-class SwerveController
+    class SwerveController
         : public controller_interface::MultiInterfaceController<hardware_interface::VelocityJointInterface,
                                                                 hardware_interface::PositionJointInterface>
-{
+    {
     public:
         SwerveController();
 
-        bool init(hardware_interface::RobotHW* robot_hw,
-                             ros::NodeHandle& root_nh,
-                             ros::NodeHandle &controller_nh);
+        bool init(hardware_interface::RobotHW *robot_hw,
+                  ros::NodeHandle &root_nh,
+                  ros::NodeHandle &controller_nh);
 
-        void update(const ros::Time& time, const ros::Duration& period);
+        void update(const ros::Time &time, const ros::Duration &period);
 
-        void starting(const ros::Time& time);
+        void starting(const ros::Time &time);
 
-        void stopping(const ros::Time& time);
+        void stopping(const ros::Time &time);
 
     private:
         std::string name_;
@@ -118,8 +118,8 @@ class SwerveController
         ros::Subscriber sub_command_;
 
         /// Odometry related:
-        std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
-        std::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
+        std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry>> odom_pub_;
+        std::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage>> tf_odom_pub_;
         Odometry odometry_;
 
         /// Wheel separation (or track), distance between left and right wheels
@@ -135,6 +135,9 @@ class SwerveController
 
         /// Wheel base (distance between front and rear wheel):
         double wheel_base_;
+
+        /// Range of steering angle:
+        double min_steering_angle_, max_steering_angle_;
 
         /// Timeout to consider cmd_vel commands old:
         double cmd_vel_timeout_;
@@ -152,23 +155,24 @@ class SwerveController
         SpeedLimiter limiter_ang_;
 
     private:
-
         void updateOdometry(const ros::Time &time);
-        
-        void updateCommand(const ros::Time& time, const ros::Duration& period);
+
+        void updateCommand(const ros::Time &time, const ros::Duration &period);
 
         void brake();
 
-        void cmdVelCallback(const geometry_msgs::Twist& command);
+        bool clipSteeringAngle(double &steering, double &speed);
 
-        bool getPhysicalParams(ros::NodeHandle& controller_nh);
+        void cmdVelCallback(const geometry_msgs::Twist &command);
 
-        void setOdomPubFields(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
-};
+        bool getPhysicalParams(ros::NodeHandle &controller_nh);
 
-PLUGINLIB_EXPORT_CLASS(swerve_controller::SwerveController,
-                       controller_interface::ControllerBase);
+        void setOdomPubFields(ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh);
+    };
 
-}  // namespace swerve_controller
+    PLUGINLIB_EXPORT_CLASS(swerve_controller::SwerveController,
+                           controller_interface::ControllerBase);
 
-#endif  // SWERVE_CONTROLLER_SWERVE_CONTROLLER_H
+} // namespace swerve_controller
+
+#endif // SWERVE_CONTROLLER_SWERVE_CONTROLLER_H

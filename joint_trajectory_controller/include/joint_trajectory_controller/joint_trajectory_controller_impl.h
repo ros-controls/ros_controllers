@@ -382,6 +382,11 @@ update(const ros::Time& time, const ros::Duration& period)
       return;
     }
 
+    // Get state error for current joint
+    state_joint_error_.position[0] = state_error_.position[i];
+    state_joint_error_.velocity[0] = state_error_.velocity[i];
+    state_joint_error_.acceleration[0] = 0.0;
+
     //Check tolerances
     const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();
     if (rt_segment_goal && rt_segment_goal == rt_active_goal_)

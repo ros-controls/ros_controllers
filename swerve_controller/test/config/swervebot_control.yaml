@@ -30,6 +30,12 @@ swervebot:
         cmd_vel_timeout: 5
         base_frame_id: "body"
 
+        # Geometry (Do not provide the following if you want it to be parsed in the URDF)
+        # track: 0.8
+        # wheel_steering_y_offset: 0
+        # wheel_radius: 0.15
+        # wheel_base: 1.2
+
     # Low-Level Controllers -------------------------------------
     gazebo_ros_control:
         pid_gains:

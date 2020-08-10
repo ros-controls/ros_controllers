@@ -151,34 +151,48 @@ namespace swerve_controller
 
         // Get robot physical parameters from URDF or parameter server
         bool lookup_track = !controller_nh.getParam("track", track_);
+        bool lookup_wheel_steering_y_offset = !controller_nh.getParam("wheel_steering_y_offset",
+                                                                      wheel_steering_y_offset_);
         bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius_);
         bool lookup_wheel_base = !controller_nh.getParam("wheel_base", wheel_base_);
 
-        urdf_geometry_parser::UrdfGeometryParser uvk(root_nh, base_frame_id_);
-        if (lookup_track)
-            if (!uvk.getDistanceBetweenJoints(lf_wheel_name, rf_wheel_name, track_))
-                return false;
-            else
-                controller_nh.setParam("track", track_);
-
-        if (!uvk.getDistanceBetweenJoints(lf_steering_name, lf_wheel_name,
-                                          wheel_steering_y_offset_))
-            return false;
-        else
-            controller_nh.setParam("wheel_steering_y_offset", wheel_steering_y_offset_);
-
-        if (lookup_wheel_radius)
-            if (!uvk.getJointRadius(lf_wheel_name, wheel_radius_))
-                return false;
-            else
-                controller_nh.setParam("wheel_radius", wheel_radius_);
-
-        if (lookup_wheel_base)
-            if (!uvk.getDistanceBetweenJoints(lf_wheel_name, lh_wheel_name,
-                                              wheel_base_))
-                return false;
-            else
-                controller_nh.setParam("wheel_base", wheel_base_);
+        if (lookup_track || lookup_wheel_steering_y_offset ||
+            lookup_wheel_radius || lookup_wheel_base)
+        {
+            ROS_INFO_STREAM("Some geometric parameters are not provided in the config file."
+                            << "Parsing from URDF!");
+            urdf_geometry_parser::UrdfGeometryParser uvk(root_nh, base_frame_id_);
+            if (lookup_track)
+            {
+                if (!uvk.getDistanceBetweenJoints(lf_wheel_name, rf_wheel_name, track_))
+                    return false;
+                else
+                    controller_nh.setParam("track", track_);
+            }
+            if (lookup_wheel_steering_y_offset)
+            {
+                if (!uvk.getDistanceBetweenJoints(lf_steering_name, lf_wheel_name,
+                                                  wheel_steering_y_offset_))
+                    return false;
+                else
+                    controller_nh.setParam("wheel_steering_y_offset", wheel_steering_y_offset_);
+            }
+            if (lookup_wheel_radius)
+            {
+                if (!uvk.getJointRadius(lf_wheel_name, wheel_radius_))
+                    return false;
+                else
+                    controller_nh.setParam("wheel_radius", wheel_radius_);
+            }
+            if (lookup_wheel_base)
+            {
+                if (!uvk.getDistanceBetweenJoints(lf_wheel_name, lh_wheel_name,
+                                                  wheel_base_))
+                    return false;
+                else
+                    controller_nh.setParam("wheel_base", wheel_base_);
+            }
+        }
 
         // Set physical parameters in odometry
         odometry_.setWheelParams(track_ - 2 * wheel_steering_y_offset_, wheel_radius_, wheel_base_);
@@ -250,14 +264,16 @@ namespace swerve_controller
         const double rf_speed = rf_wheel_joint_->getVelocity();
         const double lh_speed = lh_wheel_joint_->getVelocity();
         const double rh_speed = rh_wheel_joint_->getVelocity();
-        if (std::isnan(lf_speed) || std::isnan(rf_speed) || std::isnan(lh_speed) || std::isnan(rh_speed))
+        if (std::isnan(lf_speed) || std::isnan(rf_speed) ||
+            std::isnan(lh_speed) || std::isnan(rh_speed))
             return;
 
         const double lf_steering = lf_steering_joint_->getPosition();
         const double rf_steering = rf_steering_joint_->getPosition();
         const double lh_steering = lh_steering_joint_->getPosition();
         const double rh_steering = rh_steering_joint_->getPosition();
-        if (std::isnan(lf_steering) || std::isnan(rf_steering) || std::isnan(lh_steering) || std::isnan(rh_steering))
+        if (std::isnan(lf_steering) || std::isnan(rf_steering) ||
+            std::isnan(lh_steering) || std::isnan(rh_steering))
             return;
 
         // Estimate linear and angular velocity using joint information

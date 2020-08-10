@@ -23,6 +23,8 @@
 	<!-- Generate the robot with xacro -->
 	<param name="robot_description"
 		command="xacro '$(find swerve_controller)/test/urdf/swervebot.xacro'" />
+	<param name="swervebot/robot_description"
+		command="xacro '$(find swerve_controller)/test/urdf/swervebot.xacro'" />
 
 	<!-- Spawn the robot into Gazebo -->
 	<node name="spawn_swervebot" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"

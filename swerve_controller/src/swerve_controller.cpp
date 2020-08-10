@@ -384,15 +384,6 @@ namespace swerve_controller
             lh_wheel_joint_->setCommand(0.0);
             rh_wheel_joint_->setCommand(0.0);
         }
-
-        // Set wheels steering angles
-        if (lf_wheel_joint_ && rf_wheel_joint_ && lh_wheel_joint_ && rh_wheel_joint_)
-        {
-            lf_steering_joint_->setCommand(0.0);
-            rf_steering_joint_->setCommand(0.0);
-            lh_steering_joint_->setCommand(0.0);
-            rh_steering_joint_->setCommand(0.0);
-        }
     }
 
     bool SwerveController::clipSteeringAngle(double &steering, double &speed)

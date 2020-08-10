@@ -31,7 +31,6 @@
 		</node>
 	</group>
 
-
 	<!-- Publish ground truth -->
 	<group if="$(arg groundtruth)">
 		<node pkg="swerve_controller" type="tf_ground_truth" name="world_groundtruth_publisher" args="swervebot"/>

@@ -6,26 +6,10 @@
 	<arg name="headless" default="false"/>
 
 	<arg name="debug" default="false"/>
-	<arg name="tune" default="false"/>
 	<arg name="rviz" default="false"/>
 	<arg name="joy" default="false"/>
 	<arg name="keyboard" default="false"/>
 	<arg name="groundtruth" default="true"/>
-	<arg name="plot" default="false"/>
-	<arg name="server" default="false"/>
-	<arg name="save" default="false"/>
-
-	<!-- Start rosbridge server -->
-	<group if="$(arg server)">
-		<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
-			<arg name="port" value="9090"/>
-		</include>
-	</group>
-
-	<!-- Saving the simulation into a rosbag -->
-	<group if="$(arg save)">
-    	<node pkg="rosbag" type="record" name="recorder" args="-a -o $(find swerve_controller)/../../../data/simulations/sim" output="screen"/>
-	</group>
 
 	<!-- Forward parameters in empty_world.launch from gazebo_ros package -->
 	<include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -34,12 +18,10 @@
 		<arg name="paused" value="$(arg paused)"/>
 		<arg name="use_sim_time" value="$(arg use_sim_time)"/>
 		<arg name="headless" value="$(arg headless)"/>
-	</include>ros
+	</include>
 
 	<!-- Generate the robot with xacro -->
 	<param name="robot_description"
-		command="xacro '$(find swerve_controller)/test/urdf/swervebot.xacro'" />
-	<param name="swervebot/robot_description"
 		command="xacro '$(find swerve_controller)/test/urdf/swervebot.xacro'" />
 
 	<!-- Spawn the robot into Gazebo -->
@@ -59,16 +41,6 @@
 		<arg name="keyboard" value="$(arg keyboard)"/>
 		<arg name="groundtruth" value="$(arg groundtruth)"/>
 	</include>
- 
-	<!-- Plot joints -->
-	<group if="$(arg plot)">
-		<include file="$(find swerve_controller)/test/launch/swervebot_plot.launch" />
-	</group>
-
-	<!-- Parameters tuning -->
-	<group if="$(arg tune)">
-		<node name="param_tuner" pkg="rqt_reconfigure" type="rqt_reconfigure"/>
-	</group>
 
 </launch>
 

@@ -72,6 +72,7 @@ public:
 
   bool init(hardware_interface::EffortJointInterface* hw, ros::NodeHandle &n);
   void update(const ros::Time& /*time*/, const ros::Duration& /*period*/);
+  void starting(const ros::Time& /*time*/);
 
   std::vector< std::string > joint_names_;
   std::vector< hardware_interface::JointHandle > joints_;

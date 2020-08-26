@@ -5,9 +5,9 @@ See [ros_control](http://wiki.ros.org/ros_control) and [ros_controllers](http://
 
 ### Build Status
 
-Indigo | Kinetic | Lunar | Melodic
------- | ------ | ------ | ------
-[![Build Status](https://travis-ci.org/ros-controls/ros_controllers.png?branch=indigo-devel)](https://travis-ci.org/ros-controls/ros_controllers) | [![Build Status](https://travis-ci.org/ros-controls/ros_controllers.png?branch=kinetic-devel)](https://travis-ci.org/ros-controls/ros_controllers) | [![Build Status](https://travis-ci.org/ros-controls/ros_controllers.png?branch=kinetic-devel)](https://travis-ci.org/ros-controls/ros_controllers) | [![Build Status](https://travis-ci.org/ros-controls/ros_controllers.png?branch=melodic-devel)](https://travis-ci.org/ros-controls/ros_controllers)
+Indigo | Kinetic | Lunar | Melodic | Noetic
+------ | ------- | ----- | ------- | ------
+[![Build Status](https://travis-ci.org/ros-controls/ros_controllers.png?branch=indigo-devel)](https://travis-ci.org/ros-controls/ros_controllers) | [![Build Status](https://travis-ci.org/ros-controls/ros_controllers.png?branch=kinetic-devel)](https://travis-ci.org/ros-controls/ros_controllers) | [![Build Status](https://travis-ci.org/ros-controls/ros_controllers.png?branch=kinetic-devel)](https://travis-ci.org/ros-controls/ros_controllers) | [![Build Status](https://travis-ci.org/ros-controls/ros_controllers.png?branch=melodic-devel)](https://travis-ci.org/ros-controls/ros_controllers) | [![Build Status](https://travis-ci.org/ros-controls/ros_controllers.png?branch=noetic-devel)](https://travis-ci.org/ros-controls/ros_controllers)
 
 ### Branches for source-based installation
 

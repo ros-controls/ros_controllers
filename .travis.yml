@@ -15,9 +15,9 @@ notifications:
 
 env:
   matrix:
-    - ROS_DISTRO=melodic  ROS_REPO=ros
-    - ROS_DISTRO=melodic  ROS_REPO=ros-testing
-    - ROS_DISTRO=melodic  UPSTREAM_WORKSPACE='https://raw.githubusercontent.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall -ros_controllers'
+    - ROS_DISTRO=noetic  ROS_REPO=ros
+    - ROS_DISTRO=noetic  ROS_REPO=ros-testing
+    - ROS_DISTRO=noetic  UPSTREAM_WORKSPACE='https://raw.githubusercontent.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall -ros_controllers'
 
 install:
   - git clone --quiet --depth 1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci -b master

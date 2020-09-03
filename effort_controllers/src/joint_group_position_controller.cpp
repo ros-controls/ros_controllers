@@ -138,12 +138,26 @@ namespace effort_controllers
         // Compute position error
         if (joint_urdfs_[i]->type == urdf::Joint::REVOLUTE)
         {
-          angles::shortest_angular_distance_with_large_limits(
+          // angles::shortest_angular_distance_with_large_limits assumes implicitly (and only works correctly) if
+          // current_position (`from`) is within the valid range. As thus, we need to enforce the joint limits
+          // prior to passing it as an argument to angles::shortest_angular_distance_with_large_limits:
+          enforceJointLimits(current_position, i);
+
+          bool is_valid = angles::shortest_angular_distance_with_large_limits(
             current_position,
             command_position,
             joint_urdfs_[i]->limits->lower,
             joint_urdfs_[i]->limits->upper,
             error);
+
+          // Warn if angles::shortest_angular_distance_with_large_limits indicates that it could not correctly
+          // determine the error. This could potentially lead to unsafe behaviour.
+          // Note, an epsilon margin to reduce the enforced joint limits by a small epsilon could resolve a
+          // number of floating point issues in angles::shortest_angular_distance_with_large_limits.
+          if (!is_valid)
+          {
+            ROS_WARN_STREAM("Error in angles::shortest_angular_distance_with_large_limits for joint #" << i << ", q_current=" << current_position << ", q_command=" << command_position << ", q_lb=" << joint_urdfs_[i]->limits->lower << ", q_ub=" << joint_urdfs_[i]->limits->upper << ", error=" << error << " - NOT SAFE!");
+          }
         }
         else if (joint_urdfs_[i]->type == urdf::Joint::CONTINUOUS)
         {

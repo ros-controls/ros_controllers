@@ -129,7 +129,7 @@ namespace effort_controllers
       enforceJointLimits(current_positions[i], i);
       pid_controllers_[i].reset();
     }
-    commands_buffer_.writeFromNonRT(current_positions);
+    commands_buffer_.initRT(current_positions);
   }
 
   void JointGroupPositionController::update(const ros::Time& time, const ros::Duration& period)

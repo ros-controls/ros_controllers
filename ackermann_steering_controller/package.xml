@@ -24,14 +24,16 @@
   <depend>tf</depend>
 
   <build_depend>pluginlib</build_depend>
-  <build_depend>urdf</build_depend>
+  <build_depend>liburdfdom-dev</build_depend>
 
   <exec_depend>pluginlib</exec_depend>
-  <exec_depend>urdf</exec_depend>
+  <exec_depend>liburdfdom-dev</exec_depend>
 
   <!--Tests-->
   <test_depend>controller_manager</test_depend>
+  <test_depend>controller_manager_msgs</test_depend>
   <test_depend>geometry_msgs</test_depend>
+  <test_depend>gtest</test_depend>
   <test_depend>rosunit</test_depend>
   <test_depend>rostest</test_depend>
   <test_depend>std_msgs</test_depend>

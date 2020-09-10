@@ -6,6 +6,7 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
 endif()
 
+# Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS
   controller_interface
   diff_drive_controller
@@ -21,6 +22,7 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 
 find_package(urdfdom REQUIRED)
 
+# Declare a catkin package
 catkin_package(
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS
@@ -34,6 +36,11 @@ catkin_package(
   DEPENDS Boost
 )
 
+###########
+## Build ##
+###########
+
+# Specify header include paths
 include_directories(
   include
   ${Boost_INCLUDE_DIRS}
@@ -44,14 +51,9 @@ include_directories(
 add_library(${PROJECT_NAME} src/ackermann_steering_controller.cpp src/odometry.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${urdfdom_LIBRARIES})
 
-install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-install(FILES ${PROJECT_NAME}_plugins.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+#############
+## Testing ##
+#############
 
 if (CATKIN_ENABLE_TESTING)
   find_package(controller_manager REQUIRED)
@@ -125,3 +127,18 @@ if (CATKIN_ENABLE_TESTING)
   add_rostest(test/ackermann_steering_controller_radius_param_fail_test/ackermann_steering_controller_radius_param_fail.test)
   add_rostest(test/ackermann_steering_controller_separation_param_test/ackermann_steering_controller_separation_param.test)
 endif()
+
+#############
+## Install ##
+#############
+
+# Install targets
+install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# Install plugins
+install(FILES ${PROJECT_NAME}_plugins.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

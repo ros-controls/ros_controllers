@@ -1,8 +1,12 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model
+  href="http://download.ros.org/schema/package_format3.xsd"
+  schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>ackermann_steering_controller</name>
   <version>0.17.0</version>
   <description>Controller for a steer drive mobile base.</description>
+
   <maintainer email="p595201m@mail.kyutech.jp">Masaru Morita</maintainer>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
 
@@ -10,6 +14,7 @@
 
   <url type="bugtracker">https://github.com/ros-controls/ros_controllers/issues</url>
   <url type="repository">https://github.com/ros-controls/ros_controllers/ackermann_steering_controller</url>
+
   <author email="p595201m@mail.kyutech.jp">Masaru Morita</author>
 
   <buildtool_depend>catkin</buildtool_depend>

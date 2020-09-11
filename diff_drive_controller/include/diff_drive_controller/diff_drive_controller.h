@@ -49,7 +49,6 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <memory>
 #include <nav_msgs/Odometry.h>
-#include <pluginlib/class_list_macros.hpp>
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <tf/tfMessage.h>
@@ -310,5 +309,4 @@ namespace diff_drive_controller{
                           double right_wheel_radius);
   };
 
-  PLUGINLIB_EXPORT_CLASS(diff_drive_controller::DiffDriveController, controller_interface::ControllerBase);
 } // namespace diff_drive_controller

@@ -15,18 +15,26 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <depend>boost</depend>
   <depend>controller_interface</depend>
   <depend>control_msgs</depend>
   <depend>dynamic_reconfigure</depend>
+  <depend>geometry_msgs</depend>
+  <depend>hardware_interface</depend>
   <depend>nav_msgs</depend>
   <depend>realtime_tools</depend>
   <depend>tf</depend>
-  <depend>urdf</depend>
-  <depend>pluginlib</depend>
+
+  <build_depend>pluginlib</build_depend>
+  <build_depend>urdf</build_depend>
+
+  <exec_depend>pluginlib</exec_depend>
+  <exec_depend>urdf</exec_depend>
 
   <test_depend>controller_manager</test_depend>
   <test_depend>rosgraph_msgs</test_depend>
   <test_depend>rostest</test_depend>
+  <test_depend>rostopic</test_depend>
   <test_depend>std_srvs</test_depend>
   <test_depend>xacro</test_depend>
 

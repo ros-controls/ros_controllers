@@ -38,6 +38,7 @@
 
 #include <cmath>
 #include <diff_drive_controller/diff_drive_controller.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <tf/transform_datatypes.h>
 #include <urdf/urdfdom_compatibility.h>
 #include <urdf_parser/urdf_parser.h>
@@ -832,3 +833,5 @@ namespace diff_drive_controller{
   }
 
 } // namespace diff_drive_controller
+
+PLUGINLIB_EXPORT_CLASS(diff_drive_controller::DiffDriveController, controller_interface::ControllerBase);

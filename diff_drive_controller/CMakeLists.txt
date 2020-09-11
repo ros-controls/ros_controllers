@@ -10,22 +10,37 @@ find_package(catkin REQUIRED COMPONENTS
     controller_interface
     control_msgs
     dynamic_reconfigure
+    geometry_msgs
+    hardware_interface
     nav_msgs
+    pluginlib
     realtime_tools
     tf
     urdf
-    pluginlib
 )
+
+find_package(Boost REQUIRED COMPONENTS headers)
 
 generate_dynamic_reconfigure_options(cfg/DiffDriveController.cfg)
 
 catkin_package(
   INCLUDE_DIRS include
+  CATKIN_DEPENDS
+    controller_interface
+    control_msgs
+    dynamic_reconfigure
+    geometry_msgs
+    hardware_interface
+    nav_msgs
+    realtime_tools
+    tf
   LIBRARIES ${PROJECT_NAME}
+  DEPENDS Boost
 )
 
 include_directories(
   include ${catkin_INCLUDE_DIRS}
+  include ${Boost_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME} src/diff_drive_controller.cpp src/odometry.cpp src/speed_limiter.cpp)
@@ -46,71 +61,85 @@ install(FILES diff_drive_controller_plugins.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 if (CATKIN_ENABLE_TESTING)
-  find_package(catkin REQUIRED COMPONENTS controller_manager rosgraph_msgs rostest std_srvs tf)
-  include_directories(include ${catkin_INCLUDE_DIRS})
+  find_package(controller_manager REQUIRED)
+  find_package(rosgraph_msgs REQUIRED)
+  find_package(std_srvs REQUIRED)
+  find_package(rostest REQUIRED)
+  
+  include_directories(
+    ${controller_manager_INCLUDE_DIRS}
+    ${rosgraph_msgs_INCLUDE_DIRS}
+    ${std_srvs_INCLUDE_DIRS}
+  )
+
+  set(test_LIBRARIES
+    ${controller_manager_LIBRARIES}
+    ${rosgraph_msgs_LIBRARIES}
+    ${std_srvs_LIBRARIES}
+  )
 
   add_executable(diffbot test/diffbot.cpp)
-  target_link_libraries(diffbot ${catkin_LIBRARIES})
+  target_link_libraries(diffbot ${catkin_LIBRARIES} ${test_LIBRARIES})
 
   add_executable(skidsteerbot test/skidsteerbot.cpp)
-  target_link_libraries(skidsteerbot ${catkin_LIBRARIES})
+  target_link_libraries(skidsteerbot ${catkin_LIBRARIES} ${test_LIBRARIES})
 
   add_dependencies(tests diffbot skidsteerbot)
 
   add_rostest_gtest(diff_drive_test
     test/diff_drive_controller.test
     test/diff_drive_test.cpp)
-  target_link_libraries(diff_drive_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest_gtest(diff_drive_nan_test
     test/diff_drive_controller_nan.test
     test/diff_drive_nan_test.cpp)
-  target_link_libraries(diff_drive_nan_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_nan_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest_gtest(diff_drive_limits_test
     test/diff_drive_controller_limits.test
     test/diff_drive_limits_test.cpp)
-  target_link_libraries(diff_drive_limits_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_limits_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest_gtest(diff_drive_timeout_test
     test/diff_drive_timeout.test
     test/diff_drive_timeout_test.cpp)
-  target_link_libraries(diff_drive_timeout_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_timeout_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest(test/diff_drive_multipliers.test)
   add_rostest(test/diff_drive_left_right_multipliers.test)
   add_rostest_gtest(diff_drive_fail_test
     test/diff_drive_wrong.test
     test/diff_drive_fail_test.cpp)
-  target_link_libraries(diff_drive_fail_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_fail_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest_gtest(diff_drive_odom_tf_test
     test/diff_drive_odom_tf.test
     test/diff_drive_odom_tf_test.cpp)
-  target_link_libraries(diff_drive_odom_tf_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_odom_tf_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest_gtest(diff_drive_default_cmd_vel_out_test
     test/diff_drive_default_cmd_vel_out.test
     test/diff_drive_default_cmd_vel_out_test.cpp)
-  target_link_libraries(diff_drive_default_cmd_vel_out_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_default_cmd_vel_out_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest_gtest(diff_drive_pub_cmd_vel_out_test
     test/diff_drive_pub_cmd_vel_out.test
     test/diff_drive_pub_cmd_vel_out_test.cpp)
-  target_link_libraries(diff_drive_pub_cmd_vel_out_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_pub_cmd_vel_out_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest_gtest(diff_drive_default_wheel_joint_controller_state_test
     test/diff_drive_default_wheel_joint_controller_state.test
     test/diff_drive_default_wheel_joint_controller_state_test.cpp)
-  target_link_libraries(diff_drive_default_wheel_joint_controller_state_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_default_wheel_joint_controller_state_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest_gtest(diff_drive_publish_wheel_joint_controller_state_test
     test/diff_drive_publish_wheel_joint_controller_state.test
     test/diff_drive_publish_wheel_joint_controller_state_test.cpp)
-  target_link_libraries(diff_drive_publish_wheel_joint_controller_state_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_publish_wheel_joint_controller_state_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest_gtest(diff_drive_default_odom_frame_test
     test/diff_drive_default_odom_frame.test
     test/diff_drive_default_odom_frame_test.cpp)
-  target_link_libraries(diff_drive_default_odom_frame_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_default_odom_frame_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest_gtest(diff_drive_odom_frame_test
     test/diff_drive_odom_frame.test
     test/diff_drive_odom_frame_test.cpp)
-  target_link_libraries(diff_drive_odom_frame_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_odom_frame_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest_gtest(diff_drive_multiple_cmd_vel_publishers_test
     test/diff_drive_multiple_cmd_vel_publishers.test
     test/diff_drive_multiple_cmd_vel_publishers_test.cpp)
-  target_link_libraries(diff_drive_multiple_cmd_vel_publishers_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_multiple_cmd_vel_publishers_test ${catkin_LIBRARIES} ${test_LIBRARIES})
   add_rostest(test/diff_drive_open_loop.test)
   add_rostest(test/skid_steer_controller.test)
   add_rostest(test/skid_steer_no_wheels.test)
@@ -122,5 +151,5 @@ if (CATKIN_ENABLE_TESTING)
   add_rostest_gtest(diff_drive_dyn_reconf_test
     test/diff_drive_dyn_reconf.test
     test/diff_drive_dyn_reconf_test.cpp)
-  target_link_libraries(diff_drive_dyn_reconf_test ${catkin_LIBRARIES})
+  target_link_libraries(diff_drive_dyn_reconf_test ${catkin_LIBRARIES} ${test_LIBRARIES})
 endif()

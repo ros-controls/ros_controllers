@@ -76,7 +76,7 @@ public:
   geometry_msgs::TwistStamped getLastCmdVelOut(){ return last_cmd_vel_out; }
   control_msgs::JointTrajectoryControllerState getLastJointTrajectoryControllerState(){ return last_joint_traj_controller_state; }
   void publish(geometry_msgs::Twist cmd_vel){ cmd_pub.publish(cmd_vel); }
-  bool isControllerAlive()const{ return (odom_sub.getNumPublishers() > 0) && (cmd_pub.getNumSubscribers() > 0); }
+  bool isControllerAlive()const{ return (odom_sub.getNumPublishers() > 0); }
   bool isPublishingCmdVelOut(const ros::Duration &timeout=ros::Duration(1)) const
   {
     ros::Time start = ros::Time::now();

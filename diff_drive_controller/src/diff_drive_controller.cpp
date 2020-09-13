@@ -301,8 +301,6 @@ namespace diff_drive_controller{
                           << ", left wheel radius "  << lwr
                           << ", right wheel radius " << rwr);
 
-    setOdomPubFields(root_nh, controller_nh);
-
     if (publish_cmd_)
     {
       cmd_vel_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::TwistStamped>(controller_nh, "cmd_vel_out", 100));
@@ -341,6 +339,8 @@ namespace diff_drive_controller{
       vel_left_previous_.resize(wheel_joints_size_, 0.0);
       vel_right_previous_.resize(wheel_joints_size_, 0.0);
     }
+
+    setOdomPubFields(root_nh, controller_nh);
 
     // Get the joint object to use in the realtime loop
     for (size_t i = 0; i < wheel_joints_size_; ++i)

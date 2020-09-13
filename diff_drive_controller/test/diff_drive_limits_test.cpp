@@ -33,10 +33,8 @@
 TEST_F(DiffDriveControllerTest, testLinearJerkLimits)
 {
   // wait for ROS
-  while(!isControllerAlive())
-  {
-    ros::Duration(0.1).sleep();
-  }
+  waitForController();
+
   // zero everything before test
   geometry_msgs::Twist cmd_vel;
   cmd_vel.linear.x = 0.0;

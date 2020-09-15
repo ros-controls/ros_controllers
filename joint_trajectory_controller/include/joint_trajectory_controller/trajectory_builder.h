@@ -63,6 +63,12 @@ namespace joint_trajectory_controller
 template<class SegmentImpl>
 class TrajectoryBuilder
 {
+public:
+  /**
+   * @brief Virtual destructor because this class is a base class.
+   */
+  virtual ~TrajectoryBuilder<SegmentImpl>() = default;
+
 private:
   using Segment               = JointTrajectorySegment<SegmentImpl>;
   using TrajectoryPerJoint    = std::vector<Segment>;
@@ -93,7 +99,7 @@ public:
    */
   virtual void reset();
 
-public: 
+public:
   /**
    * @brief Creates the type of trajectory described by the builder.
    *

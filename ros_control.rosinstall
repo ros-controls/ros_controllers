@@ -1,0 +1,4 @@
+- git: {local-name: ros_control, uri: 'https://github.com/ros-controls/ros_control.git', version: noetic-devel}
+- git: {local-name: realtime_tools, uri: 'https://github.com/ros-controls/realtime_tools.git', version: noetic-devel}
+- git: {local-name: control_toolbox, uri: 'https://github.com/ros-controls/control_toolbox.git', version: melodic-devel}
+- git: {local-name: control_msgs, uri: 'https://github.com/ros-controls/control_msgs.git', version: kinetic-devel}

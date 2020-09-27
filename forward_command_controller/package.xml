@@ -16,10 +16,18 @@
   <author>Adolfo Rodriguez Tsouroukdissian</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>controller_interface</depend> 
-  <depend>hardware_interface</depend> 
-  <depend>std_msgs</depend> 
-  <depend>realtime_tools</depend>
+
+  <build_depend>controller_interface</build_depend>
+  <build_depend>hardware_interface</build_depend>
+  <build_depend>realtime_tools</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+
+  <build_export_depend>controller_interface</build_export_depend>
+  <build_export_depend>hardware_interface</build_export_depend>
+  <build_export_depend>realtime_tools</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
 
   <export>
     <cpp cflags="-I${prefix}/include"/>

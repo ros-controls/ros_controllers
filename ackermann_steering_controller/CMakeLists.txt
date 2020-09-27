@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
 )
 
-find_package(Boost REQUIRED COMPONENTS accumulators bind function)
+find_package(Boost REQUIRED COMPONENTS headers)
 
 find_package(urdfdom REQUIRED)
 
@@ -33,7 +33,6 @@ catkin_package(
     realtime_tools
     roscpp
     tf
-  DEPENDS Boost
 )
 
 ###########
@@ -49,7 +48,7 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME} src/ackermann_steering_controller.cpp src/odometry.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${urdfdom_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${urdfdom_LIBRARIES})
 
 #############
 ## Testing ##

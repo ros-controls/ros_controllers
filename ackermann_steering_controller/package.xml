@@ -19,7 +19,6 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <depend>boost</depend>
   <depend>controller_interface</depend>
   <depend>diff_drive_controller</depend>
   <depend>hardware_interface</depend>
@@ -28,8 +27,11 @@
   <depend>roscpp</depend>
   <depend>tf</depend>
 
+  <build_depend>boost</build_depend>
   <build_depend>pluginlib</build_depend>
   <build_depend>liburdfdom-dev</build_depend>
+
+  <build_export_depend>boost</build_export_depend>
 
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>liburdfdom-dev</exec_depend>

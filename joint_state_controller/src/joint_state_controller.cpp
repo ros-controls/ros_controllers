@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <pluginlib/class_list_macros.hpp>
 
 #include "joint_state_controller/joint_state_controller.h"
 

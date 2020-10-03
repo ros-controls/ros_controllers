@@ -35,7 +35,6 @@
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_state_interface.h>
 #include <memory>
-#include <pluginlib/class_list_macros.hpp>
 #include <realtime_tools/realtime_publisher.h>
 #include <sensor_msgs/JointState.h>
 

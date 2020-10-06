@@ -78,7 +78,7 @@ install(TARGETS ${PROJECT_NAME}
 
 # Install plugins
 install(FILES joint_state_plugin.xml
-              joint_state_controller.yaml
-              joint_state_controller.launch
+              config/joint_state_controller.yaml
+              launch/joint_state_controller.launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

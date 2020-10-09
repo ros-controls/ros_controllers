@@ -1338,7 +1338,7 @@ TEST_F(JointTrajectoryControllerTest, goalToleranceViolationSingleJoint)
 
   /*** JOINT0 ***/
   // Make robot respond with a delay on joint0
-  smoothings.data.assign({0.95, 0.});
+  smoothings.data.assign({0.97, 0.});
   smoothings_pub.publish(smoothings);
   ASSERT_TRUE(waitForRobotReady());
 

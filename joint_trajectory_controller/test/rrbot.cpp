@@ -27,9 +27,13 @@
 
 // NOTE: The contents of this file have been taken largely from the ros_control wiki tutorials
 
+// STD
+#include <array>
+
 // ROS
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Empty.h>
 
@@ -85,7 +89,8 @@ public:
 
     // Smoothing subscriber
     smoothing_sub_ = nh.subscribe("smoothing", 1, &RRbot::smoothingCB, this);
-    smoothing_.initRT(0.0);
+    smoothings_sub_ = nh.subscribe("smoothings", 1, &RRbot::smoothingsCB, this);
+    smoothings_.initRT({0.0, 0.0});
 
     // Delay subscriber: delay==0 yields direct control, one cycle delay otherwise
     delay_sub_ = nh.subscribe("delay", 1, &RRbot::delayCB, this);
@@ -106,7 +111,7 @@ public:
 
   void write()
   {
-    const double smoothing = *(smoothing_.readFromRT());
+    const std::array<double, 2>& smoothings = *(smoothings_.readFromRT());
     const bool delay = *(delay_.readFromRT());
     const double upper_bound = *(upper_bound_.readFromRT());
 
@@ -126,13 +131,13 @@ public:
 
       if(active_interface_[i] == "hardware_interface::PositionJointInterface")
       {
-        const double next_pos = smoothing * pos_[i] +  (1.0 - smoothing) * pos_cmd_[i];
+        const double next_pos = smoothings[i] * pos_[i] +  (1.0 - smoothings[i]) * pos_cmd_[i];
         vel_[i] = (next_pos - pos_[i]) / getPeriod().toSec();
         pos_[i] = next_pos;
       }
       else if(active_interface_[i] == "hardware_interface::VelocityJointInterface")
       {
-        vel_[i] = (1.0 - smoothing) * vel_cmd_[i];
+        vel_[i] = (1.0 - smoothings[i]) * vel_cmd_[i];
         pos_[i] = pos_[i] + vel_[i] * getPeriod().toSec();
       }
 
@@ -193,14 +198,23 @@ private:
   std::string active_interface_[2];
   std::string next_active_interface_[2];
 
-  realtime_tools::RealtimeBuffer<double> smoothing_;
-  void smoothingCB(const std_msgs::Float64& smoothing)
-  {
-    smoothing_.writeFromNonRT(smoothing.data);
+  realtime_tools::RealtimeBuffer<std::array<double, 2>> smoothings_;
+  void setSmoothings(const std::array<double, 2>& smoothings) {
+    smoothings_.writeFromNonRT(smoothings);
     std_msgs::Empty msg;
     notify_ready_pub_.publish(msg);
   }
+  void smoothingCB(const std_msgs::Float64& smoothing)
+  {
+    setSmoothings({smoothing.data, smoothing.data});
+  }
+  void smoothingsCB(const std_msgs::Float64MultiArray& smoothings)
+  {
+    assert(smoothings.data.size() == 2);
+    setSmoothings({smoothings.data[0], smoothings.data[1]});
+  }
   ros::Subscriber smoothing_sub_;
+  ros::Subscriber smoothings_sub_;
 
   realtime_tools::RealtimeBuffer<bool> delay_;
   void delayCB(const std_msgs::Bool& delay)

@@ -41,6 +41,7 @@
 #include <actionlib/client/simple_action_client.h>
 
 #include <std_msgs/Float64.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Empty.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -112,6 +113,7 @@ public:
 
     // Smoothing publisher (determines how well the robot follows a trajectory)
     smoothing_pub = nh.advertise<std_msgs::Float64>("smoothing", 1);
+    smoothings_pub = nh.advertise<std_msgs::Float64MultiArray>("smoothings", 1);
 
     // Delay publisher (allows to simulate a delay of one cycle in the hardware interface)
     delay_pub = nh.advertise<std_msgs::Bool>("delay", 1);
@@ -197,6 +199,7 @@ protected:
   ActionGoal                       traj_goal;
 
   ros::Publisher     smoothing_pub;
+  ros::Publisher     smoothings_pub;
   ros::Publisher     delay_pub;
   ros::Publisher     upper_bound_pub;
   ros::Publisher     traj_pub;
@@ -1212,6 +1215,65 @@ TEST_F(JointTrajectoryControllerTest, pathToleranceViolation)
   EXPECT_TRUE(waitForStop(timeout));
 }
 
+TEST_F(JointTrajectoryControllerTest, pathToleranceViolationSingleJoint)
+{
+  // Prepare common variables
+  std_msgs::Float64MultiArray smoothings;
+  smoothings.data.resize(2);
+  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  const ros::Duration restore_timeout = getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S);
+
+  /*** JOINT0 ***/
+  // Make robot respond with a delay on joint0
+  smoothings.data.assign({0.9, 0.});
+  smoothings_pub.publish(smoothings);
+  ASSERT_TRUE(waitForRobotReady());
+
+  // Send trajectory
+  action_client->sendGoal(traj_goal);
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
+
+  // Wait until done
+  ASSERT_TRUE(waitForActionResult(action_client));
+  EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
+  EXPECT_TRUE(checkActionResultErrorCode(action_client,
+                                         control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED));
+
+  // Controller continues execution, see https://github.com/ros-controls/ros_controllers/issues/48
+  // Make sure to restore an error-less state for the tests to continue
+
+  // Restore perfect control
+  smoothings.data.assign({0., 0.});
+  smoothings_pub.publish(smoothings);
+  ASSERT_TRUE(waitForRobotReady());
+  EXPECT_TRUE(waitForStop(restore_timeout));
+
+  /*** JOINT1 ***/
+    // Make robot respond with a delay on joint1
+  smoothings.data.assign({0., 0.9});
+  smoothings_pub.publish(smoothings);
+  ASSERT_TRUE(waitForRobotReady());
+
+  // Send trajectory
+  action_client->sendGoal(traj_goal);
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
+
+  // Wait until done
+  ASSERT_TRUE(waitForActionResult(action_client));
+  EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
+  EXPECT_TRUE(checkActionResultErrorCode(action_client,
+                                         control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED));
+
+  // Controller continues execution, see https://github.com/ros-controls/ros_controllers/issues/48
+  // Make sure to restore an error-less state for the tests to continue
+
+  // Restore perfect control
+  smoothings.data.assign({0., 0.});
+  smoothings_pub.publish(smoothings);
+  ASSERT_TRUE(waitForRobotReady());
+  EXPECT_TRUE(waitForStop(restore_timeout));
+}
+
 TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
 {
   // Make robot respond with a delay
@@ -1255,6 +1317,74 @@ TEST_F(JointTrajectoryControllerTest, goalToleranceViolation)
 
   ros::Duration timeout = getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S);
   EXPECT_TRUE(waitForStop(timeout));
+}
+
+TEST_F(JointTrajectoryControllerTest, goalToleranceViolationSingleJoint)
+{
+  // PREPARE COMMON VARIABLES
+  std_msgs::Float64MultiArray smoothings;
+  smoothings.data.resize(2);
+  traj_goal.trajectory.header.stamp = ros::Time(0); // Start immediately
+  const ros::Duration restore_timeout = getTrajectoryDuration(traj_goal.trajectory) + ros::Duration(TIMEOUT_TRAJ_EXECUTION_S);
+
+  // Disable path constraints
+  traj_goal.path_tolerance.resize(2);
+  traj_goal.path_tolerance[0].name     = "joint1";
+  traj_goal.path_tolerance[0].position = -1.0;
+  traj_goal.path_tolerance[0].velocity = -1.0;
+  traj_goal.path_tolerance[1].name     = "joint2";
+  traj_goal.path_tolerance[1].position = -1.0;
+  traj_goal.path_tolerance[1].velocity = -1.0;
+
+  /*** JOINT0 ***/
+  // Make robot respond with a delay on joint0
+  smoothings.data.assign({0.95, 0.});
+  smoothings_pub.publish(smoothings);
+  ASSERT_TRUE(waitForRobotReady());
+
+  // Send trajectory
+  action_client->sendGoal(traj_goal);
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
+
+  // Wait until done
+  ASSERT_TRUE(waitForActionResult(action_client));
+  EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
+  EXPECT_TRUE(checkActionResultErrorCode(action_client,
+                                         control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED));
+
+  // Controller continues execution, see https://github.com/ros-controls/ros_controllers/issues/48
+  // Make sure to restore an error-less state for the tests to continue
+
+  // Restore perfect control
+  smoothings.data.assign({0., 0.});
+  smoothings_pub.publish(smoothings);
+  ASSERT_TRUE(waitForRobotReady());
+  EXPECT_TRUE(waitForStop(restore_timeout));
+
+  /*** JOINT1 ***/
+  // Make robot respond with a delay on joint1
+  smoothings.data.assign({0., 0.95});
+  smoothings_pub.publish(smoothings);
+  ASSERT_TRUE(waitForRobotReady());
+
+  // Send trajectory
+  action_client->sendGoal(traj_goal);
+  EXPECT_TRUE(waitForActionGoalState(action_client, SimpleClientGoalState::ACTIVE));
+
+  // Wait until done
+  ASSERT_TRUE(waitForActionResult(action_client));
+  EXPECT_TRUE(checkActionGoalState(action_client, SimpleClientGoalState::ABORTED));
+  EXPECT_TRUE(checkActionResultErrorCode(action_client,
+                                         control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED));
+
+  // Controller continues execution, see https://github.com/ros-controls/ros_controllers/issues/48
+  // Make sure to restore an error-less state for the tests to continue
+
+  // Restore perfect control
+  smoothings.data.assign({0., 0.});
+  smoothings_pub.publish(smoothings);
+  ASSERT_TRUE(waitForRobotReady());
+  EXPECT_TRUE(waitForStop(restore_timeout));
 }
 
 int main(int argc, char** argv)

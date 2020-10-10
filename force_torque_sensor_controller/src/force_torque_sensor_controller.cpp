@@ -31,6 +31,7 @@
 
 #include "force_torque_sensor_controller/force_torque_sensor_controller.h"
 
+#include <pluginlib/class_list_macros.hpp>
 
 
 namespace force_torque_sensor_controller

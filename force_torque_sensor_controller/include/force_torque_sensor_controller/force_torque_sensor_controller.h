@@ -35,7 +35,6 @@
 #include <geometry_msgs/WrenchStamped.h>
 #include <hardware_interface/force_torque_sensor_interface.h>
 #include <memory>
-#include <pluginlib/class_list_macros.hpp>
 #include <realtime_tools/realtime_publisher.h>
 
 namespace force_torque_sensor_controller

@@ -1,4 +1,8 @@
-<package format="2">
+<?xml version="1.0"?>
+<?xml-model
+  href="http://download.ros.org/schema/package_format3.xsd"
+  schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>joint_trajectory_controller</name>
   <description> Controller for executing joint-space trajectories on a group of joints. </description>
   <version>0.18.0</version>
@@ -17,24 +21,30 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>cmake_modules</build_depend>
-
   <depend>actionlib</depend>
-  <depend>angles</depend>
-  <depend>control_msgs</depend>
+  <depend>boost</depend>
   <depend>control_toolbox</depend>
   <depend>controller_interface</depend>
-  <depend>hardware_interface</depend>
   <depend>realtime_tools</depend>
   <depend>roscpp</depend>
-  <depend>trajectory_msgs</depend>
   <depend>urdf</depend>
-  <depend>pluginlib</depend>
 
-  <test_depend>rostest</test_depend>
+  <build_depend>angles</build_depend>
+  <build_depend>control_msgs</build_depend>
+  <build_depend>hardware_interface</build_depend>
+  <build_depend>pluginlib</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+
+  <build_export_depend>angles</build_export_depend>
+  <build_export_depend>control_msgs</build_export_depend>
+  <build_export_depend>hardware_interface</build_export_depend>
+  <build_export_depend>trajectory_msgs</build_export_depend>
+
+  <test_depend>code_coverage</test_depend>
   <test_depend>controller_manager</test_depend>
   <test_depend>xacro</test_depend>
-  <test_depend>code_coverage</test_depend>
+  <test_depend>rostest</test_depend>
+  <test_depend>std_msgs</test_depend>
 
   <export>
     <controller_interface plugin="${prefix}/ros_control_plugins.xml"/>

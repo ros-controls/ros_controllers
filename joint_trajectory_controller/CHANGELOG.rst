@@ -2,6 +2,16 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Increase joint0 smoothing to force goal tolerance violation
+* Add pathToleranceViolationSingleJoint and goalToleranceViolationSingleJoint tests
+* Allow setting 'smoothing' to each joint of rrbot
+* Only update state_joint_error\_  values in loop where used
+* JointTrajectoryController: Fix tolerance checking to use state error from the correct joints
+* Fix missing virtual destructor
+* Contributors: Bence Magyar, Doug Morrison, Mateus Amarante, Tyler Weaver
+
 0.17.0 (2020-05-12)
 -------------------
 * Add extension point in update function to allow derived classes to perform e.g. additional checks.

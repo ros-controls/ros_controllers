@@ -2,6 +2,23 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update effort_controllers' package.xml file to format 3
+* Apply consistent format to effort_controllers' CMakeLists.txt file
+* Clean effort_controllers' dependencies
+* [effort_controllers] JointGroupPositionController: Change to initRT
+* [effort_controllers] JointGroupPositionController: Set to current position in starting
+  Currently, the target position upon starting is all zeros. This is not
+  great if a command is not issued immediately. To be safer, set the goal
+  position to the current sensed position and also reset the PID internal
+  state upon starting.
+* Remove unused transmission in effort_controllers test
+* Add missing test dependency on joint_state_controller in effort_controllers
+* [effort_controllers] JointGroupPositionController: Load URDF from namespace
+  Mimics `#245 <https://github.com/ros-controls/ros_controllers/issues/245>`_
+* Contributors: Mateus Amarante, Wolfgang Merkt
+
 0.17.0 (2020-05-12)
 -------------------
 

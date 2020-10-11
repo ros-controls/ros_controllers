@@ -2,6 +2,12 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use Python3 explicitly
+* fix shebang line for python3
+* Contributors: Bence Magyar, Mikael Arguedas
+
 0.17.0 (2020-05-12)
 -------------------
 

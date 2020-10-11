@@ -2,6 +2,15 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Move .yaml and .launch files to config/ and launch/ folders
+* Update joint_state_controller's package.xml file to format 3
+* Apply consistent format to joint_state_controller's CMakeLists.txt file
+* Clean joint_state_controller's dependencies
+* Move pluginlib/clast_list_macros.hpp include to cpp file
+* Contributors: Mateus Amarante
+
 0.17.0 (2020-05-12)
 -------------------
 

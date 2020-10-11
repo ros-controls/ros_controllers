@@ -2,6 +2,11 @@
 Changelog for package four_wheel_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add missing test dependency on xacro in four_wheel_steering_controller
+* Contributors: Mateus Amarante
+
 0.17.0 (2020-05-12)
 -------------------
 

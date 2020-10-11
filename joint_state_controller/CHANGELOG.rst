@@ -2,8 +2,8 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.18.0 (2020-10-11)
+-------------------
 * Move .yaml and .launch files to config/ and launch/ folders
 * Update joint_state_controller's package.xml file to format 3
 * Apply consistent format to joint_state_controller's CMakeLists.txt file

@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.18.0 (2020-10-11)
+-------------------
 * Fix dependency on Boost
 * Apply consistent format to CMakeLists.txt
 * Update package.xml to format 3

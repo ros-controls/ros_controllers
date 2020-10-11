@@ -2,8 +2,8 @@
 Changelog for package forward_command_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.18.0 (2020-10-11)
+-------------------
 * Apply consistent format to forward_command_controller's CMakeLists.txt file
 * Update package.xml of forward_ccommand_controller pkg to format 3
 * Fix dependencies of forward_command_controller pkg

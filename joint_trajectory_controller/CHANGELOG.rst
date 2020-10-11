@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.18.0 (2020-10-11)
+-------------------
 * Increase joint0 smoothing to force goal tolerance violation
 * Add pathToleranceViolationSingleJoint and goalToleranceViolationSingleJoint tests
 * Allow setting 'smoothing' to each joint of rrbot

@@ -1,6 +1,6 @@
 <package format="2">
   <name>force_torque_sensor_controller</name>
-  <version>0.17.0</version>
+  <version>0.18.0</version>
   <description>Controller to publish state of force-torque sensors</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="mathias.luedtke@ipa.fraunhofer.de">Mathias Lüdtke</maintainer>

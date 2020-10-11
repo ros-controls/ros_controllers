@@ -2,8 +2,8 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.18.0 (2020-10-11)
+-------------------
 * Fix dependency on Boost
 * Clean dependencies of diff_drive_controller package
 * Remove (unneeded?) dependencies on rosunit and gtest

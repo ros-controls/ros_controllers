@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   forward_command_controller
   hardware_interface
   pluginlib
-  rostime
+  roscpp
 )
 
 # Declare a catkin package
@@ -29,8 +29,8 @@ catkin_package(
 # Specify header include paths
 include_directories(include ${catkin_INCLUDE_DIRS})
 add_library(${PROJECT_NAME}
-  src/joint_position_controller.cpp
   src/joint_group_position_controller.cpp
+  src/joint_position_controller.cpp
 )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 

@@ -13,26 +13,36 @@ find_package(catkin REQUIRED COMPONENTS
   control_toolbox
   controller_interface
   forward_command_controller
-  realtime_tools
-  urdf
+  hardware_interface
   pluginlib
+  realtime_tools
+  roscpp
+  std_msgs
+  urdf
 )
 
 # Declare catkin package
 catkin_package(
   CATKIN_DEPENDS
-    angles
     control_msgs
     control_toolbox
     controller_interface
     forward_command_controller
+    hardware_interface
     realtime_tools
+    std_msgs
     urdf
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
 )
 
-include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
+
+###########
+## Build ##
+###########
+
+# Specify header include paths
+include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME}
   src/joint_velocity_controller.cpp
@@ -42,17 +52,23 @@ add_library(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
-# Install
+
+#############
+## Install ##
+#############
+
+# Install headers
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 
-# Install library
+# Install targets
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
 )
 
+# Install plugins
 install(FILES velocity_controllers_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

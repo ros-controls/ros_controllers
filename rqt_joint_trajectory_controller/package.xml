@@ -22,8 +22,8 @@
   <exec_depend>control_msgs</exec_depend>
   <exec_depend>controller_manager_msgs</exec_depend>
   <exec_depend>python_qt_binding</exec_depend>
+  <exec_depend>python3-rospkg</exec_depend>
   <exec_depend>trajectory_msgs</exec_depend>
-  <exec_depend>rospkg</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>rqt_gui</exec_depend>
   <exec_depend>rqt_gui_py</exec_depend>

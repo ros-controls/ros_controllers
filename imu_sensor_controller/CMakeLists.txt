@@ -60,7 +60,7 @@ install(TARGETS ${PROJECT_NAME}
 
 # Install plugins
 install(FILES imu_sensor_plugin.xml
-              imu_sensor_controller.yaml
-              imu_sensor_controller.launch
+              config/imu_sensor_controller.yaml
+              launch/imu_sensor_controller.launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

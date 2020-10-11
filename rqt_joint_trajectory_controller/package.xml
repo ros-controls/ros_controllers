@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model
+  href="http://download.ros.org/schema/package_format3.xsd"
+  schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>rqt_joint_trajectory_controller</name>
   <version>0.18.0</version>
   <description>Graphical frontend for interacting with joint_trajectory_controller instances.</description>
@@ -8,18 +11,23 @@
   <maintainer email="mathias.luedtke@ipa.fraunhofer.de">Mathias Lüdtke</maintainer>
   <maintainer email="enrique.fernandez.perdomo@gmail.com">Enrique Fernandez</maintainer>
 
-  <author email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</author>
   <license>BSD</license>
+
   <url type="website">http://wiki.ros.org/rqt_joint_trajectory_controller</url>
+
+  <author email="adolfo.rodriguez@pal-robotics.com">Adolfo Rodriguez Tsouroukdissian</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
   <exec_depend>control_msgs</exec_depend>
   <exec_depend>controller_manager_msgs</exec_depend>
+  <exec_depend>python_qt_binding</exec_depend>
   <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>rospkg</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>rqt_gui</exec_depend>
   <exec_depend>rqt_gui_py</exec_depend>
+  <exec_depend>qt_gui</exec_depend>
 
   <export>
     <rqt_gui plugin="${prefix}/plugin.xml"/>

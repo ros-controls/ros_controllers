@@ -35,7 +35,9 @@
  *********************************************************************/
 
 #include <position_controllers/joint_position_controller.h>
+#include <controller_interface/controller_base.h>
 #include <pluginlib/class_list_macros.hpp>
+#include <ros/time.h>
 
 template <class T>
 void forward_command_controller::ForwardCommandController<T>::starting(const ros::Time& time)

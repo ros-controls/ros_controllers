@@ -1,4 +1,8 @@
-<package format="2">
+<?xml version="1.0"?>
+<?xml-model
+  href="http://download.ros.org/schema/package_format3.xsd"
+  schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>position_controllers</name>
   <version>0.18.0</version>
   <description>position_controllers</description>
@@ -16,9 +20,17 @@
   <author>Vijay Pradeep</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>controller_interface</depend> 
-  <depend>forward_command_controller</depend> 
-  <depend>pluginlib</depend>
+  
+  <build_depend>forward_command_controller</build_depend> 
+  <build_depend>hardware_interface</build_depend> 
+  <build_depend>pluginlib</build_depend>
+  <build_depend>rostime</build_depend> 
+
+  <build_export_depend>forward_command_controller</build_export_depend> 
+  <build_export_depend>hardware_interface</build_export_depend> 
+  
+  <exec_depend>controller_interface</exec_depend> 
+  <exec_depend>rostime</exec_depend> 
 
   <export>
     <controller_interface plugin="${prefix}/position_controllers_plugins.xml"/>

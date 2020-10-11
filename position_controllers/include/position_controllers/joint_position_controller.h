@@ -38,6 +38,7 @@
 
 
 #include <forward_command_controller/forward_command_controller.h>
+#include <hardware_interface/joint_command_interface.h>
 
 namespace position_controllers
 {

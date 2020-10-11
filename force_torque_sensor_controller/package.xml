@@ -32,6 +32,8 @@
   <build_export_depend>geometry_msgs</build_export_depend> 
   <build_export_depend>hardware_interface</build_export_depend> 
 
+  <exec_depend>controller_manager</exec_depend> 
+
   <export>
     <controller_interface plugin="${prefix}/force_torque_sensor_plugin.xml"/>
   </export>

@@ -26,12 +26,14 @@
 
   <build_depend>four_wheel_steering_msgs</build_depend>
   <build_depend>hardware_interface</build_depend>
+  <build_depend>libboost-dev</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>pluginlib</build_depend>
   <build_depend>urdf_geometry_parser</build_depend>
 
   <build_export_depend>four_wheel_steering_msgs</build_export_depend>
   <build_export_depend>hardware_interface</build_export_depend>
+  <build_export_depend>libboost-dev</build_export_depend>
   <build_export_depend>nav_msgs</build_export_depend>
 
   <test_depend>controller_manager</test_depend>

@@ -643,23 +643,23 @@ namespace diff_drive_controller{
     urdf::JointConstSharedPtr left_wheel_joint(model->getJoint(left_wheel_name));
     urdf::JointConstSharedPtr right_wheel_joint(model->getJoint(right_wheel_name));
 
+    if (!left_wheel_joint)
+    {
+      ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
+                             << " couldn't be retrieved from model description");
+      return false;
+    }
+
+    if (!right_wheel_joint)
+    {
+      ROS_ERROR_STREAM_NAMED(name_, right_wheel_name
+                             << " couldn't be retrieved from model description");
+      return false;
+    }
+
     if (lookup_wheel_separation)
     {
       // Get wheel separation
-      if (!left_wheel_joint)
-      {
-        ROS_ERROR_STREAM_NAMED(name_, left_wheel_name
-                               << " couldn't be retrieved from model description");
-        return false;
-      }
-
-      if (!right_wheel_joint)
-      {
-        ROS_ERROR_STREAM_NAMED(name_, right_wheel_name
-                               << " couldn't be retrieved from model description");
-        return false;
-      }
-
       ROS_INFO_STREAM("left wheel to origin: " << left_wheel_joint->parent_to_joint_origin_transform.position.x << ","
                       << left_wheel_joint->parent_to_joint_origin_transform.position.y << ", "
                       << left_wheel_joint->parent_to_joint_origin_transform.position.z);

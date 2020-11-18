@@ -128,6 +128,8 @@ public:
         if (!point.velocities.empty())    {this->velocity[i]     = point.velocities[i];}
         if (!point.accelerations.empty()) {this->acceleration[i] = point.accelerations[i];}
       }
+
+      this->time_from_start = point.time_from_start.toSec();
     }
   };
 

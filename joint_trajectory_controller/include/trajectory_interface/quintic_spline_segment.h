@@ -61,7 +61,8 @@ public:
   QuinticSplineSegment()
     : coefs_(),
       duration_(static_cast<Scalar>(0)),
-      start_time_(static_cast<Scalar>(0))
+      start_time_(static_cast<Scalar>(0)),
+      time_from_start_(static_cast<Scalar>(0))
   {}
 
   /**
@@ -136,6 +137,9 @@ public:
   /** \return Segment end time. */
   Time endTime() const {return start_time_ + duration_;}
 
+  /** \return Segments time from trajectory start. */
+  Time timeFromStart() const {return time_from_start_;}
+
   /** \return Segment size (dimension). */
   unsigned int size() const {return coefs_.size();}
 
@@ -149,6 +153,7 @@ private:
   std::vector<SplineCoefficients> coefs_;
   Time duration_;
   Time start_time_;
+  Time time_from_start_;
 
   // These methods are borrowed from the previous controller's implementation
   // TODO: Clean their implementation, use the Horner algorithm for more numerically stable polynomial evaluation
@@ -220,6 +225,7 @@ void QuinticSplineSegment<ScalarType>::init(const Time&  start_time,
   // Time data
   start_time_ = start_time;
   duration_   = end_time - start_time;
+  time_from_start_ = start_state.time_from_start;
 
   // Spline coefficients
   coefs_.resize(dim);

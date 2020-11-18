@@ -716,8 +716,10 @@ publishState(const ros::Time& time)
       state_publisher_->msg_.desired.positions     = desired_state_.position;
       state_publisher_->msg_.desired.velocities    = desired_state_.velocity;
       state_publisher_->msg_.desired.accelerations = desired_state_.acceleration;
+      state_publisher_->msg_.desired.time_from_start = ros::Duration(desired_state_.time_from_start);
       state_publisher_->msg_.actual.positions      = current_state_.position;
       state_publisher_->msg_.actual.velocities     = current_state_.velocity;
+      state_publisher_->msg_.actual.time_from_start = ros::Duration(current_state_.time_from_start);
       state_publisher_->msg_.error.positions       = state_error_.position;
       state_publisher_->msg_.error.velocities      = state_error_.velocity;
 
@@ -760,7 +762,7 @@ updateStates(const ros::Time& sample_time, const Trajectory* const traj)
 
   for (unsigned int joint_index = 0; joint_index < getNumberOfJoints(); ++joint_index)
   {
-    sample( (*traj)[joint_index], sample_time.toSec(), desired_joint_state_);
+    const auto segment = sample( (*traj)[joint_index], sample_time.toSec(), desired_joint_state_);
 
     current_state_.position[joint_index] = joints_[joint_index].getPosition();
     current_state_.velocity[joint_index] = joints_[joint_index].getVelocity();
@@ -773,6 +775,13 @@ updateStates(const ros::Time& sample_time, const Trajectory* const traj)
     state_error_.position[joint_index] = angles::shortest_angular_distance(current_state_.position[joint_index],desired_joint_state_.position[0]);
     state_error_.velocity[joint_index] = desired_joint_state_.velocity[0] - current_state_.velocity[joint_index];
     state_error_.acceleration[joint_index] = 0.0;
+
+    if (joint_index == 0)
+    {
+      const auto time_from_start = segment->timeFromStart();
+      current_state_.time_from_start = sample_time.toSec() - segment->startTime() + time_from_start;
+      desired_state_.time_from_start = time_from_start;
+    }
   }
 }
 
@@ -790,8 +799,10 @@ setActionFeedback()
   current_active_goal->preallocated_feedback_->desired.positions     = desired_state_.position;
   current_active_goal->preallocated_feedback_->desired.velocities    = desired_state_.velocity;
   current_active_goal->preallocated_feedback_->desired.accelerations = desired_state_.acceleration;
+  current_active_goal->preallocated_feedback_->desired.time_from_start = ros::Duration(desired_state_.time_from_start);
   current_active_goal->preallocated_feedback_->actual.positions      = current_state_.position;
   current_active_goal->preallocated_feedback_->actual.velocities     = current_state_.velocity;
+  current_active_goal->preallocated_feedback_->actual.time_from_start = ros::Duration(current_state_.time_from_start);
   current_active_goal->preallocated_feedback_->error.positions       = state_error_.position;
   current_active_goal->preallocated_feedback_->error.velocities      = state_error_.velocity;
   current_active_goal->setFeedback( current_active_goal->preallocated_feedback_ );

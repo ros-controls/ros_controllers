@@ -63,12 +63,14 @@ struct PosVelAccState
   PosVelAccState(const typename std::vector<Scalar>::size_type size)
     : position(    std::vector<Scalar>(size, static_cast<Scalar>(0))),
       velocity(    std::vector<Scalar>(size, static_cast<Scalar>(0))),
-      acceleration(std::vector<Scalar>(size, static_cast<Scalar>(0)))
+      acceleration(std::vector<Scalar>(size, static_cast<Scalar>(0))),
+      time_from_start(static_cast<Scalar>(0))
   {}
 
   std::vector<Scalar> position;
   std::vector<Scalar> velocity;
   std::vector<Scalar> acceleration;
+  Scalar time_from_start;
 };
 
 } // namespace

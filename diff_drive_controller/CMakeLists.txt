@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
     urdf
 )
 
-find_package(Boost REQUIRED COMPONENTS headers)
+find_package(Boost REQUIRED)
 
 # Declare a catkin package
 generate_dynamic_reconfigure_options(cfg/DiffDriveController.cfg)

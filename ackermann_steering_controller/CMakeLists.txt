@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
 )
 
-find_package(Boost REQUIRED COMPONENTS headers)
+find_package(Boost REQUIRED)
 
 find_package(urdfdom REQUIRED)
 

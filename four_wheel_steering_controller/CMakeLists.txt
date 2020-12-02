@@ -19,7 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   urdf_geometry_parser
 )
 
-find_package(Boost REQUIRED COMPONENTS headers)
+find_package(Boost REQUIRED)
 
 # Declare a catkin package
 catkin_package(

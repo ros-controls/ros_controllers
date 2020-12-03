@@ -2,8 +2,8 @@
 Changelog for package four_wheel_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.18.1 (2020-12-03)
+-------------------
 * Remove explicit dependency on Boost::headers to avoid issue `#537 <https://github.com/ros-controls/ros_controllers/issues/537>`_
 * Add boost dependency
 * Format CMakeLists.txt and package.xml files + clean deps of 4ws_controller pkg

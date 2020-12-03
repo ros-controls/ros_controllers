@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.18.1 (2020-12-03)
+-------------------
 * Format CMakeLists.txt and package.xml files + clean deps of joint_trajectory_controller
 * Contributors: Mateus Amarante Araújo
 

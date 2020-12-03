@@ -2,8 +2,8 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.18.1 (2020-12-03)
+-------------------
 * Use version-agnostic FindBoost for headers
 * Contributors: Matt Reynolds
 

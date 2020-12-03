@@ -2,6 +2,11 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use version-agnostic FindBoost for headers
+* Contributors: Matt Reynolds
+
 0.18.0 (2020-10-11)
 -------------------
 * Fix dependency on Boost

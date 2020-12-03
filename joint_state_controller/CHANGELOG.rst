@@ -2,6 +2,9 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.18.0 (2020-10-11)
 -------------------
 * Move .yaml and .launch files to config/ and launch/ folders

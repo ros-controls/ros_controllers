@@ -2,6 +2,12 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix null pointer checks in diff_drive_controller
+* Use version-agnostic FindBoost for headers
+* Contributors: David V. Lu, Matt Reynolds
+
 0.18.0 (2020-10-11)
 -------------------
 * Fix dependency on Boost

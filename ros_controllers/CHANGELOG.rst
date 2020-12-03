@@ -2,6 +2,11 @@
 Changelog for package ros_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Update package.xml of ros_controllers meta-package to format 3
+* Contributors: Mateus Amarante Araújo
+
 0.18.0 (2020-10-11)
 -------------------
 

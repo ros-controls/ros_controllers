@@ -2,6 +2,9 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.18.0 (2020-10-11)
 -------------------
 * Update effort_controllers' package.xml file to format 3

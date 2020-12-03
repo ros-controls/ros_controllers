@@ -2,6 +2,13 @@
 Changelog for package four_wheel_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Remove explicit dependency on Boost::headers to avoid issue `#537 <https://github.com/ros-controls/ros_controllers/issues/537>`_
+* Add boost dependency
+* Format CMakeLists.txt and package.xml files + clean deps of 4ws_controller pkg
+* Contributors: Mateus Amarante, Mateus Amarante Araújo
+
 0.18.0 (2020-10-11)
 -------------------
 * Add missing test dependency on xacro in four_wheel_steering_controller

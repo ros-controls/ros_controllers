@@ -2,6 +2,13 @@
 Changelog for package imu_sensor_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add missing exec_depend on controller_manager
+* Move .launch and .yaml files to launch/ and config/ folders
+* Format package.xml and CMakeLIstst.txt + clean dependencies
+* Contributors: Mateus Amarante Araújo
+
 0.18.0 (2020-10-11)
 -------------------
 

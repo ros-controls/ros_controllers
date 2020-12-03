@@ -2,6 +2,11 @@
 Changelog for package gripper_action_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Format package.xml and CMakeLists.txt + clean deps of gripper_action_controller pkg
+* Contributors: Mateus Amarante Araújo
+
 0.18.0 (2020-10-11)
 -------------------
 

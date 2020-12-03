@@ -2,6 +2,11 @@
 Changelog for package velocity_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Format package.xml and CMakeLists.txt files + clean deps of velocity_controllers pkg
+* Contributors: Mateus Amarante Araújo
+
 0.18.0 (2020-10-11)
 -------------------
 

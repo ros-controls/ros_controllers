@@ -1,6 +1,6 @@
 <package format="2">
   <name>velocity_controllers</name>
-  <version>0.17.0</version>
+  <version>0.17.1</version>
   <description>velocity_controllers</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

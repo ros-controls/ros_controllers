@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.17.1 (2020-12-05)
+-------------------
 * Fix missing virtual destructor
 * Contributors: Tyler Weaver
 

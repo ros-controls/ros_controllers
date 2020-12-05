@@ -1,6 +1,6 @@
 <package format="2">
   <name>position_controllers</name>
-  <version>0.17.0</version>
+  <version>0.17.1</version>
   <description>position_controllers</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

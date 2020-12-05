@@ -1,6 +1,6 @@
 <package format="2">
   <name>four_wheel_steering_controller</name>
-  <version>0.17.0</version>
+  <version>0.17.1</version>
   <description>Controller for a four wheel steering mobile base.</description>
   <maintainer email="vincent.rousseau@irstea.fr">Vincent Rousseau</maintainer>
   <author email="vincent.rousseau@irstea.fr">Vincent Rousseau</author>

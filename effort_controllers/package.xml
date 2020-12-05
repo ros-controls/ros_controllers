@@ -1,6 +1,6 @@
 <package format="2">
   <name>effort_controllers</name>
-  <version>0.17.0</version>
+  <version>0.17.1</version>
   <description>effort_controllers</description>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>
   <maintainer email="mathias.luedtke@ipa.fraunhofer.de">Mathias Lüdtke</maintainer>

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>gripper_action_controller</name>
-  <version>0.17.0</version>
+  <version>0.17.1</version>
   <description>The gripper_action_controller package</description>
   <maintainer email="robot.moveit@gmail.com">Sachin Chitta</maintainer>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

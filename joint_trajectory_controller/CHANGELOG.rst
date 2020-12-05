@@ -2,6 +2,11 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix missing virtual destructor
+* Contributors: Tyler Weaver
+
 0.17.0 (2020-05-12)
 -------------------
 * Add extension point in update function to allow derived classes to perform e.g. additional checks.

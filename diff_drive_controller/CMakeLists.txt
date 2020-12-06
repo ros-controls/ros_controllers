@@ -188,6 +188,8 @@ if (CATKIN_ENABLE_TESTING)
 
   add_rostest(test/diff_drive_bad_urdf.test)
 
+  add_rostest(test/diff_drive_get_wheel_radius_fail.test)
+
   add_rostest_gtest(diff_drive_dyn_reconf_test
     test/diff_drive_dyn_reconf.test
     test/diff_drive_dyn_reconf_test.cpp

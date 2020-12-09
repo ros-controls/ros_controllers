@@ -9,16 +9,59 @@ on:
     - cron: '17 8 * * *'
 
 jobs:
-  industrial_ci:
+  ci_binary:
+    name: Noetic binary job
     runs-on: ubuntu-latest
     strategy:
       matrix:
         env:
           - {ROS_DISTRO: noetic, ROS_REPO: main}
           - {ROS_DISTRO: noetic, ROS_REPO: testing}
-          - {ROS_DISTRO: noetic, UPSTREAM_WORKSPACE: "https://raw.githubusercontent.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall -ros_controllers"}
+          - {ROS_DISTRO: noetic, UPSTREAM_WORKSPACE: 'https://raw.githubusercontent.com/ros-controls/ros_control/$ROS_DISTRO-devel/ros_control.rosinstall -ros_controllers'}
     steps:
       - run: sudo apt-get update -qq && sudo apt-get upgrade
       - uses: actions/checkout@v1
       - uses: ros-industrial/industrial_ci@master
         env: ${{matrix.env}}
+
+  ci_source:
+    name: Noetic source job
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: ros-tooling/setup-ros@0.1.1
+        with:
+          required-ros-distributions: noetic
+      - uses: ros-tooling/action-ros-ci@0.1.0
+        with:
+          target-ros1-distro: noetic
+          # build all packages listed in the meta package
+          package-name:
+            ackermann_steering_controller
+            diff_drive_controller
+            effort_controllers
+            force_torque_sensor_controller
+            forward_command_controller
+            four_wheel_steering_controller
+            gripper_action_controller
+            imu_sensor_controller
+            joint_state_controller
+            joint_trajectory_controller
+            position_controllers
+            ros_controllers
+            rqt_joint_trajectory_controller
+            velocity_controllers
+          vcs-repo-file-url: |
+            https://raw.githubusercontent.com/ros-controls/ros_control/noetic-devel/ros_control.rosinstall
+          colcon-mixin-name: coverage-gcc
+          colcon-mixin-repository: https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
+      - uses: codecov/codecov-action@v1.0.15
+        with:
+          file: ros_ws/lcov/total_coverage.info
+          flags: unittests
+          name: codecov-umbrella
+      - uses: actions/upload-artifact@v1
+        with:
+          name: colcon-logs-${{ matrix.os }}
+          path: ros_ws/log

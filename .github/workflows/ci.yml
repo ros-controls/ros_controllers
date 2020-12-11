@@ -30,10 +30,10 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: ros-tooling/setup-ros@0.1.1
+      - uses: ros-tooling/setup-ros@v0.1
         with:
           required-ros-distributions: noetic
-      - uses: ros-tooling/action-ros-ci@0.1.0
+      - uses: ros-tooling/action-ros-ci@v0.1
         with:
           target-ros1-distro: noetic
           # build all packages listed in the meta package
@@ -56,7 +56,7 @@ jobs:
             https://raw.githubusercontent.com/ros-controls/ros_control/noetic-devel/ros_control.rosinstall
           colcon-mixin-name: coverage-gcc
           colcon-mixin-repository: https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
-      - uses: codecov/codecov-action@v1.0.15
+      - uses: codecov/codecov-action@v1
         with:
           file: ros_ws/lcov/total_coverage.info
           flags: unittests

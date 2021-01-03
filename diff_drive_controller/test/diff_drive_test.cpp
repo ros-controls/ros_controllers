@@ -41,7 +41,7 @@ TEST_F(DiffDriveControllerTest, testForward)
   cmd_vel.linear.x = 0.0;
   cmd_vel.angular.z = 0.0;
   publish(cmd_vel);
-  ros::Duration(0.1).sleep();
+  ros::Duration(2.0).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
   // send a velocity command of 0.1 m/s
@@ -90,7 +90,7 @@ TEST_F(DiffDriveControllerTest, testTurn)
   cmd_vel.linear.x = 0.0;
   cmd_vel.angular.z = 0.0;
   publish(cmd_vel);
-  ros::Duration(0.1).sleep();
+  ros::Duration(2.0).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
   // send a velocity command

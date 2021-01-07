@@ -36,6 +36,7 @@
  * Author: Masaru Morita, Bence Magyar, Enrique Fernández
  */
 
+#include <ros/ros.h>
 #include <cmath>
 #include <pluginlib/class_list_macros.h>
 #include <tf/transform_datatypes.h>

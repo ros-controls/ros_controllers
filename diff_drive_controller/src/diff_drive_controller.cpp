@@ -541,7 +541,7 @@ namespace diff_drive_controller{
         return;
       }
 
-      if(!std::isfinite(command.angular.z) || !std::isfinite(command.angular.x))
+      if(!std::isfinite(command.angular.z) || !std::isfinite(command.linear.x))
       {
         ROS_WARN_THROTTLE(1.0, "Received NaN in velocity command. Ignoring.");
         return;

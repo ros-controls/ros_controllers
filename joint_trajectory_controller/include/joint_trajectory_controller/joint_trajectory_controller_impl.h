@@ -381,6 +381,11 @@ update(const ros::Time& time, const ros::Duration& period)
                       "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
       return;
     }
+    
+    // Get state error for current joint
+    state_joint_error_.position[0] = state_error_.position[i];
+    state_joint_error_.velocity[0] = state_error_.velocity[i];
+    state_joint_error_.acceleration[0] = state_error_.acceleration[i];
 
     //Check tolerances
     const RealtimeGoalHandlePtr rt_segment_goal = segment_it->getGoalHandle();

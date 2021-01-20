@@ -2,6 +2,13 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* JointTrajectoryController: Fix tolerance checking to use state error…
+  …from the correct joints
+  This fix was already applied to noetic-devel branch. ef2272de81bffe4b1e4a7fc3dc59d4f4c3e6cdb8
+* Contributors: Dean Reading
+
 0.17.1 (2020-12-05)
 -------------------
 * Fix missing virtual destructor

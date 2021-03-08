@@ -784,7 +784,6 @@ updateStates(const ros::Time& sample_time, const Trajectory* const traj)
       state_error_.time_from_start = desired_state_.time_from_start - current_state_.time_from_start;
     }
 
-    state_error_.time_from_start = desired_state_.time_from_start - current_state_.time_from_start;
   }
 }
 

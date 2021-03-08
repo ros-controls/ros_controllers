@@ -781,6 +781,7 @@ updateStates(const ros::Time& sample_time, const Trajectory* const traj)
       const auto time_from_start = segment->timeFromStart();
       current_state_.time_from_start = sample_time.toSec() - segment->startTime() + time_from_start;
       desired_state_.time_from_start = time_from_start;
+      state_error_.time_from_start = desired_state_.time_from_start - current_state_.time_from_start;
     }
 
     state_error_.time_from_start = desired_state_.time_from_start - current_state_.time_from_start;

@@ -807,6 +807,7 @@ setActionFeedback()
   current_active_goal->preallocated_feedback_->actual.time_from_start = ros::Duration(current_state_.time_from_start);
   current_active_goal->preallocated_feedback_->error.positions       = state_error_.position;
   current_active_goal->preallocated_feedback_->error.velocities      = state_error_.velocity;
+  current_active_goal->preallocated_feedback_->error.time_from_start = ros::Duration(state_error_.time_from_start);
   current_active_goal->setFeedback( current_active_goal->preallocated_feedback_ );
 
 }

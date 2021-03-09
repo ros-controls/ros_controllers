@@ -722,6 +722,7 @@ publishState(const ros::Time& time)
       state_publisher_->msg_.actual.time_from_start = ros::Duration(current_state_.time_from_start);
       state_publisher_->msg_.error.positions       = state_error_.position;
       state_publisher_->msg_.error.velocities      = state_error_.velocity;
+      state_publisher_->msg_.error.time_from_start = ros::Duration(state_error_.time_from_start);
 
       state_publisher_->unlockAndPublish();
     }

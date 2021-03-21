@@ -11,7 +11,6 @@
 
 namespace mecanum_drive_controller
 {
-
 namespace bacc = boost::accumulators;
 
 /// \brief The Odometry class handles odometry readings
@@ -19,7 +18,6 @@ namespace bacc = boost::accumulators;
 class Odometry
 {
 public:
-
   /// Integration function, used to integrate the odometry:
   typedef boost::function<void(double, double, double)> IntegrationFunction;
 
@@ -31,7 +29,7 @@ public:
 
   /// \brief Initialize the odometry
   /// \param time Current time
-  void init(const ros::Time &time, double base_frame_offset[PLANAR_POINT_DIM]);
+  void init(const ros::Time& time, double base_frame_offset[PLANAR_POINT_DIM]);
 
   /// \brief Updates the odometry class with latest wheels position
   /// \param wheel0_vel  Wheel velocity [rad/s]
@@ -40,20 +38,38 @@ public:
   /// \param wheel3_vel  Wheel velocity [rad/s]
   /// \param time      Current time
   /// \return true if the odometry is actually updated
-  bool update(double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const ros::Time &time);
+  bool update(double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const ros::Time& time);
 
   /// \return position (x component) [m]
-  double getX() const {return px_b_b0_;}
+  double getX() const
+  {
+    return px_b_b0_;
+  }
   /// \return position (y component) [m]
-  double getY() const {return py_b_b0_;}
+  double getY() const
+  {
+    return py_b_b0_;
+  }
   /// \return orientation (z component) [m]
-  double getRz() const {return rz_b_b0_;}
+  double getRz() const
+  {
+    return rz_b_b0_;
+  }
   /// \return body velocity of the base frame (linear x component) [m/s]
-  double getVx() const {return vx_Ob_b_b0_b_;}
+  double getVx() const
+  {
+    return vx_Ob_b_b0_b_;
+  }
   /// \return body velocity of the base frame (linear y component) [m/s]
-  double getVy() const {return vy_Ob_b_b0_b_;}
+  double getVy() const
+  {
+    return vy_Ob_b_b0_b_;
+  }
   /// \return body velocity of the base frame (angular z component) [m/s]
-  double getWz() const {return wz_b_b0_b_;}
+  double getWz() const
+  {
+    return wz_b_b0_b_;
+  }
 
   /// \brief Sets the wheels parameters: mecanum geometric param and radius
   /// \param wheels_k       Wheels geometric param (used in mecanum wheels' ik) [m]
@@ -61,7 +77,6 @@ public:
   void setWheelsParams(double wheels_k, double wheels_radius);
 
 private:
-
   /// Rolling mean accumulator and window:
   typedef bacc::accumulator_set<double, bacc::stats<bacc::tag::rolling_mean> > RollingMeanAcc;
   typedef bacc::tag::rolling_window RollingWindow;
@@ -94,6 +109,6 @@ private:
   double wheels_radius_;
 };
 
-} // namespace mecanum_drive_controller
+}  // namespace mecanum_drive_controller
 
 #endif /* ODOMETRY_H_ */

@@ -6,26 +6,21 @@
 
 namespace mecanum_drive_controller
 {
-
 namespace bacc = boost::accumulators;
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Odometry::Odometry(size_t velocity_rolling_window_size)
-: timestamp_(0.0)
-
-, px_b_b0_(0.0)
-, py_b_b0_(0.0)
-, rz_b_b0_(0.0)
-, vx_Ob_b_b0_b_(0.0)
-, vy_Ob_b_b0_b_(0.0)
-, wz_b_b0_b_(0.0)
-
-, wheels_k_(0.0)
-, wheels_radius_(0.0)
+  : timestamp_(0.0)
+  , px_b_b0_(0.0)
+  , py_b_b0_(0.0)
+  , rz_b_b0_(0.0)
+  , vx_Ob_b_b0_b_(0.0)
+  , vy_Ob_b_b0_b_(0.0)
+  , wz_b_b0_b_(0.0)
+  , wheels_k_(0.0)
+  , wheels_radius_(0.0)
 {
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Odometry::init(const ros::Time& time, double base_frame_offset[PLANAR_POINT_DIM])
 {
   // Reset timestamp:
@@ -37,13 +32,12 @@ void Odometry::init(const ros::Time& time, double base_frame_offset[PLANAR_POINT
   base_frame_offset_[2] = base_frame_offset[2];
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const ros::Time &time)
+bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, double wheel3_vel, const ros::Time& time)
 {
   /// We cannot estimate the speed with very small time intervals:
   const double dt = (time - timestamp_).toSec();
   if (dt < 0.0001)
-    return false; // Interval too small to integrate with
+    return false;  // Interval too small to integrate with
 
   timestamp_ = time;
 
@@ -53,17 +47,17 @@ bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, d
   /// NOTE: in the diff drive the velocity is filtered out, but we prefer to return it raw and let the user perform
   ///       post-processing at will. We prefer this way of doing as filtering introduces delay (which makes it
   ///       difficult to interpret and compare behavior curves).
-  double vx_Oc_c_c0_c = 0.25 * wheels_radius_              * ( wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
-  double vy_Oc_c_c0_c = 0.25 * wheels_radius_              * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
-  double wz_c_c0_c    = 0.25 * wheels_radius_  / wheels_k_ * (-wheel0_vel - wheel1_vel + wheel2_vel + wheel3_vel);
+  double vx_Oc_c_c0_c = 0.25 * wheels_radius_ * (wheel0_vel + wheel1_vel + wheel2_vel + wheel3_vel);
+  double vy_Oc_c_c0_c = 0.25 * wheels_radius_ * (-wheel0_vel + wheel1_vel - wheel2_vel + wheel3_vel);
+  double wz_c_c0_c = 0.25 * wheels_radius_ / wheels_k_ * (-wheel0_vel - wheel1_vel + wheel2_vel + wheel3_vel);
 
-  tf::Matrix3x3 R_c_b         = tf::Matrix3x3(tf::createQuaternionFromYaw(-base_frame_offset_[2]));
-  tf::Vector3   v_Oc_c_c0_b   = R_c_b * tf::Vector3(vx_Oc_c_c0_c, vy_Oc_c_c0_c, 0.0);
-  tf::Vector3   Oc_b          = R_c_b * tf::Vector3(-base_frame_offset_[0], -base_frame_offset_[1], 0.0);
+  tf::Matrix3x3 R_c_b = tf::Matrix3x3(tf::createQuaternionFromYaw(-base_frame_offset_[2]));
+  tf::Vector3 v_Oc_c_c0_b = R_c_b * tf::Vector3(vx_Oc_c_c0_c, vy_Oc_c_c0_c, 0.0);
+  tf::Vector3 Oc_b = R_c_b * tf::Vector3(-base_frame_offset_[0], -base_frame_offset_[1], 0.0);
 
   vx_Ob_b_b0_b_ = v_Oc_c_c0_b.x() + Oc_b.y() * wz_c_c0_c;
   vy_Ob_b_b0_b_ = v_Oc_c_c0_b.y() - Oc_b.x() * wz_c_c0_c;
-  wz_b_b0_b_    = wz_c_c0_c;
+  wz_b_b0_b_ = wz_c_c0_c;
 
   /// Integration.
   /// NOTE: the position is expressed in the odometry frame (frame b0), unlike the twist which is expressed in the body
@@ -79,12 +73,10 @@ bool Odometry::update(double wheel0_vel, double wheel1_vel, double wheel2_vel, d
   return true;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Odometry::setWheelsParams(double wheels_k, double wheels_radius)
 {
   wheels_k_ = wheels_k;
-
   wheels_radius_ = wheels_radius;
 }
 
-} // namespace mecanum_drive_controller
+}  // namespace mecanum_drive_controller

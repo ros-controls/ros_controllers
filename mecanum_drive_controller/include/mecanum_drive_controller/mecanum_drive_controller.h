@@ -1,3 +1,7 @@
+#pragma once
+
+#include <memory>
+
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
@@ -12,10 +16,8 @@
 
 namespace mecanum_drive_controller
 {
-
 // Check file README.md for restrictions and notes.
-class MecanumDriveController
-    : public controller_interface::Controller<hardware_interface::VelocityJointInterface>
+class MecanumDriveController : public controller_interface::Controller<hardware_interface::VelocityJointInterface>
 {
 public:
   MecanumDriveController();
@@ -26,9 +28,7 @@ public:
    * \param root_nh       Node handle at root namespace
    * \param controller_nh Node handle inside the controller namespace
    */
-  bool init(hardware_interface::VelocityJointInterface* hw,
-            ros::NodeHandle& root_nh,
-            ros::NodeHandle &controller_nh);
+  bool init(hardware_interface::VelocityJointInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
 
   /**
    * \brief Updates controller, i.e. computes the odometry and sets the new velocity commands
@@ -66,7 +66,9 @@ private:
     double wz_b_b0_b;
     ros::Time stamp;
 
-    Command() : vx_Ob_b_b0_b(0.0), vy_Ob_b_b0_b(0.0), wz_b_b0_b(0.0), stamp(0.0) {}
+    Command() : vx_Ob_b_b0_b(0.0), vy_Ob_b_b0_b(0.0), wz_b_b0_b(0.0), stamp(0.0)
+    {
+    }
   };
   realtime_tools::RealtimeBuffer<Command> command_rt_buffer_;
   Command command_;
@@ -75,8 +77,8 @@ private:
   /// Odometry related:
   Odometry odometry_;
 
-  boost::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
-  boost::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_pub_;
 
   geometry_msgs::TransformStamped odom_frame_;
 
@@ -85,15 +87,15 @@ private:
 
   /// Wheel radius (assuming it's the same for the left and right wheels):
   bool use_realigned_roller_joints_;
-  double wheels_k_; // wheels geometric param used in mecanum wheels' ik
+  double wheels_k_;  // wheels geometric param used in mecanum wheels' ik
   double wheels_radius_;
 
   /// Timeout to consider cmd_vel commands old:
   double cmd_vel_timeout_;
 
   /// Frame to use for the robot base:
-  std::string   base_frame_id_;
-  double        base_frame_offset_[PLANAR_POINT_DIM];
+  std::string base_frame_id_;
+  double base_frame_offset_[PLANAR_POINT_DIM];
 
   /// Whether to publish odometry to tf or not:
   bool enable_odom_tf_;
@@ -121,11 +123,8 @@ private:
    * \param wheel2_name Name of wheel2 joint
    * \param wheel3_name Name of wheel3 joint
    */
-  bool setWheelParamsFromUrdf(ros::NodeHandle& root_nh,
-                             const std::string& wheel0_name,
-                             const std::string& wheel1_name,
-                             const std::string& wheel2_name,
-                             const std::string& wheel3_name);
+  bool setWheelParamsFromUrdf(ros::NodeHandle& root_nh, const std::string& wheel0_name, const std::string& wheel1_name,
+                              const std::string& wheel2_name, const std::string& wheel3_name);
 
   /**
    * \brief Get the radius of a given wheel
@@ -133,17 +132,17 @@ private:
    * \param       wheel_link    link of the wheel from which to get the radius
    * \param[out]  wheels_radius radius of the wheel read from the urdf
    */
-  bool getWheelRadius(const boost::shared_ptr<urdf::ModelInterface> model, const boost::shared_ptr<const urdf::Link>& wheel_link, double& wheel_radius);
+  bool getWheelRadius(const urdf::ModelInterfaceSharedPtr& model, const urdf::LinkConstSharedPtr& wheel_link,
+                      double& wheel_radius);
 
   /**
    * \brief Sets the odometry publishing fields
    * \param root_nh Root node handle
    * \param controller_nh Node handle inside the controller namespace
    */
-  void setupRtPublishersMsg(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
-
+  void setupRealtimePublishersMsg(ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
 };
 
 PLUGINLIB_EXPORT_CLASS(mecanum_drive_controller::MecanumDriveController, controller_interface::ControllerBase)
 
-} // namespace mecanum_drive_controller
+}  // namespace mecanum_drive_controller

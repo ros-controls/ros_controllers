@@ -175,7 +175,10 @@ public:
 
     // Update PIDs
       double command = pid_->computeCommand(error_position, error_velocity, period);
-      command = std::min<double>(fabs(max_allowed_effort), std::max<double>(-fabs(max_allowed_effort), command));
+      if (max_allowed_effort)
+      {
+        command = std::min<double>(fabs(max_allowed_effort), std::max<double>(-fabs(max_allowed_effort), command));
+      }
       (*joint_handle_ptr_).setCommand(command);
       return command;
   }

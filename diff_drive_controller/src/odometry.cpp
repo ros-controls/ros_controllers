@@ -59,6 +59,7 @@ namespace diff_drive_controller
   , right_wheel_radius_(0.0)
   , left_wheel_old_pos_(0.0)
   , right_wheel_old_pos_(0.0)
+  , first_data_(true)
   , velocity_rolling_window_size_(velocity_rolling_window_size)
   , linear_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
@@ -75,6 +76,15 @@ namespace diff_drive_controller
 
   bool Odometry::update(double left_pos, double right_pos, const ros::Time &time)
   {
+    if(first_data_)
+    {
+      left_wheel_old_pos_  = left_pos  * left_wheel_radius_;
+      right_wheel_old_pos_ = right_pos * right_wheel_radius_;
+      timestamp_ = time;
+      first_data_ = false;
+      return true;
+    }
+
     /// Get current wheel joint positions:
     const double left_wheel_cur_pos  = left_pos  * left_wheel_radius_;
     const double right_wheel_cur_pos = right_pos * right_wheel_radius_;
@@ -171,6 +181,15 @@ namespace diff_drive_controller
   {
     linear_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
     angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+  }
+
+  void Odometry::resetInternalState()
+  {
+    resetAccumulators();
+    x_ = 0.0;
+    y_ = 0.0;
+    heading_ = 0.0;
+    first_data_ = true;
   }
 
 } // namespace diff_drive_controller

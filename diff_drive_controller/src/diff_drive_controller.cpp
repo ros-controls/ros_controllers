@@ -353,6 +353,7 @@ namespace diff_drive_controller{
     }
 
     sub_command_ = controller_nh.subscribe("cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
+    reset_odometry_srv_ = controller_nh.advertiseService("/reset_odometry", &DiffDriveController::resetOdometryCallback, this);
 
     // Initialize dynamic parameters
     DynamicParams dynamic_params;
@@ -829,6 +830,14 @@ namespace diff_drive_controller{
 
       controller_state_pub_->unlockAndPublish();
     }
+  }
+
+  bool DiffDriveController::resetOdometryCallback(std_srvs::TriggerRequest &req, std_srvs::TriggerResponse &res)
+  {
+    brake();
+    odometry_.resetInternalState();
+    res.success = true;
+    return true;
   }
 
 } // namespace diff_drive_controller

@@ -153,6 +153,11 @@ namespace diff_drive_controller
      */
     void setVelocityRollingWindowSize(size_t velocity_rolling_window_size);
 
+    /**
+     * \brief Reset Odometry internal state
+     */
+    void resetInternalState();
+
   private:
 
     /// Rolling mean accumulator and window:
@@ -198,6 +203,8 @@ namespace diff_drive_controller
     /// Previou wheel position/state [rad]:
     double left_wheel_old_pos_;
     double right_wheel_old_pos_;
+
+    bool first_data_;
 
     /// Rolling mean accumulators for the linar and angular velocities:
     size_t velocity_rolling_window_size_;

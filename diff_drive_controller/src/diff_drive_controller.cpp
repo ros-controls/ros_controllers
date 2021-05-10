@@ -471,6 +471,12 @@ namespace diff_drive_controller{
 
     // Limit velocities and accelerations:
     const double cmd_dt(period.toSec());
+    if(cmd_dt < 0)
+    {
+      ROS_ERROR("Invalid time interval, delta time cannot be negative");
+      curr_cmd.lin = 0.0;
+      curr_cmd.ang = 0.0;
+    }
 
     limiter_lin_.limit(curr_cmd.lin, last0_cmd_.lin, last1_cmd_.lin, cmd_dt);
     limiter_ang_.limit(curr_cmd.ang, last0_cmd_.ang, last1_cmd_.ang, cmd_dt);

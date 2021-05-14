@@ -53,7 +53,7 @@ namespace joint_state_controller
       ROS_INFO_STREAM("Joints parameter specified, publishing specified joints in desired order.");
     } else {
       // get all joint names from the hardware interface
-      std::vector<std::string> joint_names = hw->getNames();
+      joint_names = hw->getNames();
     }
 
     num_hw_joints_ = joint_names.size();

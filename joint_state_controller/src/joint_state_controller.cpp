@@ -42,8 +42,20 @@ namespace joint_state_controller
                                   ros::NodeHandle&                         root_nh,
                                   ros::NodeHandle&                         controller_nh)
   {
-    // get all joint names from the hardware interface
-    const std::vector<std::string>& joint_names = hw->getNames();
+    // List of joints to be published
+    std::vector<std::string> joint_names;
+
+    // Get list of joints: This allows specifying a desired order, or
+    // alternatively, only publish states for a subset of joints. If the
+    // parameter is not set, all joint states will be published in the order
+    // specified by the hardware interface.
+    if (controller_nh.getParam("joints", joint_names)) {
+      ROS_INFO_STREAM("Joints parameter specified, publishing specified joints in desired order.");
+    } else {
+      // get all joint names from the hardware interface
+      std::vector<std::string> joint_names = hw->getNames();
+    }
+
     num_hw_joints_ = joint_names.size();
     for (unsigned i=0; i<num_hw_joints_; i++)
       ROS_DEBUG("Got joint %s", joint_names[i].c_str());

@@ -42,10 +42,20 @@
 #include <string>
 
 #include <ros/node_handle.h>
+#include <realtime_tools/realtime_buffer.h>
+
+// actionlib
+#include <actionlib/server/action_server.h>
+
+// ROS messages
+#include <control_msgs/JointGroupCommandAction.h>
+#include <trajectory_msgs/JointTrajectoryPoint.h>
+#include <std_msgs/Float64MultiArray.h>
+
+// ros_controls
+#include <realtime_tools/realtime_server_goal_handle.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <controller_interface/controller.h>
-#include <std_msgs/Float64MultiArray.h>
-#include <realtime_tools/realtime_buffer.h>
 
 
 namespace forward_command_controller
@@ -68,71 +78,69 @@ namespace forward_command_controller
  * Subscribes to:
  * - \b command (std_msgs::Float64MultiArray) : The joint commands to apply.
  */
-template <class T>
-class ForwardJointGroupCommandController: public controller_interface::Controller<T>
+template <class HardwareInterface>
+class ForwardJointGroupCommandController: public controller_interface::Controller<HardwareInterface>
 {
 public:
   ForwardJointGroupCommandController() {}
   ~ForwardJointGroupCommandController() {sub_command_.shutdown();}
 
-  bool init(T* hw, ros::NodeHandle &n)
-  {
-    // List of controlled joints
-    std::string param_name = "joints";
-    if(!n.getParam(param_name, joint_names_))
-    {
-      ROS_ERROR_STREAM("Failed to getParam '" << param_name << "' (namespace: " << n.getNamespace() << ").");
-      return false;
-    }
-    n_joints_ = joint_names_.size();
+  bool init(HardwareInterface* hw, ros::NodeHandle &n);
 
-    if(n_joints_ == 0){
-      ROS_ERROR_STREAM("List of joint names is empty.");
-      return false;
-    }
-    for(unsigned int i=0; i<n_joints_; i++)
-    {
-      try
-      {
-        joints_.push_back(hw->getHandle(joint_names_[i]));
-      }
-      catch (const hardware_interface::HardwareInterfaceException& e)
-      {
-        ROS_ERROR_STREAM("Exception thrown: " << e.what());
-        return false;
-      }
-    }
-
-    commands_buffer_.writeFromNonRT(std::vector<double>(n_joints_, 0.0));
-
-    sub_command_ = n.subscribe<std_msgs::Float64MultiArray>("command", 1, &ForwardJointGroupCommandController::commandCB, this);
-    return true;
-  }
-
-  void starting(const ros::Time& time);
-  void update(const ros::Time& /*time*/, const ros::Duration& /*period*/)
+  void starting(const ros::Time& /*time*/);
+  void stopping(const ros::Time& /*time*/) {preemptActiveGoal();}
+  void update(const ros::Time& time, const ros::Duration& /*period*/)
   {
     std::vector<double> & commands = *commands_buffer_.readFromRT();
     for(unsigned int i=0; i<n_joints_; i++)
-    {  joints_[i].setCommand(commands[i]);  }
+    {  joints_[i].setCommand(commands[i]); }
+    setActionFeedback(time);
   }
 
-  std::vector< std::string > joint_names_;
-  std::vector< hardware_interface::JointHandle > joints_;
+protected:
+  typedef actionlib::ActionServer<control_msgs::JointGroupCommandAction>                      ActionServer;
+  typedef std::shared_ptr<ActionServer>                                                       ActionServerPtr;
+  typedef ActionServer::GoalHandle                                                            GoalHandle;
+  typedef realtime_tools::RealtimeServerGoalHandle<control_msgs::JointGroupCommandAction>     RealtimeGoalHandle;
+  typedef boost::shared_ptr<RealtimeGoalHandle>                                               RealtimeGoalHandlePtr;
+
   realtime_tools::RealtimeBuffer<std::vector<double> > commands_buffer_;
+  std::vector<double> default_commands_; // Defaults to 0 on init, can override in starting()
   unsigned int n_joints_;
 
+  std::vector< std::string >                     joint_names_;         ///< Controlled joint names.
+  std::vector< hardware_interface::JointHandle > joints_;              ///< Handle to controlled joint.
+  std::string                                    name_;               ///< Controller name.
+  RealtimeGoalHandlePtr                          rt_active_goal_;     ///< Currently active action goal, if any.
+
+  // ROS API
+  ros::NodeHandle    controller_nh_;
+  ros::Subscriber    sub_command_;
+  ActionServerPtr    action_server_;
+  ros::Timer         goal_handle_timer_;
+  ros::Timer         goal_duration_timer_;
+  ros::Duration      action_monitor_period_;
+
+  void goalCB(GoalHandle gh);
+  void cancelCB(GoalHandle gh);
+  void timeoutCB(const ros::TimerEvent& event);
+  void preemptActiveGoal();
+  void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg);
+
+  // Defaults to no change in default command
+  void updateDefaultCommand() {}
+
 private:
-  ros::Subscriber sub_command_;
-  void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg)
-  {
-    if(msg->data.size()!=n_joints_)
-    {
-      ROS_ERROR_STREAM("Dimension of command (" << msg->data.size() << ") does not match number of joints (" << n_joints_ << ")! Not executing!");
-      return;
-    }
-    commands_buffer_.writeFromNonRT(msg->data);
-  }
+  /**
+   * @brief Updates the pre-allocated feedback of the current active goal (if any)
+   * based on the current state values.
+   *
+   * @note This function is NOT thread safe but intended to be used in the
+   * update-function.
+   */
+  void setActionFeedback(const ros::Time& time);
 };
 
-}
+} // namespace
+
+#include <forward_command_controller/forward_joint_group_command_controller_impl.h>

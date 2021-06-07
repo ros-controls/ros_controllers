@@ -128,7 +128,7 @@ protected:
   void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg);
 
   // Defaults to no change in default command
-  void updateDefaultCommand() {}
+  void updateDefaultCommand();
 
 private:
   /**

@@ -45,5 +45,16 @@ void forward_command_controller::ForwardJointGroupCommandController<T>::starting
   commands_buffer_.readFromRT()->assign(n_joints_, 0.0);
 }
 
+template <class T>
+void forward_command_controller::ForwardJointGroupCommandController<T>::updateDefaultCommand()
+{
+  // Set defaults to 0
+  for(unsigned int i=0; i<joints_.size(); i++)
+  {
+    default_commands_[i] = 0.0;
+  }
+}
+
+
 
 PLUGINLIB_EXPORT_CLASS(effort_controllers::JointGroupEffortController,controller_interface::ControllerBase)

@@ -46,6 +46,17 @@ void forward_command_controller::ForwardJointGroupCommandController<T>::starting
   for(unsigned int i=0; i<joints_.size(); i++)
   {
     commands[i]=joints_[i].getPosition();
+    default_commands_[i] = commands[i];
+  }
+}
+
+template <class T>
+void forward_command_controller::ForwardJointGroupCommandController<T>::updateDefaultCommand()
+{
+  // Set default to current position
+  for(unsigned int i=0; i<joints_.size(); i++)
+  {
+    default_commands_[i] = joints_[i].getPosition();
   }
 }
 

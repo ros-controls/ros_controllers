@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.19.0 (2021-06-13)
+-------------------
 * fix NaN bug
 * fix test to expose NaN bug
 * Wait long enough for accumulator to be cleared

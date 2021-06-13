@@ -2,8 +2,8 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.19.0 (2021-06-13)
+-------------------
 * [joint_state_controller] Allow specification of joints or set specific order
   Introduces a 'joints' parameter similar to other controllers in order to
   be able to specify a subset of joints or a specific order of joints.

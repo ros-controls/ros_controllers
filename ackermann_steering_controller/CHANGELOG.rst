@@ -2,8 +2,8 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.19.0 (2021-06-13)
+-------------------
 * Wait long enough for accumulator to be cleared
 * Contributors: Matt Reynolds
 

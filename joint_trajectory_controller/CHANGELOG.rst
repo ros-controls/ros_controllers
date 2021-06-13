@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.19.0 (2021-06-13)
+-------------------
 * Set time_from_start for state error too
 * joint_trajectory_controller: add time_from_start feedback
 * Contributors: Alexander Rössler, Bence Magyar, Matt Reynolds

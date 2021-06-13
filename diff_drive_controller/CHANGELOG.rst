@@ -2,6 +2,15 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* fix NaN bug
+* fix test to expose NaN bug
+* Wait long enough for accumulator to be cleared
+* Add test for `#532 <https://github.com/ros-controls/ros_controllers/issues/532>`_
+  Close `#540 <https://github.com/ros-controls/ros_controllers/issues/540>`_
+* Contributors: Caio Amaral, Matt Reynolds, Melvin Wang
+
 0.18.1 (2020-12-03)
 -------------------
 * Fix null pointer checks in diff_drive_controller

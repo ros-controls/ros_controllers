@@ -2,6 +2,11 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Wait long enough for accumulator to be cleared
+* Contributors: Matt Reynolds
+
 0.18.1 (2020-12-03)
 -------------------
 * Use version-agnostic FindBoost for headers

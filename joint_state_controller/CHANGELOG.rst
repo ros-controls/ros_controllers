@@ -2,6 +2,17 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [joint_state_controller] Allow specification of joints or set specific order
+  Introduces a 'joints' parameter similar to other controllers in order to
+  be able to specify a subset of joints or a specific order of joints.
+  This is useful when the HardwareInterface exposes joints in an order
+  that is not desired or if certain joints are not meant to be published
+  by a controller. If not provided, the controller publishes all joints
+  and preserves backwards-compatibility.
+* Contributors: Wolfgang Merkt, Matt Reynolds
+
 0.18.1 (2020-12-03)
 -------------------
 

@@ -2,6 +2,12 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Set time_from_start for state error too
+* joint_trajectory_controller: add time_from_start feedback
+* Contributors: Alexander Rössler, Bence Magyar, Matt Reynolds
+
 0.18.1 (2020-12-03)
 -------------------
 * Format CMakeLists.txt and package.xml files + clean deps of joint_trajectory_controller

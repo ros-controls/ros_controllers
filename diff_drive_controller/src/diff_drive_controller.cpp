@@ -152,6 +152,9 @@ namespace diff_drive_controller{
     , wheel_separation_multiplier_(1.0)
     , left_wheel_radius_multiplier_(1.0)
     , right_wheel_radius_multiplier_(1.0)
+    , max_acceleration_z_(1.0)
+    , max_velocity_(1.0)
+    , max_jerk_(1.0)
     , cmd_vel_timeout_(0.5)
     , allow_multiple_cmd_vel_publishers_(true)
     , base_frame_id_("base_link")
@@ -361,6 +364,10 @@ namespace diff_drive_controller{
     dynamic_params.right_wheel_radius_multiplier = right_wheel_radius_multiplier_;
     dynamic_params.wheel_separation_multiplier   = wheel_separation_multiplier_;
 
+    dynamic_params.max_acceleration_z = limiter_ang_.max_acceleration;
+    dynamic_params.max_velocity = limiter_lin_.max_velocity;
+    dynamic_params.max_jerk = limiter_lin_.max_jerk;
+
     dynamic_params.publish_rate = publish_rate;
     dynamic_params.enable_odom_tf = enable_odom_tf_;
 
@@ -371,6 +378,10 @@ namespace diff_drive_controller{
     config.left_wheel_radius_multiplier  = left_wheel_radius_multiplier_;
     config.right_wheel_radius_multiplier = right_wheel_radius_multiplier_;
     config.wheel_separation_multiplier   = wheel_separation_multiplier_;
+
+    config.max_acceleration_z = limiter_ang_.max_acceleration;
+    config.max_velocity = limiter_lin_.max_velocity;
+    config.max_jerk = limiter_lin_.max_jerk;
 
     config.publish_rate = publish_rate;
     config.enable_odom_tf = enable_odom_tf_;
@@ -739,6 +750,10 @@ namespace diff_drive_controller{
     dynamic_params.right_wheel_radius_multiplier = config.right_wheel_radius_multiplier;
     dynamic_params.wheel_separation_multiplier   = config.wheel_separation_multiplier;
 
+    dynamic_params.max_acceleration_z = config.max_acceleration_z;
+    dynamic_params.max_velocity = config.max_velocity;
+    dynamic_params.max_jerk = config.max_jerk;
+
     dynamic_params.publish_rate = config.publish_rate;
 
     dynamic_params.enable_odom_tf = config.enable_odom_tf;
@@ -756,6 +771,13 @@ namespace diff_drive_controller{
     left_wheel_radius_multiplier_  = dynamic_params.left_wheel_radius_multiplier;
     right_wheel_radius_multiplier_ = dynamic_params.right_wheel_radius_multiplier;
     wheel_separation_multiplier_   = dynamic_params.wheel_separation_multiplier;
+
+    limiter_ang_.max_acceleration = dynamic_params.max_acceleration_z;
+    limiter_ang_.min_acceleration = -dynamic_params.max_acceleration_z;
+    limiter_lin_.max_velocity = dynamic_params.max_velocity;
+    limiter_lin_.min_velocity = -dynamic_params.max_velocity;
+    limiter_lin_.max_jerk = dynamic_params.max_jerk;
+    limiter_lin_.min_jerk = -dynamic_params.max_jerk;
 
     publish_period_ = ros::Duration(1.0 / dynamic_params.publish_rate);
     enable_odom_tf_ = dynamic_params.enable_odom_tf;

@@ -174,7 +174,8 @@ void ForwardJointGroupCommandController<HardwareInterface>::commandCB(const std_
 }
 
 template <class HardwareInterface>
-void ForwardJointGroupCommandController<HardwareInterface>::goalCB(GoalHandle gh)
+void ForwardJointGroupCommandController<HardwareInterface>::setGoal(GoalHandle gh,
+  std::vector<double> command)
 {
   ROS_DEBUG_STREAM_NAMED(name_,"Received new action goal");
   control_msgs::JointGroupCommandResult result;
@@ -189,7 +190,8 @@ void ForwardJointGroupCommandController<HardwareInterface>::goalCB(GoalHandle gh
     return;
   }
 
-  if (gh.getGoal()->joint_names.size() != gh.getGoal()->command.size()) {
+
+  if (gh.getGoal()->joint_names.size() != command.size()) {
     result.error_string = "Size of command must match size of joint_names.";
     ROS_ERROR_STREAM_NAMED(name_, result.error_string);
     result.error_code = control_msgs::JointGroupCommandResult::INVALID_GOAL;
@@ -214,7 +216,7 @@ void ForwardJointGroupCommandController<HardwareInterface>::goalCB(GoalHandle gh
   RealtimeGoalHandlePtr rt_goal(new RealtimeGoalHandle(gh));
   std::vector< double > new_commands = default_commands_;
   for(int i = 0; i < mapping_vector.size(); i++) {
-    new_commands[mapping_vector[i]] = gh.getGoal()->command[i];
+    new_commands[mapping_vector[i]] = command[i];
   }
   rt_goal->preallocated_feedback_->joint_names = joint_names_;
   commands_buffer_.writeFromNonRT(new_commands);
@@ -231,8 +233,8 @@ void ForwardJointGroupCommandController<HardwareInterface>::goalCB(GoalHandle gh
   goal_handle_timer_.start();
 
   // Setup goal timeout
-  if (gh.getGoal()->timeout > ros::Duration()) {
-    goal_duration_timer_ = controller_nh_.createTimer(gh.getGoal()->timeout,
+  if (gh.getGoal()->command.time_from_start > ros::Duration()) {
+    goal_duration_timer_ = controller_nh_.createTimer(gh.getGoal()->command.time_from_start,
                                                     &ForwardJointGroupCommandController::timeoutCB,
                                                     this,
                                                     true);
@@ -287,7 +289,7 @@ void ForwardJointGroupCommandController<HardwareInterface>::setActionFeedback(co
   }
 
   current_active_goal->preallocated_feedback_->header.stamp = time;
-  current_active_goal->preallocated_feedback_->desired = *commands_buffer_.readFromRT();
+  current_active_goal->preallocated_feedback_->desired = current_active_goal->gh_.getGoal()->command;
   current_active_goal->preallocated_feedback_->actual.positions.clear();
   current_active_goal->preallocated_feedback_->actual.velocities.clear();
   current_active_goal->preallocated_feedback_->actual.effort.clear();

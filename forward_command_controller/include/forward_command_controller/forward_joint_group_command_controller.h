@@ -121,7 +121,11 @@ protected:
   ros::Timer         goal_duration_timer_;
   ros::Duration      action_monitor_period_;
 
+  // Callback to call setGoal. Override with specific command
   void goalCB(GoalHandle gh);
+  void setGoal(GoalHandle gh, std::vector<double> command);
+
+  // General callbacks
   void cancelCB(GoalHandle gh);
   void timeoutCB(const ros::TimerEvent& event);
   void preemptActiveGoal();

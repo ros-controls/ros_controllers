@@ -55,6 +55,11 @@ void forward_command_controller::ForwardJointGroupCommandController<T>::updateDe
   }
 }
 
-
+template <class T>
+void forward_command_controller::ForwardJointGroupCommandController<T>::goalCB(GoalHandle gh)
+{
+  // Set as position command
+  setGoal(gh, gh.getGoal()->command.effort);
+}
 
 PLUGINLIB_EXPORT_CLASS(effort_controllers::JointGroupEffortController,controller_interface::ControllerBase)

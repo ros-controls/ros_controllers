@@ -64,7 +64,7 @@ inline std::vector<unsigned int> mapping(const T& t1, const T& t2)
   return mapping_vector;
 }
 
-std::string getLeafNamespace(const ros::NodeHandle& nh)
+inline std::string getLeafNamespace(const ros::NodeHandle& nh)
 {
   const std::string complete_ns = nh.getNamespace();
   std::size_t id   = complete_ns.find_last_of("/");

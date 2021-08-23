@@ -159,6 +159,7 @@ namespace diff_drive_controller{
     , wheel_joints_size_(0)
     , publish_cmd_(false)
     , publish_wheel_joint_controller_state_(false)
+    , reset_odometry_(false)
   {
   }
 
@@ -353,7 +354,7 @@ namespace diff_drive_controller{
     }
 
     sub_command_ = controller_nh.subscribe("cmd_vel", 1, &DiffDriveController::cmdVelCallback, this);
-    reset_odometry_srv_ = controller_nh.advertiseService("/reset_odometry", &DiffDriveController::resetOdometryCallback, this);
+    sub_reset_odometry_ = controller_nh.subscribe("reset_odometry", 1, &DiffDriveController::resetOdometryCallback, this);
 
     // Initialize dynamic parameters
     DynamicParams dynamic_params;
@@ -422,6 +423,13 @@ namespace diff_drive_controller{
       right_pos /= wheel_joints_size_;
 
       // Estimate linear and angular velocity using joint information
+      if(reset_odometry_)
+      {
+        brake();
+        odometry_.resetInternalState(left_pos, right_pos, time);
+        reset_odometry_ = false;
+      }
+
       odometry_.update(left_pos, right_pos, time);
     }
 
@@ -832,12 +840,9 @@ namespace diff_drive_controller{
     }
   }
 
-  bool DiffDriveController::resetOdometryCallback(std_srvs::TriggerRequest &req, std_srvs::TriggerResponse &res)
+  void DiffDriveController::resetOdometryCallback(const std_msgs::Bool::ConstPtr& msg)
   {
-    brake();
-    odometry_.resetInternalState();
-    res.success = true;
-    return true;
+    reset_odometry_ = msg->data;
   }
 
 } // namespace diff_drive_controller

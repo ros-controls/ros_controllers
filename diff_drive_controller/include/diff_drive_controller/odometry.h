@@ -155,8 +155,11 @@ namespace diff_drive_controller
 
     /**
      * \brief Reset Odometry internal state
+    * \param left_pos  Left  wheel position [rad] in which the system will be reset to
+     * \param right_pos Right wheel position [rad] in which the system will be reset to
+     * \param time      Current time in which the system will be reset to
      */
-    void resetInternalState();
+    void resetInternalState(double left_pos, double right_pos, const ros::Time &time);
 
   private:
 
@@ -204,7 +207,7 @@ namespace diff_drive_controller
     double left_wheel_old_pos_;
     double right_wheel_old_pos_;
 
-    bool first_data_;
+    bool reset_odometry_;
 
     /// Rolling mean accumulators for the linar and angular velocities:
     size_t velocity_rolling_window_size_;

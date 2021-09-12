@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
   <!-- Start the simulated hardware -->
   <include file="$(find effort_controllers)/test/simple_bot_hw.launch" />

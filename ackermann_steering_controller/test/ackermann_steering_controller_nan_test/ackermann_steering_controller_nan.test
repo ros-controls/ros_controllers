@@ -1,4 +1,4 @@
-
+<?xml version="1.0"?>
 <launch>
   <!-- Load common test stuff -->
   <include file="$(find ackermann_steering_controller)/test/common/launch/ackermann_steering_common.launch" />

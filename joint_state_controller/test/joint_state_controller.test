@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
   <rosparam command="load" ns="test_ok"
                            file="$(find joint_state_controller)/test/joint_state_controller_ok.yaml" />

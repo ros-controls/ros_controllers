@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
   <!-- start world -->
   <include file="$(find gazebo_worlds)/launch/empty_world.launch"/>

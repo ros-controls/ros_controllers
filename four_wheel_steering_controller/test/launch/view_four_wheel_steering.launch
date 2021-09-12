@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
   <!-- Start gazebo world -->
   <!--<include file="$(find gazebo_ros)/launch/empty_world.launch"/>-->

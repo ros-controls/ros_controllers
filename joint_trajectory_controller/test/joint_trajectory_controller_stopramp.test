@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
   <arg name="display_plots" default="false"/>
   <arg name="gtest_filter" default="*"/>

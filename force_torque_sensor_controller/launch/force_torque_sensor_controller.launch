@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
   <!-- load configuration -->
   <rosparam command="load" file="$(find force_torque_sensor_controller)/force_torque_sensor_controller.yaml" />

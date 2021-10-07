@@ -133,7 +133,8 @@ namespace ackermann_steering_controller{
     double wheel_separation_h_;
 
     /// Wheel radius (assuming it's the same for the left and right wheels):
-    double wheel_radius_;
+    double front_wheel_radius_;
+	double rear_wheel_radius_;
 
     /// Wheel separation and radius calibration multipliers:
     double wheel_separation_h_multiplier_;
@@ -189,7 +190,8 @@ namespace ackermann_steering_controller{
                                const std::string rear_wheel_name,
                                const std::string front_steer_name,
                                bool lookup_wheel_separation_h,
-                               bool lookup_wheel_radius);
+							   bool lookup_front_wheel_radius,
+                               bool lookup_rear_wheel_radius);
 
     /**
      * \brief Sets the odometry publishing fields

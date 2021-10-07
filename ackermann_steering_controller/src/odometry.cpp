@@ -56,7 +56,8 @@ namespace ackermann_steering_controller
   , linear_(0.0)
   , angular_(0.0)
   , wheel_separation_h_(0.0)
-  , wheel_radius_(0.0)
+  , front_wheel_radius_(0.0)
+  , rear_wheel_radius_(0.0)
   , rear_wheel_old_pos_(0.0)
   , velocity_rolling_window_size_(velocity_rolling_window_size)
   , linear_acc_(RollingWindow::window_size = velocity_rolling_window_size)
@@ -75,7 +76,7 @@ namespace ackermann_steering_controller
   bool Odometry::update(double rear_wheel_pos, double front_steer_pos, const ros::Time &time)
   {
     /// Get current wheel joint positions:
-    const double rear_wheel_cur_pos = rear_wheel_pos * wheel_radius_;
+    const double rear_wheel_cur_pos = rear_wheel_pos * rear_wheel_radius_;
 
     /// Estimate velocity of wheels using old and current position:
     //const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
@@ -123,10 +124,11 @@ namespace ackermann_steering_controller
     integrate_fun_(linear * dt, angular * dt);
   }
 
-  void Odometry::setWheelParams(double wheel_separation_h, double wheel_radius)
+  void Odometry::setWheelParams(double wheel_separation_h, double front_wheel_radius, double rear_wheel_radius)
   {
     wheel_separation_h_ = wheel_separation_h;
-    wheel_radius_     = wheel_radius;
+    front_wheel_radius_     = front_wheel_radius;
+	rear_wheel_radius_     = rear_wheel_radius;
   }
 
   void Odometry::setVelocityRollingWindowSize(size_t velocity_rolling_window_size)

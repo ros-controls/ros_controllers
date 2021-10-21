@@ -70,7 +70,7 @@ struct PosVelAccState
   std::vector<Scalar> position;
   std::vector<Scalar> velocity;
   std::vector<Scalar> acceleration;
-  Scalar time_from_start;
+  Scalar time_from_start = Scalar(0);
 };
 
 } // namespace

@@ -405,6 +405,7 @@ update(const ros::Time& time, const ros::Duration& period)
           }
           rt_segment_goal->preallocated_result_->error_code =
           control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
+          rt_segment_goal->preallocated_result_->error_string = joint_names_[i] + " path error " + std::to_string( state_joint_error_.position[0] );
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
           rt_active_goal_.reset();
           successful_joint_traj_.reset();
@@ -440,6 +441,7 @@ update(const ros::Time& time, const ros::Duration& period)
           }
 
           rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
+          rt_segment_goal->preallocated_result_->error_string = joint_names_[i] + " goal error " + std::to_string( state_joint_error_.position[0] );
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
           rt_active_goal_.reset();
           successful_joint_traj_.reset();

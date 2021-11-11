@@ -103,6 +103,13 @@ public:
       }
     }
 
+    // Check if timeout parameter has been set. Read it if set, otherwise warn about unsafe default behaviour.
+    if(n.hasParam("command_timeout"))
+    {
+      n.getParam("command_timeout", command_timeout_);
+      ROS_INFO_STREAM("Using command timeout: " << command_timeout_);
+    }
+
     commands_buffer_.writeFromNonRT(std::vector<double>(n_joints_, 0.0));
 
     sub_command_ = n.subscribe<std_msgs::Float64MultiArray>("command", 1, &ForwardJointGroupCommandController::commandCB, this);
@@ -120,6 +127,8 @@ public:
   std::vector< std::string > joint_names_;
   std::vector< hardware_interface::JointHandle > joints_;
   realtime_tools::RealtimeBuffer<std::vector<double> > commands_buffer_;
+  realtime_tools::RealtimeBuffer<ros::Time> last_received_command_time_buffer_;
+  double command_timeout_ = -1.0;
   unsigned int n_joints_;
 
 private:
@@ -132,6 +141,9 @@ private:
       return;
     }
     commands_buffer_.writeFromNonRT(msg->data);
+
+    // Record time of last received command
+    last_received_command_time_buffer_.writeFromNonRT(ros::Time::now());
   }
 };
 

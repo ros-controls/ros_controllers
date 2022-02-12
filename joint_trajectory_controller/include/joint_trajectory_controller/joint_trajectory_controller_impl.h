@@ -293,10 +293,10 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   state_publisher_.reset(new StatePublisher(controller_nh_, "state", 1));
 
   // ROS API: Action interface
-  action_server_.reset(new ActionServer(controller_nh_, "follow_joint_trajectory",
-                                        boost::bind(&JointTrajectoryController::goalCB,   this, _1),
-                                        boost::bind(&JointTrajectoryController::cancelCB, this, _1),
-                                        false));
+  action_server_.reset(
+      new ActionServer(controller_nh_, "follow_joint_trajectory",
+                       boost::bind(&JointTrajectoryController::goalCB, this, boost::placeholders::_1),
+                       boost::bind(&JointTrajectoryController::cancelCB, this, boost::placeholders::_1), false));
   action_server_->start();
 
   // ROS API: Provided services

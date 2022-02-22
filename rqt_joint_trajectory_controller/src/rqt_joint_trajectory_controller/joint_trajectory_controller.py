@@ -155,27 +155,27 @@ class JointTrajectoryController(Plugin):
 
         # Timer for sending commands to active controller
         self._update_cmd_timer = QTimer(self)
-        self._update_cmd_timer.setInterval(1000.0 / self._cmd_pub_freq)
+        self._update_cmd_timer.setInterval(int(1000.0 / self._cmd_pub_freq))
         self._update_cmd_timer.timeout.connect(self._update_cmd_cb)
 
         # Timer for updating the joint widgets from the controller state
         self._update_act_pos_timer = QTimer(self)
-        self._update_act_pos_timer.setInterval(1000.0 /
-                                               self._widget_update_freq)
+        self._update_act_pos_timer.setInterval(int(1000.0 /
+                                               self._widget_update_freq))
         self._update_act_pos_timer.timeout.connect(self._update_joint_widgets)
 
         # Timer for controller manager updates
         self._list_cm = ControllerManagerLister()
         self._update_cm_list_timer = QTimer(self)
-        self._update_cm_list_timer.setInterval(1000.0 /
-                                               self._ctrlrs_update_freq)
+        self._update_cm_list_timer.setInterval(int(1000.0 /
+                                               self._ctrlrs_update_freq))
         self._update_cm_list_timer.timeout.connect(self._update_cm_list)
         self._update_cm_list_timer.start()
 
         # Timer for running controller updates
         self._update_jtc_list_timer = QTimer(self)
-        self._update_jtc_list_timer.setInterval(1000.0 /
-                                                self._ctrlrs_update_freq)
+        self._update_jtc_list_timer.setInterval(int(1000.0 /
+                                                self._ctrlrs_update_freq))
         self._update_jtc_list_timer.timeout.connect(self._update_jtc_list)
         self._update_jtc_list_timer.start()
 

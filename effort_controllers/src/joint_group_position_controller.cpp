@@ -76,7 +76,7 @@ namespace effort_controllers
 
     // Get URDF
     urdf::Model urdf;
-    if (!urdf.initParam("robot_description"))
+    if (!urdf.initParamWithNodeHandle("robot_description", n))
     {
       ROS_ERROR("Failed to parse urdf file");
       return false;

@@ -182,6 +182,7 @@ protected:
   std::string               name_;               ///< Controller name.
   std::vector<JointHandle>  joints_;             ///< Handles to controlled joints.
   std::vector<bool>         angle_wraparound_;   ///< Whether controlled joints wrap around or not.
+  std::vector<bool>         is_linear_;          ///< Whether controlled joints are linear or not.
   std::vector<std::string>  joint_names_;        ///< Controlled joint names.
   SegmentTolerances<Scalar> default_tolerances_; ///< Default trajectory segment tolerances.
   HwIfaceAdapter            hw_iface_adapter_;   ///< Adapts desired trajectory state to HW interface.

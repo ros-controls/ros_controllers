@@ -406,6 +406,8 @@ update(const ros::Time& time, const ros::Duration& period)
           rt_segment_goal->preallocated_result_->error_code =
           control_msgs::FollowJointTrajectoryResult::PATH_TOLERANCE_VIOLATED;
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
+          // Force this to run before destroying rt_active_goal_ so results message is returned
+          rt_active_goal_->runNonRealtime(ros::TimerEvent());
           rt_active_goal_.reset();
           successful_joint_traj_.reset();
         }
@@ -441,6 +443,8 @@ update(const ros::Time& time, const ros::Duration& period)
 
           rt_segment_goal->preallocated_result_->error_code = control_msgs::FollowJointTrajectoryResult::GOAL_TOLERANCE_VIOLATED;
           rt_segment_goal->setAborted(rt_segment_goal->preallocated_result_);
+          // Force this to run before destroying rt_active_goal_ so results message is returned
+          rt_active_goal_->runNonRealtime(ros::TimerEvent());
           rt_active_goal_.reset();
           successful_joint_traj_.reset();
         }

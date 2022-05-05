@@ -34,8 +34,6 @@
 
 #include <four_wheel_steering_controller/odometry.h>
 
-#include <boost/bind.hpp>
-
 namespace four_wheel_steering_controller
 {
   namespace bacc = boost::accumulators;

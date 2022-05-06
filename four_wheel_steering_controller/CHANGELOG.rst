@@ -2,6 +2,12 @@
 Changelog for package four_wheel_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Drop old C++ standard
+* Add <?xml version=1.0?> to every .launch and .test file
+* Contributors: Jochen Sprickerhof, Lucas Walter
+
 0.19.0 (2021-06-13)
 -------------------
 

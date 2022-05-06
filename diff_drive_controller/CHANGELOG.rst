@@ -2,6 +2,13 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Drop old C++ standard
+* Use new boost bind placeholders
+* Add <?xml version=1.0?> to every .launch and .test file
+* Contributors: Jochen Sprickerhof, Lucas Walter
+
 0.19.0 (2021-06-13)
 -------------------
 * fix NaN bug

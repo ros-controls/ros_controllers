@@ -2,6 +2,12 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Drop old C++ standard
+* Add <?xml version=1.0?> to every .launch and .test file
+* Contributors: Jochen Sprickerhof, Lucas Walter
+
 0.19.0 (2021-06-13)
 -------------------
 * [joint_state_controller] Allow specification of joints or set specific order

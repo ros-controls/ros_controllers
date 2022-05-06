@@ -2,6 +2,18 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix joint trajectory controller so results message is returned on tolerance failures
+* added description for joint trajectory controller path/goal tolerance violation to action result, include which joint violated tolerance and by how much
+* I think this was responsible for at least some std::runtime_errors
+  Duration is out of dual 32-bit range
+  that came from initializing a ros::Duration with an uninitialized double
+* Drop old C++ standard
+* Use new boost bind placeholders
+* Add <?xml version=1.0?> to every .launch and .test file
+* Contributors: Jochen Sprickerhof, Levi Armstrong, Lucas Walter, grejj
+
 0.19.0 (2021-06-13)
 -------------------
 * Set time_from_start for state error too

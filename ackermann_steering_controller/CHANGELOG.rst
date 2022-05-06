@@ -2,6 +2,13 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Drop old C++ standard
+* Updated ackermann_steering_controller tests launch file to use robot_state_publisher rather than state_publisher which is no longer available in Noetic.
+* Add <?xml version=1.0?> to every .launch and .test file
+* Contributors: Jochen Sprickerhof, Lucas Walter, Tony Baltovski
+
 0.19.0 (2021-06-13)
 -------------------
 * Wait long enough for accumulator to be cleared

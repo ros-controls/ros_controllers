@@ -2,6 +2,13 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Increase spin box to six decimals
+* trivial cleanup & fix for python3.10
+  probably relevant for earlier versions of python3 as well.
+* Contributors: Levi Armstrong, v4hn
+
 0.19.0 (2021-06-13)
 -------------------
 

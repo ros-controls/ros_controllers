@@ -2,8 +2,8 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.20.0 (2022-05-06)
+-------------------
 * Drop old C++ standard
 * Add <?xml version=1.0?> to every .launch and .test file
 * Contributors: Jochen Sprickerhof, Lucas Walter

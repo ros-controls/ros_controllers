@@ -2,8 +2,8 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.20.0 (2022-05-06)
+-------------------
 * Drop old C++ standard
 * Use new boost bind placeholders
 * Add <?xml version=1.0?> to every .launch and .test file

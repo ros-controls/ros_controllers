@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.20.0 (2022-05-06)
+-------------------
 * Fix joint trajectory controller so results message is returned on tolerance failures
 * added description for joint trajectory controller path/goal tolerance violation to action result, include which joint violated tolerance and by how much
 * I think this was responsible for at least some std::runtime_errors

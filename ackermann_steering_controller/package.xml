@@ -4,7 +4,7 @@
   schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>ackermann_steering_controller</name>
-  <version>0.19.0</version>
+  <version>0.20.0</version>
   <description>Controller for a steer drive mobile base.</description>
 
   <maintainer email="p595201m@mail.kyutech.jp">Masaru Morita</maintainer>

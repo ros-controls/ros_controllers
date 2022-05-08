@@ -383,7 +383,7 @@ namespace diff_drive_controller{
     dyn_reconf_server_mutex_.unlock();
 
     dyn_reconf_server_->setCallback(
-        boost::bind(&DiffDriveController::reconfCallback, this, boost::placeholders::_1, boost::placeholders::_2));
+        std::bind(&DiffDriveController::reconfCallback, this, std::placeholders::_1, std::placeholders::_2));
 
     return true;
   }

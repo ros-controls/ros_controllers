@@ -42,8 +42,6 @@
 
 #include <ackermann_steering_controller/odometry.h>
 
-#include <boost/bind/bind.hpp>
-
 namespace ackermann_steering_controller
 {
   namespace bacc = boost::accumulators;
@@ -61,7 +59,7 @@ namespace ackermann_steering_controller
   , velocity_rolling_window_size_(velocity_rolling_window_size)
   , linear_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
-  , integrate_fun_(boost::bind(&Odometry::integrateExact, this, boost::placeholders::_1, boost::placeholders::_2))
+  , integrate_fun_(std::bind(&Odometry::integrateExact, this, std::placeholders::_1, std::placeholders::_2))
   {
   }
 

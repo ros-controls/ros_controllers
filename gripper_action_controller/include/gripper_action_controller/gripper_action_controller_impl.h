@@ -214,8 +214,8 @@ bool GripperActionController<HardwareInterface>::init(HardwareInterface* hw,
 
   // ROS API: Action interface
   action_server_.reset(new ActionServer(
-      controller_nh_, "gripper_cmd", boost::bind(&GripperActionController::goalCB, this, boost::placeholders::_1),
-      boost::bind(&GripperActionController::cancelCB, this, boost::placeholders::_1), false));
+      controller_nh_, "gripper_cmd", std::bind(&GripperActionController::goalCB, this, std::placeholders::_1),
+      std::bind(&GripperActionController::cancelCB, this, std::placeholders::_1), false));
   action_server_->start();
   return true;
 }

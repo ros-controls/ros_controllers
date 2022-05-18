@@ -59,6 +59,7 @@ namespace diff_drive_controller
   , right_wheel_radius_(0.0)
   , left_wheel_old_pos_(0.0)
   , right_wheel_old_pos_(0.0)
+  , old_pos_valid_(false)
   , velocity_rolling_window_size_(velocity_rolling_window_size)
   , linear_acc_(RollingWindow::window_size = velocity_rolling_window_size)
   , angular_acc_(RollingWindow::window_size = velocity_rolling_window_size)
@@ -78,6 +79,15 @@ namespace diff_drive_controller
     /// Get current wheel joint positions:
     const double left_wheel_cur_pos  = left_pos  * left_wheel_radius_;
     const double right_wheel_cur_pos = right_pos * right_wheel_radius_;
+
+    if (!old_pos_valid_)
+    {
+      /// Update old position with current:
+      left_wheel_old_pos_ = left_wheel_cur_pos;
+      right_wheel_old_pos_ = right_wheel_cur_pos;
+      old_pos_valid_ = true;
+      return false;
+    }
 
     /// Estimate velocity of wheels using old and current position:
     const double left_wheel_est_vel  = left_wheel_cur_pos  - left_wheel_old_pos_;
@@ -171,6 +181,7 @@ namespace diff_drive_controller
   {
     linear_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
     angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
+    old_pos_valid_ = false;
   }
 
 } // namespace diff_drive_controller

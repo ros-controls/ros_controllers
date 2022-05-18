@@ -82,7 +82,7 @@ namespace diff_drive_controller
 
     if (!old_pos_valid_)
     {
-      /// Update old position with current:
+      /// Set old position with current to retain true velocities when initial wheel position is non-zero:
       left_wheel_old_pos_ = left_wheel_cur_pos;
       right_wheel_old_pos_ = right_wheel_cur_pos;
       old_pos_valid_ = true;

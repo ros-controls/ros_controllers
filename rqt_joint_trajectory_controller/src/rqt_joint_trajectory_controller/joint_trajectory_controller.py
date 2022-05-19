@@ -414,6 +414,7 @@ class JointTrajectoryController(Plugin):
     def _update_cmd_cb(self):
         dur = []
         traj = JointTrajectory()
+        traj.header.stamp = rospy.Time.now()
         traj.joint_names = self._joint_names
         point = JointTrajectoryPoint()
         for name in traj.joint_names:

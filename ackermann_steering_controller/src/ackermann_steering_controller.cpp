@@ -37,7 +37,7 @@
  */
 
 #include <cmath>
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 #include <tf/transform_datatypes.h>
 #include <urdf_parser/urdf_parser.h>
 

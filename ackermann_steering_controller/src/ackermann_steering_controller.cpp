@@ -219,7 +219,7 @@ namespace ackermann_steering_controller{
     // If either parameter is not available, we need to look up the value in the URDF
     bool lookup_wheel_separation_h = !controller_nh.getParam("wheel_separation_h", wheel_separation_h_);
     double wheel_radius;
-    controller_nh.getParam("wheel_radius", wheel_radius);
+    bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius);
     bool lookup_front_wheel_radius = !controller_nh.param("front_wheel_radius", front_wheel_radius_, wheel_radius);
     bool lookup_rear_wheel_radius = !controller_nh.param("rear_wheel_radius", rear_wheel_radius_, wheel_radius);
 
@@ -227,8 +227,8 @@ namespace ackermann_steering_controller{
                                rear_wheel_name,
                                front_steer_name,
                                lookup_wheel_separation_h,
-                               lookup_front_wheel_radius,
-                               lookup_rear_wheel_radius))
+                               lookup_front_wheel_radius && lookup_wheel_radius,
+                               lookup_rear_wheel_radius && lookup_wheel_radius))
     {
       return false;
     }

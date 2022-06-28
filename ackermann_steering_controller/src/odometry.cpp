@@ -126,7 +126,7 @@ namespace ackermann_steering_controller
   {
     wheel_separation_h_ = wheel_separation_h;
     front_wheel_radius_     = front_wheel_radius;
-	rear_wheel_radius_     = rear_wheel_radius;
+    rear_wheel_radius_      = rear_wheel_radius;
   }
 
   void Odometry::setVelocityRollingWindowSize(size_t velocity_rolling_window_size)

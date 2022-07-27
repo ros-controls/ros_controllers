@@ -254,6 +254,7 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   // Initialize members
   joints_.resize(n_joints);
   angle_wraparound_.resize(n_joints);
+  trajectory_indices_ = std::vector<Scalar>(n_joints, -1);
   for (unsigned int i = 0; i < n_joints; ++i)
   {
     // Joint handle
@@ -381,6 +382,9 @@ update(const ros::Time& time, const ros::Duration& period)
                       "Unexpected error: No trajectory defined at current time. Please contact the package maintainer.");
       return;
     }
+
+    // Record the index of the segment we are currently in
+    trajectory_indices_[i] = segment_it - curr_traj[i].begin();
 
     // Get state error for current joint
     state_joint_error_.position[0] = state_error_.position[i];
@@ -614,6 +618,8 @@ goalCB(GoalHandle gh)
 
   if (update_ok)
   {
+    trajectory_indices_ = std::vector<double>(joint_names_.size(), -1);
+
     // Accept new goal
     preemptActiveGoal();
     gh.setAccepted();
@@ -814,8 +820,8 @@ setActionFeedback()
   current_active_goal->preallocated_feedback_->error.positions       = state_error_.position;
   current_active_goal->preallocated_feedback_->error.velocities      = state_error_.velocity;
   current_active_goal->preallocated_feedback_->error.time_from_start = ros::Duration(state_error_.time_from_start);
+  current_active_goal->preallocated_feedback_->indices               = trajector_indices_;
   current_active_goal->setFeedback( current_active_goal->preallocated_feedback_ );
-
 }
 
 template <class SegmentImpl, class HardwareInterface>

@@ -2,6 +2,11 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [rqt_joint_trajectory_controller] Added Timestamp to the outgoing command message
+* Contributors: Bence Magyar, Caedael
+
 0.20.0 (2022-05-06)
 -------------------
 * Increase spin box to six decimals

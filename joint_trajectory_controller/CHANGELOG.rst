@@ -2,8 +2,8 @@
 Changelog for package joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.21.0 (2022-10-21)
+-------------------
 * std::bind and placeholders instead of boost
 * Contributors: Lucas Walter
 

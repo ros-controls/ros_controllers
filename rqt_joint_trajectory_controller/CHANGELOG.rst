@@ -2,8 +2,8 @@
 Changelog for package rqt_joint_trajectory_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.21.0 (2022-10-21)
+-------------------
 * [rqt_joint_trajectory_controller] Added Timestamp to the outgoing command message
 * Contributors: Bence Magyar, Caedael
 

@@ -4,7 +4,7 @@
   schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>ros_controllers</name>
-  <version>0.20.0</version>
+  <version>0.21.0</version>
   <description>Library of ros controllers</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

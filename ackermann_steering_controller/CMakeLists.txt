@@ -116,3 +116,26 @@ if (CATKIN_ENABLE_TESTING)
   add_rostest(test/ackermann_steering_controller_radius_param_fail_test/ackermann_steering_controller_radius_param_fail.test)
   add_rostest(test/ackermann_steering_controller_separation_param_test/ackermann_steering_controller_separation_param.test)
 endif()
+<<<<<<< HEAD
+=======
+
+#############
+## Install ##
+#############
+
+# Install headers
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+)
+
+# Install targets
+install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# Install plugins
+install(FILES ${PROJECT_NAME}_plugins.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+>>>>>>> 802e2a7 (Install headers of ackermann_steering_controller)

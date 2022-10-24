@@ -48,6 +48,7 @@ add_library(${PROJECT_NAME}
   src/odometry.cpp
   src/speed_limiter.cpp
 )
+add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 

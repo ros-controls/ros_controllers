@@ -43,15 +43,6 @@ include_directories(
 add_library(${PROJECT_NAME} src/ackermann_steering_controller.cpp src/odometry.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-install(FILES ackermann_steering_controller_plugins.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
 if (CATKIN_ENABLE_TESTING)
   find_package(catkin REQUIRED COMPONENTS
     controller_manager
@@ -116,8 +107,6 @@ if (CATKIN_ENABLE_TESTING)
   add_rostest(test/ackermann_steering_controller_radius_param_fail_test/ackermann_steering_controller_radius_param_fail.test)
   add_rostest(test/ackermann_steering_controller_separation_param_test/ackermann_steering_controller_separation_param.test)
 endif()
-<<<<<<< HEAD
-=======
 
 #############
 ## Install ##
@@ -138,4 +127,3 @@ install(TARGETS ${PROJECT_NAME}
 # Install plugins
 install(FILES ${PROJECT_NAME}_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
->>>>>>> 802e2a7 (Install headers of ackermann_steering_controller)

@@ -1,4 +1,4 @@
-<library path="lib/libdiff_drive_controller">
+<library path="libdiff_drive_controller">
 
   <class name="diff_drive_controller/DiffDriveController" type="diff_drive_controller::DiffDriveController" base_class_type="controller_interface::ControllerBase">
     <description>

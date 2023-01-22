@@ -1,4 +1,4 @@
-<library path="lib/libjoint_state_controller">
+<library path="libjoint_state_controller">
   <class name="joint_state_controller/JointStateController" type="joint_state_controller::JointStateController" base_class_type="controller_interface::ControllerBase">
   <description>
     The joint state controller publishes the current joint state as a sensor_msgs/JointState message. The joint state controller expects a JointStateInterface type of hardware interface.

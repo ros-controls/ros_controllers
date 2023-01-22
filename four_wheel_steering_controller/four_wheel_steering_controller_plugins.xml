@@ -1,4 +1,4 @@
-<library path="lib/libfour_wheel_steering_controller">
+<library path="libfour_wheel_steering_controller">
 
   <class name="four_wheel_steering_controller/FourWheelSteeringController" type="four_wheel_steering_controller::FourWheelSteeringController" base_class_type="controller_interface::ControllerBase">
     <description>

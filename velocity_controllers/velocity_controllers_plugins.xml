@@ -1,4 +1,4 @@
-<library path="lib/libvelocity_controllers">
+<library path="libvelocity_controllers">
 
   <class name="velocity_controllers/JointVelocityController" type="velocity_controllers::JointVelocityController" base_class_type="controller_interface::ControllerBase">
     <description>

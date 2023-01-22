@@ -1,4 +1,4 @@
-<library path="lib/libeffort_controllers">
+<library path="libeffort_controllers">
 
   <class name="effort_controllers/JointPositionController" type="effort_controllers::JointPositionController" base_class_type="controller_interface::ControllerBase">
     <description>

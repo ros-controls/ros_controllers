@@ -1,4 +1,4 @@
-<library path="lib/libjoint_trajectory_controller">
+<library path="libjoint_trajectory_controller">
 
   <class name="position_controllers/JointTrajectoryController"
          type="position_controllers::JointTrajectoryController"

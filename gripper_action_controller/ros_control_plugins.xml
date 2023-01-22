@@ -1,4 +1,4 @@
-<library path="lib/libgripper_action_controller">
+<library path="libgripper_action_controller">
 
   <class name="position_controllers/GripperActionController"
          type="position_controllers::GripperActionController"

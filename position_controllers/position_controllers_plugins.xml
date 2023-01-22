@@ -1,4 +1,4 @@
-<library path="lib/libposition_controllers">
+<library path="libposition_controllers">
 
   <class name="position_controllers/JointPositionController" type="position_controllers::JointPositionController" base_class_type="controller_interface::ControllerBase">
     <description>

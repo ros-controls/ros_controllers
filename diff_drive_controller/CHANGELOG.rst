@@ -2,6 +2,11 @@
 Changelog for package diff_drive_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Don't hardcode plugin library path
+* Contributors: Jochen Sprickerhof
+
 0.21.0 (2022-10-21)
 -------------------
 * std::bind and placeholders instead of boost

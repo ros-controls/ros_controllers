@@ -1,6 +1,6 @@
 <package format="2">
   <name>ros_controllers</name>
-  <version>0.17.2</version>
+  <version>0.17.3</version>
   <description>Library of ros controllers</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

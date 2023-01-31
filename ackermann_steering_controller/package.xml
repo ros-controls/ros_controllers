@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>ackermann_steering_controller</name>
-  <version>0.17.2</version>
+  <version>0.17.3</version>
   <description>Controller for a steer drive mobile base.</description>
   <maintainer email="p595201m@mail.kyutech.jp">Masaru Morita</maintainer>
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

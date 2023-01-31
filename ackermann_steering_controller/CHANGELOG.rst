@@ -2,6 +2,11 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Install headers of ackermann_steering_controller
+* Contributors: Bence Magyar, Martin Pecka
+
 0.17.2 (2021-01-20)
 -------------------
 

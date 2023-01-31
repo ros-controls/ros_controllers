@@ -2,8 +2,8 @@
 Changelog for package ackermann_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.21.1 (2023-01-31)
+-------------------
 * Don't hardcode plugin library path
 * Install headers of ackermann_steering_controller
 * Contributors: Jochen Sprickerhof, Martin Pecka

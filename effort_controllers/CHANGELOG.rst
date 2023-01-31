@@ -2,8 +2,8 @@
 Changelog for package effort_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.21.1 (2023-01-31)
+-------------------
 * Don't hardcode plugin library path
 * Contributors: Jochen Sprickerhof
 

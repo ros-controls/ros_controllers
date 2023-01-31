@@ -2,8 +2,8 @@
 Changelog for package four_wheel_steering_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.21.1 (2023-01-31)
+-------------------
 * Don't hardcode plugin library path
 * add_dependencies was added to the CMakeLists.txt in four_wheel_steering_controller
 * Contributors: Jochen Sprickerhof, pavel

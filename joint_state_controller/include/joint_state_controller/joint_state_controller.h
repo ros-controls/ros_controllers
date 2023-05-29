@@ -93,6 +93,7 @@ private:
   ros::Time last_publish_time_;
   double publish_rate_;
   unsigned int num_hw_joints_; ///< Number of joints present in the JointStateInterface, excluding extra joints
+  bool pub_time_initialized_;
 
   void addExtraJoints(const ros::NodeHandle& nh, sensor_msgs::JointState& msg);
 };

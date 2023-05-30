@@ -91,6 +91,7 @@ namespace joint_state_controller
     if (!pub_time_initialized_)
     {
       last_publish_time_ = time - ros::Duration(1.001/publish_rate_); //ensure publish on first cycle
+      pub_time_initialized_ = true;
     }
   }
 

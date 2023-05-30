@@ -136,7 +136,6 @@ namespace joint_state_controller
       ROS_ERROR("Extra joints specification is not an array. Ignoring.");
       return;
     }
- 
     for(std::size_t i = 0; i < list.size(); ++i)
     {
       XmlRpc::XmlRpcValue& elem = list[i];

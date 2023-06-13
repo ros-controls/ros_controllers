@@ -133,6 +133,7 @@ TEST_F(JointStateControllerTest, publishOk)
   // NOTE: Below we subtract the loop rate because the the published message gets picked up in the
   // next iteration's spinOnce()
   const ros::Duration real_test_duration = ros::Time::now() - start_time - loop_rate.expectedCycleTime();
+  rec_msgs_-=1; //joint_state_controller now publishes on first update(), leading to an extra message (ie. 11 message for 10 intervals)
   const double real_pub_rate = static_cast<double>(rec_msgs_) / real_test_duration.toSec();
 
   // The publish rate should be close to the nominal value

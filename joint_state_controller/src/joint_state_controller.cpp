@@ -70,6 +70,7 @@ namespace joint_state_controller
     realtime_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::JointState>(root_nh, "joint_states", 4));
 
     // get joints and allocate message
+    joint_state_.clear();
     for (unsigned i=0; i<num_hw_joints_; i++){
       joint_state_.push_back(hw->getHandle(joint_names[i]));
       realtime_pub_->msg_.name.push_back(joint_names[i]);

@@ -2,6 +2,11 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* [joint_state_controller] clear joint_state\_ before assignment
+* Contributors: Cong Liu
+
 0.21.1 (2023-01-31)
 -------------------
 * Don't hardcode plugin library path

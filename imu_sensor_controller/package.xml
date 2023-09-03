@@ -4,7 +4,7 @@
   schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>imu_sensor_controller</name>
-  <version>0.21.1</version>
+  <version>0.21.2</version>
   <description>Controller to publish state of IMU sensors</description>
 
   <maintainer email="bence.magyar.robotics@gmail.com">Bence Magyar</maintainer>

@@ -2,8 +2,8 @@
 Changelog for package joint_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.21.2 (2023-09-03)
+-------------------
 * [joint_state_controller] clear joint_state\_ before assignment
 * Contributors: Cong Liu
 

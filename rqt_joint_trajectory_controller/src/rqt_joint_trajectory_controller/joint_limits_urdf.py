@@ -11,14 +11,15 @@ from math import pi
 import rospy
 
 
-def get_joint_limits(key='robot_description', use_smallest_joint_limits=True):
+def get_joint_limits(key='robot_description', use_smallest_joint_limits=True, description=None):
     use_small = use_smallest_joint_limits
     use_mimic = True
 
     # Code inspired on the joint_state_publisher package by David Lu!!!
     # https://github.com/ros/robot_model/blob/indigo-devel/
     # joint_state_publisher/joint_state_publisher/joint_state_publisher
-    description = rospy.get_param(key)
+    if description is None:
+        description = rospy.get_param(key)
     robot = xml.dom.minidom.parseString(description)\
         .getElementsByTagName('robot')[0]
     free_joints = {}

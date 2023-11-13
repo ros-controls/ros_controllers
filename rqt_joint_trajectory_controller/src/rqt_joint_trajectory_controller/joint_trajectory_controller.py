@@ -189,6 +189,7 @@ class JointTrajectoryController(Plugin):
         self._state_sub = None  # Controller state subscriber
 
         self._list_controllers = None
+        self._cm_checked = set()
 
     def shutdown_plugin(self):
         self._update_cmd_timer.stop()
@@ -242,8 +243,20 @@ class JointTrajectoryController(Plugin):
         # List of running controllers with a valid joint limits specification
         # for _all_ their joints
         running_jtc = self._running_jtc_info()
-        if running_jtc and not self._robot_joint_limits:
-            self._robot_joint_limits = get_joint_limits()  # Lazy evaluation
+        if running_jtc:
+            ns = self._cm_ns.rsplit('/', 1)[0]
+            if ns not in self._cm_checked:
+                try:
+                    for jnt, lims in get_joint_limits(description=rospy.get_param('{}/robot_description'.format(ns))).iteritems():
+                            self._robot_joint_limits[jnt] = lims
+                    self._cm_checked.add(ns)
+                except KeyError:
+                    rospy.logwarn('Could not find a valid robot_description parameter in namespace {}'.format(ns))
+                    try:
+                       for jnt, lims in  get_joint_limits(description=rospy.get_param('robot_description')).iteritems():
+                            self._robot_joint_limits[jnt] = lims
+                    except KeyError:
+                        rospy.logwarn('Could not find robot_description parameter')
         valid_jtc = []
         for jtc_info in running_jtc:
             has_limits = all(name in self._robot_joint_limits
@@ -271,9 +284,9 @@ class JointTrajectoryController(Plugin):
             # might have controllers with the same name but different
             # configurations. Clearing forces controller re-discovery
             self._widget.jtc_combo.clear()
-            self._update_jtc_list()
         else:
             self._list_controllers = None
+        self._update_jtc_list()
 
     def _on_jtc_change(self, jtc_name):
         self._unload_jtc()

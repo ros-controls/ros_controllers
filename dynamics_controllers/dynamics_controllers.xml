@@ -1,0 +1,23 @@
+<library path="lib/libdynamics_controllers">
+
+  <class
+    name="dynamics_controllers/KdlChainController"
+    type="dynamics_controllers::KdlChainController"
+    base_class_type="controller_interface::ControllerBase">
+    <description>
+      Computes the efforts based on the Inverse Dynamics of a kinematic chain.
+      Wraps around controllers compatible with an EffortJointInterface.
+    </description>
+  </class>
+
+  <class
+    name="dynamics_controllers/KdlTreeController"
+    type="dynamics_controllers::KdlTreeController"
+    base_class_type="controller_interface::ControllerBase">
+    <description>
+      Computes the efforts based on the Inverse Dynamics of a kinematic tree.
+      Wraps around controllers compatible with an EffortJointInterface.
+    </description>
+  </class>
+
+</library>

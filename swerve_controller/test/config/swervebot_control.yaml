@@ -1,0 +1,49 @@
+swervebot:
+    # Publish all joint states -----------------------------------
+    joint_state_controller:
+        type: "joint_state_controller/JointStateController"
+        publish_rate: 100
+
+    # Controller for independent wheels --------------------------
+    swerve_controller:
+        type: "swerve_controller/SwerveController"
+        
+        # Joints
+        lf_wheel: "wheel_lf_joint"
+        rf_wheel: "wheel_rf_joint"
+        lh_wheel: "wheel_lh_joint"
+        rh_wheel: "wheel_rh_joint"
+        lf_steering: "leg_lf_joint"
+        rf_steering: "leg_rf_joint"
+        lh_steering: "leg_lh_joint"
+        rh_steering: "leg_rh_joint"
+
+        # Range of motion of steering motors
+        min_steering_angle: -1.58
+        max_steering_angle: 1.58
+
+        # Other
+        publish_rate: 50
+        enable_odom_tf: true
+        pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.03]
+        twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.03]
+        cmd_vel_timeout: 5
+        base_frame_id: "body"
+
+        # Geometry (Do not provide the following if you want it to be parsed in the URDF)
+        # track: 0.8
+        # wheel_steering_y_offset: 0
+        # wheel_radius: 0.15
+        # wheel_base: 1.2
+
+    # Low-Level Controllers -------------------------------------
+    gazebo_ros_control:
+        pid_gains:
+            leg_lf_joint: {p: 50.0, i: 0.5, d: 5}
+            leg_rf_joint: {p: 50.0, i: 0.5, d: 5}
+            leg_lh_joint: {p: 50.0, i: 0.5, d: 5}
+            leg_rh_joint: {p: 50.0, i: 0.5, d: 5}
+            wheel_lf_joint: {p: 50.0, i: 2.0, d: 0.001}
+            wheel_rf_joint: {p: 50.0, i: 2.0, d: 0.001}
+            wheel_lh_joint: {p: 50.0, i: 2.0, d: 0.001}
+            wheel_rh_joint: {p: 50.0, i: 2.0, d: 0.001}

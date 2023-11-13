@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<package format="2">
+	<name>swerve_controller</name>
+	<version>0.0.0</version>
+	<description>A controller for ros_control which can operate swerve drive on a robot with four steered wheels</description>
+
+	<maintainer email="gabriel@exobotic.be">Gabriel Urbain</maintainer>
+
+	<license>BSD</license>
+	
+	<url type="repository">http://62.138.26.28:8888/exobotic_land/fieldbot_ros</url>
+
+	<author email="gabriel@exobotic.be">Gabriel Urbain</author>
+
+	<buildtool_depend>catkin</buildtool_depend>
+
+	<build_depend>roslint</build_depend>
+	<build_export_depend>roslint</build_export_depend>
+
+	<depend>controller_interface</depend>
+	<depend>joint_state_controller</depend>
+	<depend>robot_state_publisher</depend>
+	<depend>nav_msgs</depend>
+	<depend>realtime_tools</depend>
+	<depend>tf</depend>
+	<depend>urdf_geometry_parser</depend>
+
+	<test_depend>rosgraph_msgs</test_depend>
+	<test_depend>rostest</test_depend>
+	<test_depend>std_srvs</test_depend>
+	<test_depend>controller_manager</test_depend>
+
+	<export>
+    	<controller_interface plugin="${prefix}/swerve_controller_plugin.xml"/>
+	</export>
+
+</package>

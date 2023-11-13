@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<launch>
+    
+    <arg name="description" default="true"/>
+
+    <!-- Publish robot description and joint states -->
+    <group if="$(arg description)">
+        <param name="robot_description" command="xacro '$(find swerve_controller)/test/urdf/swervebot.xacro'" />
+        <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+            <param name="use_gui" value="TRUE"/>
+        </node> 
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find swerve_controller)/test/config/swervebot.rviz -f body"/>
+    </group>
+
+    <!-- Show in Rviz   -->
+    <group unless="$(arg description)">
+        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find swerve_controller)/test/config/swervebot.rviz -f world"/>
+    </group>
+
+    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="odom_trajectory" output="screen">
+        <remap from="/trajectory" to="/swervebot/odom_path" />
+        <param name="target_frame_name" type="string" value="/world" />
+        <param name="source_frame_name" type="string" value="/odom" />
+        <param name="trajectory_update_rate" type="double" value="4" />
+        <param name="trajectory_publish_rate" type="double" value="1" />
+    </node>
+    
+    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="robot_trajectory" output="screen">
+        <remap from="/trajectory" to="/swervebot/body_path" />
+        <param name="target_frame_name" type="string" value="/world" />
+        <param name="source_frame_name" type="string" value="/body" />
+        <param name="trajectory_update_rate" type="double" value="4" />
+        <param name="trajectory_publish_rate" type="double" value="1" />
+    </node>
+
+</launch>

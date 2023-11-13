@@ -1,0 +1,402 @@
+<?xml version="1.0"?>
+<!--
+Software License Agreement (BSD License)
+
+Copyright (c) 2020, Exobotic
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+ * Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above
+   copyright notice, this list of conditions and the following
+   disclaimer in the documentation and/or other materials provided
+   with the distribution.
+ * Neither the name of Exobotic nor the names of its
+   contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<robot name="fieldbot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+	<!-- Constants for robot dimensions -->
+	<xacro:property name="PI" value="3.1415926535897931"/>
+	<xacro:property name="height" value="0.5" /> <!-- height of the body -->
+
+	<xacro:property name="body_m" value="25.0" /> <!-- mass of the body structure -->
+	<xacro:property name="body_l" value="1.2" /> <!-- length of the body structure -->
+	<xacro:property name="body_w" value="0.8" /> <!-- width of the body structure -->
+	<xacro:property name="body_h" value="0.2" /> <!-- thickness of the body structure -->
+	<xacro:property name="leg_m" value="1" /> <!-- mass of a thigh leg -->
+	<xacro:property name="leg_r" value="0.025" /> <!-- radius of the leg cylinders -->
+	<xacro:property name="wheel_m" value="5" /> <!-- mass of a single wheel -->
+	<xacro:property name="wheel_r" value="0.15" /> <!-- radius of the wheels -->
+	<xacro:property name="wheel_h" value="0.05" /> <!-- thickness of the wheels -->
+	<xacro:property name="wheel_off" value="0.01" /> <!-- thickness of the wheels -->
+	<xacro:property name="joint_damping" value="1" /> <!-- damping of all joints -->
+
+	<!-- Import all Gazebo-customization elements, including Gazebo colors -->
+	<xacro:include filename="$(find swerve_controller)/test/urdf/swervebot.gazebo" />
+	<!-- Import Rviz colors -->
+	<xacro:include filename="$(find swerve_controller)/test/urdf/materials.xacro" />
+
+
+	<!-- BODY link -->
+	<link name="body">
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<box size="${body_l} ${body_w} ${body_h}"/>
+			</geometry>
+		</collision>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<box size="${body_l} ${body_w} ${body_h}"/>
+			</geometry>
+			<material name="orange"/>
+		</visual>
+		<inertial>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<mass value="${body_m}"/>
+			<inertia ixx="${body_m / 12.0 * (body_w*body_w + body_h*body_h)}" ixy="0.0" ixz="0.0"
+					 iyy="${body_m / 12.0 * (body_l*body_l + body_h*body_h)}" iyz="0.0"
+					 izz="${body_m / 12.0 * (body_w*body_w + body_l*body_l)}"/>
+		</inertial>
+	</link>
+
+	<!-- LEG joints -->
+	<joint name="leg_lf_joint" type="continuous">
+		<origin xyz="${body_l / 2} ${body_w / 2} ${-body_h/2 - (height - 2*wheel_r - wheel_off)/2}" rpy="0 0 0"/>
+		<parent link="body" />
+		<child link="leg_lf" />
+		<dynamics damping="${joint_damping}"/>
+		<axis xyz="0 0 1" />
+	</joint>
+	<joint name="leg_rf_joint" type="continuous">
+		<origin xyz="${body_l / 2} ${-body_w / 2} ${-body_h/2 - (height - 2*wheel_r - wheel_off)/2}" rpy="0 0 0"/>
+		<parent link="body" />
+		<child link="leg_rf" />
+		<dynamics damping="${joint_damping}"/>
+		<axis xyz="0 0 1" />
+	</joint>
+	<joint name="leg_lh_joint" type="continuous">
+		<origin xyz="${-body_l / 2} ${body_w / 2} ${-body_h/2 - (height - 2*wheel_r - wheel_off)/2}" rpy="0 0 0"/>
+		<parent link="body" />
+		<child link="leg_lh" />
+		<dynamics damping="${joint_damping}"/>
+		<axis xyz="0 0 1" />
+	</joint>
+	<joint name="leg_rh_joint" type="continuous">
+		<origin xyz="${-body_l / 2} ${-body_w / 2} ${-body_h/2 - (height - 2*wheel_r - wheel_off)/2}" rpy="0 0 0"/>
+		<parent link="body" />
+		<child link="leg_rh" />
+		<dynamics damping="${joint_damping}"/>
+		<axis xyz="0 0 1" />
+	</joint>
+
+	<!-- LEG links -->
+	<link name="leg_lf">
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<cylinder radius="${leg_r}" length="${height - 2*wheel_r - wheel_off}"/>
+			</geometry>
+		</collision>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<cylinder radius="${leg_r}" length="${height - 2*wheel_r - wheel_off}"/>
+			</geometry>
+			<material name="green"/>
+		</visual>
+		<inertial>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<mass value="${leg_m}"/>
+			<inertia ixx="${leg_m / 12.0 * (3*leg_r*leg_r + (height - 2*wheel_r - wheel_off)*(height - 2*wheel_r - wheel_off))}" ixy="0.0" ixz="0.0"
+					 iyy="${leg_m / 12.0 * (3*leg_r*leg_r + (height - 2*wheel_r - wheel_off)*(height - 2*wheel_r - wheel_off))}" iyz="0.0"
+					 izz="${leg_m / 2.0 * leg_r * leg_r}"/>
+		</inertial> 
+	</link>
+	<link name="leg_rf">
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<cylinder radius="${leg_r}" length="${height - 2*wheel_r - wheel_off}"/>
+			</geometry>
+		</collision>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<cylinder radius="${leg_r}" length="${height - 2*wheel_r - wheel_off}"/>
+			</geometry>
+			<material name="green"/>
+		</visual>
+		<inertial>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<mass value="${leg_m}"/>
+			<inertia ixx="${leg_m / 12.0 * (3*leg_r*leg_r + (height - 2*wheel_r - wheel_off)*(height - 2*wheel_r - wheel_off))}" ixy="0.0" ixz="0.0"
+					 iyy="${leg_m / 12.0 * (3*leg_r*leg_r + (height - 2*wheel_r - wheel_off)*(height - 2*wheel_r - wheel_off))}" iyz="0.0"
+					 izz="${leg_m / 2.0 * leg_r * leg_r}"/>
+		</inertial> 
+	</link>
+	<link name="leg_lh">
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<cylinder radius="${leg_r}" length="${height - 2*wheel_r - wheel_off}"/>
+			</geometry>
+		</collision>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<cylinder radius="${leg_r}" length="${height - 2*wheel_r - wheel_off}"/>
+			</geometry>
+			<material name="green"/>
+		</visual>
+		<inertial>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<mass value="${leg_m}"/>
+			<inertia ixx="${leg_m / 12.0 * (3*leg_r*leg_r + (height - 2*wheel_r - wheel_off)*(height - 2*wheel_r - wheel_off))}" ixy="0.0" ixz="0.0"
+					 iyy="${leg_m / 12.0 * (3*leg_r*leg_r + (height - 2*wheel_r - wheel_off)*(height - 2*wheel_r - wheel_off))}" iyz="0.0"
+					 izz="${leg_m / 2.0 * leg_r * leg_r}"/>
+		</inertial> 
+	</link>
+	<link name="leg_rh">
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<cylinder radius="${leg_r}" length="${height - 2*wheel_r - wheel_off}"/>
+			</geometry>
+		</collision>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<cylinder radius="${leg_r}" length="${height - 2*wheel_r - wheel_off}"/>
+			</geometry>
+			<material name="green"/>
+		</visual>
+		<inertial>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<mass value="${leg_m}"/>
+			<inertia ixx="${leg_m / 12.0 * (3*leg_r*leg_r + (height - 2*wheel_r - wheel_off)*(height - 2*wheel_r - wheel_off))}" ixy="0.0" ixz="0.0"
+					 iyy="${leg_m / 12.0 * (3*leg_r*leg_r + (height - 2*wheel_r - wheel_off)*(height - 2*wheel_r - wheel_off))}" iyz="0.0"
+					 izz="${leg_m / 2.0 * leg_r * leg_r}"/>
+		</inertial> 
+	</link>
+
+	<!-- WHEEL joints -->
+	<joint name="wheel_lf_joint" type="continuous">
+		<parent link="leg_lf"/>
+		<child link="wheel_lf"/>
+		<origin xyz="0 0 ${-(height + wheel_off) / 2}" rpy="0 0 0"/>
+		<dynamics damping="${joint_damping}"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<joint name="wheel_rf_joint" type="continuous">
+		<parent link="leg_rf"/>
+		<child link="wheel_rf"/>
+		<origin xyz="0 0 ${-(height + wheel_off) / 2}" rpy="0 0 0"/>
+		<dynamics damping="${joint_damping}"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<joint name="wheel_lh_joint" type="continuous">
+		<parent link="leg_lh"/>
+		<child link="wheel_lh"/>
+		<origin xyz="0 0 ${-(height + wheel_off) / 2}" rpy="0 0 0"/>
+		<dynamics damping="${joint_damping}"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+	<joint name="wheel_rh_joint" type="continuous">
+		<parent link="leg_rh"/>
+		<child link="wheel_rh"/>
+		<origin xyz="0 0 ${-(height + wheel_off) / 2}" rpy="0 0 0"/>
+		<dynamics damping="${joint_damping}"/>
+		<axis xyz="0 1 0"/>
+	</joint>
+
+	<!-- WHEEL links -->
+	<link name="wheel_lf">
+		<collision>
+			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<geometry>
+				<cylinder radius="${wheel_r}" length="${wheel_h}"/>
+			</geometry>
+		</collision>
+		<visual>
+  			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<geometry>
+				<cylinder radius="${wheel_r}" length="${wheel_h}"/>
+			</geometry>
+			<material name="black"/>
+		</visual>
+		<inertial>
+  			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<mass value="${wheel_m}"/>
+			<inertia ixx="${wheel_m / 12.0 * (3*wheel_r*wheel_r + wheel_h*wheel_h)}" ixy="0.0" ixz="0.0"
+					 iyy="${wheel_m / 12.0 * (3*wheel_r*wheel_r + wheel_h*wheel_h)}" iyz="0.0"
+					 izz="${wheel_m / 2.0 * wheel_r * wheel_r}"/>
+		</inertial>
+	</link>
+	<link name="wheel_rf">
+		<collision>
+			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<geometry>
+				<cylinder radius="${wheel_r}" length="${wheel_h}"/>
+			</geometry>
+		</collision>
+		<visual>
+  			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<geometry>
+				<cylinder radius="${wheel_r}" length="${wheel_h}"/>
+			</geometry>
+			<material name="black"/>
+		</visual>
+		<inertial>
+  			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<mass value="${wheel_m}"/>
+			<inertia ixx="${wheel_m / 12.0 * (3*wheel_r*wheel_r + wheel_h*wheel_h)}" ixy="0.0" ixz="0.0"
+					 iyy="${wheel_m / 12.0 * (3*wheel_r*wheel_r + wheel_h*wheel_h)}" iyz="0.0"
+					 izz="${wheel_m / 2.0 * wheel_r * wheel_r}"/>
+		</inertial>
+	</link>
+	<link name="wheel_lh">
+		<collision>
+			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<geometry>
+				<cylinder radius="${wheel_r}" length="${wheel_h}"/>
+			</geometry>
+		</collision>
+		<visual>
+  			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<geometry>
+				<cylinder radius="${wheel_r}" length="${wheel_h}"/>
+			</geometry>
+			<material name="black"/>
+		</visual>
+		<inertial>
+  			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<mass value="${wheel_m}"/>
+			<inertia ixx="${wheel_m / 12.0 * (3*wheel_r*wheel_r + wheel_h*wheel_h)}" ixy="0.0" ixz="0.0"
+					 iyy="${wheel_m / 12.0 * (3*wheel_r*wheel_r + wheel_h*wheel_h)}" iyz="0.0"
+					 izz="${wheel_m / 2.0 * wheel_r * wheel_r}"/>
+		</inertial>
+	</link>
+	<link name="wheel_rh">
+		<collision>
+			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<geometry>
+				<cylinder radius="${wheel_r}" length="${wheel_h}"/>
+			</geometry>
+		</collision>
+		<visual>
+  			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<geometry>
+				<cylinder radius="${wheel_r}" length="${wheel_h}"/>
+			</geometry>
+			<material name="black"/>
+		</visual>
+		<inertial>
+  			<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}"/>
+			<mass value="${wheel_m}"/>
+			<inertia ixx="${wheel_m / 12.0 * (3*wheel_r*wheel_r + wheel_h*wheel_h)}" ixy="0.0" ixz="0.0"
+					 iyy="${wheel_m / 12.0 * (3*wheel_r*wheel_r + wheel_h*wheel_h)}" iyz="0.0"
+					 izz="${wheel_m / 2.0 * wheel_r * wheel_r}"/>
+		</inertial>
+	</link>
+
+	<!-- SENSORS: nothing yet -->
+
+
+	<!-- ACTUATORS -->
+	<transmission name="leg_lf_trans">
+		<type>transmission_interface/SimpleTransmission</type>
+		<joint name="leg_lf_joint">
+			<hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+		</joint>
+		<actuator name="leg_lf_mot">
+			<mechanicalReduction>1</mechanicalReduction>
+		</actuator>
+	</transmission>
+	<transmission name="leg_rf_trans">
+		<type>transmission_interface/SimpleTransmission</type>
+		<joint name="leg_rf_joint">
+			<hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+		</joint>
+		<actuator name="leg_rf_mot">
+			<mechanicalReduction>1</mechanicalReduction>
+		</actuator>
+	</transmission>
+	<transmission name="leg_lh_trans">
+		<type>transmission_interface/SimpleTransmission</type>
+		<joint name="leg_lh_joint">
+			<hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+		</joint>
+		<actuator name="leg_lh_mot">
+			<mechanicalReduction>1</mechanicalReduction>
+		</actuator>
+	</transmission>
+	<transmission name="leg_rh_trans">
+		<type>transmission_interface/SimpleTransmission</type>
+		<joint name="leg_rh_joint">
+			<hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+		</joint>
+		<actuator name="leg_rh_mot">
+			<mechanicalReduction>1</mechanicalReduction>
+		</actuator>
+	</transmission>
+
+	<transmission name="wheel_lf_trans">
+		<type>transmission_interface/SimpleTransmission</type>
+		<joint name="wheel_lf_joint">
+			<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+		</joint>
+		<actuator name="wheel_lf_mot">
+			<mechanicalReduction>1</mechanicalReduction>
+		</actuator>
+	</transmission>
+	<transmission name="wheel_rf_trans">
+		<type>transmission_interface/SimpleTransmission</type>
+		<joint name="wheel_rf_joint">
+			<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+		</joint>
+		<actuator name="wheel_rf_mot">
+			<mechanicalReduction>1</mechanicalReduction>
+		</actuator>
+	</transmission>
+	<transmission name="wheel_lh_trans">
+		<type>transmission_interface/SimpleTransmission</type>
+		<joint name="wheel_lh_joint">
+			<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+		</joint>
+		<actuator name="wheel_lh_mot">
+			<mechanicalReduction>1</mechanicalReduction>
+		</actuator>
+	</transmission>
+	<transmission name="wheel_rh_trans">
+		<type>transmission_interface/SimpleTransmission</type>
+		<joint name="wheel_rh_joint">
+			<hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+		</joint>
+		<actuator name="wheel_rh_mot">
+			<mechanicalReduction>1</mechanicalReduction>
+		</actuator>
+	</transmission>
+
+</robot>

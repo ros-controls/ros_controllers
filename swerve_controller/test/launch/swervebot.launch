@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<launch>
+	<arg name="paused" default="false"/>
+	<arg name="use_sim_time" default="true"/>
+	<arg name="gui" default="true"/>
+	<arg name="headless" default="false"/>
+
+	<arg name="debug" default="false"/>
+	<arg name="rviz" default="false"/>
+	<arg name="joy" default="false"/>
+	<arg name="keyboard" default="false"/>
+	<arg name="groundtruth" default="true"/>
+
+	<!-- Forward parameters in empty_world.launch from gazebo_ros package -->
+	<include file="$(find gazebo_ros)/launch/empty_world.launch">
+		<arg name="debug" value="$(arg debug)" />
+		<arg name="gui" value="$(arg gui)" />
+		<arg name="paused" value="$(arg paused)"/>
+		<arg name="use_sim_time" value="$(arg use_sim_time)"/>
+		<arg name="headless" value="$(arg headless)"/>
+	</include>
+
+	<!-- Generate the robot with xacro -->
+	<param name="robot_description"
+		command="xacro '$(find swerve_controller)/test/urdf/swervebot.xacro'" />
+	<param name="swervebot/robot_description"
+		command="xacro '$(find swerve_controller)/test/urdf/swervebot.xacro'" />
+
+	<!-- Spawn the robot into Gazebo -->
+	<node name="spawn_swervebot" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+		args="-urdf -model swervebot -param robot_description -z 1"/>
+
+	<!-- Show in rviz -->
+	<group if="$(arg rviz)">
+		<include file="$(find swerve_controller)/test/launch/swervebot_rviz.launch">
+			<arg name="description" value="false"/>
+		</include>
+	</group>
+
+	<!-- Start the robot low-level controllers -->
+	<include file="$(find swerve_controller)/test/launch/swervebot_control.launch">
+		<arg name="joy" value="$(arg joy)"/>
+		<arg name="keyboard" value="$(arg keyboard)"/>
+		<arg name="groundtruth" value="$(arg groundtruth)"/>
+	</include>
+
+</launch>
+

@@ -52,6 +52,7 @@
 #include <pluginlib/class_list_macros.hpp>
 #include <realtime_tools/realtime_buffer.h>
 #include <realtime_tools/realtime_publisher.h>
+#include <std_msgs/Bool.h>
 #include <tf/tfMessage.h>
 
 namespace diff_drive_controller{
@@ -142,6 +143,7 @@ namespace diff_drive_controller{
     /// Odometry related:
     std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
     std::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
+    ros::Subscriber sub_reset_odometry_;
     Odometry odometry_;
 
     /// Controller state publisher
@@ -187,6 +189,9 @@ namespace diff_drive_controller{
 
     /// Publish wheel data:
     bool publish_wheel_joint_controller_state_;
+
+    /// Reset odometry state
+    bool reset_odometry_;
 
     // A struct to hold dynamic parameters
     // set from dynamic_reconfigure server
@@ -248,6 +253,11 @@ namespace diff_drive_controller{
      * \param command Velocity command message (twist)
      */
     void cmdVelCallback(const geometry_msgs::Twist& command);
+
+    /**
+     * \brief Reset Odometry internal state callback
+     */
+    void resetOdometryCallback(const std_msgs::Bool::ConstPtr& msg);
 
     /**
      * \brief Get the wheel names from a wheel param

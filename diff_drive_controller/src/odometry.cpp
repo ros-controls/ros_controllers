@@ -173,4 +173,15 @@ namespace diff_drive_controller
     angular_acc_ = RollingMeanAcc(RollingWindow::window_size = velocity_rolling_window_size_);
   }
 
+  void Odometry::resetInternalState(double left_pos, double right_pos, const ros::Time &time)
+  {
+    resetAccumulators();
+    x_ = 0.0;
+    y_ = 0.0;
+    heading_ = 0.0;
+    left_wheel_old_pos_  = left_pos  * left_wheel_radius_;
+    right_wheel_old_pos_ = right_pos * right_wheel_radius_;
+    timestamp_ = time;
+  }
+
 } // namespace diff_drive_controller

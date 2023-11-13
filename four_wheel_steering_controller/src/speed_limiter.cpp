@@ -115,7 +115,7 @@ namespace four_wheel_steering_controller
       const double dv  = v  - v0;
       const double dv0 = v0 - v1;
 
-      const double dt2 = 2. * dt * dt;
+      const double dt2 = dt * dt;
 
       const double da_min = min_jerk * dt2;
       const double da_max = max_jerk * dt2;

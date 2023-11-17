@@ -45,5 +45,35 @@ void forward_command_controller::ForwardJointGroupCommandController<T>::starting
   commands_buffer_.readFromRT()->assign(n_joints_, 0.0);
 }
 
+namespace velocity_controllers
+{
+  bool JointGroupVelocityController::init(hardware_interface::VelocityJointInterface *hw, ros::NodeHandle &nh) {
+    if (!BaseClass::init(hw, nh))
+      return false;
+
+    double timeout;
+    if (!nh.param("watchdog_timeout", timeout, 1.0))
+      ROS_WARN_STREAM("No watchdog_timeout parameter, defaulting to " << timeout);
+    watchdog_ = nh.createWallTimer(ros::WallDuration(timeout), &JointGroupVelocityController::watchDogCB, this, false, false);
+    sub_command_ = nh.subscribe<std_msgs::Float64MultiArray>("command", 1, &JointGroupVelocityController::commandCB, this);
+    return true;
+  }
+  void JointGroupVelocityController::commandCB(const std_msgs::Float64MultiArrayConstPtr&) {
+    received_ = true;
+    watchdog_.start(); // (re)start watchdog timer
+  }
+  void JointGroupVelocityController::watchDogCB(const ros::WallTimerEvent&) {
+    if (!isRunning()) {
+      watchdog_.stop();
+    }
+    else if (!received_) {
+      ROS_WARN("Didn't receive new velocity commands: stopping motion");
+      std::vector<double> zeros(n_joints_, 0.0);
+      commands_buffer_.writeFromNonRT(zeros);
+      watchdog_.stop(); // wait for message before starting again
+    }
+    received_ = false;
+  }
+}
 
 PLUGINLIB_EXPORT_CLASS(velocity_controllers::JointGroupVelocityController,controller_interface::ControllerBase)

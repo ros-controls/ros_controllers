@@ -57,7 +57,17 @@ namespace velocity_controllers
  * Subscribes to:
  * - \b command (std_msgs::Float64MultiArray) : The joint velocities to apply
  */
-typedef forward_command_controller::ForwardJointGroupCommandController<hardware_interface::VelocityJointInterface>
-        JointGroupVelocityController;
+class JointGroupVelocityController : public forward_command_controller::ForwardJointGroupCommandController<hardware_interface::VelocityJointInterface>
+{
+  using BaseClass = forward_command_controller::ForwardJointGroupCommandController<hardware_interface::VelocityJointInterface>;
+  bool received_;
+  ros::WallTimer watchdog_;
+  ros::Subscriber sub_command_;
+  void commandCB(const std_msgs::Float64MultiArrayConstPtr&);
+  void watchDogCB(const ros::WallTimerEvent& event);
+
+public:
+  bool init(hardware_interface::VelocityJointInterface* hw, ros::NodeHandle &nh) override;
+};
 
 }

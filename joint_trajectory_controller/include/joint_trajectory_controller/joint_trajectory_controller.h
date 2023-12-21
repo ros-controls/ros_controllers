@@ -185,7 +185,8 @@ protected:
 
   bool                      verbose_;            ///< Hard coded verbose flag to help in debugging
   std::string               name_;               ///< Controller name.
-  std::vector<talonfxpro_controllers::TalonFXProPositionTorqueCurrentFOCControllerInterface>  joints_;             ///< Handles to controlled joints.
+  //std::vector<talonfxpro_controllers::TalonFXProPositionTorqueCurrentFOCControllerInterface>  joints_;             ///< Handles to controlled joints.
+  typename std::conditional_t<std::is_same_v<HardwareInterface, talonfxpro_controllers::TalonFXProPositionTorqueCurrentFOCControllerInterface>, std::vector<talonfxpro_controllers::TalonFXProPositionTorqueCurrentFOCControllerInterface>, std::vector<JointHandle>> joints_;
   std::vector<bool>         angle_wraparound_;   ///< Whether controlled joints wrap around or not.
   std::vector<std::string>  joint_names_;        ///< Controlled joint names.
   SegmentTolerances<Scalar> default_tolerances_; ///< Default trajectory segment tolerances.

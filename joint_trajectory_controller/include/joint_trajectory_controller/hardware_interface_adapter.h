@@ -43,6 +43,11 @@
 #include <hardware_interface/posvel_command_interface.h>
 #include <hardware_interface/posvelacc_command_interface.h>
 
+// probably more includes than needed but shouldn't miss anything with this
+#include <talon_controllers/talon_controller_interface.h>
+#include <talon_controllers/talonfxpro_controller_interface.h>
+#include <ctre_interfaces/talon_state_interface.h>
+
 /**
  * \brief Helper class to simplify integrating the JointTrajectoryController with different hardware interfaces.
  *
@@ -355,4 +360,43 @@ public:
 
 private:
   std::vector<hardware_interface::PosVelAccJointHandle>* joint_handles_ptr_;
+};
+
+
+
+// talonfxpro adapter
+template <class State>
+class HardwareInterfaceAdapter<talonfxpro_controllers::TalonFXProPositionTorqueCurrentFOCControllerInterface, State>
+{
+public:
+  HardwareInterfaceAdapter() : joint_handles_ptr_(nullptr) {}
+
+  bool init(std::vector<talonfxpro_controllers::TalonFXProPositionTorqueCurrentFOCControllerInterface>& joint_handles, ros::NodeHandle& /*controller_nh*/)
+  {
+    // Store pointer to joint handles
+    joint_handles_ptr_ = &joint_handles;
+
+    return true;
+  }
+
+  void starting(const ros::Time& /*time*/) {}
+  void stopping(const ros::Time& /*time*/) {}
+
+  void updateCommand(const ros::Time&     /*time*/,
+                     const ros::Duration& /*period*/,
+                     const State&         desired_state,
+                     const State&         /*state_error*/)
+  {
+    // Forward desired position to command
+    const unsigned int n_joints = joint_handles_ptr_->size();
+    for (unsigned int i = 0; i < n_joints; ++i)
+    {
+      (*joint_handles_ptr_)[i].setControlPosition(desired_state.position[i]);
+      (*joint_handles_ptr_)[i].setControlVelocity(desired_state.velocity[i]);
+      (*joint_handles_ptr_)[i].setControlAcceleration(desired_state.acceleration[i]);
+    }
+  }
+
+private:
+  std::vector<talonfxpro_controllers::TalonFXProPositionTorqueCurrentFOCControllerInterface>* joint_handles_ptr_;
 };

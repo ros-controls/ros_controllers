@@ -39,6 +39,16 @@
   <build_export_depend>control_msgs</build_export_depend>
   <build_export_depend>hardware_interface</build_export_depend>
   <build_export_depend>trajectory_msgs</build_export_depend>
+  <build_depend>hardware_interface</build_depend>
+  <build_depend>talon_controllers</build_depend>
+  <build_depend>ctre_interfaces</build_depend>
+  <build_export_depend>talon_controllers</build_export_depend>
+  <build_export_depend>ctre_interfaces</build_export_depend>
+  <exec_depend>hardware_interface</exec_depend>
+  <exec_depend>talon_controllers</exec_depend>
+  <exec_depend>ctre_interfaces</exec_depend>
+  
+
 
   <test_depend>code_coverage</test_depend>
   <test_depend>controller_manager</test_depend>

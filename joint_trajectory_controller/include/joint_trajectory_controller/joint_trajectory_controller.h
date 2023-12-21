@@ -76,6 +76,11 @@
 #include <joint_trajectory_controller/hold_trajectory_builder.h>
 #include <joint_trajectory_controller/stop_trajectory_builder.h>
 
+// talonfxpro
+#include <talon_controllers/talon_controller_interface.h>
+#include <talon_controllers/talonfxpro_controller_interface.h>
+#include <ctre_interfaces/talon_state_interface.h>
+
 namespace joint_trajectory_controller
 {
 
@@ -180,7 +185,7 @@ protected:
 
   bool                      verbose_;            ///< Hard coded verbose flag to help in debugging
   std::string               name_;               ///< Controller name.
-  std::vector<JointHandle>  joints_;             ///< Handles to controlled joints.
+  std::vector<talonfxpro_controllers::TalonFXProPositionTorqueCurrentFOCControllerInterface>  joints_;             ///< Handles to controlled joints.
   std::vector<bool>         angle_wraparound_;   ///< Whether controlled joints wrap around or not.
   std::vector<std::string>  joint_names_;        ///< Controlled joint names.
   SegmentTolerances<Scalar> default_tolerances_; ///< Default trajectory segment tolerances.

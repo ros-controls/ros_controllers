@@ -80,26 +80,17 @@ namespace joint_state_controller
     }
     addExtraJoints(controller_nh, realtime_pub_->msg_);
 
-    pub_time_initialized_=false;
-
     return true;
   }
 
   void JointStateController::starting(const ros::Time& time)
   {
-    // initialize time exactly once, to maintain publish rate through controller resets
-    if (!pub_time_initialized_)
-    {
-      last_publish_time_ = time - ros::Duration(1.001/publish_rate_); //ensure publish on first cycle
-      pub_time_initialized_ = true;
-    }
   }
 
   void JointStateController::update(const ros::Time& time, const ros::Duration& /*period*/)
   {
     // limit rate of publishing
-    if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0/publish_rate_) < time){
-
+    if (publish_rate_ > 0.0 && (last_publish_time_.isZero() || last_publish_time_ + ros::Duration(1.0/publish_rate_) < time)){
       // try to publish
       if (realtime_pub_->trylock()){
         // we're actually publishing, so increment time

@@ -90,7 +90,11 @@ namespace joint_state_controller
     // initialize time exactly once, to maintain publish rate through controller resets
     if (!pub_time_initialized_)
     {
-      last_publish_time_ = time - ros::Duration(1.001/publish_rate_); //ensure publish on first cycle
+      try {
+        last_publish_time_ = time - ros::Duration(1.001/publish_rate_); //ensure publish on first cycle
+      } catch(std::runtime_error& ex) { // negative ros::Time is not allowed
+        last_publish_time_ = ros::Time::MIN;
+      }
       pub_time_initialized_ = true;
     }
   }

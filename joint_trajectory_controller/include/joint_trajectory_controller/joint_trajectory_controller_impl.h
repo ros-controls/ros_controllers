@@ -254,6 +254,7 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
   // Initialize members
   joints_.resize(n_joints);
   angle_wraparound_.resize(n_joints);
+  is_linear_.resize(n_joints);
   for (unsigned int i = 0; i < n_joints; ++i)
   {
     // Joint handle
@@ -267,13 +268,16 @@ bool JointTrajectoryController<SegmentImpl, HardwareInterface>::init(HardwareInt
 
     // Whether a joint is continuous (ie. has angle wraparound)
     angle_wraparound_[i] = urdf_joints[i]->type == urdf::Joint::CONTINUOUS;
+    is_linear_[i] = urdf_joints[i]->type == urdf::Joint::PRISMATIC;
     const std::string not_if = angle_wraparound_[i] ? "" : "non-";
+    const std::string linear = is_linear_[i] ? "linear " : "";
 
-    ROS_DEBUG_STREAM_NAMED(name_, "Found " << not_if << "continuous joint '" << joint_names_[i] << "' in '" <<
+    ROS_DEBUG_STREAM_NAMED(name_, "Found " << not_if << "continuous " << linear << "joint '" << joint_names_[i] << "' in '" <<
                                   this->getHardwareInterfaceType() << "'.");
   }
 
   assert(joints_.size() == angle_wraparound_.size());
+  assert(joints_.size() == is_linear_.size());
   ROS_DEBUG_STREAM_NAMED(name_, "Initialized controller '" << name_ << "' with:" <<
                          "\n- Number of joints: " << getNumberOfJoints() <<
                          "\n- Hardware interface type: '" << this->getHardwareInterfaceType() << "'" <<
@@ -778,6 +782,17 @@ updateStates(const ros::Time& sample_time, const Trajectory* const traj)
     desired_state_.position[joint_index] = desired_joint_state_.position[0];
     desired_state_.velocity[joint_index] = desired_joint_state_.velocity[0];
     desired_state_.acceleration[joint_index] = desired_joint_state_.acceleration[0];
+
+    if (is_linear_[joint_index])
+    {
+      state_joint_error_.position[0] = desired_joint_state_.position[0] - current_state_.position[joint_index];
+    }
+    else
+    {
+      state_joint_error_.position[0] = angles::shortest_angular_distance(current_state_.position[joint_index],desired_joint_state_.position[0]);
+    }
+    state_joint_error_.velocity[0] = desired_joint_state_.velocity[0] - current_state_.velocity[joint_index];
+    state_joint_error_.acceleration[0] = 0.0;
 
     state_error_.position[joint_index] = angles::shortest_angular_distance(current_state_.position[joint_index],desired_joint_state_.position[0]);
     state_error_.velocity[joint_index] = desired_joint_state_.velocity[0] - current_state_.velocity[joint_index];

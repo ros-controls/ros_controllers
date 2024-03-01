@@ -3,6 +3,7 @@ project(forward_command_controller)
 
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS
+  actionlib
   controller_interface
   hardware_interface
   realtime_tools
@@ -15,6 +16,7 @@ catkin_package(
   INCLUDE_DIRS
     include
   CATKIN_DEPENDS
+    actionlib
     controller_interface
     hardware_interface
     realtime_tools

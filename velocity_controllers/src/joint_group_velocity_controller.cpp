@@ -45,5 +45,21 @@ void forward_command_controller::ForwardJointGroupCommandController<T>::starting
   commands_buffer_.readFromRT()->assign(n_joints_, 0.0);
 }
 
+template <class T>
+void forward_command_controller::ForwardJointGroupCommandController<T>::updateDefaultCommand()
+{
+  // Set default to 0
+  for(unsigned int i=0; i<joints_.size(); i++)
+  {
+    default_commands_[i] = 0.0;
+  }
+}
+
+template <class T>
+void forward_command_controller::ForwardJointGroupCommandController<T>::goalCB(GoalHandle gh)
+{
+  // Set as position command
+  setGoal(gh, gh.getGoal()->command.velocities);
+}
 
 PLUGINLIB_EXPORT_CLASS(velocity_controllers::JointGroupVelocityController,controller_interface::ControllerBase)

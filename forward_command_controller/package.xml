@@ -22,6 +22,8 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <depend>actionlib</depend>
+
   <build_depend>controller_interface</build_depend>
   <build_depend>hardware_interface</build_depend>
   <build_depend>realtime_tools</build_depend>

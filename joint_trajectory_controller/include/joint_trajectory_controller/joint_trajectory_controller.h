@@ -223,6 +223,11 @@ protected:
   ActionServerPtr    action_server_;
   ros::ServiceServer query_state_service_;
   StatePublisherPtr  state_publisher_;
+  /**
+   *  @brief Indices of trajectory that is currently being executed
+   *  @details These should usually (always?) be all the same
+   */
+  std::vector<Scalar> trajectory_indices_;
 
   ros::Timer         goal_handle_timer_;
   ros::Time          last_state_publish_time_;

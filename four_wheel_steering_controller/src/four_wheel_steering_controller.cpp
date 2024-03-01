@@ -362,7 +362,11 @@ namespace four_wheel_steering_controller{
       curr_cmd_4ws.rear_steering = 0.0;
     }
 
-    const double cmd_dt(period.toSec());
+    const double cmd_dt = (period.toSec() > 0) ? period.toSec() : 0.0;
+    if(period.toSec() < 0)
+    {
+      ROS_ERROR("Invalid time interval, delta time cannot be negative");
+    }
 
     const double angular_speed = odometry_.getAngular();
     const double steering_track = track_-2*wheel_steering_y_offset_;

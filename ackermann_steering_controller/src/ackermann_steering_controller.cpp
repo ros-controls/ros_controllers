@@ -321,7 +321,11 @@ namespace ackermann_steering_controller{
     }
 
     // Limit velocities and accelerations:
-    const double cmd_dt(period.toSec());
+    const double cmd_dt = (period.toSec() > 0) ? period.toSec() : 0.0;
+    if(period.toSec() < 0)
+    {
+      ROS_ERROR("Invalid time interval, delta time cannot be negative");
+    }
 
     limiter_lin_.limit(curr_cmd.lin, last0_cmd_.lin, last1_cmd_.lin, cmd_dt);
     limiter_ang_.limit(curr_cmd.ang, last0_cmd_.ang, last1_cmd_.ang, cmd_dt);

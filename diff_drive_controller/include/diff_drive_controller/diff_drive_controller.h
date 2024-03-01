@@ -157,6 +157,11 @@ namespace diff_drive_controller{
     double left_wheel_radius_multiplier_;
     double right_wheel_radius_multiplier_;
 
+    // Acceleration, velocity and jerk 
+    double max_acceleration_z_;
+    double max_velocity_;
+    double max_jerk_;
+
     /// Timeout to consider cmd_vel commands old:
     double cmd_vel_timeout_;
 
@@ -197,6 +202,10 @@ namespace diff_drive_controller{
       double right_wheel_radius_multiplier;
       double wheel_separation_multiplier;
 
+      double max_acceleration_z;
+      double max_velocity;
+      double max_jerk;
+
       bool publish_cmd;
 
       double publish_rate;
@@ -206,6 +215,9 @@ namespace diff_drive_controller{
         : left_wheel_radius_multiplier(1.0)
         , right_wheel_radius_multiplier(1.0)
         , wheel_separation_multiplier(1.0)
+        , max_acceleration_z(1.0)
+        , max_velocity(1.0)
+        , max_jerk(1.0)
         , publish_cmd(false)
         , publish_rate(50)
         , enable_odom_tf(true)
@@ -219,6 +231,11 @@ namespace diff_drive_controller{
            << "\t\tleft wheel radius multiplier: "   << params.left_wheel_radius_multiplier  << "\n"
            << "\t\tright wheel radius multiplier: "  << params.right_wheel_radius_multiplier << "\n"
            << "\t\twheel separation multiplier: "    << params.wheel_separation_multiplier   << "\n"
+           //
+           << "\tVelocity, acceleration, jerk parameters:\n"
+           << "\t\tmax_acceleration_z: "             << params.max_acceleration_z            << "\n"
+           << "\t\tmax_velocity: "                   << params.max_velocity                  << "\n"
+           << "\t\tmax_jerk: "                       << params.max_jerk                      << "\n"
            //
            << "\tPublication parameters:\n"
            << "\t\tPublish executed velocity command: " << (params.publish_cmd?"enabled":"disabled") << "\n"

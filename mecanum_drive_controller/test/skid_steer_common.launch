@@ -1,0 +1,31 @@
+<launch>
+  <!-- Load skidsteerbot model -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro.py '$(find diff_drive_controller)/test/skidsteerbot.xacro'" />
+
+  <!-- Start skidsteerbot -->
+  <node name="skidsteerbot"
+      pkg="diff_drive_controller"
+      type="skidsteerbot"/>
+
+  <!-- Load controller config -->
+  <rosparam command="load" file="$(find diff_drive_controller)/test/skidsteerbot_controllers.yaml" />
+
+  <!-- Spawn controller -->
+  <node name="controller_spawner"
+        pkg="controller_manager" type="spawner" output="screen"
+        args="skidsteerbot_controller" />
+
+  <!-- rqt_plot monitoring -->
+  <!--
+  <node name="skidsteerbot_pos_monitor"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/skidsteerbot_controller/odom/pose/pose/position/x" />
+
+  <node name="skidsteerbot_vel_monitor"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/skidsteerbot_controller/odom/twist/twist/linear/x" />
+  -->
+</launch>

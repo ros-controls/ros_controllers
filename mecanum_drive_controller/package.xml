@@ -1,0 +1,28 @@
+<package>
+  <name>mecanum_drive_controller</name>
+  <version>0.0.1</version>
+  <description>Controller for a mecanum drive mobile base.</description>
+  <maintainer email="antoinerennuit@hotmail.com">Antoine Rennuit</maintainer>
+
+  <license>MIT</license>
+
+  <author email="antoinerennuit@hotmail.com">Antoine Rennuit</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>controller_interface</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>realtime_tools</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>urdf</build_depend>
+
+  <run_depend>controller_interface</run_depend>
+  <run_depend>nav_msgs</run_depend>
+  <run_depend>realtime_tools</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>urdf</run_depend>
+
+  <export>
+    <controller_interface plugin="${prefix}/mecanum_drive_controller_plugins.xml"/>
+  </export>
+</package>

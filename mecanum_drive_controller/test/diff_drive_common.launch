@@ -1,0 +1,31 @@
+<launch>
+  <!-- Load diffbot model -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro.py '$(find diff_drive_controller)/test/diffbot.xacro'" />
+
+  <!-- Start diffbot -->
+  <node name="diffbot"
+      pkg="diff_drive_controller"
+      type="diffbot"/>
+
+  <!-- Load controller config -->
+  <rosparam command="load" file="$(find diff_drive_controller)/test/diffbot_controllers.yaml" />
+
+  <!-- Spawn controller -->
+  <node name="controller_spawner"
+        pkg="controller_manager" type="spawner" output="screen"
+        args="diffbot_controller" />
+
+  <!-- rqt_plot monitoring -->
+  <!--
+  <node name="diffbot_pos_monitor"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/diffbot_controller/odom/pose/pose/position/x" />
+
+  <node name="diffbot_vel_monitor"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/diffbot_controller/odom/twist/twist/linear/x" />
+  -->
+</launch>

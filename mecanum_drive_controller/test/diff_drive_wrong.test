@@ -1,0 +1,16 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find diff_drive_controller)/test/diff_drive_common.launch" />
+
+  <!-- Override with wrong controller configuration -->
+  <rosparam command="load" file="$(find diff_drive_controller)/test/diffbot_wrong.yaml" />
+
+  <!-- Controller test -->
+  <test test-name="diff_drive_fail_test"
+        pkg="diff_drive_controller"
+        type="diff_drive_fail_test"
+        time-limit="10.0">
+    <remap from="cmd_vel" to="diffbot_controller/cmd_vel" />
+    <remap from="odom" to="diffbot_controller/odom" />
+  </test>
+</launch>

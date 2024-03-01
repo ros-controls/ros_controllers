@@ -143,9 +143,10 @@ namespace ackermann_steering_controller
     /**
      * \brief Sets the wheel parameters: radius and separation
      * \param wheel_separation Seperation between left and right wheels [m]
-     * \param wheel_radius     Wheel radius [m]
+     * \param front_wheel_radius    Front (Steer) Wheel radius [m]
+     * \param rear_wheel_radius     Rear (Drive) Wheel radius [m]
      */
-    void setWheelParams(double wheel_reparation_h, double wheel_radius);
+    void setWheelParams(double wheel_reparation_h, double front_wheel_radius, double rear_wheel_radius);
 
     /**
      * \brief Velocity rolling window size setter
@@ -192,7 +193,8 @@ namespace ackermann_steering_controller
 
     /// Wheel kinematic parameters [m]:
     double wheel_separation_h_;
-    double wheel_radius_;
+    double front_wheel_radius_;
+    double rear_wheel_radius_;
 
     /// Previous wheel position/state [rad]:
     double rear_wheel_old_pos_;

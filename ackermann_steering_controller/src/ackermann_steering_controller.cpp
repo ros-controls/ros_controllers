@@ -109,7 +109,8 @@ namespace ackermann_steering_controller{
     : open_loop_(false)
     , command_struct_()
     , wheel_separation_h_(0.0)
-    , wheel_radius_(0.0)
+    , front_wheel_radius_(0.0)
+    , rear_wheel_radius_(0.0)
     , wheel_separation_h_multiplier_(1.0)
     , wheel_radius_multiplier_(1.0)
     , steer_pos_multiplier_(1.0)
@@ -217,13 +218,17 @@ namespace ackermann_steering_controller{
 
     // If either parameter is not available, we need to look up the value in the URDF
     bool lookup_wheel_separation_h = !controller_nh.getParam("wheel_separation_h", wheel_separation_h_);
-    bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius_);
+    double wheel_radius;
+    bool lookup_wheel_radius = !controller_nh.getParam("wheel_radius", wheel_radius);
+    bool lookup_front_wheel_radius = !controller_nh.param("front_wheel_radius", front_wheel_radius_, wheel_radius);
+    bool lookup_rear_wheel_radius = !controller_nh.param("rear_wheel_radius", rear_wheel_radius_, wheel_radius);
 
     if (!setOdomParamsFromUrdf(root_nh,
                                rear_wheel_name,
                                front_steer_name,
                                lookup_wheel_separation_h,
-                               lookup_wheel_radius))
+                               lookup_front_wheel_radius && lookup_wheel_radius,
+                               lookup_rear_wheel_radius && lookup_wheel_radius))
     {
       return false;
     }
@@ -231,11 +236,13 @@ namespace ackermann_steering_controller{
     // Regardless of how we got the separation and radius, use them
     // to set the odometry parameters
     const double ws_h = wheel_separation_h_multiplier_ * wheel_separation_h_;
-    const double wr = wheel_radius_multiplier_ * wheel_radius_;
-    odometry_.setWheelParams(ws_h, wr);
+    const double fwr = wheel_radius_multiplier_ * front_wheel_radius_;
+    const double rwr = wheel_radius_multiplier_ * rear_wheel_radius_;
+    odometry_.setWheelParams(ws_h, fwr, rwr);
     ROS_INFO_STREAM_NAMED(name_,
                           "Odometry params : wheel separation height " << ws_h
-                          << ", wheel radius " << wr);
+                          << ", front wheel radius " << fwr
+                          << ", rear wheel radius " << rwr);
 
     setOdomPubFields(root_nh, controller_nh);
 
@@ -330,7 +337,8 @@ namespace ackermann_steering_controller{
     last0_cmd_ = curr_cmd;
 
     // Set Command
-    const double wheel_vel = curr_cmd.lin/wheel_radius_; // omega = linear_vel / radius
+    // rear wheels are assumed to be drive wheels
+    const double wheel_vel = curr_cmd.lin/rear_wheel_radius_; // omega = linear_vel / radius
     rear_wheel_joint_.setCommand(wheel_vel);
     front_steer_joint_.setCommand(curr_cmd.ang);
 
@@ -394,9 +402,10 @@ namespace ackermann_steering_controller{
                              const std::string rear_wheel_name,
                              const std::string front_steer_name,
                              bool lookup_wheel_separation_h,
-                             bool lookup_wheel_radius)
+                             bool lookup_front_wheel_radius,
+                             bool lookup_rear_wheel_radius)
   {
-    if (!(lookup_wheel_separation_h || lookup_wheel_radius))
+    if (!(lookup_wheel_separation_h || lookup_front_wheel_radius || lookup_rear_wheel_radius))
     {
       // Short-circuit in case we don't need to look up anything, so we don't have to parse the URDF
       return true;
@@ -451,15 +460,25 @@ namespace ackermann_steering_controller{
       ROS_INFO_STREAM("Calculated wheel_separation_h: " << wheel_separation_h_);
     }
 
-    if (lookup_wheel_radius)
+    if (lookup_rear_wheel_radius)
     {
-      // Get wheel radius
-      if (!getWheelRadius(model->getLink(rear_wheel_joint->child_link_name), wheel_radius_))
+      // Get rear wheel radius
+      if (!getWheelRadius(model->getLink(rear_wheel_joint->child_link_name), rear_wheel_radius_))
       {
         ROS_ERROR_STREAM_NAMED(name_, "Couldn't retrieve " << rear_wheel_name << " wheel radius");
         return false;
       }
-      ROS_INFO_STREAM("Retrieved wheel_radius: " << wheel_radius_);
+      ROS_INFO_STREAM("Retrieved rear_wheel_radius: " << rear_wheel_radius_);
+    }
+    if (lookup_front_wheel_radius)
+    {
+      // Get front wheel radius
+      if (!getWheelRadius(model->getLink(front_steer_joint->child_link_name), front_wheel_radius_))
+      {
+        ROS_ERROR_STREAM_NAMED(name_, "Couldn't retrieve " << front_steer_name << " wheel radius");
+        return false;
+      }
+      ROS_INFO_STREAM("Retrieved rear_wheel_radius: " << front_wheel_radius_);
     }
 
     return true;

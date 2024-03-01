@@ -38,12 +38,33 @@
 #include <velocity_controllers/joint_group_velocity_controller.h>
 #include <pluginlib/class_list_macros.hpp>
 
-template <class T>
-void forward_command_controller::ForwardJointGroupCommandController<T>::starting(const ros::Time& time)
+template<>
+void velocity_controllers::JointGroupVelocityController::starting(const ros::Time& /*time*/)
 {
   // Start controller with 0.0 velocities
   commands_buffer_.readFromRT()->assign(n_joints_, 0.0);
 }
 
+template<>
+void velocity_controllers::JointGroupVelocityController::update(const ros::Time& time, const ros::Duration& /*period*/)
+{
+  std::vector<double> & commands = *commands_buffer_.readFromRT();
+
+  // Check timeout
+  if (command_timeout_ > 0.0)
+  {
+    ros::Time& last_received_command_time = *last_received_command_time_buffer_.readFromRT();
+    const double command_age = (time - last_received_command_time).toSec();
+    if (std::abs(command_age) > command_timeout_)
+    {
+      ROS_WARN_STREAM_THROTTLE(10, "Commands timed out, setting to zero.");
+      for (std::size_t i = 0; i < commands.size(); ++i)
+      {  commands[i] = 0;  }
+    }
+  }
+
+  for(unsigned int i=0; i<n_joints_; i++)
+  {  joints_[i].setCommand(commands[i]);  }
+}
 
 PLUGINLIB_EXPORT_CLASS(velocity_controllers::JointGroupVelocityController,controller_interface::ControllerBase)

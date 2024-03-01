@@ -198,6 +198,7 @@ namespace diff_drive_controller
     /// Previou wheel position/state [rad]:
     double left_wheel_old_pos_;
     double right_wheel_old_pos_;
+    bool old_pos_valid_;
 
     /// Rolling mean accumulators for the linar and angular velocities:
     size_t velocity_rolling_window_size_;
